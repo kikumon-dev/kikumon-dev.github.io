@@ -974,12 +974,17 @@
       /* スマホ縦画面：第1象限の右上に日付を固定表示 */
       .date-display-mobile {
         display: block !important;
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        width: auto;
+        position: static;
+        width: 100%;
         text-align: right;
-        margin: 0;
+        margin: -8px 0 4px 0;
+        font-size: 0.85em;
+      }
+
+      /* スマホ：第1象限のh4を幅いっぱいに */
+      #section1 .header-row h4 {
+        width: 100%;
+        font-size: 0.95em;
       }
 
       /* スマホ縦画面：第2象限の日付を非表示 */
@@ -2231,6 +2236,13 @@
       <button class="monthly-nav-btn" onclick="changeMonth(-1)">◀ 先月</button>
       <h2 id="monthlyTitle"></h2>
       <button class="monthly-nav-btn" onclick="changeMonth(1)">来月 ▶</button>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; justify-content: flex-end;">
+      <span style="font-size: 0.75em; color: #999;">↔ 幅</span>
+      <input type="range" id="monthlyWidthSlider" min="100" max="300" value="100" 
+        style="width: 100px; accent-color: #4facfe; cursor: pointer;"
+        oninput="adjustMonthlyWidth(this.value)">
+      <button onclick="resetMonthlyWidth()" style="font-size: 0.7em; color: #999; background: none; border: 1px solid #ddd; border-radius: 4px; padding: 2px 6px; cursor: pointer;">リセット</button>
     </div>
     <div id="monthlyCalendar" class="monthly-calendar">
       <!-- JavaScriptで動的に生成 -->
@@ -4156,6 +4168,19 @@
       resizingRow = null;
       document.removeEventListener('touchmove', onMonthlyResizeTouch);
       document.removeEventListener('touchend', stopMonthlyResizeTouch);
+    }
+
+    // 月間カレンダーの幅調整
+    function adjustMonthlyWidth(percent) {
+      const calendar = document.getElementById('monthlyCalendar');
+      calendar.style.width = percent + '%';
+      calendar.style.minWidth = percent + '%';
+    }
+
+    function resetMonthlyWidth() {
+      const slider = document.getElementById('monthlyWidthSlider');
+      slider.value = 100;
+      adjustMonthlyWidth(100);
     }
 
     function changeMonth(delta) {
