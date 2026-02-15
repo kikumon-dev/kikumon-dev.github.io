@@ -6,7 +6,7 @@
   <title>やることリスト - v9.8 (2026-02-14)</title>
   
   <!-- 
-    VERSION: 10.0
+    VERSION: 10.1
     DATE: 2026-02-14
     CHANGES: 
     - ナビバーデザイン全面リニューアル（モダンボトムナビ風）
@@ -2232,7 +2232,8 @@
 
   <!-- 月間ビュー -->
   <div id="monthlyView" class="monthly-view">
-    <div class="monthly-header">
+    <div class="monthly-header" style="position: relative;">
+      <span id="seasonalArt" style="display: none; position: absolute; left: 8px; top: -5px; font-size: 2.2em; line-height: 1; filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.1));"></span>
       <button class="monthly-nav-btn" onclick="changeMonth(-1)">◀ 先月</button>
       <h2 id="monthlyTitle"></h2>
       <button class="monthly-nav-btn" onclick="changeMonth(1)">来月 ▶</button>
@@ -2246,6 +2247,22 @@
     </div>
     <div id="monthlyCalendar" class="monthly-calendar">
       <!-- JavaScriptで動的に生成 -->
+    </div>
+
+    <!-- シンプルモード：スタンプバー -->
+    <div id="stampBar" style="display: none; position: sticky; bottom: 0; left: 0; right: 0; background: #fff; border-top: 2px solid #eee; padding: 8px 10px; z-index: 30; box-shadow: 0 -2px 8px rgba(0,0,0,0.08);">
+      <div style="display: flex; align-items: center; gap: 6px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch;">
+        <div id="stampButtons" style="display: flex; gap: 6px; flex-shrink: 0;"></div>
+        <div style="display: flex; gap: 6px; flex-shrink: 0; margin-left: 8px; padding-left: 8px; border-left: 2px solid #eee;">
+          <button onclick="selectMemoType('work')" id="memoWorkBtn"
+            style="padding: 6px 10px; border-radius: 16px; border: 2px solid #78909c; background: #fff; font-size: 0.8em; cursor: pointer; white-space: nowrap; transition: all 0.2s;">■ 仕事メモ</button>
+          <button onclick="selectMemoType('private')" id="memoPrivateBtn"
+            style="padding: 6px 10px; border-radius: 16px; border: 2px solid #ffa726; background: #fff; font-size: 0.8em; cursor: pointer; white-space: nowrap; transition: all 0.2s;">★ プライベート</button>
+          <button onclick="clearStampSelection()" id="stampClearBtn"
+            style="padding: 6px 10px; border-radius: 16px; border: 2px solid #e0e0e0; background: #f5f5f5; font-size: 0.8em; cursor: pointer; white-space: nowrap;">✕ 解除</button>
+        </div>
+      </div>
+      <div id="stampSelectionInfo" style="text-align: center; font-size: 0.75em; color: #999; margin-top: 4px;">スタンプを選んで、カレンダーの日付をタップ</div>
     </div>
   </div>
 
@@ -2334,6 +2351,31 @@
               <span style="font-size: 0.75em; color: #8e8e8e; margin-left: 8px;">全文判読可能</span>
             </label>
           </div>
+        </div>
+      </div>
+
+      <!-- シンプルモード -->
+      <div style="margin-top: 24px; border-top: 1px solid #efefef; padding-top: 18px;">
+        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">🩺 シンプルモード</h3>
+        <p style="font-size: 0.8em; color: #8e8e8e; margin: 0 0 12px 0;">シフト管理に特化したシンプル画面。スタンプをタップ→日付をタップで入力。</p>
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+          <label style="font-weight: 600; color: #262626; font-size: 0.9em;">シンプルモード</label>
+          <label style="position: relative; display: inline-block; width: 50px; height: 26px; cursor: pointer;">
+            <input type="checkbox" id="simpleModeToggle" style="opacity: 0; width: 0; height: 0;"
+              onchange="toggleSimpleModePreview(this.checked)">
+            <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; border-radius: 26px; transition: 0.3s;"
+              id="simpleToggleSlider"></span>
+            <span style="position: absolute; content: ''; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; border-radius: 50%; transition: 0.3s; pointer-events: none;"
+              id="simpleToggleKnob"></span>
+          </label>
+        </div>
+
+        <!-- スタンプ設定 -->
+        <div id="stampSettingsArea" style="display: none;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #262626; font-size: 0.9em;">スタンプ設定</label>
+          <p style="font-size: 0.8em; color: #8e8e8e; margin: 0 0 10px 0;">最大20個。名前・色・時間帯を設定できます。</p>
+          <div id="stampList" style="margin-bottom: 12px;"></div>
+          <button onclick="addStampSetting()" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; border-radius: 8px; padding: 8px 16px; font-size: 0.85em; cursor: pointer;">＋ スタンプ追加</button>
         </div>
       </div>
       
@@ -3860,6 +3902,49 @@
           cell.appendChild(holidayDiv);
         }
         
+        // シンプルモード：スタンプ表示
+        const isSimple = localStorage.getItem('simpleMode') === 'on';
+        if (isSimple) {
+          const stampData = getStampData();
+          const memoData = getMemoData();
+          
+          if (stampData[dateStr]) {
+            const sd = stampData[dateStr];
+            const stampLabel = document.createElement('div');
+            stampLabel.className = 'stamp-label';
+            stampLabel.textContent = sd.name;
+            stampLabel.style.cssText = `
+              background: ${sd.color}; color: ${sd.textColor || '#333'}; 
+              padding: 2px 8px; border-radius: 10px; font-size: 0.75em; font-weight: 600;
+              text-align: center; margin-bottom: 2px; cursor: pointer;
+            `;
+            cell.appendChild(stampLabel);
+          }
+          
+          // メモアイコン表示
+          if (memoData[dateStr]) {
+            const memoIcons = document.createElement('div');
+            memoIcons.style.cssText = 'display: flex; gap: 2px; justify-content: center; font-size: 0.7em;';
+            if (memoData[dateStr].work && memoData[dateStr].work.length > 0) {
+              const icon = document.createElement('span');
+              icon.className = 'memo-icon';
+              icon.textContent = '■';
+              icon.style.color = '#78909c';
+              icon.title = memoData[dateStr].work.join('\n');
+              memoIcons.appendChild(icon);
+            }
+            if (memoData[dateStr].private && memoData[dateStr].private.length > 0) {
+              const icon = document.createElement('span');
+              icon.className = 'memo-icon';
+              icon.textContent = '★';
+              icon.style.color = '#ffa726';
+              icon.title = memoData[dateStr].private.join('\n');
+              memoIcons.appendChild(icon);
+            }
+            cell.appendChild(memoIcons);
+          }
+        }
+        
         // この日のタスクを表示
         const dayTasks = allTasks.filter(t => t.date === dateStr);
         dayTasks.forEach(task => {
@@ -4025,13 +4110,17 @@
           }
         });
         
-        // セルクリック（新規タスク追加 or 移動先確定）
+        // セルクリック（新規タスク追加 or 移動先確定 or スタンプ貼付）
         cell.addEventListener('click', (e) => {
+          const isSimple = localStorage.getItem('simpleMode') === 'on';
           if (movingTaskId && (e.target === cell || e.target === dayNum || e.target.classList.contains('monthly-holiday-name'))) {
             // 移動モード中：このセルに移動
             completeMoveMode(dateStr);
+          } else if (isSimple && (selectedStamp || selectedMemoType) && (e.target === cell || e.target === dayNum || e.target.classList.contains('monthly-holiday-name') || e.target.classList.contains('stamp-label') || e.target.classList.contains('memo-icon'))) {
+            // シンプルモード：スタンプ/メモ貼付
+            applyStampToDate(dateStr);
           } else if (e.target === cell || e.target === dayNum || e.target.classList.contains('monthly-holiday-name')) {
-            // 新規タスク追加モーダルを開く
+            // 通常：新規タスク追加モーダルを開く
             openMonthlyTaskAddModal(dateStr);
           }
         });
@@ -4159,6 +4248,7 @@
       cancelMoveMode();
       currentMonthDate.setMonth(currentMonthDate.getMonth() + delta);
       renderMonthlyView();
+      updateSeasonalArt();
     }
 
     // 週を変更
@@ -5767,6 +5857,14 @@
       monthlyRadios.forEach(radio => {
         radio.checked = (radio.value === monthlyMode);
       });
+
+      // シンプルモード
+      const simpleMode = localStorage.getItem('simpleMode') === 'on';
+      const simpleToggle = document.getElementById('simpleModeToggle');
+      simpleToggle.checked = simpleMode;
+      updateSimpleToggleUI(simpleMode);
+      document.getElementById('stampSettingsArea').style.display = simpleMode ? 'block' : 'none';
+      if (simpleMode) loadStampSettingsUI();
       
       // プロフィール
       const savedName = localStorage.getItem('profileName') || '';
@@ -5904,6 +6002,13 @@
         localStorage.setItem('monthlyMode', selectedMonthlyMode.value);
       }
       
+      // シンプルモード
+      const simpleToggle = document.getElementById('simpleModeToggle');
+      localStorage.setItem('simpleMode', simpleToggle.checked ? 'on' : 'off');
+      
+      // スタンプ設定保存
+      saveStampSettings();
+      
       // プロフィール名
       const profileName = document.getElementById('profileNameInput').value.trim();
       localStorage.setItem('profileName', profileName);
@@ -5919,11 +6024,18 @@
       // ナビバー更新
       updateNavAvatar();
       
+      // シンプルモード適用
+      applySimpleMode();
+      
       // 保存完了メッセージ
       alert('設定を保存しました！');
       
-      // 保存した初期ビューに移動
-      switchView(selectedView.value);
+      // シンプルモード時は月間に強制移動
+      if (simpleToggle.checked) {
+        switchView('monthly');
+      } else {
+        switchView(selectedView.value);
+      }
     }
     
     // 初期ビューを取得
@@ -6071,6 +6183,263 @@
       inspectionMode = (targetMode - 1 + 4) % 4;
       toggleDeepDive();
     }
+
+    // ===== シンプルモード =====
+    let selectedStamp = null; // { id, name, color, startTime, endTime }
+    let selectedMemoType = null; // 'work' | 'private'
+
+    // 季節アート（月ごとのemoji）
+    const SEASONAL_ART = {
+      1: '🎍', 2: '🌸', 3: '🌸', 4: '🌷', 5: '🎏', 6: '☔',
+      7: '🎆', 8: '🌻', 9: '🎑', 10: '🍁', 11: '🍂', 12: '🎄'
+    };
+
+    // デフォルトスタンプ
+    const DEFAULT_STAMPS = [
+      { id: 's1', name: '日勤', color: '#ffcdd2', textColor: '#c62828', startTime: '08:30', endTime: '17:00' },
+      { id: 's2', name: '長日勤', color: '#f8bbd0', textColor: '#ad1457', startTime: '08:30', endTime: '20:00' },
+      { id: 's3', name: '入り', color: '#e1bee7', textColor: '#6a1b9a', startTime: '16:30', endTime: '01:00' },
+      { id: 's4', name: '明け', color: '#c5cae9', textColor: '#283593', startTime: '00:00', endTime: '09:00' },
+      { id: 's5', name: '休み', color: '#b2dfdb', textColor: '#00695c', startTime: '', endTime: '' },
+      { id: 's6', name: '有給', color: '#fff9c4', textColor: '#f57f17', startTime: '', endTime: '' }
+    ];
+
+    function getStamps() {
+      const saved = localStorage.getItem('simpleStamps');
+      return saved ? JSON.parse(saved) : DEFAULT_STAMPS;
+    }
+
+    function getStampData() {
+      // 日付 → スタンプ情報のマッピング
+      const saved = localStorage.getItem('stampData');
+      return saved ? JSON.parse(saved) : {};
+    }
+
+    function saveStampData(data) {
+      localStorage.setItem('stampData', JSON.stringify(data));
+    }
+
+    function getMemoData() {
+      const saved = localStorage.getItem('simpleMemos');
+      return saved ? JSON.parse(saved) : {};
+    }
+
+    function saveMemoData(data) {
+      localStorage.setItem('simpleMemos', JSON.stringify(data));
+    }
+
+    // スタンプ選択
+    function selectStamp(stamp) {
+      selectedStamp = stamp;
+      selectedMemoType = null;
+      updateStampBarUI();
+    }
+
+    function selectMemoType(type) {
+      selectedMemoType = type;
+      selectedStamp = null;
+      updateStampBarUI();
+    }
+
+    function clearStampSelection() {
+      selectedStamp = null;
+      selectedMemoType = null;
+      updateStampBarUI();
+    }
+
+    function updateStampBarUI() {
+      const info = document.getElementById('stampSelectionInfo');
+      const btns = document.querySelectorAll('#stampButtons button');
+      btns.forEach(btn => {
+        btn.style.transform = btn.dataset.stampId === (selectedStamp ? selectedStamp.id : '') ? 'scale(1.1)' : 'scale(1)';
+        btn.style.boxShadow = btn.dataset.stampId === (selectedStamp ? selectedStamp.id : '') ? '0 2px 8px rgba(0,0,0,0.2)' : 'none';
+      });
+      document.getElementById('memoWorkBtn').style.background = selectedMemoType === 'work' ? '#78909c' : '#fff';
+      document.getElementById('memoWorkBtn').style.color = selectedMemoType === 'work' ? '#fff' : '#78909c';
+      document.getElementById('memoPrivateBtn').style.background = selectedMemoType === 'private' ? '#ffa726' : '#fff';
+      document.getElementById('memoPrivateBtn').style.color = selectedMemoType === 'private' ? '#fff' : '#ffa726';
+
+      if (selectedStamp) {
+        info.textContent = `「${selectedStamp.name}」を選択中 → 日付をタップ`;
+        info.style.color = selectedStamp.textColor || '#333';
+      } else if (selectedMemoType) {
+        info.textContent = selectedMemoType === 'work' ? '■ 仕事メモを選択中 → 日付をタップ' : '★ プライベートメモを選択中 → 日付をタップ';
+        info.style.color = selectedMemoType === 'work' ? '#78909c' : '#ffa726';
+      } else {
+        info.textContent = 'スタンプを選んで、カレンダーの日付をタップ';
+        info.style.color = '#999';
+      }
+    }
+
+    // 日付セルにスタンプ/メモを貼る
+    function applyStampToDate(dateStr) {
+      if (selectedStamp) {
+        const data = getStampData();
+        if (data[dateStr] && data[dateStr].stampId === selectedStamp.id) {
+          delete data[dateStr]; // 同じスタンプ再タップで解除
+        } else {
+          data[dateStr] = { stampId: selectedStamp.id, name: selectedStamp.name, color: selectedStamp.color, textColor: selectedStamp.textColor };
+        }
+        saveStampData(data);
+        renderMonthlyView();
+      } else if (selectedMemoType) {
+        const memos = getMemoData();
+        const key = dateStr;
+        if (!memos[key]) memos[key] = {};
+        const memoText = prompt(selectedMemoType === 'work' ? '■ 仕事メモを入力:' : '★ プライベートメモを入力:');
+        if (memoText !== null && memoText.trim()) {
+          if (!memos[key][selectedMemoType]) memos[key][selectedMemoType] = [];
+          memos[key][selectedMemoType].push(memoText.trim());
+          saveMemoData(memos);
+          renderMonthlyView();
+        }
+      }
+    }
+
+    // スタンプバーのボタン生成
+    function renderStampBar() {
+      const container = document.getElementById('stampButtons');
+      if (!container) return;
+      container.innerHTML = '';
+      const stamps = getStamps();
+      stamps.forEach(stamp => {
+        const btn = document.createElement('button');
+        btn.dataset.stampId = stamp.id;
+        btn.textContent = stamp.name;
+        btn.style.cssText = `
+          padding: 6px 14px; border-radius: 16px; border: 2px solid ${stamp.textColor || '#333'};
+          background: ${stamp.color}; color: ${stamp.textColor || '#333'}; font-size: 0.8em;
+          font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.15s;
+        `;
+        btn.onclick = function() { selectStamp(stamp); };
+        container.appendChild(btn);
+      });
+    }
+
+    // シンプルモードON/OFF
+    function applySimpleMode() {
+      const isSimple = localStorage.getItem('simpleMode') === 'on';
+      const navDaily = document.getElementById('navDaily');
+      const navWeekly = document.getElementById('navWeekly');
+      const navYearly = document.getElementById('navYearly');
+      const stampBar = document.getElementById('stampBar');
+      const seasonalArt = document.getElementById('seasonalArt');
+      const widthSlider = document.getElementById('monthlyWidthSlider');
+
+      if (isSimple) {
+        if (navDaily) navDaily.style.display = 'none';
+        if (navWeekly) navWeekly.style.display = 'none';
+        if (navYearly) navYearly.style.display = 'none';
+        if (stampBar) { stampBar.style.display = 'block'; renderStampBar(); }
+        if (seasonalArt) { seasonalArt.style.display = 'block'; updateSeasonalArt(); }
+        if (widthSlider) widthSlider.parentElement.style.display = 'none';
+      } else {
+        if (navDaily) navDaily.style.display = '';
+        if (navWeekly) navWeekly.style.display = '';
+        if (navYearly) navYearly.style.display = '';
+        if (stampBar) stampBar.style.display = 'none';
+        if (seasonalArt) seasonalArt.style.display = 'none';
+        if (widthSlider) widthSlider.parentElement.style.display = '';
+      }
+    }
+
+    function updateSeasonalArt() {
+      const el = document.getElementById('seasonalArt');
+      if (!el) return;
+      const month = currentMonthDate ? (currentMonthDate.getMonth() + 1) : (new Date().getMonth() + 1);
+      el.textContent = SEASONAL_ART[month] || '🗓️';
+    }
+
+    // 設定画面のトグルUI
+    function toggleSimpleModePreview(checked) {
+      updateSimpleToggleUI(checked);
+      document.getElementById('stampSettingsArea').style.display = checked ? 'block' : 'none';
+      if (checked) loadStampSettingsUI();
+    }
+
+    function updateSimpleToggleUI(checked) {
+      const slider = document.getElementById('simpleToggleSlider');
+      const knob = document.getElementById('simpleToggleKnob');
+      if (checked) {
+        slider.style.backgroundColor = '#4facfe';
+        knob.style.left = '27px';
+      } else {
+        slider.style.backgroundColor = '#ccc';
+        knob.style.left = '3px';
+      }
+    }
+
+    // スタンプ設定UI
+    function loadStampSettingsUI() {
+      const stamps = getStamps();
+      const list = document.getElementById('stampList');
+      list.innerHTML = '';
+      stamps.forEach((stamp, idx) => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap;';
+        row.innerHTML = `
+          <input type="text" value="${stamp.name}" data-idx="${idx}" data-field="name"
+            style="width: 60px; padding: 4px 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85em;"
+            onchange="updateStampField(${idx}, 'name', this.value)">
+          <input type="color" value="${stamp.color}" data-idx="${idx}"
+            style="width: 30px; height: 28px; border: none; cursor: pointer; border-radius: 4px;"
+            onchange="updateStampField(${idx}, 'color', this.value)">
+          <input type="time" value="${stamp.startTime || ''}" placeholder="開始"
+            style="width: 75px; padding: 3px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.8em;"
+            onchange="updateStampField(${idx}, 'startTime', this.value)">
+          <span style="font-size: 0.8em; color: #999;">〜</span>
+          <input type="time" value="${stamp.endTime || ''}" placeholder="終了"
+            style="width: 75px; padding: 3px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.8em;"
+            onchange="updateStampField(${idx}, 'endTime', this.value)">
+          <button onclick="removeStamp(${idx})" style="background: none; border: none; color: #e53935; cursor: pointer; font-size: 1.1em; padding: 2px 6px;">✕</button>
+        `;
+        list.appendChild(row);
+      });
+    }
+
+    function updateStampField(idx, field, value) {
+      const stamps = getStamps();
+      if (stamps[idx]) {
+        stamps[idx][field] = value;
+        localStorage.setItem('simpleStamps', JSON.stringify(stamps));
+      }
+    }
+
+    function addStampSetting() {
+      const stamps = getStamps();
+      if (stamps.length >= 20) { alert('スタンプは最大20個です'); return; }
+      stamps.push({
+        id: 's' + Date.now(),
+        name: '新規',
+        color: '#e0e0e0',
+        textColor: '#333',
+        startTime: '',
+        endTime: ''
+      });
+      localStorage.setItem('simpleStamps', JSON.stringify(stamps));
+      loadStampSettingsUI();
+    }
+
+    function removeStamp(idx) {
+      const stamps = getStamps();
+      stamps.splice(idx, 1);
+      localStorage.setItem('simpleStamps', JSON.stringify(stamps));
+      loadStampSettingsUI();
+    }
+
+    function saveStampSettings() {
+      // 設定UIから最新の値を収集
+      const stamps = getStamps();
+      const nameInputs = document.querySelectorAll('#stampList input[data-field="name"]');
+      nameInputs.forEach(input => {
+        const idx = parseInt(input.dataset.idx);
+        if (stamps[idx]) stamps[idx].name = input.value;
+      });
+      localStorage.setItem('simpleStamps', JSON.stringify(stamps));
+    }
+
+    // 起動時にシンプルモード適用
+    applySimpleMode();
   </script>
 
   <!-- タスク編集モーダル -->
