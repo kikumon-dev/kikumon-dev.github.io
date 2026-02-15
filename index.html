@@ -4076,19 +4076,49 @@
         // ドラッグオーバー（PC用）
         cell.addEventListener('dragover', (e) => {
           e.preventDefault();
-          e.dataTransfer.dropEffect = 'move';
-          cell.classList.add('drag-over');
+          // スタンプドロップ時はcopyエフェクト
+          if (e.dataTransfer.types.includes('application/stamp')) {
+            e.dataTransfer.dropEffect = 'copy';
+            cell.style.outline = '3px solid #4facfe';
+            cell.style.outlineOffset = '-3px';
+            cell.style.transition = 'outline 0.1s ease';
+          } else {
+            e.dataTransfer.dropEffect = 'move';
+            cell.classList.add('drag-over');
+          }
         });
         
         // ドラッグリーブ（PC用）
         cell.addEventListener('dragleave', () => {
           cell.classList.remove('drag-over');
+          cell.style.outline = '';
+          cell.style.outlineOffset = '';
         });
         
         // ドロップ（PC用）
         cell.addEventListener('drop', (e) => {
           e.preventDefault();
           cell.classList.remove('drag-over');
+          cell.style.outline = '';
+          cell.style.outlineOffset = '';
+          
+          // スタンプのドロップを判定
+          const stampDataStr = e.dataTransfer.getData('application/stamp');
+          if (stampDataStr) {
+            try {
+              const stamp = JSON.parse(stampDataStr);
+              const targetDate = cell.dataset.date;
+              const data = getStampData();
+              if (data[targetDate] && data[targetDate].stampId === stamp.id) {
+                delete data[targetDate]; // 同じスタンプ再ドロップで解除
+              } else {
+                data[targetDate] = { stampId: stamp.id, name: stamp.name, color: stamp.color, textColor: stamp.textColor };
+              }
+              saveStampData(data);
+              renderMonthlyView();
+            } catch (err) {}
+            return;
+          }
           
           try {
             const data = JSON.parse(e.dataTransfer.getData('text/plain'));
@@ -6306,12 +6336,121 @@
         const btn = document.createElement('button');
         btn.dataset.stampId = stamp.id;
         btn.textContent = stamp.name;
+        btn.draggable = true;
         btn.style.cssText = `
           padding: 6px 14px; border-radius: 16px; border: 2px solid ${stamp.textColor || '#333'};
           background: ${stamp.color}; color: ${stamp.textColor || '#333'}; font-size: 0.8em;
-          font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.15s;
+          font-weight: 600; cursor: grab; white-space: nowrap; transition: all 0.15s;
+          user-select: none; -webkit-user-select: none;
         `;
         btn.onclick = function() { selectStamp(stamp); };
+        
+        // ドラッグ開始
+        btn.addEventListener('dragstart', function(e) {
+          e.dataTransfer.effectAllowed = 'copy';
+          e.dataTransfer.setData('application/stamp', JSON.stringify(stamp));
+          btn.style.opacity = '0.5';
+          btn.style.cursor = 'grabbing';
+          // ドラッグ中のゴースト
+          const ghost = btn.cloneNode(true);
+          ghost.style.position = 'absolute';
+          ghost.style.top = '-1000px';
+          ghost.style.transform = 'scale(1.2)';
+          ghost.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+          document.body.appendChild(ghost);
+          e.dataTransfer.setDragImage(ghost, ghost.offsetWidth / 2, ghost.offsetHeight / 2);
+          setTimeout(() => document.body.removeChild(ghost), 0);
+        });
+        
+        btn.addEventListener('dragend', function() {
+          btn.style.opacity = '1';
+          btn.style.cursor = 'grab';
+        });
+        
+        // タッチ対応：長押しでドラッグ開始
+        let touchDragStamp = null;
+        let touchGhost = null;
+        let touchStarted = false;
+        
+        btn.addEventListener('touchstart', function(e) {
+          touchStarted = true;
+          touchDragStamp = stamp;
+          // 長押し判定は不要（タップで選択、ドラッグで貼付の両方対応）
+        }, { passive: true });
+        
+        btn.addEventListener('touchmove', function(e) {
+          if (!touchDragStamp || !touchStarted) return;
+          e.preventDefault();
+          
+          // ゴースト要素を作成・移動
+          if (!touchGhost) {
+            touchGhost = document.createElement('div');
+            touchGhost.textContent = stamp.name;
+            touchGhost.style.cssText = `
+              position: fixed; z-index: 9999; padding: 8px 16px; border-radius: 16px;
+              background: ${stamp.color}; color: ${stamp.textColor || '#333'}; font-size: 0.9em;
+              font-weight: 700; pointer-events: none; box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+              transform: scale(1.15); opacity: 0.9; border: 2px solid ${stamp.textColor || '#333'};
+            `;
+            document.body.appendChild(touchGhost);
+            // スタンプを選択状態にする
+            selectStamp(stamp);
+          }
+          
+          const touch = e.touches[0];
+          touchGhost.style.left = (touch.clientX - 30) + 'px';
+          touchGhost.style.top = (touch.clientY - 20) + 'px';
+          
+          // ドロップ先セルをハイライト
+          const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+          document.querySelectorAll('.monthly-day-cell').forEach(c => {
+            c.style.outline = '';
+            c.style.outlineOffset = '';
+          });
+          if (elemBelow) {
+            const cell = elemBelow.closest('.monthly-day-cell');
+            if (cell) {
+              cell.style.outline = `3px solid ${stamp.textColor || '#4facfe'}`;
+              cell.style.outlineOffset = '-3px';
+            }
+          }
+        }, { passive: false });
+        
+        btn.addEventListener('touchend', function(e) {
+          if (touchGhost) {
+            const touch = e.changedTouches[0];
+            const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+            
+            // ハイライト解除
+            document.querySelectorAll('.monthly-day-cell').forEach(c => {
+              c.style.outline = '';
+              c.style.outlineOffset = '';
+            });
+            
+            if (elemBelow) {
+              const cell = elemBelow.closest('.monthly-day-cell');
+              if (cell && cell.dataset.date) {
+                // スタンプをドロップ
+                const data = getStampData();
+                if (data[cell.dataset.date] && data[cell.dataset.date].stampId === stamp.id) {
+                  delete data[cell.dataset.date];
+                } else {
+                  data[cell.dataset.date] = { stampId: stamp.id, name: stamp.name, color: stamp.color, textColor: stamp.textColor };
+                }
+                saveStampData(data);
+                renderMonthlyView();
+                // 振動フィードバック
+                if (navigator.vibrate) navigator.vibrate(30);
+              }
+            }
+            
+            document.body.removeChild(touchGhost);
+            touchGhost = null;
+          }
+          touchDragStamp = null;
+          touchStarted = false;
+        });
+        
         container.appendChild(btn);
       });
     }
