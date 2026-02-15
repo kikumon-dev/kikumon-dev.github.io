@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>やることリスト - v0.10.1</title>
+  <title>やることリスト - v0.10.2</title>
   
   <!-- 
     VERSION: 10.1
@@ -1067,6 +1067,7 @@
       margin-bottom: 15px;
       position: relative;
       padding-left: 45px;
+      padding-right: 110px;
     }
 
     .monthly-header h2 {
@@ -2239,30 +2240,29 @@
       <button class="monthly-nav-btn" onclick="changeMonth(-1)">◀ 先月</button>
       <h2 id="monthlyTitle"></h2>
       <button class="monthly-nav-btn" onclick="changeMonth(1)">来月 ▶</button>
-    </div>
-    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; justify-content: flex-end;">
-      <span style="font-size: 0.75em; color: #999;">↔ 幅</span>
-      <input type="range" id="monthlyWidthSlider" min="100" max="300" value="100" 
-        style="width: 100px; accent-color: #4facfe; cursor: pointer;"
-        oninput="adjustMonthlyWidth(this.value)">
-      <button onclick="resetMonthlyWidth()" style="font-size: 0.7em; color: #999; background: none; border: 1px solid #ddd; border-radius: 4px; padding: 2px 6px; cursor: pointer;">リセット</button>
+      <div id="widthSliderWrap" style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 4px;">
+        <span style="font-size: 0.65em; color: #bbb;">↔</span>
+        <input type="range" id="monthlyWidthSlider" min="100" max="300" value="100" 
+          style="width: 70px; accent-color: #4facfe; cursor: pointer;"
+          oninput="adjustMonthlyWidth(this.value)">
+        <button onclick="resetMonthlyWidth()" style="font-size: 0.6em; color: #aaa; background: none; border: 1px solid #ddd; border-radius: 3px; padding: 1px 4px; cursor: pointer;">↺</button>
+      </div>
     </div>
     <div id="monthlyCalendar" class="monthly-calendar">
       <!-- JavaScriptで動的に生成 -->
     </div>
 
-    <!-- シンプルモード：スタンプバー（2段構成） -->
+    <!-- シンプルモード：スタンプバー（折り返し対応） -->
     <div id="stampBar" style="display: none; position: sticky; bottom: 0; left: 0; right: 0; background: #fff; border-top: 2px solid #eee; padding: 6px 8px 4px; z-index: 30; box-shadow: 0 -2px 8px rgba(0,0,0,0.08);">
-      <!-- 上段：スタンプボタン（横スクロール可） -->
-      <div style="display: flex; align-items: center; gap: 5px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch;">
-        <div id="stampButtons" style="display: flex; gap: 5px; flex-shrink: 0;"></div>
-      </div>
-      <!-- 下段：ツールボタン -->
-      <div style="display: flex; align-items: center; gap: 4px; justify-content: center; padding-top: 4px; border-top: 1px solid #f0f0f0;">
-        <button onclick="selectEraserMode()" id="stampEraserBtn"
-          style="padding: 4px 12px; border-radius: 12px; border: 1.5px solid #ef5350; background: #fff; font-size: 0.72em; cursor: pointer; white-space: nowrap; transition: all 0.2s; color: #ef5350;">🗑 消す</button>
-        <button onclick="clearStampSelection()" id="stampClearBtn"
-          style="padding: 4px 12px; border-radius: 12px; border: 1.5px solid #e0e0e0; background: #f5f5f5; font-size: 0.72em; cursor: pointer; white-space: nowrap;">✕ 解除</button>
+      <!-- スタンプ＋ツール（flex-wrap で自動折り返し） -->
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 5px; justify-content: center; padding-bottom: 2px;">
+        <div id="stampButtons" style="display: contents;"></div>
+        <div style="display: flex; gap: 4px; margin-left: 2px;">
+          <button onclick="selectEraserMode()" id="stampEraserBtn"
+            style="padding: 4px 10px; border-radius: 14px; border: 1.5px solid #ef5350; background: #fff; font-size: 0.75em; cursor: pointer; white-space: nowrap; transition: all 0.2s; color: #ef5350;">🗑</button>
+          <button onclick="clearStampSelection()" id="stampClearBtn"
+            style="padding: 4px 10px; border-radius: 14px; border: 1.5px solid #e0e0e0; background: #f5f5f5; font-size: 0.75em; cursor: pointer; white-space: nowrap;">✕</button>
+        </div>
       </div>
       <div id="stampSelectionInfo" style="text-align: center; font-size: 0.7em; color: #999; margin-top: 2px;">スタンプを選んで、カレンダーの日付をタップ</div>
     </div>
@@ -5591,7 +5591,7 @@
     // エクスポート：JSONファイルをダウンロード
     function exportData() {
       const exportObj = {
-        version: '0.10.1',
+        version: '0.10.2',
         exportedAt: new Date().toISOString(),
         tasks: allTasks
       };
@@ -6520,9 +6520,9 @@
         btn.textContent = stamp.name;
         btn.setAttribute('role', 'button');
         btn.style.cssText = `
-          padding: 6px 14px; border-radius: 16px; border: 2px solid ${stamp.textColor || '#333'};
-          background: ${stamp.color}; color: ${stamp.textColor || '#333'}; font-size: 0.8em;
-          font-weight: 600; cursor: grab; white-space: nowrap; display: inline-block;
+          padding: 5px 12px; border-radius: 14px; border: 2px solid ${stamp.textColor || '#333'};
+          background: ${stamp.color}; color: ${stamp.textColor || '#333'}; font-size: 0.78em;
+          font-weight: 600; cursor: grab; white-space: nowrap;
           user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
           touch-action: none;
         `;
@@ -6583,23 +6583,19 @@
       const navYearly = document.getElementById('navYearly');
       const stampBar = document.getElementById('stampBar');
       const seasonalArt = document.getElementById('seasonalArt');
-      const widthSlider = document.getElementById('monthlyWidthSlider');
 
       if (isSimple) {
-        // ナビタブは残す（全ビューアクセス可能）
         if (navDaily) navDaily.style.display = '';
         if (navWeekly) navWeekly.style.display = '';
         if (navYearly) navYearly.style.display = '';
         if (stampBar) { stampBar.style.display = 'block'; renderStampBar(); }
         if (seasonalArt) { seasonalArt.style.display = 'block'; updateSeasonalArt(); }
-        if (widthSlider) widthSlider.parentElement.style.display = 'none';
       } else {
         if (navDaily) navDaily.style.display = '';
         if (navWeekly) navWeekly.style.display = '';
         if (navYearly) navYearly.style.display = '';
         if (stampBar) stampBar.style.display = 'none';
         if (seasonalArt) { seasonalArt.style.display = 'block'; updateSeasonalArt(); }
-        if (widthSlider) widthSlider.parentElement.style.display = '';
       }
     }
 
