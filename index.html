@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>やることリスト - v0.8.4</title>
+  <title>やることリスト - v0.10.1</title>
   
   <!-- 
     VERSION: 10.1
@@ -2251,20 +2251,20 @@
       <!-- JavaScriptで動的に生成 -->
     </div>
 
-    <!-- シンプルモード：スタンプバー -->
-    <div id="stampBar" style="display: none; position: sticky; bottom: 0; left: 0; right: 0; background: #fff; border-top: 2px solid #eee; padding: 8px 10px; z-index: 30; box-shadow: 0 -2px 8px rgba(0,0,0,0.08);">
-      <div style="display: flex; align-items: center; gap: 6px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch;">
-        <div id="stampButtons" style="display: flex; gap: 6px; flex-shrink: 0;"></div>
-        <div style="display: flex; gap: 6px; flex-shrink: 0; margin-left: 8px; padding-left: 8px; border-left: 2px solid #eee;">
-          <button onclick="selectMemoType('work')" id="memoWorkBtn"
-            style="padding: 6px 10px; border-radius: 16px; border: 2px solid #78909c; background: #fff; font-size: 0.8em; cursor: pointer; white-space: nowrap; transition: all 0.2s;">■ 仕事メモ</button>
-          <button onclick="selectMemoType('private')" id="memoPrivateBtn"
-            style="padding: 6px 10px; border-radius: 16px; border: 2px solid #ffa726; background: #fff; font-size: 0.8em; cursor: pointer; white-space: nowrap; transition: all 0.2s;">★ プライベート</button>
-          <button onclick="clearStampSelection()" id="stampClearBtn"
-            style="padding: 6px 10px; border-radius: 16px; border: 2px solid #e0e0e0; background: #f5f5f5; font-size: 0.8em; cursor: pointer; white-space: nowrap;">✕ 解除</button>
-        </div>
+    <!-- シンプルモード：スタンプバー（2段構成） -->
+    <div id="stampBar" style="display: none; position: sticky; bottom: 0; left: 0; right: 0; background: #fff; border-top: 2px solid #eee; padding: 6px 8px 4px; z-index: 30; box-shadow: 0 -2px 8px rgba(0,0,0,0.08);">
+      <!-- 上段：スタンプボタン（横スクロール可） -->
+      <div style="display: flex; align-items: center; gap: 5px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch;">
+        <div id="stampButtons" style="display: flex; gap: 5px; flex-shrink: 0;"></div>
       </div>
-      <div id="stampSelectionInfo" style="text-align: center; font-size: 0.75em; color: #999; margin-top: 4px;">スタンプを選んで、カレンダーの日付をタップ</div>
+      <!-- 下段：ツールボタン -->
+      <div style="display: flex; align-items: center; gap: 4px; justify-content: center; padding-top: 4px; border-top: 1px solid #f0f0f0;">
+        <button onclick="selectEraserMode()" id="stampEraserBtn"
+          style="padding: 4px 12px; border-radius: 12px; border: 1.5px solid #ef5350; background: #fff; font-size: 0.72em; cursor: pointer; white-space: nowrap; transition: all 0.2s; color: #ef5350;">🗑 消す</button>
+        <button onclick="clearStampSelection()" id="stampClearBtn"
+          style="padding: 4px 12px; border-radius: 12px; border: 1.5px solid #e0e0e0; background: #f5f5f5; font-size: 0.72em; cursor: pointer; white-space: nowrap;">✕ 解除</button>
+      </div>
+      <div id="stampSelectionInfo" style="text-align: center; font-size: 0.7em; color: #999; margin-top: 2px;">スタンプを選んで、カレンダーの日付をタップ</div>
     </div>
   </div>
 
@@ -2768,8 +2768,9 @@
       
       const task = {
         id: generateTaskId(),
+        kind: 'task',
         text: text,
-        memo: null,  // メモフィールド（v9.7追加）
+        memo: null,
         date: date,
         time: time || null,
         section: section,
@@ -3923,48 +3924,62 @@
         // シンプルモード：スタンプ表示
         const isSimple = localStorage.getItem('simpleMode') === 'on';
         if (isSimple) {
-          const stampData = getStampData();
-          const memoData = getMemoData();
+          const dayInfo = getDayInfo(dateStr);
           
-          if (stampData[dateStr]) {
-            const sd = stampData[dateStr];
-            const stampLabel = document.createElement('div');
-            stampLabel.className = 'stamp-label';
-            stampLabel.textContent = sd.name;
-            stampLabel.style.cssText = `
-              background: ${sd.color}; color: ${sd.textColor || '#333'}; 
-              padding: 2px 8px; border-radius: 10px; font-size: 0.75em; font-weight: 600;
-              text-align: center; margin-bottom: 2px; cursor: pointer;
-            `;
-            cell.appendChild(stampLabel);
+          if (dayInfo && dayInfo.stampId) {
+            const def = getStampDef(dayInfo.stampId);
+            if (def) {
+              const stampLabel = document.createElement('div');
+              stampLabel.className = 'stamp-label';
+              stampLabel.textContent = def.name;
+              stampLabel.style.cssText = `
+                background: ${def.color}; color: ${def.textColor || '#333'}; 
+                padding: 2px 8px; border-radius: 10px; font-size: 0.75em; font-weight: 600;
+                text-align: center; margin-bottom: 2px; cursor: pointer;
+              `;
+              // スタンプラベルタップ：消しゴム中は削除、通常は詳細モーダル
+              stampLabel.addEventListener('click', (e) => {
+                if (eraserMode) {
+                  e.stopPropagation();
+                  removeDayInfo(dateStr);
+                  renderMonthlyView();
+                  if (navigator.vibrate) navigator.vibrate(30);
+                } else if (!selectedStamp) {
+                  e.stopPropagation();
+                  openDayInfoModal(dateStr);
+                }
+                // selectedStamp時はstopPropagationしない → セルのclickに委譲（上書き処理）
+              });
+              cell.appendChild(stampLabel);
+            }
           }
           
           // メモアイコン表示
-          if (memoData[dateStr]) {
+          if (dayInfo && (dayInfo.workMemo || dayInfo.privateMemo)) {
             const memoIcons = document.createElement('div');
             memoIcons.style.cssText = 'display: flex; gap: 2px; justify-content: center; font-size: 0.7em;';
-            if (memoData[dateStr].work && memoData[dateStr].work.length > 0) {
+            if (dayInfo.workMemo) {
               const icon = document.createElement('span');
               icon.className = 'memo-icon';
               icon.textContent = '■';
               icon.style.color = '#78909c';
-              icon.title = memoData[dateStr].work.join('\n');
+              icon.title = dayInfo.workMemo;
               memoIcons.appendChild(icon);
             }
-            if (memoData[dateStr].private && memoData[dateStr].private.length > 0) {
+            if (dayInfo.privateMemo) {
               const icon = document.createElement('span');
               icon.className = 'memo-icon';
               icon.textContent = '★';
               icon.style.color = '#ffa726';
-              icon.title = memoData[dateStr].private.join('\n');
+              icon.title = dayInfo.privateMemo;
               memoIcons.appendChild(icon);
             }
             cell.appendChild(memoIcons);
           }
         }
         
-        // この日のタスクを表示
-        const dayTasks = allTasks.filter(t => t.date === dateStr);
+        // この日のタスクを表示（dailyStatusは除外）
+        const dayTasks = allTasks.filter(t => t.date === dateStr && (t.kind || 'task') === 'task');
         dayTasks.forEach(task => {
           const taskDiv = document.createElement('div');
           taskDiv.className = 'monthly-task-item';
@@ -4132,7 +4147,7 @@
           if (movingTaskId && (e.target === cell || e.target === dayNum || e.target.classList.contains('monthly-holiday-name'))) {
             // 移動モード中：このセルに移動
             completeMoveMode(dateStr);
-          } else if (isSimple && (selectedStamp || selectedMemoType) && (e.target === cell || e.target === dayNum || e.target.classList.contains('monthly-holiday-name') || e.target.classList.contains('stamp-label') || e.target.classList.contains('memo-icon'))) {
+          } else if (isSimple && (selectedStamp || eraserMode) && (e.target === cell || e.target === dayNum || e.target.classList.contains('monthly-holiday-name') || e.target.classList.contains('stamp-label') || e.target.classList.contains('memo-icon'))) {
             // シンプルモード：スタンプ/メモ貼付
             applyStampToDate(dateStr);
           } else if (e.target === cell || e.target === dayNum || e.target.classList.contains('monthly-holiday-name')) {
@@ -5576,7 +5591,7 @@
     // エクスポート：JSONファイルをダウンロード
     function exportData() {
       const exportObj = {
-        version: '0.8.4',
+        version: '0.10.1',
         exportedAt: new Date().toISOString(),
         tasks: allTasks
       };
@@ -6202,8 +6217,8 @@
     }
 
     // ===== シンプルモード =====
-    let selectedStamp = null; // { id, name, color, startTime, endTime }
-    let selectedMemoType = null; // 'work' | 'private'
+    let selectedStamp = null;
+    let eraserMode = false;
 
     // 季節アート（月ごとのemoji）
     // デフォルトスタンプ
@@ -6221,41 +6236,66 @@
       return saved ? JSON.parse(saved) : DEFAULT_STAMPS;
     }
 
-    function getStampData() {
-      // 日付 → スタンプ情報のマッピング
-      const saved = localStorage.getItem('stampData');
-      return saved ? JSON.parse(saved) : {};
+    // ===== dailyStatus CRUD（allTasksに統合） =====
+    function getDayInfo(date) {
+      return allTasks.find(t => t.kind === 'dailyStatus' && t.date === date) || null;
     }
 
-    function saveStampData(data) {
-      localStorage.setItem('stampData', JSON.stringify(data));
+    function setDayInfo(date, stampId, workMemo, privateMemo) {
+      const existing = getDayInfo(date);
+      if (existing) {
+        existing.stampId = stampId;
+        if (workMemo !== undefined) existing.workMemo = workMemo;
+        if (privateMemo !== undefined) existing.privateMemo = privateMemo;
+        existing.updatedAt = new Date().toISOString();
+      } else {
+        allTasks.push({
+          id: generateTaskId(),
+          kind: 'dailyStatus',
+          date: date,
+          stampId: stampId,
+          workMemo: workMemo || '',
+          privateMemo: privateMemo || '',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      }
+      saveAllTasks();
     }
 
-    function getMemoData() {
-      const saved = localStorage.getItem('simpleMemos');
-      return saved ? JSON.parse(saved) : {};
+    function removeDayInfo(date) {
+      const idx = allTasks.findIndex(t => t.kind === 'dailyStatus' && t.date === date);
+      if (idx !== -1) {
+        allTasks.splice(idx, 1);
+        saveAllTasks();
+        return true;
+      }
+      return false;
     }
 
-    function saveMemoData(data) {
-      localStorage.setItem('simpleMemos', JSON.stringify(data));
+    // スタンプ定義からID→表示情報を取得
+    function getStampDef(stampId) {
+      const stamps = getStamps();
+      return stamps.find(s => s.id === stampId) || null;
     }
+
 
     // スタンプ選択
     function selectStamp(stamp) {
       selectedStamp = stamp;
-      selectedMemoType = null;
+      eraserMode = false;
       updateStampBarUI();
     }
 
-    function selectMemoType(type) {
-      selectedMemoType = type;
+    function selectEraserMode() {
+      eraserMode = !eraserMode;
       selectedStamp = null;
       updateStampBarUI();
     }
 
     function clearStampSelection() {
       selectedStamp = null;
-      selectedMemoType = null;
+      eraserMode = false;
       updateStampBarUI();
     }
 
@@ -6266,46 +6306,104 @@
         btn.style.transform = btn.dataset.stampId === (selectedStamp ? selectedStamp.id : '') ? 'scale(1.1)' : 'scale(1)';
         btn.style.boxShadow = btn.dataset.stampId === (selectedStamp ? selectedStamp.id : '') ? '0 2px 8px rgba(0,0,0,0.2)' : 'none';
       });
-      document.getElementById('memoWorkBtn').style.background = selectedMemoType === 'work' ? '#78909c' : '#fff';
-      document.getElementById('memoWorkBtn').style.color = selectedMemoType === 'work' ? '#fff' : '#78909c';
-      document.getElementById('memoPrivateBtn').style.background = selectedMemoType === 'private' ? '#ffa726' : '#fff';
-      document.getElementById('memoPrivateBtn').style.color = selectedMemoType === 'private' ? '#fff' : '#ffa726';
+      // 消しゴムボタン
+      const eraserBtn = document.getElementById('stampEraserBtn');
+      if (eraserBtn) {
+        eraserBtn.style.background = eraserMode ? '#ef5350' : '#fff';
+        eraserBtn.style.color = eraserMode ? '#fff' : '#ef5350';
+      }
 
-      if (selectedStamp) {
+      if (eraserMode) {
+        info.textContent = '🗑 消しゴムモード → 日付をタップで削除';
+        info.style.color = '#ef5350';
+      } else if (selectedStamp) {
         info.textContent = `「${selectedStamp.name}」を選択中 → 日付をタップ`;
         info.style.color = selectedStamp.textColor || '#333';
-      } else if (selectedMemoType) {
-        info.textContent = selectedMemoType === 'work' ? '■ 仕事メモを選択中 → 日付をタップ' : '★ プライベートメモを選択中 → 日付をタップ';
-        info.style.color = selectedMemoType === 'work' ? '#78909c' : '#ffa726';
       } else {
         info.textContent = 'スタンプを選んで、カレンダーの日付をタップ';
         info.style.color = '#999';
       }
     }
 
-    // 日付セルにスタンプ/メモを貼る
+    // 日付セルにスタンプ貼付 or 消しゴム削除
     function applyStampToDate(dateStr) {
-      if (selectedStamp) {
-        const data = getStampData();
-        if (data[dateStr] && data[dateStr].stampId === selectedStamp.id) {
-          delete data[dateStr]; // 同じスタンプ再タップで解除
-        } else {
-          data[dateStr] = { stampId: selectedStamp.id, name: selectedStamp.name, color: selectedStamp.color, textColor: selectedStamp.textColor };
-        }
-        saveStampData(data);
-        renderMonthlyView();
-      } else if (selectedMemoType) {
-        const memos = getMemoData();
-        const key = dateStr;
-        if (!memos[key]) memos[key] = {};
-        const memoText = prompt(selectedMemoType === 'work' ? '■ 仕事メモを入力:' : '★ プライベートメモを入力:');
-        if (memoText !== null && memoText.trim()) {
-          if (!memos[key][selectedMemoType]) memos[key][selectedMemoType] = [];
-          memos[key][selectedMemoType].push(memoText.trim());
-          saveMemoData(memos);
+      // 消しゴムモード → dailyStatusのみ削除
+      if (eraserMode) {
+        if (removeDayInfo(dateStr)) {
           renderMonthlyView();
+          if (navigator.vibrate) navigator.vibrate(30);
         }
+        return;
       }
+      // スタンプ貼付
+      if (selectedStamp) {
+        const existing = getDayInfo(dateStr);
+        if (existing && existing.stampId === selectedStamp.id) {
+          // 同じスタンプ再タップ → 解除
+          removeDayInfo(dateStr);
+        } else {
+          // 新規 or 上書き（メモは保持）
+          setDayInfo(dateStr, selectedStamp.id,
+            existing ? existing.workMemo : '',
+            existing ? existing.privateMemo : '');
+        }
+        renderMonthlyView();
+      }
+    }
+
+    // 詳細モーダル（スタンプラベルタップで開く）
+    function openDayInfoModal(dateStr) {
+      const dayInfo = getDayInfo(dateStr);
+      if (!dayInfo) return;
+      const def = getStampDef(dayInfo.stampId);
+      const dateParts = dateStr.split('-');
+      const dateLabel = `${parseInt(dateParts[1])}/${parseInt(dateParts[2])}`;
+      
+      // モーダルHTML
+      const modal = document.createElement('div');
+      modal.id = 'dayInfoModal';
+      modal.style.cssText = `
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999;
+        background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center;
+      `;
+      modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+      
+      const box = document.createElement('div');
+      box.style.cssText = `
+        background: #fff; border-radius: 16px; padding: 24px; width: 90%; max-width: 360px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      `;
+      
+      box.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+          <span style="font-size: 1.2em; font-weight: 700;">${dateLabel}</span>
+          ${def ? `<span style="background: ${def.color}; color: ${def.textColor || '#333'}; padding: 4px 12px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">${def.name}</span>` : ''}
+        </div>
+        <div style="margin-bottom: 14px;">
+          <label style="font-size: 0.8em; font-weight: 600; color: #78909c;">■ 仕事メモ</label>
+          <textarea id="dayInfoWorkMemo" rows="2" style="width: 100%; border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 8px; font-size: 0.9em; resize: vertical; box-sizing: border-box; margin-top: 4px;">${dayInfo.workMemo || ''}</textarea>
+        </div>
+        <div style="margin-bottom: 18px;">
+          <label style="font-size: 0.8em; font-weight: 600; color: #ffa726;">★ プライベートメモ</label>
+          <textarea id="dayInfoPrivateMemo" rows="2" style="width: 100%; border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 8px; font-size: 0.9em; resize: vertical; box-sizing: border-box; margin-top: 4px;">${dayInfo.privateMemo || ''}</textarea>
+        </div>
+        <div style="display: flex; gap: 8px; justify-content: flex-end;">
+          <button onclick="document.getElementById('dayInfoModal').remove()" style="padding: 8px 16px; border-radius: 10px; border: 1.5px solid #e0e0e0; background: #f5f5f5; cursor: pointer; font-size: 0.85em;">閉じる</button>
+          <button id="dayInfoSaveBtn" style="padding: 8px 16px; border-radius: 10px; border: none; background: #4facfe; color: #fff; cursor: pointer; font-size: 0.85em; font-weight: 600;">保存</button>
+        </div>
+      `;
+      
+      modal.appendChild(box);
+      document.body.appendChild(modal);
+      
+      // 保存ボタン
+      document.getElementById('dayInfoSaveBtn').onclick = function() {
+        const wm = document.getElementById('dayInfoWorkMemo').value.trim();
+        const pm = document.getElementById('dayInfoPrivateMemo').value.trim();
+        setDayInfo(dateStr, dayInfo.stampId, wm, pm);
+        modal.remove();
+        renderMonthlyView();
+      };
     }
 
     // スタンプバーのボタン生成
@@ -6345,14 +6443,15 @@
         if (el) {
           const cell = el.closest('.monthly-day-cell');
           if (cell && cell.dataset.date && d.stamp) {
-            const sd = getStampData();
             const key = cell.dataset.date;
-            if (sd[key] && sd[key].stampId === d.stamp.id) {
-              delete sd[key];
+            const existing = getDayInfo(key);
+            if (existing && existing.stampId === d.stamp.id) {
+              removeDayInfo(key);
             } else {
-              sd[key] = { stampId: d.stamp.id, name: d.stamp.name, color: d.stamp.color, textColor: d.stamp.textColor };
+              setDayInfo(key, d.stamp.id,
+                existing ? existing.workMemo : '',
+                existing ? existing.privateMemo : '');
             }
-            saveStampData(sd);
             if (navigator.vibrate) navigator.vibrate(30);
           }
         }
@@ -6614,6 +6713,10 @@
       });
       localStorage.setItem('simpleStamps', JSON.stringify(stamps));
     }
+
+    // v0.10.0: 旧localStorageキー掃除（stampData/simpleMemos → allTasksに統合済み）
+    localStorage.removeItem('stampData');
+    localStorage.removeItem('simpleMemos');
 
     // 起動時にシンプルモード適用
     applySimpleMode();
