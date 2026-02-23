@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>やることリスト - v0.10.2</title>
+  <title>やることリスト - v0.10.5</title>
   
   <!-- 
     VERSION: 10.1
@@ -1018,6 +1018,7 @@
       top: 0;
       z-index: 25;
       border-bottom: 1px solid #e0e0e0;
+      padding-right: 110px;
     }
 
     .weekly-header h2 {
@@ -1427,10 +1428,18 @@
       }
 
       .weekly-header {
-        gap: 10px;
+        gap: 4px;
         padding: 8px 0;
         height: 40px;
         font-size: 0.9em;
+        padding-right: 0;
+      }
+
+      #weeklyWidthSliderWrap {
+        position: static !important;
+        transform: none !important;
+        margin-left: auto;
+        flex-shrink: 0;
       }
 
       .weekly-header h2 {
@@ -1466,8 +1475,22 @@
       }
 
       .monthly-header {
-        gap: 10px;
-        flex-wrap: wrap;
+        gap: 4px;
+        flex-wrap: nowrap;
+        padding-left: 0;
+        padding-right: 0;
+        justify-content: center;
+      }
+
+      .monthly-header #seasonalArt {
+        display: none !important;
+      }
+
+      #widthSliderWrap {
+        position: static !important;
+        transform: none !important;
+        margin-left: auto;
+        flex-shrink: 0;
       }
 
       .monthly-header h2 {
@@ -1496,6 +1519,10 @@
       .monthly-task-item {
         font-size: 0.65em;
         padding: 2px 3px;
+      }
+
+      .monthly-task-item .task-icons {
+        display: none !important;
       }
 
       .monthly-weekday-header {
@@ -2227,6 +2254,13 @@
       <button class="monthly-nav-btn" onclick="changeWeek(-1)">◀ 先週</button>
       <h2 id="weeklyTitle"></h2>
       <button class="monthly-nav-btn" onclick="changeWeek(1)">来週 ▶</button>
+      <div id="weeklyWidthSliderWrap" style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 4px;">
+        <span style="font-size: 0.65em; color: #bbb;">↔</span>
+        <input type="range" id="weeklyWidthSlider" min="100" max="300" value="100" 
+          style="width: 70px; accent-color: #4facfe; cursor: pointer;"
+          oninput="adjustWeeklyWidth(this.value)">
+        <button onclick="resetWeeklyWidth()" style="font-size: 0.6em; color: #aaa; background: none; border: 1px solid #ddd; border-radius: 3px; padding: 1px 4px; cursor: pointer;">↺</button>
+      </div>
     </div>
     <div class="weekly-container" id="weeklyContainer">
       <!-- JavaScriptで動的に生成 -->
@@ -4071,6 +4105,7 @@
           
           // アイコンコンテナ
           const iconContainer = document.createElement('span');
+          iconContainer.className = 'task-icons';
           iconContainer.style.display = 'flex';
           iconContainer.style.gap = '2px';
           iconContainer.style.marginLeft = '4px';
@@ -4273,6 +4308,19 @@
       const slider = document.getElementById('monthlyWidthSlider');
       slider.value = 100;
       adjustMonthlyWidth(100);
+    }
+
+    // 週間カレンダーの幅調整
+    function adjustWeeklyWidth(percent) {
+      const container = document.getElementById('weeklyContainer');
+      container.style.width = percent + '%';
+      container.style.minWidth = percent + '%';
+    }
+
+    function resetWeeklyWidth() {
+      const slider = document.getElementById('weeklyWidthSlider');
+      slider.value = 100;
+      adjustWeeklyWidth(100);
     }
 
     function changeMonth(delta) {
@@ -5591,7 +5639,7 @@
     // エクスポート：JSONファイルをダウンロード
     function exportData() {
       const exportObj = {
-        version: '0.10.2',
+        version: '0.10.5',
         exportedAt: new Date().toISOString(),
         tasks: allTasks
       };
