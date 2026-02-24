@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>やることリスト - v0.11.6</title>
+  <title>やることリスト - v0.11.8</title>
   
   <!-- 
     VERSION: 10.1
@@ -2028,7 +2028,7 @@
   <div id="timelineView" style="display: none; max-width: 600px; margin: 0 auto; padding: 10px;">
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding: 0 2px;">
       <button class="monthly-nav-btn" style="padding: 5px 8px; font-size: 0.72em; white-space: nowrap; flex-shrink: 0;" onclick="changeTimelineDate(-1)">◀ 前日</button>
-      <h2 id="timelineTitle" style="margin: 0; font-size: 0.95em; text-align: center; white-space: nowrap; font-weight: 700;"></h2>
+      <h2 id="timelineTitle" style="margin: 0; font-size: 0.88em; text-align: center; white-space: nowrap; font-weight: 700;"></h2>
       <div style="display: flex; gap: 4px; flex-shrink: 0;">
         <button class="monthly-nav-btn" style="padding: 5px 8px; font-size: 0.72em; white-space: nowrap;" onclick="changeTimelineDate(1)">翌日 ▶</button>
         <button onclick="goTimelineToday()" style="font-size: 0.68em; padding: 5px 6px; border-radius: 5px; border: 1.5px solid #4facfe; background: #fff; color: #4facfe; cursor: pointer; white-space: nowrap; font-weight: 600;">今日</button>
@@ -4404,7 +4404,7 @@
       const dateStr = getLocalDateStr(currentTimelineDate);
       const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
       const d = currentTimelineDate;
-      const title = `${d.getMonth()+1}/${d.getDate()}（${weekdays[d.getDay()]}）`;
+      const title = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}（${weekdays[d.getDay()]}）`;
       document.getElementById('timelineTitle').textContent = title;
 
       const body = document.getElementById('timelineBody');
@@ -5852,7 +5852,7 @@
     // エクスポート：JSONファイルをダウンロード
     function exportData() {
       const exportObj = {
-        version: '0.11.6',
+        version: '0.11.8',
         exportedAt: new Date().toISOString(),
         tasks: allTasks
       };
