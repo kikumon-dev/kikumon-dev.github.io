@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>やることリスト - v0.10.5</title>
+  <title>やることリスト - v0.11.4</title>
   
   <!-- 
     VERSION: 10.1
@@ -2024,6 +2024,17 @@
     </div>
   </div>
 
+  <!-- 日次タイムラインビュー -->
+  <div id="timelineView" style="display: none; max-width: 600px; margin: 0 auto; padding: 10px;">
+    <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 12px;">
+      <button class="monthly-nav-btn" onclick="changeTimelineDate(-1)">◀ 前日</button>
+      <h2 id="timelineTitle" style="margin: 0; font-size: 1.2em; min-width: 150px; text-align: center;"></h2>
+      <button class="monthly-nav-btn" onclick="changeTimelineDate(1)">翌日 ▶</button>
+      <button onclick="goTimelineToday()" style="font-size: 0.75em; padding: 4px 8px; border-radius: 6px; border: 1px solid #4facfe; background: #fff; color: #4facfe; cursor: pointer;">今日</button>
+    </div>
+    <div id="timelineBody" style="border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;"></div>
+  </div>
+
   <!-- 逃げ出したメッセージ -->
   <div id="escapeMessage" class="escape-message">
     逃げ出した！
@@ -2220,17 +2231,40 @@
       <h3>タスク作成</h3>
       <div id="weeklyModalDate" style="text-align: center; color: #666; margin-bottom: 15px; font-size: 0.9em;"></div>
       <div style="margin: 15px 0;">
-        <input type="text" id="createTaskText" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 1em; box-sizing: border-box;" placeholder="タスクを入力..." onkeydown="if(event.key==='Enter') saveCreateTask();">
+        <input type="text" id="createTaskText" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 1em; box-sizing: border-box;" placeholder="タスクを入力...">
       </div>
       <div style="margin: 15px 0;">
         <label style="display: block; margin-bottom: 8px; font-weight: bold;">メモ（任意）</label>
         <textarea id="createTaskMemo" rows="2" placeholder="詳細や持ち物など..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.95em; box-sizing: border-box; resize: vertical; font-family: inherit;"></textarea>
       </div>
       <div style="margin: 15px 0;">
-        <label style="display: block; margin-bottom: 8px; font-weight: bold;">時間</label>
-        <select id="createTaskTime" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 1em;">
-          <!-- JavaScriptで動的に生成 -->
-        </select>
+        <label style="display: block; margin-bottom: 8px; font-weight: bold;">時間（任意）</label>
+        <div class="custom-time-picker" id="createTimePicker">
+          <div class="time-select-wrapper">
+            <select class="time-select" id="createHourSelect">
+              <option value="">--</option>
+              <option value="0">00</option><option value="1">01</option><option value="2">02</option><option value="3">03</option>
+              <option value="4">04</option><option value="5">05</option><option value="6">06</option><option value="7">07</option>
+              <option value="8">08</option><option value="9">09</option><option value="10">10</option><option value="11">11</option>
+              <option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option>
+              <option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option>
+              <option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option>
+            </select>
+            <div class="time-label">時</div>
+          </div>
+          <span class="time-separator">:</span>
+          <div class="time-select-wrapper">
+            <select class="time-select" id="createMinuteSelect">
+              <option value="">--</option>
+              <option value="0">00</option><option value="5">05</option><option value="10">10</option><option value="15">15</option>
+              <option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option>
+              <option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option>
+            </select>
+            <div class="time-label">分</div>
+          </div>
+          <button type="button" class="time-clear-btn" onclick="clearTimeSelect('create')" title="時間をクリア">✕</button>
+        </div>
+        <div style="font-size: 0.75em; color: #888; margin-top: 4px;">※時間を設定すると週間ビューにも表示されます</div>
       </div>
       <div style="margin: 15px 0;">
         <label style="display: block; margin-bottom: 8px; font-weight: bold;">象限</label>
@@ -2385,6 +2419,27 @@
               <input type="radio" name="monthlyMode" value="expand">
               <span>📖 全タスク表示</span>
               <span style="font-size: 0.75em; color: #8e8e8e; margin-left: 8px;">全文判読可能</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 日次ビュー表示モード -->
+      <div style="margin-top: 24px; border-top: 1px solid #efefef; padding-top: 18px;">
+        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">日次ビュー</h3>
+        <div>
+          <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #262626; font-size: 0.9em;">表示形式</label>
+          <p style="font-size: 0.8em; color: #8e8e8e; margin: 0 0 10px 0;">マトリクス（4象限）またはタイムラインを選択</p>
+          <div class="settings-radio-group" id="dailyViewModeGroup">
+            <label class="settings-radio-label">
+              <input type="radio" name="dailyViewMode" value="matrix" checked>
+              <span>📊 マトリクス</span>
+              <span style="font-size: 0.75em; color: #8e8e8e; margin-left: 8px;">4象限で優先度管理</span>
+            </label>
+            <label class="settings-radio-label">
+              <input type="radio" name="dailyViewMode" value="timeline">
+              <span>🕐 タイムライン</span>
+              <span style="font-size: 0.75em; color: #8e8e8e; margin-left: 8px;">時間軸でスケジュール確認</span>
             </label>
           </div>
         </div>
@@ -3764,6 +3819,11 @@
       renderWeeklyView();
       renderMonthlyView();
       
+      // タイムラインも再描画
+      if (document.getElementById('timelineView').style.display !== 'none') {
+        renderTimelineView();
+      }
+      
       // 日次も再描画
       for (let sec = 1; sec <= 4; sec++) {
         renderTasks(sec);
@@ -4323,6 +4383,145 @@
       adjustWeeklyWidth(100);
     }
 
+    // ===== 日次タイムラインビュー =====
+    let currentTimelineDate = null;
+
+    function changeTimelineDate(delta) {
+      if (!currentTimelineDate) currentTimelineDate = new Date();
+      currentTimelineDate.setDate(currentTimelineDate.getDate() + delta);
+      renderTimelineView();
+    }
+
+    function goTimelineToday() {
+      currentTimelineDate = new Date();
+      renderTimelineView();
+    }
+
+    function renderTimelineView() {
+      if (!currentTimelineDate) currentTimelineDate = new Date();
+      const dateStr = getLocalDateStr(currentTimelineDate);
+      const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+      const d = currentTimelineDate;
+      const title = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}（${weekdays[d.getDay()]}）`;
+      document.getElementById('timelineTitle').textContent = title;
+
+      const body = document.getElementById('timelineBody');
+      body.innerHTML = '';
+
+      // この日のタスク取得
+      const tasks = allTasks.filter(t => t.date === dateStr && (t.kind || 'task') === 'task');
+      
+      // 時間別に振り分け
+      const hourMap = {};  // hour -> [tasks]
+      const noTimeTasks = [];
+      tasks.forEach(t => {
+        if (t.time) {
+          const h = parseInt(t.time.split(':')[0]);
+          if (!hourMap[h]) hourMap[h] = [];
+          hourMap[h].push(t);
+        } else {
+          noTimeTasks.push(t);
+        }
+      });
+
+      const now = new Date();
+      const currentHour = now.getHours();
+      const isToday = dateStr === getLocalDateStr(now);
+
+      // 6:00～23:00 を描画
+      for (let h = 6; h <= 23; h++) {
+        const row = document.createElement('div');
+        const isCurrent = isToday && h === currentHour;
+        row.style.cssText = `
+          display: flex; border-bottom: 1px solid #f0f0f0; min-height: 44px;
+          ${isCurrent ? 'background: linear-gradient(90deg, #fff9c4 0%, #fffde7 100%); border-left: 3px solid #fbc02d;' : ''}
+          ${h === 12 ? 'border-top: 2px solid #ff5722;' : ''}
+        `;
+
+        // 時間ラベル
+        const timeLabel = document.createElement('div');
+        timeLabel.style.cssText = `
+          width: 52px; min-width: 52px; padding: 8px 4px; text-align: center;
+          font-size: 0.8em; font-weight: 600; color: ${isCurrent ? '#e65100' : '#999'};
+          border-right: 1px solid #e0e0e0; display: flex; align-items: flex-start; justify-content: center;
+        `;
+        timeLabel.textContent = `${String(h).padStart(2,'0')}:00`;
+        row.appendChild(timeLabel);
+
+        // タスク領域
+        const taskArea = document.createElement('div');
+        taskArea.style.cssText = 'flex: 1; padding: 4px 8px; display: flex; flex-direction: column; gap: 3px; cursor: pointer;';
+        taskArea.addEventListener('click', (e) => {
+          if (e.target === taskArea) openWeeklyTaskCreateModal(dateStr, h);
+        });
+
+        if (hourMap[h]) {
+          hourMap[h].forEach(t => {
+            const colors = {
+              1: { bg: '#ffe6e6', border: '#ff4444' },
+              2: { bg: '#e8f5e9', border: '#4caf50' },
+              3: { bg: '#fffef5', border: '#ffc107' },
+              4: { bg: '#f0f0f0', border: '#999' }
+            };
+            const c = colors[t.section] || colors[4];
+            const item = document.createElement('div');
+            item.style.cssText = `
+              padding: 4px 8px; border-radius: 4px; font-size: 0.85em;
+              background: ${c.bg}; border-left: 3px solid ${c.border};
+              ${t.completed ? 'text-decoration: line-through; opacity: 0.6;' : ''}
+              cursor: pointer;
+            `;
+            item.textContent = `${t.time} ${t.text}`;
+            if (t.memo) item.title = t.memo;
+            item.addEventListener('click', (e) => {
+              e.stopPropagation();
+              editWeeklyTaskById(t.id);
+            });
+            taskArea.appendChild(item);
+          });
+        }
+        row.appendChild(taskArea);
+        body.appendChild(row);
+      }
+
+      // 時間未設定タスク
+      if (noTimeTasks.length > 0) {
+        const section = document.createElement('div');
+        section.style.cssText = 'padding: 8px 12px; background: #fafafa; border-top: 2px solid #e0e0e0;';
+        const label = document.createElement('div');
+        label.style.cssText = 'font-size: 0.75em; color: #999; margin-bottom: 6px; font-weight: 600;';
+        label.textContent = '⏱ 時間未設定';
+        section.appendChild(label);
+        noTimeTasks.forEach(t => {
+          const colors = { 1: { bg: '#ffe6e6', border: '#ff4444' }, 2: { bg: '#e8f5e9', border: '#4caf50' }, 3: { bg: '#fffef5', border: '#ffc107' }, 4: { bg: '#f0f0f0', border: '#999' } };
+          const c = colors[t.section] || colors[4];
+          const item = document.createElement('div');
+          item.style.cssText = `padding: 4px 8px; border-radius: 4px; font-size: 0.85em; background: ${c.bg}; border-left: 3px solid ${c.border}; margin-bottom: 3px; cursor: pointer; ${t.completed ? 'text-decoration: line-through; opacity: 0.6;' : ''}`;
+          item.textContent = t.text;
+          item.addEventListener('click', () => editWeeklyTaskById(t.id));
+          section.appendChild(item);
+        });
+        body.appendChild(section);
+      }
+
+      // タスクがない場合
+      if (tasks.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'text-align: center; padding: 40px; color: #ccc; font-size: 0.9em;';
+        empty.textContent = 'タスクがありません';
+        body.appendChild(empty);
+      }
+
+      // 現在時刻にスクロール
+      if (isToday) {
+        setTimeout(() => {
+          const rows = body.children;
+          const targetIdx = Math.max(0, currentHour - 6);
+          if (rows[targetIdx]) rows[targetIdx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 50);
+      }
+    }
+
     function changeMonth(delta) {
       cancelMoveMode();
       currentMonthDate.setMonth(currentMonthDate.getMonth() + delta);
@@ -4593,6 +4792,11 @@
       // 週間も再描画
       renderWeeklyView();
       
+      // タイムラインも再描画
+      if (document.getElementById('timelineView').style.display !== 'none') {
+        renderTimelineView();
+      }
+      
       // 日次も再描画
       for (let i = 1; i <= 4; i++) {
         renderTasks(i);
@@ -4608,6 +4812,11 @@
         closeMonthlyTaskModal();
         renderMonthlyView();
         
+        // タイムラインも再描画
+        if (document.getElementById('timelineView').style.display !== 'none') {
+          renderTimelineView();
+        }
+        
         // 日次も再描画
         for (let i = 1; i <= 4; i++) {
           renderTasks(i);
@@ -4622,26 +4831,18 @@
       // 日付表示を設定
       document.getElementById('weeklyModalDate').textContent = formatDateForDisplay(dateStr);
       
-      // タスク名をクリア
+      // タスク名・メモをクリア
       document.getElementById('createTaskText').value = '';
+      document.getElementById('createTaskMemo').value = '';
       
       // 象限をデフォルトに
       document.getElementById('createTaskSection').value = '2';
       
-      // 時間セレクトボックスを生成（15分刻み）
-      const timeSelect = document.getElementById('createTaskTime');
-      timeSelect.innerHTML = '';
-      for (let h = 0; h <= 23; h++) {
-        for (let min = 0; min < 60; min += 15) {
-          const timeStr = `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
-          const option = document.createElement('option');
-          option.value = timeStr;
-          option.textContent = timeStr;
-          if (h === hour && min === 0) {
-            option.selected = true;
-          }
-          timeSelect.appendChild(option);
-        }
+      // 時間を設定（hourが渡されていれば）
+      if (hour !== undefined && hour !== null) {
+        setTimeSelect('create', `${String(hour).padStart(2, '0')}:00`);
+      } else {
+        clearTimeSelect('create');
       }
       
       // モーダルを表示
@@ -4657,6 +4858,7 @@
     function closeCreateModal() {
       document.getElementById('weeklyTaskCreateModal').classList.remove('show');
       document.getElementById('createTaskMemo').value = '';
+      clearTimeSelect('create');
       creatingTask = null;
     }
     
@@ -4666,7 +4868,7 @@
       
       const taskText = document.getElementById('createTaskText').value.trim();
       const taskMemo = document.getElementById('createTaskMemo').value.trim();
-      const taskTime = document.getElementById('createTaskTime').value;
+      const taskTime = getTimeFromSelect('create');
       const taskSection = parseInt(document.getElementById('createTaskSection').value);
       
       if (!taskText) {
@@ -4689,6 +4891,11 @@
       closeCreateModal();
       renderWeeklyView();
       renderMonthlyView();
+      
+      // タイムラインも再描画
+      if (document.getElementById('timelineView').style.display !== 'none') {
+        renderTimelineView();
+      }
       
       // 日次も再描画
       for (let sec = 1; sec <= 4; sec++) {
@@ -5203,6 +5410,10 @@
       if (document.getElementById('weeklyView').style.display === 'block') {
         renderWeeklyView();
       }
+      // タイムラインが表示されていたら更新
+      if (document.getElementById('timelineView').style.display !== 'none') {
+        renderTimelineView();
+      }
     }
 
     // 旧deleteTask関数は削除済み
@@ -5639,7 +5850,7 @@
     // エクスポート：JSONファイルをダウンロード
     function exportData() {
       const exportObj = {
-        version: '0.10.5',
+        version: '0.11.4',
         exportedAt: new Date().toISOString(),
         tasks: allTasks
       };
@@ -5870,19 +6081,26 @@
       monthlyView.style.display = 'none';
       yearlyView.style.display = 'none';
       settingsView.style.display = 'none';
+      document.getElementById('timelineView').style.display = 'none';
       
       // タブのアクティブ状態を更新
       document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
       
       if (view === 'daily') {
-        dailyView.style.display = 'grid';
-        document.getElementById('navDaily').classList.add('active');
-        // 今日にリセット
-        currentDailyDate = null;
-        updateDate();  // 日付表示を今日に更新
-        for (let i = 1; i <= 4; i++) {
-          renderTasks(i);
+        const dailyMode = localStorage.getItem('dailyViewMode') || 'matrix';
+        if (dailyMode === 'timeline') {
+          document.getElementById('timelineView').style.display = 'block';
+          if (!currentTimelineDate) currentTimelineDate = new Date();
+          renderTimelineView();
+        } else {
+          dailyView.style.display = 'grid';
+          currentDailyDate = null;
+          updateDate();
+          for (let i = 1; i <= 4; i++) {
+            renderTasks(i);
+          }
         }
+        document.getElementById('navDaily').classList.add('active');
       } else if (view === 'weekly') {
         weeklyView.style.display = 'block';
         document.getElementById('navWeekly').classList.add('active');
@@ -5936,6 +6154,13 @@
       const monthlyRadios = document.querySelectorAll('input[name="monthlyMode"]');
       monthlyRadios.forEach(radio => {
         radio.checked = (radio.value === monthlyMode);
+      });
+
+      // 日次ビュー表示モード
+      const dailyMode = localStorage.getItem('dailyViewMode') || 'matrix';
+      const dailyRadios = document.querySelectorAll('input[name="dailyViewMode"]');
+      dailyRadios.forEach(radio => {
+        radio.checked = (radio.value === dailyMode);
       });
 
       // シンプルモード
@@ -6080,6 +6305,12 @@
       const selectedMonthlyMode = document.querySelector('input[name="monthlyMode"]:checked');
       if (selectedMonthlyMode) {
         localStorage.setItem('monthlyMode', selectedMonthlyMode.value);
+      }
+      
+      // 日次ビュー表示モード
+      const selectedDailyMode = document.querySelector('input[name="dailyViewMode"]:checked');
+      if (selectedDailyMode) {
+        localStorage.setItem('dailyViewMode', selectedDailyMode.value);
       }
       
       // シンプルモード
