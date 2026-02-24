@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>やることリスト - v0.11.8</title>
+  <title>やることリスト - v0.11.9</title>
   
   <!-- 
     VERSION: 10.1
@@ -4431,7 +4431,7 @@
       const isToday = dateStr === getLocalDateStr(now);
 
       // 6:00～23:00 を描画
-      for (let h = 6; h <= 23; h++) {
+      for (let h = 0; h <= 23; h++) {
         const row = document.createElement('div');
         const isCurrent = isToday && h === currentHour;
         row.style.cssText = `
@@ -4518,7 +4518,7 @@
       if (isToday) {
         setTimeout(() => {
           const rows = body.children;
-          const targetIdx = Math.max(0, currentHour - 6);
+          const targetIdx = Math.max(0, currentHour);
           if (rows[targetIdx]) rows[targetIdx].scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 50);
       }
@@ -5852,7 +5852,7 @@
     // エクスポート：JSONファイルをダウンロード
     function exportData() {
       const exportObj = {
-        version: '0.11.8',
+        version: '0.11.9',
         exportedAt: new Date().toISOString(),
         tasks: allTasks
       };
