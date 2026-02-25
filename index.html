@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>やることリスト - v0.11.9</title>
+  <title>やることリスト</title>  <!-- バージョンはJSで動的設定 -->
   
   <!-- 
     VERSION: 10.1
@@ -20,6 +20,13 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>
     var USE_COLORS = false;  // ← ここを true/false で切り替え
+  </script>
+  <script>
+    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
+    const APP_VERSION = 'v0.13.0';
+    document.addEventListener('DOMContentLoaded', function() {
+      document.title = 'やることリスト - ' + APP_VERSION;
+    });
   </script>
   
   <style>
@@ -6645,7 +6652,7 @@
     // エクスポート：JSONファイルをダウンロード
     function exportData() {
       const exportObj = {
-        version: '0.11.9',
+        version: APP_VERSION,
         exportedAt: new Date().toISOString(),
         tasks: allTasks
       };
