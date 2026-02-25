@@ -1031,6 +1031,7 @@
     .weekly-container {
       min-width: 100%;
       position: relative;
+      overflow: visible;
     }
 
     /* 週間ビューのスティッキーヘッダー */
@@ -1424,7 +1425,7 @@
     /* スマホ版：週間ビューはスクロール */
     @media screen and (max-width: 768px) {
       .weekly-view {
-        padding: 10px;
+        padding: 6px 8px;
       }
 
       .weekly-header {
@@ -1444,29 +1445,44 @@
 
       .weekly-header h2 {
         font-size: 1em;
-        min-width: 120px;
+        min-width: 100px;
       }
 
-      /* スマホでstickyヘッダーのtop位置を再調整 */
-      .weekly-container thead th {
+      /* スマホ：今日を含む3日間だけ表示（JSで制御） */
+      .weekly-container thead th,
+      .weekly-container tbody td {
         top: 40px;
-        font-size: 0.7em;
-        padding: 6px 2px !important;
+      }
+      .weekly-container thead th {
+        font-size: 0.68em;
+        padding: 5px 2px !important;
       }
       
       .weekly-container table {
-        font-size: 0.75em;
+        font-size: 0.72em;
       }
       
       .weekly-container table th {
-        min-width: 60px;
-        padding: 8px 4px !important;
+        min-width: 52px;
+        max-width: 80px;
+        padding: 6px 2px !important;
+      }
+      
+      /* 時間列 */
+      .weekly-container table th:first-child,
+      .weekly-container table td:first-child {
+        min-width: 36px !important;
+        max-width: 40px !important;
+        font-size: 0.78em;
+        padding: 4px 2px !important;
       }
       
       .weekly-container table td {
-        min-width: 60px;
-        padding: 6px 4px !important;
-        height: 60px !important;
+        min-width: 52px;
+        max-width: 80px;
+        padding: 3px 2px !important;
+        height: 46px !important;
+        vertical-align: top;
       }
 
       /* 月間ビューのスマホ対応 */
@@ -2329,15 +2345,13 @@
 
     /* 綴じ目 */
     .nb-gutter {
-      width: 18px;
+      width: 10px;
       flex-shrink: 0;
       background:
         linear-gradient(to right,
-          rgba(0,0,0,0.13) 0px,
-          rgba(0,0,0,0.04) 5px,
-          rgba(255,255,255,0.6) 9px,
-          rgba(0,0,0,0.04) 13px,
-          rgba(0,0,0,0.13) 18px
+          rgba(0,0,0,0.08) 0px,
+          rgba(255,255,255,0.5) 5px,
+          rgba(0,0,0,0.08) 10px
         );
       position: relative;
     }
@@ -2348,7 +2362,7 @@
       left: 50%;
       top: 0; bottom: 0;
       width: 1px;
-      background: rgba(0,0,0,0.07);
+      background: rgba(0,0,0,0.06);
     }
 
     /* ヘッダー：左右完全同一高さ・同一ライン */
@@ -2800,6 +2814,52 @@
         </div>
       </div>
       <div style="margin: 15px 0;">
+        <label style="display: block; margin-bottom: 8px; font-weight: bold;">終了時刻（任意）</label>
+        <div class="custom-time-picker" id="weeklyEditEndTimePicker">
+          <div class="time-select-wrapper">
+            <select class="time-select" id="weeklyEditEndHourSelect">
+              <option value="">--</option>
+              <option value="0">00</option><option value="1">01</option><option value="2">02</option><option value="3">03</option>
+              <option value="4">04</option><option value="5">05</option><option value="6">06</option><option value="7">07</option>
+              <option value="8">08</option><option value="9">09</option><option value="10">10</option><option value="11">11</option>
+              <option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option>
+              <option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option>
+              <option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option>
+            </select>
+            <div class="time-label">時</div>
+          </div>
+          <span class="time-separator">:</span>
+          <div class="time-select-wrapper">
+            <select class="time-select" id="weeklyEditEndMinuteSelect">
+              <option value="">--</option>
+              <option value="0">00</option><option value="5">05</option><option value="10">10</option><option value="15">15</option>
+              <option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option>
+              <option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option>
+            </select>
+            <div class="time-label">分</div>
+          </div>
+          <button type="button" class="time-clear-btn" onclick="clearTimeSelect('weeklyEditEnd')" title="終了時刻をクリア">✕</button>
+        </div>
+        <div style="font-size:0.73em;color:#aaa;margin-top:3px;">設定するとカレンダー上でブロック表示されます</div>
+      </div>
+      <div style="margin: 15px 0;">
+        <label style="display: block; margin-bottom: 8px; font-weight: bold;">カテゴリ（色分け）</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:7px 12px;border-radius:20px;border:1.5px solid #e0e0e0;font-size:0.88em;" id="catLabelNone">
+            <input type="radio" name="editCategory" value="" style="display:none;" id="catNone" onchange="updateCatStyle()"> なし
+          </label>
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:7px 12px;border-radius:20px;border:1.5px solid #43a047;font-size:0.88em;background:#e8f5e9;" id="catLabelPrivate">
+            <input type="radio" name="editCategory" value="private" style="display:none;" id="catPrivate" onchange="updateCatStyle()"> 🏠 プライベート
+          </label>
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:7px 12px;border-radius:20px;border:1.5px solid #1e88e5;font-size:0.88em;background:#e3f2fd;" id="catLabelWork">
+            <input type="radio" name="editCategory" value="work" style="display:none;" id="catWork" onchange="updateCatStyle()"> 💼 仕事
+          </label>
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:7px 12px;border-radius:20px;border:1.5px solid #e53935;font-size:0.88em;background:#fce4ec;" id="catLabelUrgent">
+            <input type="radio" name="editCategory" value="urgent" style="display:none;" id="catUrgent" onchange="updateCatStyle()"> 🔥 緊急・重要
+          </label>
+        </div>
+      </div>
+      <div style="margin: 15px 0;">
         <label style="display: block; margin-bottom: 8px; font-weight: bold;">象限</label>
         <select id="editTaskSection" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 1em;">
           <option value="1">緊急かつ重要</option>
@@ -2855,6 +2915,51 @@
           </div>
           <button type="button" class="time-clear-btn" onclick="clearTimeSelect('create')" title="時間をクリア">✕</button>
         </div>
+      <div style="margin: 15px 0;">
+        <label style="display: block; margin-bottom: 8px; font-weight: bold;">終了時刻（任意）</label>
+        <div class="custom-time-picker" id="createEndTimePicker">
+          <div class="time-select-wrapper">
+            <select class="time-select" id="createEndHourSelect">
+              <option value="">--</option>
+              <option value="0">00</option><option value="1">01</option><option value="2">02</option><option value="3">03</option>
+              <option value="4">04</option><option value="5">05</option><option value="6">06</option><option value="7">07</option>
+              <option value="8">08</option><option value="9">09</option><option value="10">10</option><option value="11">11</option>
+              <option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option>
+              <option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option>
+              <option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option>
+            </select>
+            <div class="time-label">時</div>
+          </div>
+          <span class="time-separator">:</span>
+          <div class="time-select-wrapper">
+            <select class="time-select" id="createEndMinuteSelect">
+              <option value="">--</option>
+              <option value="0">00</option><option value="5">05</option><option value="10">10</option><option value="15">15</option>
+              <option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option>
+              <option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option>
+            </select>
+            <div class="time-label">分</div>
+          </div>
+          <button type="button" class="time-clear-btn" onclick="clearTimeSelect('createEnd')" title="終了時刻をクリア">✕</button>
+        </div>
+      </div>
+      <div style="margin: 15px 0;">
+        <label style="display: block; margin-bottom: 8px; font-weight: bold;">カテゴリ（色分け）</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;padding:6px 10px;border-radius:20px;border:1.5px solid #e0e0e0;font-size:0.85em;" id="createCatLabelNone">
+            <input type="radio" name="createCategory" value="" style="display:none;" id="createCatNone" checked onchange="updateCreateCatStyle()"> なし
+          </label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;padding:6px 10px;border-radius:20px;border:1.5px solid #43a047;font-size:0.85em;background:#e8f5e9;" id="createCatLabelPrivate">
+            <input type="radio" name="createCategory" value="private" style="display:none;" id="createCatPrivate" onchange="updateCreateCatStyle()"> 🏠 プライベート
+          </label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;padding:6px 10px;border-radius:20px;border:1.5px solid #1e88e5;font-size:0.85em;background:#e3f2fd;" id="createCatLabelWork">
+            <input type="radio" name="createCategory" value="work" style="display:none;" id="createCatWork" onchange="updateCreateCatStyle()"> 💼 仕事
+          </label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;padding:6px 10px;border-radius:20px;border:1.5px solid #e53935;font-size:0.85em;background:#fce4ec;" id="createCatLabelUrgent">
+            <input type="radio" name="createCategory" value="urgent" style="display:none;" id="createCatUrgent" onchange="updateCreateCatStyle()"> 🔥 緊急・重要
+          </label>
+        </div>
+      </div>
         <div style="font-size: 0.75em; color: #888; margin-top: 4px;">※時間を設定すると週間ビューにも表示されます</div>
       </div>
       <div style="margin: 15px 0;">
@@ -3461,6 +3566,8 @@
         memo: null,
         date: date,
         time: time || null,
+        endTime: null,      // 終了時刻 "17:00"
+        category: null,     // "private"|"work"|"urgent"|null（カテゴリ色分け）
         section: section,
         order: maxOrder,
         completed: false,
@@ -3999,6 +4106,7 @@
       table.style.borderCollapse = 'separate';
       table.style.borderSpacing = '0';
       table.style.backgroundColor = '#fff';
+      table.style.overflow = 'visible'; // absoluteブロックがはみ出せるよう
       
       // ヘッダー行
       const thead = document.createElement('thead');
@@ -4064,9 +4172,14 @@
       
       // 時間行（0:00-23:00）
       const tbody = document.createElement('tbody');
+      tbody.style.overflow = 'visible';
       
       for (let hour = 0; hour <= 23; hour++) {
         const tr = document.createElement('tr');
+        // 上の行（早い時刻）のabsoluteブロックが
+        // 下の行の背景より前面に来るよう逆順z-indexを設定
+        tr.style.position = 'relative';
+        tr.style.zIndex = String(50 - hour); // 0時=50, 23時=27
         
         // 時間帯によるゾーニング色
         let zoneColor = '#fafafa'; // デフォルト
@@ -4133,11 +4246,12 @@
           const dateStr = getLocalDateStr(date);
           
           const td = document.createElement('td');
-          td.style.padding = '8px';
+          td.style.padding = '4px 6px';
           td.style.border = '1px solid #ddd';
           td.style.verticalAlign = 'top';
           td.style.height = '80px';
-          td.style.position = 'relative';
+          // position:relativeはタスクがある行のみ後で設定（スタッキングコンテキスト最小化）
+          td.style.overflow = 'visible';
           td.style.cursor = 'pointer';
           td.dataset.date = dateStr;
           td.dataset.hour = hour;
@@ -4163,16 +4277,16 @@
           
           // 現在時刻の行をハイライト
           if (isCurrentHour && dateStr === todayDateStr) {
-            cellBgColor = '#fff176'; // 今この瞬間（濃い黄色）
-            td.style.boxShadow = 'inset 0 0 0 2px #fbc02d';
-            td.style.borderRadius = '4px';
+            cellBgColor = '#fff9c4';
           } else if (isCurrentHour) {
-            // 現在時刻の行は全体的に薄黄色
             cellBgColor = blendColors(cellBgColor, '#fffde7', 0.5);
           }
           
           td.style.backgroundColor = cellBgColor;
-          td.dataset.bgColor = cellBgColor; // 元の色を保存
+          td.dataset.bgColor = cellBgColor;
+          // z-index:0を明示→スタッキングコンテキストを作るがz-indexが低いため
+          // endTimeブロック（z-index:100）が確実に上に来る
+          td.style.zIndex = '0';
           
           // クリックでタスク作成
           td.addEventListener('click', (e) => {
@@ -4229,104 +4343,131 @@
           const weeklyTasksForDate = allTasks.filter(t => 
             t.date === dateStr && t.time
           );
+
+          // このhourにタスクがある場合のみposition:relativeを設定
+          // （スタッキングコンテキストを最小化して隣接行へのはみ出しを可能に）
+          const hasTaskInThisHour = weeklyTasksForDate.some(t => parseInt(t.time.split(':')[0]) === hour);
+          if (hasTaskInThisHour) {
+            td.style.position = 'relative';
+            td.style.zIndex = '1'; // タスクのないtdより上位
+          }
           
           weeklyTasksForDate.forEach((task) => {
             const taskHour = parseInt(task.time.split(':')[0]);
-            
+            const taskMin  = parseInt((task.time.split(':')[1]) || '0');
+
             if (taskHour === hour) {
-              // section別の色設定
-              const sectionColors = {
-                1: { bg: '#ffe6e6', border: '#ff4444' }, // 緊急かつ重要（赤）
-                2: { bg: '#e8f5e9', border: '#4caf50' }, // 緊急だが重要でない（緑）
-                3: { bg: '#fffef5', border: '#ffc107' }, // 重要だが緊急でない（黄）
-                4: { bg: '#f0f0f0', border: '#999999' }  // 緊急でも重要でもない（グレー）
+              const ROW_H = 80; // px = 1時間行の実際の高さ
+
+              const categoryColors = {
+                private: { bg: '#e8f5e9', border: '#43a047', label: '🏠' },
+                work:    { bg: '#e3f2fd', border: '#1e88e5', label: '💼' },
+                urgent:  { bg: '#fce4ec', border: '#e53935', label: '🔥' },
               };
-              
-              const colors = sectionColors[task.section] || sectionColors[1];
-              
+              const sectionColors = {
+                1: { bg: '#ffe6e6', border: '#ff4444' },
+                2: { bg: '#e8f5e9', border: '#4caf50' },
+                3: { bg: '#fffef5', border: '#ffc107' },
+                4: { bg: '#f0f0f0', border: '#999999' }
+              };
+              const catColor = task.category ? categoryColors[task.category] : null;
+              const colors = catColor || sectionColors[task.section] || sectionColors[2];
+
+              // 開始分オフセット（例：15:30 → 上から40px）
+              const topOffset = Math.round(taskMin / 60 * ROW_H);
+
+              // endTimeから正確な高さ（ROW_H=80px/h）
+              let blockH = null;
+              if (task.endTime) {
+                const [sh, sm] = task.time.split(':').map(Number);
+                const [eh, em] = task.endTime.split(':').map(Number);
+                const durationMins = (eh * 60 + em) - (sh * 60 + sm);
+                if (durationMins > 0) blockH = Math.round(durationMins / 60 * ROW_H);
+              }
+
               const taskDiv = document.createElement('div');
-              taskDiv.style.padding = '4px 8px';
-              taskDiv.style.marginBottom = '2px';
-              taskDiv.style.backgroundColor = task.completed ? '#e0e0e0' : colors.bg;
-              taskDiv.style.borderLeft = `3px solid ${colors.border}`;
-              taskDiv.style.borderRadius = '3px';
-              taskDiv.style.fontSize = '0.85em';
-              taskDiv.style.cursor = 'grab';
-              taskDiv.style.display = 'flex';
-              taskDiv.style.alignItems = 'center';
-              taskDiv.style.gap = '4px';
+              const bg = task.completed ? '#e8e8e8' : colors.bg;
+              const bd = task.completed ? '#bbb'    : colors.border;
+
+              if (blockH !== null) {
+                // endTimeあり：absolute配置でセルをまたいで描画
+                // z-index:100で現在時刻ハイライト行の背景より確実に前面へ
+                taskDiv.style.cssText =
+                  'position:absolute;left:4px;right:4px;' +
+                  'top:' + topOffset + 'px;' +
+                  'height:' + blockH + 'px;' +
+                  'z-index:100;padding:3px 7px;' +
+                  'background-color:' + bg + ';' +
+                  'border:1px solid ' + bd + ';' +
+                  'border-left:3px solid ' + bd + ';' +
+                  'border-radius:5px;font-size:0.82em;cursor:pointer;' +
+                  'overflow:hidden;box-sizing:border-box;' +
+                  'box-shadow:0 2px 8px rgba(0,0,0,0.15);';
+              } else {
+                // endTimeなし：通常フロー
+                taskDiv.style.cssText =
+                  'padding:3px 7px;margin-bottom:2px;' +
+                  'background-color:' + bg + ';' +
+                  'border-left:3px solid ' + bd + ';' +
+                  'border-radius:4px;font-size:0.82em;cursor:pointer;' +
+                  'overflow:hidden;box-sizing:border-box;';
+              }
+
               taskDiv.draggable = true;
               taskDiv.dataset.taskId = task.id;
-              
-              // ドラッグ開始
+
               taskDiv.addEventListener('dragstart', (e) => {
                 e.dataTransfer.effectAllowed = 'move';
                 e.dataTransfer.setData('text/plain', JSON.stringify({
-                  taskId: task.id,
-                  dateStr: dateStr,
-                  taskText: task.text,
-                  taskTime: task.time
+                  taskId: task.id, dateStr: dateStr, taskText: task.text, taskTime: task.time
                 }));
                 taskDiv.style.opacity = '0.5';
               });
-              
-                // ドラッグ終了
-                taskDiv.addEventListener('dragend', (e) => {
-                  taskDiv.style.opacity = '1';
-                });
-                
-                const timeSpan = document.createElement('span');
-                timeSpan.textContent = task.time;
-                timeSpan.style.fontWeight = 'bold';
-                timeSpan.style.marginRight = '4px';
-                
-                const textSpan = document.createElement('span');
-                textSpan.textContent = task.text;
-                textSpan.style.flex = '1';
-                if (task.completed) {
-                  textSpan.style.textDecoration = 'line-through';
-                  textSpan.style.opacity = '0.6';
-                }
-                
-                const editBtn = document.createElement('span');
-                editBtn.textContent = '✏️';
-                editBtn.title = '編集';
-                editBtn.style.cursor = 'pointer';
-                editBtn.style.opacity = '0.5';
-                editBtn.style.pointerEvents = 'auto';
-                editBtn.addEventListener('click', (e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  
-                  
-                  // promptをsetTimeoutで遅延実行（ブラウザのブロック回避）
-                  setTimeout(() => {
-                    editWeeklyTaskById(task.id);
-                  }, 10);
-                });
-                
-                taskDiv.onclick = (e) => {
-                  // ボタン以外をクリックした時だけ完了トグル
-                  if (e.target === taskDiv || e.target === timeSpan || e.target === textSpan) {
-                    updateTask(task.id, { completed: !task.completed });
-                    renderWeeklyView();
-                    
-                    // 今日のタスクなら日次も再描画
-                    const today = getLocalDateStr(new Date());
-                    if (task.date === today) {
-                      for (let sec = 1; sec <= 4; sec++) {
-                        renderTasks(sec);
-                      }
-                    }
-                  }
-                };
-                
-                taskDiv.appendChild(timeSpan);
-                taskDiv.appendChild(textSpan);
-                taskDiv.appendChild(editBtn);
-                td.appendChild(taskDiv);
+              taskDiv.addEventListener('dragend', () => { taskDiv.style.opacity = '1'; });
+
+              // 1行目：時刻＋タイトル＋編集
+              const line1 = document.createElement('div');
+              line1.style.cssText = 'display:flex;align-items:center;gap:4px;white-space:nowrap;overflow:hidden;';
+
+              const timeSpan = document.createElement('span');
+              timeSpan.textContent = task.time + (task.endTime ? '–' + task.endTime : '');
+              timeSpan.style.cssText = 'font-weight:700;font-size:0.84em;flex-shrink:0;color:#555;';
+
+              const titleSpan = document.createElement('span');
+              titleSpan.textContent = (catColor ? catColor.label + ' ' : '') + task.text;
+              titleSpan.style.cssText = 'flex:1;overflow:hidden;text-overflow:ellipsis;' +
+                (task.completed ? 'text-decoration:line-through;opacity:0.5;' : '');
+
+              const editBtn = document.createElement('span');
+              editBtn.textContent = '✏️';
+              editBtn.title = '編集';
+              editBtn.style.cssText = 'flex-shrink:0;font-size:0.9em;opacity:0.5;cursor:pointer;';
+              editBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                setTimeout(() => editWeeklyTaskById(task.id), 10);
+              });
+
+              line1.appendChild(timeSpan);
+              line1.appendChild(titleSpan);
+              line1.appendChild(editBtn);
+              taskDiv.appendChild(line1);
+
+              // 2行目：メモ（高さに余裕がある時のみ）
+              if (task.memo && (blockH === null || blockH >= 52)) {
+                const memoLine = document.createElement('div');
+                memoLine.textContent = '📍 ' + task.memo;
+                memoLine.style.cssText = 'font-size:0.78em;color:#777;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;';
+                taskDiv.appendChild(memoLine);
               }
-            });
+
+              taskDiv.addEventListener('click', (e) => {
+                if (e.target === editBtn) return;
+                setTimeout(() => editWeeklyTaskById(task.id), 10);
+              });
+
+              td.appendChild(taskDiv);
+            }
+          });
           
           tr.appendChild(td);
         }
@@ -4335,7 +4476,38 @@
       }
       
       table.appendChild(tbody);
+
+      // endTimeブロックが23時以降にはみ出しても見えるよう
+      // 終端に空白行を追加（最大4時間分の余白）
+      const padTr = document.createElement('tr');
+      padTr.style.height = '240px'; // 3時間分の余白
+      padTr.style.pointerEvents = 'none';
+      const padTh = document.createElement('td');
+      padTh.colSpan = 8;
+      padTh.style.cssText = 'border:none;background:transparent;height:240px;';
+      padTr.appendChild(padTh);
+      tbody.appendChild(padTr);
+
       container.appendChild(table);
+
+      // スマホ：今日を中心に3日だけ表示
+      if (window.innerWidth <= 768) {
+        const todayIdx = Array.from(table.querySelectorAll('thead th')).findIndex(
+          th => th.dataset && th.dataset.date === todayDateStr
+        );
+        const visibleCenter = (todayIdx >= 1 && todayIdx <= 7) ? todayIdx : 1;
+        const showCols = new Set([0, visibleCenter - 1, visibleCenter, visibleCenter + 1].filter(c => c >= 0 && c <= 7));
+        table.querySelectorAll('tr').forEach(row => {
+          Array.from(row.children).forEach((cell, ci) => {
+            cell.style.display = showCols.has(ci) ? '' : 'none';
+          });
+        });
+        // 3日表示インジケーター
+        const note = document.createElement('div');
+        note.textContent = '← → 前週・来週で切り替え';
+        note.style.cssText = 'text-align:center;font-size:0.72em;color:#aaa;margin-top:4px;';
+        container.appendChild(note);
+      }
     }
 
     // 週間タスクの編集（ID版）
@@ -4365,6 +4537,14 @@
       // 時間を設定（新しいセレクト式）
       setTimeSelect('weeklyEdit', task.time);
       
+      // 終了時刻を設定
+      setTimeSelect('weeklyEditEnd', task.endTime);
+      
+      // カテゴリを設定
+      const catVal = task.category || '';
+      document.querySelectorAll('input[name="editCategory"]').forEach(r => { r.checked = r.value === catVal; });
+      updateCatStyle();
+      
       // 象限を設定
       document.getElementById('editTaskSection').value = task.section || 2;
       
@@ -4382,6 +4562,22 @@
       document.getElementById('weeklyTaskEditModal').classList.remove('show');
       editingWeeklyTaskId = null;
     }
+
+    function updateCatStyle() {
+      const map = { '':'catLabelNone', 'private':'catLabelPrivate', 'work':'catLabelWork', 'urgent':'catLabelUrgent' };
+      document.querySelectorAll('input[name="editCategory"]').forEach(r => {
+        const lbl = document.getElementById(map[r.value]);
+        if (lbl) lbl.style.boxShadow = r.checked ? '0 0 0 2px #333' : 'none';
+      });
+    }
+
+    function updateCreateCatStyle() {
+      const map = { '':'createCatLabelNone', 'private':'createCatLabelPrivate', 'work':'createCatLabelWork', 'urgent':'createCatLabelUrgent' };
+      document.querySelectorAll('input[name="createCategory"]').forEach(r => {
+        const lbl = document.getElementById(map[r.value]);
+        if (lbl) lbl.style.boxShadow = r.checked ? '0 0 0 2px #333' : 'none';
+      });
+    }
     
     function saveWeeklyEdit() {
       if (!editingWeeklyTaskId) return;
@@ -4390,7 +4586,10 @@
       const newMemo = document.getElementById('editTaskMemo').value.trim();
       const newDate = document.getElementById('editTaskDate').value;
       const newTime = getTimeFromSelect('weeklyEdit');
+      const newEndTime = getTimeFromSelect('weeklyEditEnd') || null;
       const newSection = parseInt(document.getElementById('editTaskSection').value);
+      const catRadio = document.querySelector('input[name="editCategory"]:checked');
+      const newCategory = catRadio && catRadio.value ? catRadio.value : null;
       
       if (!newText) {
         alert('タスク名を入力してください');
@@ -4409,7 +4608,9 @@
         text: newText,
         memo: newMemo || null,
         date: newDate,
-        time: newTime, 
+        time: newTime,
+        endTime: newEndTime,
+        category: newCategory,
         section: newSection,
         showInWeekly: showInWeekly
       });
@@ -5468,24 +5669,27 @@
       const taskText = document.getElementById('createTaskText').value.trim();
       const taskMemo = document.getElementById('createTaskMemo').value.trim();
       const taskTime = getTimeFromSelect('create');
+      const taskEndTime = getTimeFromSelect('createEnd') || null;
       const taskSection = parseInt(document.getElementById('createTaskSection').value);
+      const catRadio = document.querySelector('input[name="createCategory"]:checked');
+      const taskCategory = catRadio && catRadio.value ? catRadio.value : null;
       
       if (!taskText) {
         alert('タスク名を入力してください');
         return;
       }
       
-      // 週間タスク作成時は日次にも週間にも表示
       const showInDaily = true;
       const showInWeekly = true;
       
-      // マスターデータに追加
       const newTask = createTask(taskText, creatingTask.dateStr, taskTime, taskSection, showInDaily, showInWeekly);
       
-      // メモがあれば設定
-      if (taskMemo) {
-        updateTask(newTask.id, { memo: taskMemo });
-      }
+      // メモ・終了時刻・カテゴリを設定
+      const updates = {};
+      if (taskMemo) updates.memo = taskMemo;
+      if (taskEndTime) updates.endTime = taskEndTime;
+      if (taskCategory) updates.category = taskCategory;
+      if (Object.keys(updates).length > 0) updateTask(newTask.id, updates);
       
       closeCreateModal();
       renderWeeklyView();
