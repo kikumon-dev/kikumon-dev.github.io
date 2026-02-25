@@ -1993,102 +1993,117 @@
     .nb-shelf-tab.nb-drag-over { border-color: #8a7f74 !important; background: rgba(255,255,255,0.85) !important; }
 
     /* ===== 見開きレイアウト ===== */
+
+    /* 棚の実測高さ：約52px */
     .nb-spread {
       display: flex;
       height: calc(100vh - 48px - 52px);
-      min-height: 500px;
+      min-height: 480px;
       overflow: hidden;
+      transition: opacity 0.18s ease;
     }
+    .nb-spread.nb-snap-anim { opacity: 0; }
 
-    /* 左右共通のページ */
+    /* 左右共通ページ */
     .nb-leaf {
       flex: 1;
       display: flex;
       flex-direction: column;
       overflow: hidden;
       background: #fefcf7;
-    }
-    /* 左ページ：右端に綴じ目の影 */
-    .nb-leaf-left {
-      border-right: none;
-      box-shadow: inset -8px 0 16px -8px rgba(0,0,0,0.12);
-    }
-    /* 綴じ目（中央の縦線） */
-    .nb-gutter {
-      width: 6px;
-      flex-shrink: 0;
-      background: linear-gradient(to right, rgba(0,0,0,0.08), rgba(0,0,0,0.03) 40%, rgba(0,0,0,0.03) 60%, rgba(0,0,0,0.08));
-    }
-    /* 右ページ：左端に綴じ目の影 */
-    .nb-leaf-right {
-      box-shadow: inset 8px 0 16px -8px rgba(0,0,0,0.12);
+      min-width: 0;
     }
 
-    /* 各ページのヘッダー（タイトル or ページ番号） */
+    /* 綴じ目 */
+    .nb-gutter {
+      width: 18px;
+      flex-shrink: 0;
+      background:
+        linear-gradient(to right,
+          rgba(0,0,0,0.13) 0px,
+          rgba(0,0,0,0.04) 5px,
+          rgba(255,255,255,0.6) 9px,
+          rgba(0,0,0,0.04) 13px,
+          rgba(0,0,0,0.13) 18px
+        );
+      position: relative;
+    }
+    /* 綴じ目中心に細い縦線 */
+    .nb-gutter::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 0; bottom: 0;
+      width: 1px;
+      background: rgba(0,0,0,0.07);
+    }
+
+    /* ヘッダー：左右完全同一高さ・同一ライン */
     .nb-leaf-header {
       flex-shrink: 0;
-      height: 68px;          /* 左右完全固定高さ */
+      height: 72px;
       box-sizing: border-box;
-      padding: 14px 20px 10px;
-      border-bottom: 1px solid #e8e3da;
+      padding: 0 22px;
+      border-bottom: 1.5px solid #e0dbd2;
       background: #fefcf7;
       display: flex;
       flex-direction: column;
       justify-content: center;
+      gap: 3px;
     }
+    /* 右ページヘッダーは右寄せ */
     .nb-leaf-header.right-header {
       align-items: flex-end;
       justify-content: flex-end;
+      padding-bottom: 14px;
     }
 
-    /* タイトル（左ページのみ） */
+    /* タイトル入力 */
     .nb-title {
       width: 100%;
       box-sizing: border-box;
       border: none;
       background: transparent;
-      font-size: 1.25em;
+      font-size: 1.22em;
       font-weight: 700;
       color: #1c1c1e;
       outline: none;
       letter-spacing: -0.02em;
       padding: 0;
-      line-height: 1.3;
+      line-height: 1.35;
       font-family: -apple-system, 'Hiragino Sans', sans-serif;
-      display: block;
     }
     .nb-title::placeholder { color: #d0ccc6; }
+
+    /* 保存ステータス */
     .nb-status {
-      font-size: 0.64em;
-      color: #c0bbb5;
-      height: 14px;
-      line-height: 14px;
-      letter-spacing: 0.02em;
-      margin-top: 2px;
+      font-size: 0.62em;
+      color: #c8c3bc;
+      line-height: 1;
+      letter-spacing: 0.03em;
+      height: 12px;
     }
 
-    /* コーネル式：日付欄＋本文欄 */
+    /* コーネル式エリア */
     .nb-cornell {
       flex: 1;
       display: flex;
       overflow: hidden;
-      /* 罫線：ヘッダー68px分オフセットして左右で揃える */
       background-image: repeating-linear-gradient(
         180deg,
         transparent 0px, transparent 31px,
-        #dde8f2 31px, #dde8f2 32px
+        #dce8f3 31px, #dce8f3 32px
       );
-      background-position: 0 4px;
+      background-position: 0 8px;
       background-attachment: local;
     }
 
-    /* 日付・メモ欄（左の細い列） */
+    /* 日付・メモ欄 */
     .nb-date-col {
-      width: 72px;
+      width: 68px;
       flex-shrink: 0;
-      border-right: 1.5px solid #f0a0a0;
-      overflow-y: auto;
-      background: transparent;
+      border-right: 1.5px solid #f0a8a8;
+      overflow-y: hidden;
     }
     .nb-date-textarea {
       display: block;
@@ -2098,22 +2113,21 @@
       box-sizing: border-box;
       border: none;
       background: transparent;
-      font-size: 0.73em;
+      font-size: 0.72em;
       line-height: 32px;
       color: #555;
       outline: none;
       resize: none;
-      padding: 8px 6px 40px 8px;
+      padding: 8px 5px 40px 6px;
       font-family: -apple-system, 'Hiragino Sans', 'YuGothic', sans-serif;
       text-align: center;
     }
-    .nb-date-textarea::placeholder { color: #ccc; font-size: 0.88em; }
+    .nb-date-textarea::placeholder { color: #ccc; font-size: 0.9em; }
 
     /* 本文欄 */
     .nb-text-col {
       flex: 1;
       overflow-y: auto;
-      background: transparent;
     }
     .nb-text-textarea {
       display: block;
@@ -2127,7 +2141,7 @@
       color: #1a1a1a;
       outline: none;
       resize: none;
-      padding: 8px 20px 40px 14px;
+      padding: 8px 24px 60px 14px;
       font-family: -apple-system, 'Hiragino Sans', 'YuGothic', sans-serif;
       letter-spacing: 0.01em;
     }
@@ -2150,16 +2164,23 @@
     }
     .nb-empty-state-btn:hover { opacity: 0.78; }
 
-    /* スマホ：左ページのみ */
-    @media (max-width: 700px) {
-      .nb-shelf { padding: 10px 12px 0; }
-      .nb-shelf-tab { font-size: 0.78em; padding: 7px 10px 9px; max-width: 110px; }
-      .nb-spread { height: auto; min-height: 0; }
+    /* ===== レスポンシブ：スナップ切り替え =====
+       < 1100px → 1面モード（右ページ・綴じ目を隠す）
+       ≥ 1100px → 見開き2面
+       タブレット縦・小さいPC・スマホ全て1面扱い
+    */
+    @media (max-width: 1099px) {
+      .nb-shelf-tab { font-size: 0.8em; }
+      .nb-spread { height: calc(100vh - 48px - 48px); }
       .nb-leaf-right, .nb-gutter { display: none; }
       .nb-leaf-left { box-shadow: none; }
       .nb-cornell { min-height: 70vh; }
-      .nb-date-col { width: 56px; }
-      .nb-text-textarea { font-size: 0.9em; padding: 8px 12px 40px 10px; }
+    }
+    @media (max-width: 600px) {
+      .nb-shelf { padding: 10px 12px 0; }
+      .nb-shelf-tab { font-size: 0.76em; padding: 7px 10px 9px; max-width: 110px; }
+      .nb-date-col { width: 52px; }
+      .nb-text-textarea { font-size: 0.88em; }
     }
   </style>
   
@@ -6399,7 +6420,8 @@
       } else if (view === 'notebook') {
         notebookView.style.display = 'block';
         document.getElementById('navNotebook').classList.add('active');
-        nbRender();
+        // 初回のみObserver起動（以降は自動追従）
+        if (!nbSpreadMode) { nbInitSpreadObserver(); } else { nbRender(); }
       }
       
       // 状態を保存（設定画面以外）
@@ -6412,8 +6434,41 @@
     // 自由帳 v0.12.0 — テキスト一本
     // ===================================================
 
-    var nbCurrentId = null;   // 現在開いているページID
-    var nbSaveTimer = null;   // 自動保存タイマー
+    var nbCurrentId = null;
+    var nbSaveTimer = null;
+    var nbSpreadMode = null; // 'single' | 'spread'
+
+    // ---- スナップ切り替え（ResizeObserver） ----
+    function nbInitSpreadObserver() {
+      var spread = document.getElementById('nbSpread');
+      if (!spread) return;
+      var BREAKPOINT = 1100;
+
+      function applyMode(w) {
+        var mode = w >= BREAKPOINT ? 'spread' : 'single';
+        if (mode === nbSpreadMode) return;
+        // アニメーション：フェードアウト→切り替え→フェードイン
+        spread.classList.add('nb-snap-anim');
+        setTimeout(function() {
+          nbSpreadMode = mode;
+          nbRenderBody();
+          spread.classList.remove('nb-snap-anim');
+        }, 160);
+      }
+
+      if (window.ResizeObserver) {
+        var ro = new ResizeObserver(function(entries) {
+          applyMode(entries[0].contentRect.width);
+        });
+        ro.observe(spread);
+      } else {
+        // fallback
+        applyMode(window.innerWidth);
+        window.addEventListener('resize', function(){ applyMode(window.innerWidth); });
+      }
+      // 初期適用
+      applyMode(spread.offsetWidth || window.innerWidth);
+    }
 
     // ---- データアクセス（allTasks統合 kind="note"）----
     function nbPages() {
@@ -6484,6 +6539,7 @@
     function nbRenderBody() {
       var spread = document.getElementById('nbSpread');
       var pages = nbPages();
+      var isSingle = nbSpreadMode !== 'spread';
 
       if (pages.length === 0 || !nbCurrentId) {
         spread.innerHTML = '<div class="nb-empty-state"><span class="nb-empty-state-icon">📒</span><p>まだページがありません<br>メモ、アイデア、対策ノート、なんでも</p><button class="nb-empty-state-btn" onclick="nbNewPage()">＋ 最初のページを作る</button></div>';
@@ -6497,8 +6553,9 @@
 
       spread.innerHTML = '';
 
-      // ---- ページ生成ヘルパー ----
-      function makeLeaf(side, dateId, textId, datePlaceholder, textPlaceholder, dateVal, textVal) {
+      var pageIdx = pages.findIndex(function(p){ return p.id === nbCurrentId; });
+
+      function makeLeaf(side, dateId, textId, datePh, textPh, dateVal, textVal) {
         var leaf = document.createElement('div');
         leaf.className = 'nb-leaf nb-leaf-' + side;
 
@@ -6506,7 +6563,6 @@
         hdr.className = 'nb-leaf-header' + (side === 'right' ? ' right-header' : '');
 
         if (side === 'left') {
-          // タイトル＋保存ステータス
           var titleEl = document.createElement('input');
           titleEl.className = 'nb-title';
           titleEl.id = 'nbTitleInput';
@@ -6520,14 +6576,12 @@
           hdr.appendChild(titleEl);
           hdr.appendChild(statusEl);
         } else {
-          // 右ページヘッダー（左と高さ揃え）
-          var cont = document.createElement('span');
-          cont.style.cssText = 'font-size:0.7em;color:#ccc;letter-spacing:0.06em;';
-          cont.textContent = '続き';
-          hdr.appendChild(cont);
+          var pgNum = document.createElement('span');
+          pgNum.style.cssText = 'font-size:0.68em;color:#ccc;letter-spacing:0.05em;';
+          pgNum.textContent = pageIdx >= 0 ? ('— ' + (pageIdx + 1) + ' —') : '';
+          hdr.appendChild(pgNum);
         }
 
-        // コーネル式（日付欄 ＋ 本文欄）
         var cornell = document.createElement('div');
         cornell.className = 'nb-cornell';
 
@@ -6536,7 +6590,7 @@
         var dateTa = document.createElement('textarea');
         dateTa.className = 'nb-date-textarea';
         dateTa.id = dateId;
-        dateTa.placeholder = datePlaceholder;
+        dateTa.placeholder = datePh;
         dateTa.value = dateVal;
         dateTa.addEventListener('input', nbOnChange);
         dateCol.appendChild(dateTa);
@@ -6546,7 +6600,7 @@
         var textTa = document.createElement('textarea');
         textTa.className = 'nb-text-textarea';
         textTa.id = textId;
-        textTa.placeholder = textPlaceholder;
+        textTa.placeholder = textPh;
         textTa.value = textVal;
         textTa.addEventListener('input', nbOnChange);
         textCol.appendChild(textTa);
@@ -6558,14 +6612,14 @@
         return leaf;
       }
 
-      var leftLeaf  = makeLeaf('left',  'nbDateL', 'nbTextL', '日付\nメモ', 'ここに書いてください...', page.dateL || '', page.textL || '');
-      var gutter    = document.createElement('div');
-      gutter.className = 'nb-gutter';
-      var rightLeaf = makeLeaf('right', 'nbDateR', 'nbTextR', '日付\nメモ', '続きを書いてください...', page.dateR || '', page.textR || '');
+      spread.appendChild(makeLeaf('left', 'nbDateL', 'nbTextL', '日付\nメモ', 'ここに書いてください...', page.dateL||'', page.textL||''));
 
-      spread.appendChild(leftLeaf);
-      spread.appendChild(gutter);
-      spread.appendChild(rightLeaf);
+      if (!isSingle) {
+        var gutter = document.createElement('div');
+        gutter.className = 'nb-gutter';
+        spread.appendChild(gutter);
+        spread.appendChild(makeLeaf('right', 'nbDateR', 'nbTextR', '日付\nメモ', '続きを書いてください...', page.dateR||'', page.textR||''));
+      }
     }
 
     // 後方互換
