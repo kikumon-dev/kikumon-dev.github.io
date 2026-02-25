@@ -1907,6 +1907,249 @@
         width: 100%;
       }
     }
+
+    /* ===== 自由帳 v0.12.0 ===== */
+    .nb-view {
+      display: none;
+      min-height: calc(100vh - 48px);
+      background: #f0ede8;
+      font-family: -apple-system, 'Hiragino Sans', 'YuGothic', sans-serif;
+    }
+
+    /* 上部ページ棚 */
+    .nb-shelf {
+      background: #e5e1da;
+      border-bottom: 2px solid #cdc8c0;
+      padding: 14px 16px 0;
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      align-items: flex-end;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+      scrollbar-color: #c5c0b8 transparent;
+    }
+    .nb-shelf::-webkit-scrollbar { height: 4px; }
+    .nb-shelf::-webkit-scrollbar-track { background: transparent; }
+    .nb-shelf::-webkit-scrollbar-thumb { background: #c5c0b8; border-radius: 2px; }
+
+    .nb-shelf-tab {
+      flex-shrink: 0;
+      padding: 8px 14px 11px;
+      border-radius: 8px 8px 0 0;
+      border: 1px solid transparent;
+      border-bottom: none;
+      background: rgba(255,255,255,0.35);
+      font-size: 0.82em;
+      font-weight: 500;
+      color: #7a736a;
+      cursor: pointer;
+      max-width: 140px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: background 0.12s, color 0.12s;
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      user-select: none;
+    }
+    .nb-shelf-tab:hover { background: rgba(255,255,255,0.6); color: #333; }
+    .nb-shelf-tab.active {
+      background: #faf7f1;
+      color: #1c1c1e;
+      font-weight: 600;
+      border-color: #cdc8c0;
+      padding-bottom: 13px;
+    }
+    .nb-shelf-tab-del {
+      opacity: 0;
+      background: none;
+      border: none;
+      color: #bbb;
+      font-size: 0.8em;
+      cursor: pointer;
+      line-height: 1;
+      padding: 1px 2px;
+      border-radius: 3px;
+      flex-shrink: 0;
+      transition: opacity 0.12s, color 0.12s;
+    }
+    .nb-shelf-tab:hover .nb-shelf-tab-del { opacity: 1; }
+    .nb-shelf-tab-del:hover { color: #c00; background: rgba(200,0,0,0.08); }
+
+    .nb-shelf-add {
+      flex-shrink: 0;
+      padding: 8px 16px 11px;
+      border-radius: 8px 8px 0 0;
+      border: none;
+      background: none;
+      font-size: 0.82em;
+      color: #aaa;
+      cursor: pointer;
+      transition: color 0.12s;
+      white-space: nowrap;
+    }
+    .nb-shelf-add:hover { color: #555; }
+
+    /* ノート本体エリア */
+    .nb-body {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 20px 20px 80px;
+    }
+
+    /* タイトル */
+    .nb-title {
+      width: 100%;
+      box-sizing: border-box;
+      border: none;
+      background: transparent;
+      font-size: 1.75em;
+      font-weight: 700;
+      color: #1c1c1e;
+      outline: none;
+      letter-spacing: -0.025em;
+      padding: 0 0 14px;
+      font-family: -apple-system, 'Hiragino Sans', sans-serif;
+      border-bottom: 1.5px solid #d4cfc7;
+      margin-bottom: 14px;
+      display: block;
+    }
+    .nb-title::placeholder { color: #d0ccc6; }
+
+    /* コーネル式ノート本体 */
+    .nb-ruled {
+      display: flex;
+      background: #fefcf8;
+      border-radius: 3px 3px 4px 4px;
+      box-shadow:
+        0 1px 3px rgba(0,0,0,0.06),
+        0 4px 16px rgba(0,0,0,0.05),
+        inset 0 0 0 0.5px rgba(0,0,0,0.04);
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* 左マージン欄 */
+    .nb-margin {
+      width: 80px;
+      flex-shrink: 0;
+      border-right: 1.5px solid #f0a0a0;
+      position: relative;
+      background-image: repeating-linear-gradient(
+        180deg,
+        transparent 0px, transparent 31px,
+        #dae6f0 31px, #dae6f0 32px
+      );
+      background-position: 0 24px;
+    }
+    .nb-margin-textarea {
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-height: 520px;
+      box-sizing: border-box;
+      border: none;
+      background: transparent;
+      font-size: 0.72em;
+      line-height: 32px;
+      color: #555;
+      outline: none;
+      resize: none;
+      padding: 24px 6px 32px 8px;
+      font-family: -apple-system, 'Hiragino Sans', 'YuGothic', sans-serif;
+      letter-spacing: 0.01em;
+      text-align: center;
+    }
+    .nb-margin-textarea::placeholder { color: #ccc; font-size: 0.9em; }
+
+    /* 本文欄 */
+    .nb-main-col {
+      flex: 1;
+      position: relative;
+      background-image: repeating-linear-gradient(
+        180deg,
+        transparent 0px, transparent 31px,
+        #dae6f0 31px, #dae6f0 32px
+      );
+      background-position: 0 24px;
+    }
+    .nb-textarea {
+      display: block;
+      width: 100%;
+      min-height: 520px;
+      box-sizing: border-box;
+      border: none;
+      background: transparent;
+      font-size: 0.945em;
+      line-height: 32px;
+      color: #1a1a1a;
+      outline: none;
+      resize: none;
+      padding: 24px 24px 32px 16px;
+      font-family: -apple-system, 'Hiragino Sans', 'YuGothic', sans-serif;
+      letter-spacing: 0.01em;
+    }
+    .nb-textarea::placeholder { color: #c8c4bc; }
+
+    /* 保存ステータス */
+    .nb-status {
+      font-size: 0.71em;
+      color: #c0bbb5;
+      text-align: right;
+      padding: 6px 2px 2px;
+      min-height: 20px;
+      letter-spacing: 0.02em;
+    }
+
+    /* 空状態 */
+    .nb-empty-state {
+      text-align: center;
+      padding: 100px 20px 40px;
+      color: #c0bbb5;
+    }
+    .nb-empty-state-icon {
+      font-size: 3.2em;
+      display: block;
+      margin-bottom: 14px;
+      filter: grayscale(0.3) opacity(0.6);
+    }
+    .nb-empty-state p { font-size: 0.88em; line-height: 1.8; margin: 0; }
+    .nb-empty-state-btn {
+      margin-top: 20px;
+      padding: 11px 28px;
+      background: #1c1c1e;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.85em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .nb-empty-state-btn:hover { opacity: 0.78; }
+
+    /* D&D中のスタイル */
+    .nb-shelf-tab.nb-dragging {
+      opacity: 0.45;
+      cursor: grabbing;
+    }
+    .nb-shelf-tab.nb-drag-over {
+      border-color: #8a7f74 !important;
+      background: rgba(255,255,255,0.85) !important;
+    }
+    .nb-shelf-tab { cursor: grab; }
+
+    @media (max-width: 600px) {
+      .nb-shelf-tab { font-size: 0.78em; padding: 7px 10px 10px; max-width: 110px; }
+      .nb-body { padding: 16px 12px 60px; }
+      .nb-title { font-size: 1.4em; }
+      /* スマホでは左マージン欄を非表示 */
+      .nb-margin { display: none; }
+      .nb-textarea { padding-left: 16px; font-size: 0.9em; }
+    }
   </style>
   
   <script>
@@ -1923,6 +2166,7 @@
     <button class="nav-tab" id="navWeekly" onclick="switchView('weekly')">週間</button>
     <button class="nav-tab active" id="navMonthly" onclick="switchView('monthly')">月間</button>
     <button class="nav-tab" id="navYearly" onclick="switchView('yearly')">年間</button>
+    <button class="nav-tab" id="navNotebook" onclick="switchView('notebook')">自由帳</button>
     <button class="nav-tab nav-tab-settings" id="navSettings" onclick="switchView('settings')">
       <div class="nav-avatar-wrapper" id="navAvatarWrapper" style="display: none;">
         <img id="navAvatar" src="" alt="" class="nav-avatar">
@@ -2350,6 +2594,12 @@
     </div>
   </div>
 
+  <!-- 自由帳ビュー v0.12.0 -->
+  <div id="notebookView" class="nb-view">
+    <div class="nb-shelf" id="nbShelf"></div>
+    <div class="nb-body" id="nbBody"></div>
+  </div>
+
   <!-- 設定ビュー -->
   <div id="settingsView" class="settings-view" style="display: none;">
     <div class="settings-container">
@@ -2775,7 +3025,7 @@
     let taskIdCounter = 1; // 互換性のため保持（実際はUUIDを使用）
 
     // 初期データ（テストデータ54件 - 大学3年生・マックバイト・彼氏あり）
-    const INITIAL_DATA = [{"id":"58c3b5d3-3dab-468e-b94d-644ad8ff2b67","text":"熱力学の宿題","date":"2026-02-09","time":"10:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"6db44052-8f93-481c-bd68-9d62ded414c0","text":"おばあちゃん家 様子見","date":"2026-02-09","time":"14:00","section":1,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"965653ab-a245-461f-99a5-efe137002ab4","text":"めし","date":"2026-02-09","time":"12:00","section":2,"order":0,"completed":true,"showInDaily":true,"showInWeekly":true},{"id":"01bf2de0-1d4f-493b-a62e-ce52f255ea16","text":"洗濯","date":"2026-02-09","time":"09:00","section":2,"order":1,"completed":true,"showInDaily":true,"showInWeekly":true},{"id":"3c916322-2347-43ff-ace2-f284d0b60c1f","text":"LINE返す","date":"2026-02-09","time":"20:00","section":3,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"5b60a61c-803c-42d1-9208-15e500884b35","text":"Netflix","date":"2026-02-09","time":"22:00","section":4,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"54267021-2c61-43f1-b554-be7f01f41a30","text":"材料力学 2限","date":"2026-02-10","time":"10:30","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"6b698034-60d9-4825-a2e2-86a0681a676f","text":"熱力学レポート提出","date":"2026-02-10","time":"23:59","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"d2b7ce67-23e0-42f5-84b2-7f9126258398","text":"マック 17:00-22:00","date":"2026-02-10","time":"17:00","section":2,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"36612121-39ac-4d7c-b0cf-6c310a6e9045","text":"新人トレーニング 佐藤さん","date":"2026-02-10","time":"18:00","section":1,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"68e1d1ea-89e1-4552-bde9-305d3544d0f1","text":"めし","date":"2026-02-10","time":"12:00","section":2,"order":2,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"2a6a6f00-8bae-41c8-8421-499cdf0fcf7c","text":"おばあちゃん病院付き添い 横浜市大","date":"2026-02-11","time":"10:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"2d5d4e32-05aa-4d42-bcc2-1111ecc31761","text":"ケアマネさん電話","date":"2026-02-11","time":"15:00","section":1,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"8369e595-04d8-4ef5-849b-b3b8e1c28f7e","text":"薬局 処方箋","date":"2026-02-11","time":"12:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"e24e5245-7517-46ca-81d8-b9d2e9ddf8ea","text":"部屋掃除","date":"2026-02-11","time":"16:00","section":4,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"42e13b28-a103-4b20-a755-647a405a7f64","text":"研究室ゼミ 発表","date":"2026-02-12","time":"14:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"35fbff5f-bd46-4579-81f7-f6a8405590ba","text":"ゼミ発表スライド最終確認","date":"2026-02-12","time":"09:00","section":1,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"28bc4e34-dd30-4486-95bd-7a4ffd509d1c","text":"マック 17:00-21:00","date":"2026-02-12","time":"17:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"b6435ad1-fb20-4a17-9a50-295d6360eb63","text":"めし","date":"2026-02-12","time":"12:00","section":2,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"a2169fc7-43f3-4b7b-9f07-858263188232","text":"バイトグループLINE確認","date":"2026-02-12","time":"22:00","section":3,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"65106b5a-1a3a-4552-b4f4-e45f7928764e","text":"流体力学 3限","date":"2026-02-13","time":"13:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"3d883e67-e613-4da8-880e-9a2d7f2f4d23","text":"友達とカラオケ まねきねこ横浜西口","date":"2026-02-13","time":"19:00","section":2,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"9fce656c-2605-4787-9c72-95eb7a1b8180","text":"ゆうかに誕プレ渡す","date":"2026-02-13","time":"19:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"30cc43fb-6da3-4bdd-beec-d10ed873d179","text":"めし","date":"2026-02-13","time":"12:00","section":2,"order":2,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"f9061ff5-b090-4a82-b5b0-508dafe7024f","text":"翔太と横浜デート","date":"2026-02-14","time":"11:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"95040bd3-e274-4732-8f67-8aa6e5990e8f","text":"bills 横浜赤レンガ ランチ","date":"2026-02-14","time":"12:00","section":2,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"93f82bee-882b-4229-912d-3fec6f116767","text":"チョコ渡す","date":"2026-02-14","time":"15:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"6808e0e0-2c91-4fc7-a7a7-2489bc403817","text":"MARINE & WALK 散歩","date":"2026-02-14","time":"14:00","section":2,"order":2,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"6cdf43d6-c0e1-47ab-a959-9bed00d9c534","text":"アニヴェルセル みなとみらい ディナー予約済","date":"2026-02-14","time":"18:00","section":2,"order":3,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"e0edd106-3c1a-4a2f-b5e4-64f909196648","text":"あいみょん ライブ 横浜アリーナ","date":"2026-02-15","time":"17:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"ed802d46-1e6f-4e8e-85ab-42448c30ec94","text":"AFLOAT 横浜 カット予約","date":"2026-02-15","time":"11:00","section":2,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"0b620f74-5f5d-43c1-a8fb-19e74ee67f63","text":"ライブ前にみさきと合流","date":"2026-02-15","time":"15:00","section":2,"order":2,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"63fd2b42-077b-4de0-baaf-39ac7548ca32","text":"めし","date":"2026-02-15","time":"13:00","section":2,"order":3,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"69dd6d27-c23a-4bf3-92d3-cf0afa32d108","text":"お母さん誕生日","date":"2026-02-16","time":"12:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"43704123-24b9-4914-94c2-4a0c9e270749","text":"実家帰る","date":"2026-02-16","time":"11:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"b73e666c-e5f0-476e-b8dc-d53294d18467","text":"プレゼント ルミネで買う","date":"2026-02-16","time":"10:00","section":1,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"fd196cc7-7214-4d1a-b97c-44a3aadd48c8","text":"妹の塾送り","date":"2026-02-16","time":"17:00","section":3,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"21f7fa53-d2d2-46a5-ad8b-ad1c86ac61b1","text":"マック 10:00-15:00","date":"2026-02-17","time":"10:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"2a5f452a-811a-4cca-bccd-f6c8edf600fa","text":"制御工学 4限","date":"2026-02-17","time":"14:30","section":2,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"ef02a42d-fbe5-4cdc-abbc-5bea28d64499","text":"履修登録確認","date":"2026-02-17","time":"20:00","section":3,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"9d8453d3-7a58-4868-b83a-b5e0a935907f","text":"店長MTG シフト調整","date":"2026-02-19","time":"16:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"2f071eb8-fe0e-4757-8eb3-3fd3bed88271","text":"マック 17:00-22:00","date":"2026-02-19","time":"17:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"fcc7da9e-dfa7-4c61-92ff-9f866ac3b198","text":"EXILE ライブ 東京ドーム","date":"2026-02-22","time":"16:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"7fe096fd-18e3-4b76-97fb-d45e1b47f8ee","text":"友達と現地集合 14:30","date":"2026-02-22","time":"14:30","section":2,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"24a1969e-302d-4631-9557-5ea289c957a1","text":"家賃支払日","date":"2026-02-27","time":"09:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"cefc7416-bd08-42cd-bb43-a9a93b7775b4","text":"おばあちゃん 月1通院","date":"2026-02-27","time":"10:00","section":1,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"4726c52b-6145-40de-a6ce-7c81a4e1159a","text":"ゼミ中間発表","date":"2026-03-12","time":"14:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"487ab703-72be-4fd7-ace4-cdf3251f08d7","text":"翔太 誕生日","date":"2026-03-21","time":"18:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"975c669a-5d59-4ab6-b6ae-8353bd427791","text":"春休み旅行 京都 計画","date":"2026-03-25","time":"10:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"1d5e68b8-87d9-40a1-8eeb-2542ff87d270","text":"新学期ガイダンス","date":"2026-04-01","time":"10:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"43a651ce-eb2a-4390-b6a1-5bebf9dd7451","text":"薬飲む","date":"2026-02-09","time":null,"section":2,"order":99,"completed":false,"showInDaily":true,"showInWeekly":false},{"id":"fe60d6cb-131f-421b-8372-304505a9eb98","text":"日記書く","date":"2026-02-09","time":null,"section":4,"order":99,"completed":false,"showInDaily":true,"showInWeekly":false},{"id":"ddfec598-b81c-4999-9aef-aab86bda0eba","text":"教科書 生協で買う","date":"2026-02-10","time":null,"section":3,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"740c0b4a-fe72-4369-b494-a3746de1f102","text":"メルカリ出品 冬服","date":"2026-02-11","time":null,"section":4,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true}];
+    const INITIAL_DATA = [{"id":"58c3b5d3-3dab-468e-b94d-644ad8ff2b67","text":"熱力学の宿題","date":"2026-02-09","time":"10:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"6db44052-8f93-481c-bd68-9d62ded414c0","text":"おばあちゃん家 様子見","date":"2026-02-09","time":"14:00","section":1,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"965653ab-a245-461f-99a5-efe137002ab4","text":"めし","date":"2026-02-09","time":"12:00","section":2,"order":0,"completed":true,"showInDaily":true,"showInWeekly":true},{"id":"01bf2de0-1d4f-493b-a62e-ce52f255ea16","text":"洗濯","date":"2026-02-09","time":"09:00","section":2,"order":1,"completed":true,"showInDaily":true,"showInWeekly":true},{"id":"3c916322-2347-43ff-ace2-f284d0b60c1f","text":"LINE返す","date":"2026-02-09","time":"20:00","section":3,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"5b60a61c-803c-42d1-9208-15e500884b35","text":"Netflix","date":"2026-02-09","time":"22:00","section":4,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"54267021-2c61-43f1-b554-be7f01f41a30","text":"材料力学 2限","date":"2026-02-10","time":"10:30","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"6b698034-60d9-4825-a2e2-86a0681a676f","text":"熱力学レポート提出","date":"2026-02-10","time":"23:59","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"d2b7ce67-23e0-42f5-84b2-7f9126258398","text":"マック 17:00-22:00","date":"2026-02-10","time":"17:00","section":2,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"36612121-39ac-4d7c-b0cf-6c310a6e9045","text":"新人トレーニング 佐藤さん","date":"2026-02-10","time":"18:00","section":1,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"68e1d1ea-89e1-4552-bde9-305d3544d0f1","text":"めし","date":"2026-02-10","time":"12:00","section":2,"order":2,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"2a6a6f00-8bae-41c8-8421-499cdf0fcf7c","text":"おばあちゃん病院付き添い 横浜市大","date":"2026-02-11","time":"10:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"2d5d4e32-05aa-4d42-bcc2-1111ecc31761","text":"ケアマネさん電話","date":"2026-02-11","time":"15:00","section":1,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"8369e595-04d8-4ef5-849b-b3b8e1c28f7e","text":"薬局 処方箋","date":"2026-02-11","time":"12:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"e24e5245-7517-46ca-81d8-b9d2e9ddf8ea","text":"部屋掃除","date":"2026-02-11","time":"16:00","section":4,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"42e13b28-a103-4b20-a755-647a405a7f64","text":"研究室ゼミ 発表","date":"2026-02-12","time":"14:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"35fbff5f-bd46-4579-81f7-f6a8405590ba","text":"ゼミ発表スライド最終確認","date":"2026-02-12","time":"09:00","section":1,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"28bc4e34-dd30-4486-95bd-7a4ffd509d1c","text":"マック 17:00-21:00","date":"2026-02-12","time":"17:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"b6435ad1-fb20-4a17-9a50-295d6360eb63","text":"めし","date":"2026-02-12","time":"12:00","section":2,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"a2169fc7-43f3-4b7b-9f07-858263188232","text":"バイトグループLINE確認","date":"2026-02-12","time":"22:00","section":3,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"65106b5a-1a3a-4552-b4f4-e45f7928764e","text":"流体力学 3限","date":"2026-02-13","time":"13:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"3d883e67-e613-4da8-880e-9a2d7f2f4d23","text":"友達とカラオケ まねきねこ横浜西口","date":"2026-02-13","time":"19:00","section":2,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"9fce656c-2605-4787-9c72-95eb7a1b8180","text":"ゆうかに誕プレ渡す","date":"2026-02-13","time":"19:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"30cc43fb-6da3-4bdd-beec-d10ed873d179","text":"めし","date":"2026-02-13","time":"12:00","section":2,"order":2,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"f9061ff5-b090-4a82-b5b0-508dafe7024f","text":"翔太と横浜デート","date":"2026-02-14","time":"11:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"95040bd3-e274-4732-8f67-8aa6e5990e8f","text":"bills 横浜赤レンガ ランチ","date":"2026-02-14","time":"12:00","section":2,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"93f82bee-882b-4229-912d-3fec6f116767","text":"チョコ渡す","date":"2026-02-14","time":"15:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"6808e0e0-2c91-4fc7-a7a7-2489bc403817","text":"MARINE & WALK 散歩","date":"2026-02-14","time":"14:00","section":2,"order":2,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"6cdf43d6-c0e1-47ab-a959-9bed00d9c534","text":"アニヴェルセル みなとみらい ディナー予約済","date":"2026-02-14","time":"18:00","section":2,"order":3,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"e0edd106-3c1a-4a2f-b5e4-64f909196648","text":"あいみょん ライブ 横浜アリーナ","date":"2026-02-15","time":"17:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"ed802d46-1e6f-4e8e-85ab-42448c30ec94","text":"AFLOAT 横浜 カット予約","date":"2026-02-15","time":"11:00","section":2,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"0b620f74-5f5d-43c1-a8fb-19e74ee67f63","text":"ライブ前にみさきと合流","date":"2026-02-15","time":"15:00","section":2,"order":2,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"63fd2b42-077b-4de0-baaf-39ac7548ca32","text":"めし","date":"2026-02-15","time":"13:00","section":2,"order":3,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"69dd6d27-c23a-4bf3-92d3-cf0afa32d108","text":"お母さん誕生日","date":"2026-02-16","time":"12:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"43704123-24b9-4914-94c2-4a0c9e270749","text":"実家帰る","date":"2026-02-16","time":"11:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"b73e666c-e5f0-476e-b8dc-d53294d18467","text":"プレゼント ルミネで買う","date":"2026-02-16","time":"10:00","section":1,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"fd196cc7-7214-4d1a-b97c-44a3aadd48c8","text":"妹の塾送り","date":"2026-02-16","time":"17:00","section":3,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"21f7fa53-d2d2-46a5-ad8b-ad1c86ac61b1","text":"マック 10:00-15:00","date":"2026-02-17","time":"10:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"2a5f452a-811a-4cca-bccd-f6c8edf600fa","text":"制御工学 4限","date":"2026-02-17","time":"14:30","section":2,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"ef02a42d-fbe5-4cdc-abbc-5bea28d64499","text":"履修登録確認","date":"2026-02-17","time":"20:00","section":3,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"9d8453d3-7a58-4868-b83a-b5e0a935907f","text":"店長MTG シフト調整","date":"2026-02-19","time":"16:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"2f071eb8-fe0e-4757-8eb3-3fd3bed88271","text":"マック 17:00-22:00","date":"2026-02-19","time":"17:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"fcc7da9e-dfa7-4c61-92ff-9f866ac3b198","text":"EXILE ライブ 東京ドーム","date":"2026-02-22","time":"16:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"7fe096fd-18e3-4b76-97fb-d45e1b47f8ee","text":"友達と現地集合 14:30","date":"2026-02-22","time":"14:30","section":2,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"24a1969e-302d-4631-9557-5ea289c957a1","text":"家賃支払日","date":"2026-02-27","time":"09:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"cefc7416-bd08-42cd-bb43-a9a93b7775b4","text":"おばあちゃん 月1通院","date":"2026-02-27","time":"10:00","section":1,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"4726c52b-6145-40de-a6ce-7c81a4e1159a","text":"ゼミ中間発表","date":"2026-03-12","time":"14:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"487ab703-72be-4fd7-ace4-cdf3251f08d7","text":"翔太 誕生日","date":"2026-03-21","time":"18:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"975c669a-5d59-4ab6-b6ae-8353bd427791","text":"春休み旅行 京都 計画","date":"2026-03-25","time":"10:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"1d5e68b8-87d9-40a1-8eeb-2542ff87d270","text":"新学期ガイダンス","date":"2026-04-01","time":"10:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"43a651ce-eb2a-4390-b6a1-5bebf9dd7451","text":"薬飲む","date":"2026-02-09","time":null,"section":2,"order":99,"completed":false,"showInDaily":true,"showInWeekly":false},{"id":"fe60d6cb-131f-421b-8372-304505a9eb98","text":"日記書く","date":"2026-02-09","time":null,"section":4,"order":99,"completed":false,"showInDaily":true,"showInWeekly":false},{"id":"ddfec598-b81c-4999-9aef-aab86bda0eba","text":"教科書 生協で買う","date":"2026-02-10","time":null,"section":3,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"740c0b4a-fe72-4369-b494-a3746de1f102","text":"メルカリ出品 冬服","date":"2026-02-11","time":null,"section":4,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"note-001","kind":"note","title":"翔太のこと","text":"2/14 バレンタイン\nanivercelle でディナー、すごく緊張した\nでもめちゃくちゃ楽しかった\n翔太がずっとニコニコしてたの、かわいかった\n誕生日 3/21 → プレゼント何にする？\nGUCCIの財布？予算3万くらいまで","margin":"2.14\nバレンタイン","createdAt":"2026-02-14T20:00:00.000Z","updatedAt":"2026-02-14T21:30:00.000Z"},{"id":"note-002","kind":"note","title":"ゼミ発表メモ 2/12","text":"テーマ：都市型水害における排水システムの最適化\n\n発表の流れ\n1. 研究背景（気候変動と都市浸水）\n2. 先行研究レビュー\n3. 提案手法（遺伝的アルゴリズム適用）\n4. シミュレーション結果\n5. 考察・今後の課題\n\n先生からの指摘\n→ 境界条件の設定根拠が弱い\n→ 比較対象を増やす\n→ 3/12の中間発表までに修正","margin":"2.12\nゼミ","createdAt":"2026-02-12T16:00:00.000Z","updatedAt":"2026-02-12T18:00:00.000Z"},{"id":"note-003","kind":"note","title":"今週の献立","text":"月　チキンと野菜の塩麹炒め / 味噌汁\n火　パスタ（トマト缶使い切り）\n水　鍋（白菜・豚バラ・えのき）\n木　バイトだから適当でOK\n金　翔太来るかも → 唐揚げ作る！\n土　実家帰るから不要\n日　残り物で","margin":"2/25〜\n今週","createdAt":"2026-02-24T21:00:00.000Z","updatedAt":"2026-02-24T21:15:00.000Z"},{"id":"note-004","kind":"note","title":"友達の誕生日まとめ","text":"みさき　3/5　→ アクセ好き、AGETE系\nゆうか　2/13　→ 渡し済み✓ コスメセット\n翔太　　3/21　→ 財布か香水で迷い中\nりな　　4/8　→ 新学期近いからケアセット？\nお母さん 2/16 → 渡し済み✓ お花とケーキ\nおばあちゃん 8/3 → まだ先","margin":"誕生日\nリスト","createdAt":"2026-02-01T10:00:00.000Z","updatedAt":"2026-02-16T14:00:00.000Z"},{"id":"note-005","kind":"note","title":"春休み旅行 京都計画","text":"日程：3/25（水）〜3/28（土）3泊4日\nメンバー：みさき・ゆうか・わたし\n\n宿　京都駅近のホテルで検索中\n　→ ドーミーイン京都が安くて良さそう（1泊5800円）\n\n行きたいとこ\n・伏見稲荷（早朝！人少ない）\n・嵐山・竹林\n・錦市場でたべあるき\n・哲学の道（桜微妙かな）\n・清水寺夜間拝観\n\n予算　交通＋宿で3万くらい","margin":"3/25〜\n京都","createdAt":"2026-02-20T20:00:00.000Z","updatedAt":"2026-02-23T22:00:00.000Z"},{"id":"note-006","kind":"note","title":"バイトメモ（マック）","text":"店長：田中さん　副店長：橋本さん\n\nシフト基本　月水金＋週末どちらか\n時給 1150円（深夜 1438円）\n\n新人 佐藤さん（2/10〜）のトレーニング担当\n→ レジはだいぶ慣れてきた\n→ ドリンク作りはまだ確認必要\n\n3月のシフト希望\n・3/25〜28 京都旅行で全部NG\n・3/21 翔太誕生日なので夕方以降NG","margin":"バイト\nメモ","createdAt":"2026-02-05T18:00:00.000Z","updatedAt":"2026-02-19T17:30:00.000Z"},{"id":"note-007","kind":"note","title":"おばあちゃんのこと","text":"担当ケアマネ：山田さん（☎ 045-xxx-xxxx）\n主治医：横浜市大付属 内科 鈴木先生\n\n薬　血圧の薬（朝1錠）/ 胃薬（毎食後）\n通院　月1回 第4金曜 10:00〜\n\n最近の様子\n・2/11 少し足がむくんでいた\n・食欲は普通\n・転倒注意（浴室マット買い足したい）\n\nやること\n→ 浴室の滑り止めマット追加注文","margin":"おばあ\nちゃん","createdAt":"2026-01-15T10:00:00.000Z","updatedAt":"2026-02-11T15:30:00.000Z"},{"id":"note-008","kind":"note","title":"2/25 日記","text":"今日は制御工学の課題が思ったより早く終わって、珍しく夜に余裕があった\n久しぶりにゆっくりお風呂入って、アロマたいた\nこのアプリ（yarukotolist）使い始めてみてる\n自由帳のページがノート感あっていい感じ\n翔太に「最近ちゃんとしてるじゃん」って言われた\nそれが一番うれしかったかもしれない","margin":"2.25\n日記","createdAt":"2026-02-25T22:30:00.000Z","updatedAt":"2026-02-25T22:45:00.000Z"},{"id":"note-009","kind":"note","title":"就活メモ（3年後半〜）","text":"志望業界（今のところ）\n1. インフラ・建設コンサル（専攻活かせる）\n2. 鉄道・電力などインフラ系\n3. 都市開発系デベロッパー\n\nインターン情報\n・日建設計　夏インターン → エントリー済\n・UR都市機構　秋インターン → 要確認\n\n資格\n→ 技術士補（卒業前に取れるか確認）\n→ TOEIC 現在 680点 → 750目標\n\n研究室の先輩に話聞く（3月に時間作る）","margin":"就活\nメモ","createdAt":"2026-02-10T14:00:00.000Z","updatedAt":"2026-02-22T20:00:00.000Z"},{"id":"note-010","kind":"note","title":"買い物リスト","text":"食材\n□ 卵　□ 豆腐　□ 鶏むね肉\n□ ほうれん草　□ えのき\n□ トマト缶（2個）\n\n日用品\n□ シャンプー（残り少ない）\n□ 浴室マット（おばあちゃん用）\n□ メモ帳（大学用）\n\n欲しいもの\n□ ニベア青缶（amazonで安い）\n□ 無印のアロマ詰め替え","margin":"買い物","createdAt":"2026-02-24T19:00:00.000Z","updatedAt":"2026-02-25T10:00:00.000Z"}];
     const INITIAL_PURPOSE = "熱力学レポート提出する";
     const INITIAL_STOP_CONDITION = "終わるまで寝ない。ただし2時で強制終了。";
 
@@ -6076,6 +6326,7 @@
       const monthlyView = document.getElementById('monthlyView');
       const yearlyView = document.getElementById('yearlyView');
       const settingsView = document.getElementById('settingsView');
+      const notebookView = document.getElementById('notebookView');
       
       // 全ビューを非表示
       dailyView.style.display = 'none';
@@ -6083,6 +6334,7 @@
       monthlyView.style.display = 'none';
       yearlyView.style.display = 'none';
       settingsView.style.display = 'none';
+      notebookView.style.display = 'none';
       document.getElementById('timelineView').style.display = 'none';
       
       // タブのアクティブ状態を更新
@@ -6106,9 +6358,8 @@
       } else if (view === 'weekly') {
         weeklyView.style.display = 'block';
         document.getElementById('navWeekly').classList.add('active');
-        currentWeekDate = new Date(); // 今週にリセット
+        currentWeekDate = new Date();
         renderWeeklyView();
-        // 現在時刻にスクロール（少し上にオフセット）
         setTimeout(() => {
           const now = new Date();
           const currentHourEl = document.getElementById(`weekly-time-${now.getHours()}`);
@@ -6132,12 +6383,411 @@
         settingsView.style.display = 'block';
         document.getElementById('navSettings').classList.add('active');
         loadSettingsUI();
+      } else if (view === 'notebook') {
+        notebookView.style.display = 'block';
+        document.getElementById('navNotebook').classList.add('active');
+        nbRender();
       }
       
       // 状態を保存（設定画面以外）
       if (view !== 'settings') {
         localStorage.setItem('currentView', view);
       }
+    }
+
+    // ===================================================
+    // 自由帳 v0.12.0 — テキスト一本
+    // ===================================================
+
+    var nbCurrentId = null;   // 現在開いているページID
+    var nbSaveTimer = null;   // 自動保存タイマー
+
+    // ---- データアクセス（allTasks統合 kind="note"）----
+    function nbPages() {
+      // allTasksからkind="note"のみ抽出し、order順に並べる
+      return allTasks
+        .filter(function(t){ return t.kind === 'note'; })
+        .sort(function(a,b){ return (a.order||0) - (b.order||0); });
+    }
+    function nbPagesSet(pages) {
+      // allTasksからnoteを全削除して差し替え
+      allTasks = allTasks.filter(function(t){ return t.kind !== 'note'; });
+      pages.forEach(function(p, i){ p.order = i; });
+      allTasks = allTasks.concat(pages);
+      saveAllTasks();
+    }
+    function nbPage(id) {
+      return nbPages().find(function(p){ return p.id === id; }) || null;
+    }
+
+    // ---- メインレンダリング ----
+    function nbRender() {
+      nbRenderShelf();
+      nbRenderBody();
+    }
+
+    // ---- 棚タブ ----
+    function nbRenderShelf() {
+      var pages = nbPages();
+      var shelf = document.getElementById('nbShelf');
+      shelf.innerHTML = '';
+
+      pages.forEach(function(p, idx) {
+        var tab = document.createElement('div');
+        tab.className = 'nb-shelf-tab' + (p.id === nbCurrentId ? ' active' : '');
+        tab.dataset.pid = p.id;
+
+        var labelSpan = document.createElement('span');
+        labelSpan.style.cssText = 'flex:1;overflow:hidden;text-overflow:ellipsis;';
+        labelSpan.textContent = p.title || '無題';
+
+        var delBtn = document.createElement('button');
+        delBtn.className = 'nb-shelf-tab-del';
+        delBtn.title = '削除';
+        delBtn.textContent = '✕';
+        delBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          nbDeletePage(p.id);
+        });
+
+        tab.appendChild(labelSpan);
+        tab.appendChild(delBtn);
+        tab.addEventListener('click', function(){ nbOpen(p.id); });
+
+        // D&D初期化
+        nbInitDnd(tab, idx);
+
+        shelf.appendChild(tab);
+      });
+
+      var addBtn = document.createElement('button');
+      addBtn.className = 'nb-shelf-add';
+      addBtn.textContent = '＋ 新しいページ';
+      addBtn.addEventListener('click', nbNewPage);
+      shelf.appendChild(addBtn);
+    }
+
+    // ---- ボディ ----
+    function nbRenderBody() {
+      var body = document.getElementById('nbBody');
+      var pages = nbPages();
+
+      if (pages.length === 0 || !nbCurrentId) {
+        body.innerHTML =
+          '<div class="nb-empty-state">' +
+          '<span class="nb-empty-state-icon">📒</span>' +
+          '<p>まだページがありません<br>メモ、アイデア、対策ノート、なんでも</p>' +
+          '<button class="nb-empty-state-btn" onclick="nbNewPage()">＋ 最初のページを作る</button>' +
+          '</div>';
+        return;
+      }
+
+      var page = nbPage(nbCurrentId);
+      if (!page) {
+        body.innerHTML = '<div class="nb-empty-state"><span class="nb-empty-state-icon">📒</span><p>ページを選んでください</p></div>';
+        return;
+      }
+
+      // タイトル＋保存インジケータ
+      var titleEl = document.createElement('input');
+      titleEl.className = 'nb-title';
+      titleEl.id = 'nbTitleInput';
+      titleEl.type = 'text';
+      titleEl.placeholder = 'タイトル';
+      titleEl.value = page.title || '';
+      titleEl.addEventListener('input', nbOnChange);
+
+      var statusEl = document.createElement('div');
+      statusEl.className = 'nb-status';
+      statusEl.id = 'nbStatus';
+
+      // コーネル式ノート
+      var ruled = document.createElement('div');
+      ruled.className = 'nb-ruled';
+
+      // 左マージン欄
+      var marginCol = document.createElement('div');
+      marginCol.className = 'nb-margin';
+      var marginTa = document.createElement('textarea');
+      marginTa.className = 'nb-margin-textarea';
+      marginTa.id = 'nbMarginarea';
+      marginTa.placeholder = '日付\nメモ';
+      marginTa.value = page.margin || '';
+      marginTa.addEventListener('input', function(){ nbOnChange(); nbSyncHeight(); });
+      marginCol.appendChild(marginTa);
+
+      // 本文欄
+      var mainCol = document.createElement('div');
+      mainCol.className = 'nb-main-col';
+      var mainTa = document.createElement('textarea');
+      mainTa.className = 'nb-textarea';
+      mainTa.id = 'nbTextarea';
+      mainTa.placeholder = 'ここに書いてください...';
+      mainTa.value = page.text || '';
+      mainTa.addEventListener('input', function(){ nbOnChange(); nbSyncHeight(); });
+      mainCol.appendChild(mainTa);
+
+      ruled.appendChild(marginCol);
+      ruled.appendChild(mainCol);
+
+      body.innerHTML = '';
+      body.appendChild(titleEl);
+      body.appendChild(statusEl);
+      body.appendChild(ruled);
+
+      nbSyncHeight();
+    }
+
+    // 左右textareaの高さを同期
+    function nbSyncHeight() {
+      var mTa = document.getElementById('nbMarginarea');
+      var tTa = document.getElementById('nbTextarea');
+      if (!mTa || !tTa) return;
+      // 両方をautoにしてから大きい方に合わせる
+      mTa.style.height = 'auto';
+      tTa.style.height = 'auto';
+      var h = Math.max(520, mTa.scrollHeight, tTa.scrollHeight) + 32;
+      mTa.style.height = h + 'px';
+      tTa.style.height = h + 'px';
+    }
+
+    // ---- 新規ページ ----
+    function nbNewPage() {
+      nbFlush();
+      var pages = nbPages();
+      var id = generateTaskId();
+      var now = new Date().toISOString();
+      var newPage = {
+        id: id, kind: 'note',
+        title: '', text: '', margin: '',
+        order: 0, // 先頭に挿入するので0
+        createdAt: now, updatedAt: now
+      };
+      // 既存ページのorderを1つずらして先頭に挿入
+      pages.forEach(function(p){ p.order = (p.order||0) + 1; });
+      pages.unshift(newPage);
+      nbPagesSet(pages);
+      nbCurrentId = id;
+      nbRender();
+      setTimeout(function(){
+        var t = document.getElementById('nbTitleInput');
+        if (t) t.focus();
+      }, 40);
+    }
+
+    // ---- ページを開く ----
+    function nbOpen(id) {
+      nbFlush();
+      nbCurrentId = id;
+      nbRender();
+      var body = document.getElementById('nbBody');
+      if (body) body.scrollTop = 0;
+    }
+
+    // ---- ページ削除（カスタムモーダル使用）----
+    var nbDeleteTargetId = null;
+    function nbDeletePage(id) {
+      nbDeleteTargetId = id;
+      var modal = document.getElementById('customModal');
+      var msg = modal.querySelector('.modal-message');
+      var confirmBtn = modal.querySelector('.modal-btn-confirm');
+      if (msg) msg.textContent = 'このページを削除しますか？この操作は取り消せません。';
+      if (confirmBtn) {
+        confirmBtn.textContent = '削除';
+        confirmBtn.onclick = function() {
+          closeModal();
+          var pages = nbPages().filter(function(p){ return p.id !== nbDeleteTargetId; });
+          nbPagesSet(pages);
+          if (nbCurrentId === nbDeleteTargetId) {
+            nbCurrentId = pages.length > 0 ? pages[0].id : null;
+          }
+          nbDeleteTargetId = null;
+          nbRender();
+        };
+      }
+      modal.classList.add('show');
+    }
+
+    // ---- 変更検知 ----
+    function nbOnChange() {
+      clearTimeout(nbSaveTimer);
+      var st = document.getElementById('nbStatus');
+      if (st) st.textContent = '';
+      nbSaveTimer = setTimeout(nbFlush, 800);
+    }
+
+    // ---- 即時保存 ----
+    function nbFlush() {
+      clearTimeout(nbSaveTimer);
+      if (!nbCurrentId) return;
+      var pages = nbPages();
+      var idx = pages.findIndex(function(p){ return p.id === nbCurrentId; });
+      if (idx < 0) return;
+
+      var titleEl  = document.getElementById('nbTitleInput');
+      var textEl   = document.getElementById('nbTextarea');
+      var marginEl = document.getElementById('nbMarginarea');
+      if (!titleEl && !textEl) return;
+
+      var title  = titleEl  ? titleEl.value  : pages[idx].title;
+      var text   = textEl   ? textEl.value   : pages[idx].text;
+      var margin = marginEl ? marginEl.value : pages[idx].margin || '';
+
+      // タイトルが空なら本文1行目を自動セット
+      if (!title.trim() && text.trim()) {
+        title = text.trim().split('\n')[0].slice(0, 40);
+        if (titleEl) titleEl.value = title;
+      }
+
+      pages[idx].title     = title;
+      pages[idx].text      = text;
+      pages[idx].margin    = margin;
+      pages[idx].updatedAt = new Date().toISOString();
+      nbPagesSet(pages);
+      nbRenderShelf();
+
+      var st = document.getElementById('nbStatus');
+      if (st) {
+        st.textContent = '保存済み';
+        setTimeout(function(){ if (st && st.textContent === '保存済み') st.textContent = ''; }, 2000);
+      }
+    }
+
+    // ---- テキストエリア高さ（後方互換で残す）----
+    function nbGrow(el) {
+      el.style.height = 'auto';
+      el.style.height = Math.max(520, el.scrollHeight + 32) + 'px';
+    }
+
+    // ---- HTMLエスケープ ----
+    function nbEsc(s) {
+      if (!s) return '';
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ===================================================
+    // タブ D&D 並び替え（マウス＋タッチ対応）
+    // ===================================================
+    var nbDnd = {
+      el: null,       // ドラッグ中のタブ要素
+      fromIdx: -1,    // 開始インデックス
+      ghost: null,    // ゴースト
+      startX: 0,
+      startY: 0,
+      moved: false
+    };
+
+    function nbInitDnd(tab, idx) {
+      // マウス
+      tab.addEventListener('mousedown', function(e) {
+        if (e.target.classList.contains('nb-shelf-tab-del')) return;
+        nbDndStart(tab, idx, e.clientX, e.clientY);
+      });
+      // タッチ
+      tab.addEventListener('touchstart', function(e) {
+        if (e.target.classList.contains('nb-shelf-tab-del')) return;
+        var t = e.touches[0];
+        nbDndStart(tab, idx, t.clientX, t.clientY);
+      }, { passive: true });
+    }
+
+    function nbDndStart(tab, idx, x, y) {
+      nbDnd.el = tab;
+      nbDnd.fromIdx = idx;
+      nbDnd.startX = x;
+      nbDnd.startY = y;
+      nbDnd.moved = false;
+
+      // ゴースト作成
+      var ghost = tab.cloneNode(true);
+      ghost.style.cssText = 'position:fixed;pointer-events:none;opacity:0.75;z-index:9999;' +
+        'width:' + tab.offsetWidth + 'px;height:' + tab.offsetHeight + 'px;' +
+        'background:#fefcf8;border:1.5px solid #bfb9b0;border-radius:8px 8px 0 0;' +
+        'padding:8px 14px;font-size:0.82em;font-weight:600;color:#1c1c1e;' +
+        'display:flex;align-items:center;gap:5px;box-shadow:0 4px 16px rgba(0,0,0,0.15);';
+      ghost.style.left = x + 'px';
+      ghost.style.top  = y + 'px';
+      document.body.appendChild(ghost);
+      nbDnd.ghost = ghost;
+
+      // グローバルイベント
+      document.addEventListener('mousemove', nbDndMove);
+      document.addEventListener('mouseup',   nbDndEnd);
+      document.addEventListener('touchmove', nbDndMoveTouch, { passive: false });
+      document.addEventListener('touchend',  nbDndEnd);
+    }
+
+    function nbDndMove(e) {
+      nbDndMoveAt(e.clientX, e.clientY);
+    }
+    function nbDndMoveTouch(e) {
+      e.preventDefault();
+      var t = e.touches[0];
+      nbDndMoveAt(t.clientX, t.clientY);
+    }
+    function nbDndMoveAt(x, y) {
+      if (!nbDnd.el) return;
+      nbDnd.moved = true;
+      nbDnd.el.classList.add('nb-dragging');
+      if (nbDnd.ghost) {
+        nbDnd.ghost.style.left = (x - 30) + 'px';
+        nbDnd.ghost.style.top  = (y - 20) + 'px';
+      }
+      // ドロップ先ハイライト
+      var shelf = document.getElementById('nbShelf');
+      var tabs = shelf.querySelectorAll('.nb-shelf-tab');
+      tabs.forEach(function(t){ t.classList.remove('nb-drag-over'); });
+      var target = nbDndTargetTab(x, y);
+      if (target && target !== nbDnd.el) target.classList.add('nb-drag-over');
+    }
+
+    function nbDndTargetTab(x, y) {
+      var shelf = document.getElementById('nbShelf');
+      var tabs = shelf.querySelectorAll('.nb-shelf-tab');
+      var found = null;
+      tabs.forEach(function(t) {
+        var r = t.getBoundingClientRect();
+        if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom + 30) found = t;
+      });
+      return found;
+    }
+
+    function nbDndEnd(e) {
+      document.removeEventListener('mousemove', nbDndMove);
+      document.removeEventListener('mouseup',   nbDndEnd);
+      document.removeEventListener('touchmove', nbDndMoveTouch);
+      document.removeEventListener('touchend',  nbDndEnd);
+
+      if (nbDnd.ghost) { nbDnd.ghost.remove(); nbDnd.ghost = null; }
+      if (!nbDnd.el) return;
+      nbDnd.el.classList.remove('nb-dragging');
+
+      var cx = e.clientX || (e.changedTouches && e.changedTouches[0].clientX) || 0;
+      var cy = e.clientY || (e.changedTouches && e.changedTouches[0].clientY) || 0;
+
+      if (nbDnd.moved) {
+        var target = nbDndTargetTab(cx, cy);
+        var shelf = document.getElementById('nbShelf');
+        if (target) target.classList.remove('nb-drag-over');
+
+        if (target && target !== nbDnd.el) {
+          // ページ配列を並び替え
+          var pages = nbPages();
+          var tabs = Array.from(shelf.querySelectorAll('.nb-shelf-tab'));
+          var fromIdx = tabs.indexOf(nbDnd.el);
+          var toIdx   = tabs.indexOf(target);
+          if (fromIdx >= 0 && toIdx >= 0 && fromIdx !== toIdx) {
+            var moved = pages.splice(fromIdx, 1)[0];
+            pages.splice(toIdx, 0, moved);
+            nbPagesSet(pages);
+            nbRenderShelf();
+          }
+        }
+      }
+
+      nbDnd.el = null;
+      nbDnd.fromIdx = -1;
+      nbDnd.moved = false;
     }
 
     // ===== 設定関連 =====
@@ -6991,9 +7641,11 @@
       localStorage.setItem('simpleStamps', JSON.stringify(stamps));
     }
 
-    // v0.10.0: 旧localStorageキー掃除（stampData/simpleMemos → allTasksに統合済み）
+    // v0.10.0: 旧localStorageキー掃除
     localStorage.removeItem('stampData');
     localStorage.removeItem('simpleMemos');
+    // v0.12.0: nbPages → allTasks統合
+    localStorage.removeItem('nbPages');
 
     // 起動時にシンプルモード適用
     applySimpleMode();
