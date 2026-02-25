@@ -2027,7 +2027,7 @@
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.45);
+      background: rgba(0,0,0,0.5);
       z-index: 3000;
       align-items: center;
       justify-content: center;
@@ -2036,36 +2036,39 @@
     .nb-share-modal.show { display: flex; }
     .nb-share-modal-box {
       background: #fff;
-      border-radius: 16px;
+      border-radius: 20px;
       padding: 28px 28px 24px;
-      max-width: 480px;
+      max-width: 500px;
       width: 100%;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      max-height: 88vh;
+      overflow-y: auto;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.22);
+      position: relative;
     }
     .nb-share-modal-title {
-      font-size: 1.1em;
+      font-size: 1.12em;
       font-weight: 700;
       color: #1c1c1e;
-      margin-bottom: 6px;
+      margin-bottom: 5px;
     }
     .nb-share-modal-desc {
       font-size: 0.82em;
       color: #888;
-      line-height: 1.6;
-      margin-bottom: 18px;
+      line-height: 1.65;
+      margin-bottom: 16px;
     }
-    .nb-share-modal-desc strong { color: #555; }
+    .nb-share-modal-desc strong { color: #444; }
     .nb-share-section {
       background: #f7f7f7;
-      border-radius: 10px;
+      border-radius: 12px;
       padding: 14px 16px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
     .nb-share-section-label {
-      font-size: 0.73em;
+      font-size: 0.72em;
       font-weight: 600;
-      color: #999;
-      letter-spacing: 0.05em;
+      color: #aaa;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
       margin-bottom: 8px;
     }
@@ -2076,8 +2079,8 @@
       font-family: 'SF Mono', 'Menlo', monospace;
       color: #444;
       background: #fff;
-      border: 1px solid #e0e0e0;
-      border-radius: 7px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 8px;
       padding: 10px 12px;
       resize: none;
       outline: none;
@@ -2085,35 +2088,222 @@
       min-height: 72px;
     }
     .nb-share-code-area:focus { border-color: #aac4f0; }
-    .nb-share-btn-row {
-      display: flex;
-      gap: 8px;
-      margin-top: 8px;
-    }
     .nb-share-btn {
-      flex: 1;
-      padding: 9px 0;
-      border-radius: 8px;
+      display: block;
+      width: 100%;
+      padding: 12px 0;
+      border-radius: 11px;
       border: none;
-      font-size: 0.82em;
+      font-size: 0.88em;
       font-weight: 600;
       cursor: pointer;
-      transition: opacity 0.15s;
+      transition: opacity 0.15s, transform 0.1s;
+      margin-top: 8px;
+      letter-spacing: 0.01em;
     }
-    .nb-share-btn:hover { opacity: 0.8; }
+    .nb-share-btn:hover { opacity: 0.82; }
+    .nb-share-btn:active { transform: scale(0.98); }
     .nb-share-btn.primary { background: #1c1c1e; color: #fff; }
-    .nb-share-btn.green  { background: #34c759; color: #fff; }
-    .nb-share-btn.blue   { background: #007aff; color: #fff; }
-    .nb-share-btn.cancel { background: #f0f0f0; color: #555; }
+    .nb-share-btn.green   { background: #30d158; color: #fff; }
+    .nb-share-btn.blue    { background: #0a84ff; color: #fff; }
+    .nb-share-btn.cancel  { background: #f2f2f7; color: #555; }
+    .nb-share-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
     .nb-share-warn {
-      font-size: 0.75em;
-      color: #e06040;
+      font-size: 0.76em;
+      color: #d44;
       background: #fff5f2;
-      border-radius: 7px;
-      padding: 8px 12px;
+      border-radius: 8px;
+      padding: 9px 13px;
       margin-top: 10px;
-      line-height: 1.5;
+      line-height: 1.55;
+      border: 1px solid #ffd0c8;
     }
+    .nb-back-btn {
+      background: none;
+      border: none;
+      color: #aaa;
+      font-size: 0.8em;
+      cursor: pointer;
+      padding: 0;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      transition: color 0.12s;
+    }
+    .nb-back-btn:hover { color: #555; }
+
+    /* STEP0：ページ選択リスト */
+    .nb-page-select-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 240px;
+      overflow-y: auto;
+      margin: 4px 0 14px;
+      padding-right: 2px;
+    }
+    .nb-page-select-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1.5px solid #ebebeb;
+      background: #fafafa;
+      cursor: pointer;
+      transition: border-color 0.12s, background 0.12s;
+      user-select: none;
+    }
+    .nb-page-select-item:hover { background: #f0f6ff; border-color: #c0d8f8; }
+    .nb-page-select-item.selected { background: #eef5ff; border-color: #4da3f8; }
+    .nb-page-select-check {
+      width: 20px; height: 20px;
+      border-radius: 6px;
+      border: 2px solid #ccc;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8em;
+      transition: border-color 0.12s, background 0.12s;
+    }
+    .nb-page-select-item.selected .nb-page-select-check {
+      background: #0a84ff;
+      border-color: #0a84ff;
+      color: white;
+    }
+    .nb-page-select-title {
+      flex: 1;
+      font-size: 0.88em;
+      color: #1c1c1e;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .nb-page-select-date {
+      font-size: 0.72em;
+      color: #bbb;
+      flex-shrink: 0;
+    }
+    .nb-select-all-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .nb-select-all-btn {
+      background: none;
+      border: none;
+      font-size: 0.78em;
+      color: #0a84ff;
+      cursor: pointer;
+      padding: 0;
+    }
+    .nb-select-count {
+      font-size: 0.78em;
+      color: #888;
+    }
+
+    /* STEP1：感情報酬画面 */
+    @keyframes nb-letter-fly {
+      0%   { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; }
+      40%  { transform: translateY(-28px) scale(1.12) rotate(-4deg); opacity: 1; }
+      100% { transform: translateY(-8px) scale(1.05) rotate(0deg); opacity: 1; }
+    }
+    @keyframes nb-confetti-1 {
+      0%   { transform: translate(0,0) rotate(0deg); opacity: 1; }
+      100% { transform: translate(-32px, 48px) rotate(360deg); opacity: 0; }
+    }
+    @keyframes nb-confetti-2 {
+      0%   { transform: translate(0,0) rotate(0deg); opacity: 1; }
+      100% { transform: translate(28px, 52px) rotate(-280deg); opacity: 0; }
+    }
+    @keyframes nb-confetti-3 {
+      0%   { transform: translate(0,0) rotate(0deg); opacity: 1; }
+      100% { transform: translate(-18px, 44px) rotate(420deg); opacity: 0; }
+    }
+    @keyframes nb-confetti-4 {
+      0%   { transform: translate(0,0) rotate(0deg); opacity: 1; }
+      100% { transform: translate(36px, 40px) rotate(-320deg); opacity: 0; }
+    }
+    @keyframes nb-fade-up {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .nb-reward-wrap {
+      text-align: center;
+      padding: 8px 0 4px;
+    }
+    .nb-reward-letter-wrap {
+      position: relative;
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+    .nb-reward-letter {
+      font-size: 4em;
+      display: block;
+      animation: nb-letter-fly 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards;
+    }
+    .nb-confetti {
+      position: absolute;
+      font-size: 1em;
+      animation-duration: 0.9s;
+      animation-fill-mode: forwards;
+      animation-timing-function: ease-out;
+    }
+    .nb-confetti.c1 { top: 4px; left: -8px; animation-name: nb-confetti-1; animation-delay: 0.2s; }
+    .nb-confetti.c2 { top: 4px; right: -8px; animation-name: nb-confetti-2; animation-delay: 0.25s; }
+    .nb-confetti.c3 { top: 12px; left: -20px; animation-name: nb-confetti-3; animation-delay: 0.3s; }
+    .nb-confetti.c4 { top: 12px; right: -20px; animation-name: nb-confetti-4; animation-delay: 0.35s; }
+    .nb-reward-title {
+      font-size: 1.18em;
+      font-weight: 800;
+      color: #1c1c1e;
+      margin-bottom: 6px;
+      animation: nb-fade-up 0.4s 0.3s both;
+    }
+    .nb-reward-sub {
+      font-size: 0.82em;
+      color: #888;
+      line-height: 1.65;
+      margin-bottom: 20px;
+      animation: nb-fade-up 0.4s 0.45s both;
+    }
+    .nb-reward-cta {
+      animation: nb-fade-up 0.4s 0.6s both;
+    }
+
+    /* 方法選択カード */
+    .nb-method-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .nb-method-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 22px 12px 18px;
+      background: #f7f7f7;
+      border: 2px solid #ebebeb;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, transform 0.12s;
+      text-align: center;
+    }
+    .nb-method-card:hover {
+      border-color: #4da3f8;
+      background: #eef5ff;
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(10,132,255,0.1);
+    }
+    .nb-method-card:active { transform: translateY(0); box-shadow: none; }
+    .nb-method-icon { font-size: 2.2em; line-height: 1; }
+    .nb-method-label { font-size: 0.9em; font-weight: 700; color: #1c1c1e; }
+    .nb-method-sub   { font-size: 0.72em; color: #aaa; line-height: 1.3; }
 
     /* ===== 見開きレイアウト ===== */
 
@@ -6903,209 +7093,381 @@
       document.getElementById('nbShareModal').classList.remove('show');
     }
 
-    // ---- エクスポートモーダル表示 ----
+    // ===================================================
+    // 暗号化（AES-GCM 256bit / PBKDF2）
+    // ===================================================
+    async function nbDeriveKey(pw, salt) {
+      var km = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), {name:'PBKDF2'}, false, ['deriveKey']);
+      return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:200000,hash:'SHA-256'}, km, {name:'AES-GCM',length:256}, false, ['encrypt','decrypt']);
+    }
+    async function nbEncrypt(json, pw) {
+      var salt=crypto.getRandomValues(new Uint8Array(16)), iv=crypto.getRandomValues(new Uint8Array(12));
+      var ct=await crypto.subtle.encrypt({name:'AES-GCM',iv}, await nbDeriveKey(pw,salt), new TextEncoder().encode(json));
+      var buf=new Uint8Array(28+ct.byteLength);
+      buf.set(salt,0); buf.set(iv,16); buf.set(new Uint8Array(ct),28);
+      return 'NB1E:'+btoa(String.fromCharCode.apply(null,buf));
+    }
+    async function nbDecrypt(code, pw) {
+      var raw=Uint8Array.from(atob(code.slice(5)),c=>c.charCodeAt(0));
+      var pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:raw.slice(16,28)}, await nbDeriveKey(pw,raw.slice(0,16)), raw.slice(28));
+      return new TextDecoder().decode(pt);
+    }
+
+    // ===================================================
+    // 共有モーダル：4ステップ文通フロー
+    // ===================================================
+    var nbShareSelected = [];
+
+    function nbBuildExportJson(pageIds) {
+      var all = nbPages();
+      var sel = pageIds ? all.filter(function(p){ return pageIds.indexOf(p.id)>=0; }) : all;
+      return JSON.stringify({
+        version:'1.0', type:'yarukotolist-notebook',
+        exportedAt:new Date().toISOString(), pageCount:sel.length,
+        pages:sel.map(function(p){
+          return {id:p.id,title:p.title||'',dateL:p.dateL||'',textL:p.textL||'',
+            dateR:p.dateR||'',textR:p.textR||'',createdAt:p.createdAt,updatedAt:p.updatedAt};
+        })
+      },null,2);
+    }
+
+    function nbPwWidget(id, placeholder) {
+      return '<div style="display:flex;gap:8px;margin-top:8px;">'+
+        '<input id="'+id+'" type="password" placeholder="'+placeholder+'"'+
+          ' style="flex:1;padding:10px 14px;border:1.5px solid #e5e5e5;border-radius:10px;font-size:0.86em;outline:none;box-sizing:border-box;"'+
+          ' onfocus="this.style.borderColor=\'#4da3f8\'" onblur="this.style.borderColor=\'#e5e5e5\'">'+
+        '<button onclick="var i=document.getElementById(\''+id+'\');var t=i.type===\'text\';i.type=t?\'password\':\'text\';this.textContent=t?\'表示\':\'隠す\';"'+
+          ' style="padding:0 14px;border:1.5px solid #e5e5e5;border-radius:10px;background:#fafafa;font-size:0.82em;color:#888;cursor:pointer;white-space:nowrap;flex-shrink:0;">表示</button>'+
+      '</div>';
+    }
+
+    // エントリーポイント
     function nbShowExport() {
+      if (nbPages().length===0){ alert('エクスポートするページがありません。'); return; }
+      nbShareStep0();
+    }
+    function nbShowImport() { nbShareImportStep1(); }
+
+    // =====================
+    // STEP0：ページ選択
+    // =====================
+    function nbShareStep0() {
       var pages = nbPages();
-      if (pages.length === 0) {
-        alert('エクスポートするページがありません。');
-        return;
+      nbShareSelected = pages.map(function(p){ return p.id; });
+
+      function render() {
+        var count = nbShareSelected.length;
+        var allSel = count === pages.length;
+        var box = document.getElementById('nbShareModalBox');
+        box.innerHTML =
+          '<div class="nb-share-modal-title">✉️ 文通を始める</div>'+
+          '<div class="nb-share-modal-desc">送りたいページを選んでください。</div>'+
+          '<div class="nb-select-all-row">'+
+            '<span class="nb-select-count"><strong>'+count+'</strong> / '+pages.length+' ページ選択中</span>'+
+            '<button class="nb-select-all-btn" id="nbSelAllBtn">'+(allSel?'すべて解除':'すべて選択')+'</button>'+
+          '</div>'+
+          '<div class="nb-page-select-list" id="nbPageSelectList">'+
+            pages.map(function(p){
+              var sel=nbShareSelected.indexOf(p.id)>=0;
+              var d=p.updatedAt?p.updatedAt.slice(0,10).replace(/-/g,'/'):'';
+              return '<div class="nb-page-select-item'+(sel?' selected':'')+'" data-id="'+p.id+'">'+
+                '<div class="nb-page-select-check">'+(sel?'✓':'')+'</div>'+
+                '<div class="nb-page-select-title">'+(p.title||'無題')+'</div>'+
+                '<div class="nb-page-select-date">'+d+'</div>'+
+              '</div>';
+            }).join('')+
+          '</div>'+
+          '<button class="nb-share-btn primary" id="nbStep0Next"'+(count===0?' disabled':'')+'>'+count+'ページを送る準備をする →</button>'+
+          '<button class="nb-share-btn cancel" onclick="nbShareClose()">キャンセル</button>';
+
+        box.querySelectorAll('.nb-page-select-item').forEach(function(el){
+          el.addEventListener('click', function(){
+            var id=this.dataset.id, idx=nbShareSelected.indexOf(id);
+            if(idx>=0) nbShareSelected.splice(idx,1); else nbShareSelected.push(id);
+            render();
+          });
+        });
+        document.getElementById('nbSelAllBtn').addEventListener('click',function(){
+          nbShareSelected=allSel?[]:pages.map(function(p){return p.id;});
+          render();
+        });
+        var nb=document.getElementById('nbStep0Next');
+        if(nb&&!nb.disabled) nb.addEventListener('click', nbShareStep1Emotion);
       }
 
-      // 共有用データ（IDは保持、kindはnoteで固定）
-      var exportData = {
-        version: '1.0',
-        type: 'yarukotolist-notebook',
-        exportedAt: new Date().toISOString(),
-        pageCount: pages.length,
-        pages: pages.map(function(p) {
-          return {
-            id: p.id,
-            title: p.title || '',
-            dateL: p.dateL || '', textL: p.textL || '',
-            dateR: p.dateR || '', textR: p.textR || '',
-            createdAt: p.createdAt, updatedAt: p.updatedAt
-          };
-        })
-      };
-
-      var json = JSON.stringify(exportData, null, 2);
-      var b64 = btoa(unescape(encodeURIComponent(json)));
-      // 共有コードは先頭識別子付き
-      var shareCode = 'NB1:' + b64;
-
-      var box = document.getElementById('nbShareModalBox');
-      box.innerHTML =
-        '<div class="nb-share-modal-title">📤 自由帳をエクスポート</div>' +
-        '<div class="nb-share-modal-desc">' +
-          '<strong>' + pages.length + 'ページ</strong>を共有できます。<br>' +
-          'JSONファイルとして保存するか、共有コードをコピーして友達に送れます。' +
-        '</div>' +
-        '<div class="nb-share-section">' +
-          '<div class="nb-share-section-label">📁 ファイルとして保存（PC向け）</div>' +
-          '<div class="nb-share-btn-row">' +
-            '<button class="nb-share-btn green" id="nbExportFileBtn">JSONファイルをダウンロード</button>' +
-          '</div>' +
-        '</div>' +
-        '<div class="nb-share-section">' +
-          '<div class="nb-share-section-label">📋 共有コード（LINEやDiscordで送る）</div>' +
-          '<textarea class="nb-share-code-area" id="nbExportCode" readonly rows="3">' + shareCode + '</textarea>' +
-          '<div class="nb-share-btn-row">' +
-            '<button class="nb-share-btn blue" id="nbCopyCodeBtn">コードをコピー</button>' +
-          '</div>' +
-        '</div>' +
-        '<div class="nb-share-btn-row" style="margin-top:4px;">' +
-          '<button class="nb-share-btn cancel" onclick="nbShareClose()">閉じる</button>' +
-        '</div>';
-
-      // ファイルダウンロード
-      document.getElementById('nbExportFileBtn').addEventListener('click', function() {
-        var blob = new Blob([json], { type: 'application/json' });
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement('a');
-        a.href = url;
-        a.download = 'yarukotolist-notebook-' + new Date().toISOString().slice(0,10) + '.json';
-        a.click();
-        URL.revokeObjectURL(url);
-        this.textContent = '✅ ダウンロード完了';
-        this.disabled = true;
-      });
-
-      // コードコピー
-      document.getElementById('nbCopyCodeBtn').addEventListener('click', function() {
-        var ta = document.getElementById('nbExportCode');
-        ta.select();
-        document.execCommand('copy');
-        this.textContent = '✅ コピーしました';
-        this.style.background = '#34c759';
-        var btn = this;
-        setTimeout(function(){ btn.textContent = 'コードをコピー'; btn.style.background = ''; }, 2000);
-      });
-
+      render();
       document.getElementById('nbShareModal').classList.add('show');
     }
 
-    // ---- インポートモーダル表示 ----
-    function nbShowImport() {
+    // =====================
+    // STEP1：感情報酬
+    // =====================
+    function nbShareStep1Emotion() {
+      var count = nbShareSelected.length;
       var box = document.getElementById('nbShareModalBox');
       box.innerHTML =
-        '<div class="nb-share-modal-title">📥 自由帳をインポート</div>' +
-        '<div class="nb-share-modal-desc">' +
-          '友達の自由帳ページを<strong>あなたの自由帳に追加</strong>します。<br>' +
-          '⚠️ 今あるあなたのページは<strong>消えません</strong>。新しいページとして追加されます。' +
-        '</div>' +
-        '<div class="nb-share-section">' +
-          '<div class="nb-share-section-label">📁 JSONファイルから読み込む</div>' +
-          '<input type="file" id="nbImportFile" accept=".json" style="display:none">' +
-          '<div class="nb-share-btn-row">' +
-            '<button class="nb-share-btn primary" id="nbImportFileBtn">JSONファイルを選択</button>' +
-          '</div>' +
-          '<div id="nbImportFileStatus" style="font-size:0.78em;color:#888;margin-top:6px;min-height:18px;"></div>' +
-        '</div>' +
-        '<div class="nb-share-section">' +
-          '<div class="nb-share-section-label">📋 共有コードを貼り付ける</div>' +
-          '<textarea class="nb-share-code-area" id="nbImportCode" placeholder="NB1: から始まるコードをここに貼り付けてください" rows="3"></textarea>' +
-          '<div class="nb-share-btn-row" style="margin-top:8px;">' +
-            '<button class="nb-share-btn blue" id="nbImportCodeBtn">このコードで追加する</button>' +
-          '</div>' +
-        '</div>' +
-        '<div class="nb-share-warn" id="nbImportWarn" style="display:none;"></div>' +
-        '<div class="nb-share-btn-row" style="margin-top:12px;">' +
-          '<button class="nb-share-btn cancel" onclick="nbShareClose()">キャンセル</button>' +
+        '<div class="nb-reward-wrap">'+
+          '<div class="nb-reward-letter-wrap">'+
+            '<span class="nb-reward-letter">✉️</span>'+
+            '<span class="nb-confetti c1">🎊</span>'+
+            '<span class="nb-confetti c2">🎉</span>'+
+            '<span class="nb-confetti c3">✨</span>'+
+            '<span class="nb-confetti c4">🌟</span>'+
+          '</div>'+
+          '<div class="nb-reward-title">'+count+'通の手紙、送れるよ！</div>'+
+          '<div class="nb-reward-sub">'+
+            '自由帳のページを友達と共有できます。<br>'+
+            'パスワードをかけることもできるので安心。<br>'+
+            '<span style="color:#0a84ff;font-weight:600;">現代の文通、始めよう。</span>'+
+          '</div>'+
+          '<div class="nb-reward-cta">'+
+            '<button class="nb-share-btn primary" onclick="nbShareStep2Method()">どうやって送る？ →</button>'+
+            '<button class="nb-share-btn cancel" onclick="nbShareStep0()">‹ ページを選び直す</button>'+
+          '</div>'+
         '</div>';
+    }
 
-      // ファイル読み込み
-      var fileInput = document.getElementById('nbImportFile');
-      document.getElementById('nbImportFileBtn').addEventListener('click', function() {
-        fileInput.click();
-      });
-      fileInput.addEventListener('change', function(e) {
-        var file = e.target.files[0];
-        if (!file) return;
-        var reader = new FileReader();
-        reader.onload = function(ev) {
-          try {
-            var data = JSON.parse(ev.target.result);
-            nbDoImport(data);
-          } catch(err) {
-            nbShowImportWarn('ファイルの読み込みに失敗しました。yarukotolistで出力したJSONファイルか確認してください。');
+    // =====================
+    // STEP2：方法選択
+    // =====================
+    function nbShareStep2Method() {
+      var box = document.getElementById('nbShareModalBox');
+      box.innerHTML =
+        '<button class="nb-back-btn" onclick="nbShareStep1Emotion()">‹ 戻る</button>'+
+        '<div class="nb-share-modal-title">どうやって送る？</div>'+
+        '<div class="nb-share-modal-desc">相手への送り方を選んでください。</div>'+
+        '<div class="nb-method-grid">'+
+          '<button class="nb-method-card" onclick="nbShareStep3(\'file\')">'+
+            '<div class="nb-method-icon">📁</div>'+
+            '<div class="nb-method-label">ファイルで保存</div>'+
+            '<div class="nb-method-sub">PCに保存<br>メールに添付</div>'+
+          '</button>'+
+          '<button class="nb-method-card" onclick="nbShareStep3(\'code\')">'+
+            '<div class="nb-method-icon">📋</div>'+
+            '<div class="nb-method-label">コードで送る</div>'+
+            '<div class="nb-method-sub">LINE・Discord<br>にコピペ</div>'+
+          '</button>'+
+        '</div>'+
+        '<button class="nb-share-btn cancel" onclick="nbShareClose()">キャンセル</button>';
+    }
+
+    // =====================
+    // STEP3：実行
+    // =====================
+    function nbShareStep3(method) {
+      var box = document.getElementById('nbShareModalBox');
+      if (method==='file') {
+        box.innerHTML =
+          '<button class="nb-back-btn" onclick="nbShareStep2Method()">‹ 戻る</button>'+
+          '<div class="nb-share-modal-title">📁 ファイルとして保存</div>'+
+          '<div class="nb-share-modal-desc">PCに保存したり、メールに添付して送れます。</div>'+
+          '<div class="nb-share-section">'+
+            '<div class="nb-share-section-label">🔑 パスワード（任意・暗号化）</div>'+
+            nbPwWidget('nbExportPwFile','設定しない場合は空欄のまま')+
+            '<div style="font-size:0.72em;color:#bbb;margin-top:6px;line-height:1.5;">設定した場合、受け取る相手も同じパスワードが必要です。</div>'+
+          '</div>'+
+          '<button class="nb-share-btn green" id="nbExportFileBtn">📥 JSONファイルをダウンロード</button>'+
+          '<div id="nbExportFileMsg" style="text-align:center;font-size:0.78em;color:#888;min-height:18px;margin-top:6px;"></div>'+
+          '<button class="nb-share-btn cancel" onclick="nbShareClose()">閉じる</button>';
+
+        document.getElementById('nbExportFileBtn').addEventListener('click', async function(){
+          var pw=document.getElementById('nbExportPwFile').value;
+          var json=nbBuildExportJson(nbShareSelected);
+          var content,filename;
+          if(pw){
+            content=JSON.stringify({type:'yarukotolist-notebook-enc',code:await nbEncrypt(json,pw)});
+            filename='yarukotolist-notebook-enc-'+new Date().toISOString().slice(0,10)+'.json';
+          } else {
+            content=json; filename='yarukotolist-notebook-'+new Date().toISOString().slice(0,10)+'.json';
           }
-        };
-        reader.readAsText(file);
-      });
+          var a=Object.assign(document.createElement('a'),{
+            href:URL.createObjectURL(new Blob([content],{type:'application/json'})),download:filename
+          });
+          a.click();
+          document.getElementById('nbExportFileMsg').textContent=pw?'🔒 暗号化ファイル ダウンロード完了':'✅ ダウンロード完了';
+          this.textContent='✅ 完了'; this.disabled=true;
+        });
 
-      // コード読み込み
-      document.getElementById('nbImportCodeBtn').addEventListener('click', function() {
-        var code = (document.getElementById('nbImportCode').value || '').trim();
-        if (!code) { nbShowImportWarn('コードを貼り付けてください。'); return; }
-        if (!code.startsWith('NB1:')) { nbShowImportWarn('正しい共有コードではありません。「NB1:」から始まるコードを貼り付けてください。'); return; }
-        try {
-          var json = decodeURIComponent(escape(atob(code.slice(4))));
-          var data = JSON.parse(json);
-          nbDoImport(data);
-        } catch(err) {
-          nbShowImportWarn('コードの読み取りに失敗しました。コードが正しくコピーされているか確認してください。');
-        }
-      });
+      } else {
+        box.innerHTML =
+          '<button class="nb-back-btn" onclick="nbShareStep2Method()">‹ 戻る</button>'+
+          '<div class="nb-share-modal-title">📋 コードで送る</div>'+
+          '<div class="nb-share-modal-desc">LINEやDiscordにそのまま貼り付けて送れます。</div>'+
+          '<div class="nb-share-section">'+
+            '<div class="nb-share-section-label">🔑 パスワード（任意・暗号化）</div>'+
+            nbPwWidget('nbExportPwCode','設定しない場合は空欄のまま')+
+            '<div style="font-size:0.72em;color:#bbb;margin-top:6px;line-height:1.5;">設定した場合、受け取る相手も同じパスワードが必要です。</div>'+
+          '</div>'+
+          '<button class="nb-share-btn blue" id="nbGenCodeBtn">✨ 共有コードを生成する</button>'+
+          '<div id="nbCodeWrap" style="display:none;margin-top:10px;">'+
+            '<textarea class="nb-share-code-area" id="nbExportCode" readonly rows="3"></textarea>'+
+            '<button class="nb-share-btn green" id="nbCopyCodeBtn" style="margin-top:8px;">コードをコピーする</button>'+
+          '</div>'+
+          '<button class="nb-share-btn cancel" onclick="nbShareClose()">閉じる</button>';
 
+        document.getElementById('nbGenCodeBtn').addEventListener('click', async function(){
+          var pw=document.getElementById('nbExportPwCode').value;
+          var json=nbBuildExportJson(nbShareSelected);
+          this.textContent='⏳ 生成中...'; this.disabled=true;
+          var code=pw?await nbEncrypt(json,pw):'NB1:'+btoa(unescape(encodeURIComponent(json)));
+          document.getElementById('nbExportCode').value=code;
+          document.getElementById('nbCodeWrap').style.display='block';
+          this.textContent=pw?'🔒 暗号化コードを再生成':'🔓 コードを再生成';
+          this.disabled=false;
+        });
+        document.getElementById('nbCopyCodeBtn').addEventListener('click', function(){
+          var ta=document.getElementById('nbExportCode');
+          if(!ta.value) return;
+          ta.select(); document.execCommand('copy');
+          this.textContent='✅ コピーしました！';
+          var btn=this; setTimeout(function(){ btn.textContent='コードをコピーする'; },2200);
+        });
+      }
+    }
+
+    // =====================
+    // 受け取り（インポート）
+    // =====================
+    function nbShareImportStep1() {
+      var box = document.getElementById('nbShareModalBox');
+      box.innerHTML =
+        '<div class="nb-share-modal-title">📬 手紙を受け取る</div>'+
+        '<div class="nb-share-modal-desc">'+
+          '友達の自由帳ページを<strong>あなたの自由帳に追加</strong>します。<br>'+
+          '<span style="color:#e06040;font-size:0.9em;">⚠️ 今あるページは消えません。末尾に追加されます。</span>'+
+        '</div>'+
+        '<div class="nb-method-grid">'+
+          '<button class="nb-method-card" onclick="nbShareImportStep2(\'file\')">'+
+            '<div class="nb-method-icon">📁</div>'+
+            '<div class="nb-method-label">ファイルから</div>'+
+            '<div class="nb-method-sub">JSONファイルを選択</div>'+
+          '</button>'+
+          '<button class="nb-method-card" onclick="nbShareImportStep2(\'code\')">'+
+            '<div class="nb-method-icon">📋</div>'+
+            '<div class="nb-method-label">コードから</div>'+
+            '<div class="nb-method-sub">LINE・Discord<br>から貼り付け</div>'+
+          '</button>'+
+        '</div>'+
+        '<button class="nb-share-btn cancel" onclick="nbShareClose()">キャンセル</button>';
       document.getElementById('nbShareModal').classList.add('show');
+    }
+
+    function nbShareImportStep2(method) {
+      var box = document.getElementById('nbShareModalBox');
+      if (method==='file') {
+        box.innerHTML =
+          '<button class="nb-back-btn" onclick="nbShareImportStep1()">‹ 戻る</button>'+
+          '<div class="nb-share-modal-title">📁 ファイルから受け取る</div>'+
+          '<div class="nb-share-modal-desc">yarukotolistで出力したJSONファイルを選んでください。</div>'+
+          '<div id="nbImportFileEncWrap" style="display:none;" class="nb-share-section">'+
+            '<div class="nb-share-section-label">🔑 パスワード（暗号化ファイルの場合）</div>'+
+            nbPwWidget('nbImportPwFile','送った相手に確認してください')+
+            '<button class="nb-share-btn blue" id="nbImportFilePwBtn" style="margin-top:10px;">🔓 このパスワードで開く</button>'+
+          '</div>'+
+          '<input type="file" id="nbImportFile" accept=".json" style="display:none">'+
+          '<button class="nb-share-btn primary" id="nbImportFileBtn">📂 ファイルを選択する</button>'+
+          '<div class="nb-share-warn" id="nbImportWarn" style="display:none;"></div>'+
+          '<button class="nb-share-btn cancel" onclick="nbShareClose()">キャンセル</button>';
+
+        var _penc=null;
+        document.getElementById('nbImportFileBtn').addEventListener('click',function(){ document.getElementById('nbImportFile').click(); });
+        document.getElementById('nbImportFile').addEventListener('change',async function(e){
+          var file=e.target.files[0]; if(!file) return;
+          var r=new FileReader();
+          r.onload=async function(ev){
+            try {
+              var p=JSON.parse(ev.target.result);
+              if(p.type==='yarukotolist-notebook-enc'&&p.code){
+                _penc=p.code;
+                document.getElementById('nbImportFileEncWrap').style.display='block';
+                document.getElementById('nbImportFileBtn').textContent='📂 別のファイルを選択';
+              } else { nbDoImport(p); }
+            } catch(err){ nbShowImportWarn('ファイルの読み込みに失敗しました。yarukotolistで出力したファイルか確認してください。'); }
+          };
+          r.readAsText(file);
+        });
+        document.getElementById('nbImportFilePwBtn').addEventListener('click',async function(){
+          if(_penc) await nbHandleEncryptedCode(_penc,'nbImportPwFile');
+        });
+
+      } else {
+        box.innerHTML =
+          '<button class="nb-back-btn" onclick="nbShareImportStep1()">‹ 戻る</button>'+
+          '<div class="nb-share-modal-title">📋 コードから受け取る</div>'+
+          '<div class="nb-share-modal-desc">友達から受け取ったコードを貼り付けてください。</div>'+
+          '<textarea class="nb-share-code-area" id="nbImportCode"'+
+            ' placeholder="NB1: または NB1E: から始まるコードを貼り付けてください" rows="4"'+
+            ' style="margin:4px 0 10px;"></textarea>'+
+          '<div id="nbImportCodeEncWrap" style="display:none;" class="nb-share-section">'+
+            '<div class="nb-share-section-label">🔑 パスワード（NB1E:コードの場合）</div>'+
+            nbPwWidget('nbImportPwCode','送った相手に確認してください')+
+          '</div>'+
+          '<button class="nb-share-btn blue" id="nbImportCodeBtn">受け取る</button>'+
+          '<div class="nb-share-warn" id="nbImportWarn" style="display:none;"></div>'+
+          '<button class="nb-share-btn cancel" onclick="nbShareClose()">キャンセル</button>';
+
+        document.getElementById('nbImportCode').addEventListener('input',function(){
+          document.getElementById('nbImportCodeEncWrap').style.display=this.value.trim().startsWith('NB1E:')?'block':'none';
+        });
+        document.getElementById('nbImportCodeBtn').addEventListener('click',async function(){
+          var code=(document.getElementById('nbImportCode').value||'').trim();
+          if(!code){ nbShowImportWarn('コードを貼り付けてください。'); return; }
+          if(code.startsWith('NB1E:')){ await nbHandleEncryptedCode(code,'nbImportPwCode'); }
+          else if(code.startsWith('NB1:')){
+            try{ nbDoImport(JSON.parse(decodeURIComponent(escape(atob(code.slice(4)))))); }
+            catch(e){ nbShowImportWarn('コードの読み取りに失敗しました。正しくコピーされているか確認してください。'); }
+          } else { nbShowImportWarn('正しいコードではありません。NB1: または NB1E: から始まるコードを貼り付けてください。'); }
+        });
+      }
+    }
+
+    async function nbHandleEncryptedCode(code, pwId) {
+      var pw=(document.getElementById(pwId)||{}).value||'';
+      if(!pw){
+        nbShowImportWarn('このデータは暗号化されています。送った相手から教えてもらったパスワードを入力してください。');
+        var i=document.getElementById(pwId); if(i){i.style.borderColor='#d44';i.focus();}
+        return;
+      }
+      try{ nbDoImport(JSON.parse(await nbDecrypt(code,pw))); }
+      catch(e){
+        nbShowImportWarn('パスワードが違います。もう一度確認してください。');
+        var i=document.getElementById(pwId); if(i){i.style.borderColor='#d44';i.focus();i.select();}
+      }
     }
 
     function nbShowImportWarn(msg) {
-      var w = document.getElementById('nbImportWarn');
-      if (w) { w.textContent = '⚠️ ' + msg; w.style.display = 'block'; }
+      var w=document.getElementById('nbImportWarn');
+      if(w){ w.textContent='⚠️ '+msg; w.style.display='block'; }
     }
 
-    // ---- 実際のインポート処理 ----
     function nbDoImport(data) {
-      // バリデーション
-      if (!data || data.type !== 'yarukotolist-notebook' || !Array.isArray(data.pages)) {
+      if(!data||data.type!=='yarukotolist-notebook'||!Array.isArray(data.pages)){
         nbShowImportWarn('このファイルは自由帳のデータではないようです。エクスポートし直してください。');
         return;
       }
-      var incoming = data.pages;
-      if (incoming.length === 0) {
-        nbShowImportWarn('インポートするページがありません。');
-        return;
-      }
-
-      // ID重複を避けるため全ページに新規IDを発行
-      var now = new Date().toISOString();
-      var existing = nbPages();
-      var maxOrder = existing.reduce(function(m, p){ return Math.max(m, p.order||0); }, -1);
-
-      var newPages = incoming.map(function(p, i) {
-        return {
-          id: generateTaskId(),
-          kind: 'note',
-          title: p.title || '',
-          dateL: p.dateL || '', textL: p.textL || '',
-          dateR: p.dateR || '', textR: p.textR || '',
-          text: p.textL || '', margin: p.dateL || '',
-          order: maxOrder + 1 + i,
-          createdAt: p.createdAt || now,
-          updatedAt: now
-        };
+      if(!data.pages.length){ nbShowImportWarn('インポートするページがありません。'); return; }
+      var now=new Date().toISOString(), existing=nbPages();
+      var maxOrder=existing.reduce(function(m,p){ return Math.max(m,p.order||0); },-1);
+      var newPages=data.pages.map(function(p,i){
+        return {id:generateTaskId(),kind:'note',title:p.title||'',
+          dateL:p.dateL||'',textL:p.textL||'',dateR:p.dateR||'',textR:p.textR||'',
+          text:p.textL||'',margin:p.dateL||'',order:maxOrder+1+i,
+          createdAt:p.createdAt||now,updatedAt:now};
       });
-
-      // 既存ページの末尾に追加
-      var merged = existing.concat(newPages);
-      nbPagesSet(merged);
-
-      // 成功表示
-      var box = document.getElementById('nbShareModalBox');
-      box.innerHTML =
-        '<div style="text-align:center;padding:20px 0;">' +
-          '<div style="font-size:3em;margin-bottom:12px;">✅</div>' +
-          '<div class="nb-share-modal-title">' + newPages.length + 'ページを追加しました</div>' +
-          '<div class="nb-share-modal-desc" style="margin-top:8px;">自由帳の末尾に追加されています。<br>タブをタップして確認してください。</div>' +
-          '<div class="nb-share-btn-row" style="margin-top:20px;">' +
-            '<button class="nb-share-btn primary" onclick="nbShareClose();nbCurrentId=nbPages()[nbPages().length-' + newPages.length + '].id;nbRender();">追加したページを見る</button>' +
-          '</div>' +
-          '<div class="nb-share-btn-row" style="margin-top:6px;">' +
-            '<button class="nb-share-btn cancel" onclick="nbShareClose()">閉じる</button>' +
-          '</div>' +
+      nbPagesSet(existing.concat(newPages));
+      var firstId=newPages[0].id;
+      var box=document.getElementById('nbShareModalBox');
+      box.innerHTML=
+        '<div style="text-align:center;padding:20px 0 12px;">'+
+          '<div style="font-size:3.5em;margin-bottom:8px;animation:nb-letter-fly 0.6s cubic-bezier(0.34,1.56,0.64,1) both;">📬</div>'+
+          '<div class="nb-share-modal-title" style="font-size:1.3em;">手紙が届きました！</div>'+
+          '<div class="nb-share-modal-desc" style="margin-top:6px;"><strong>'+newPages.length+'ページ</strong>があなたの自由帳に追加されました。</div>'+
+          '<button class="nb-share-btn primary" id="nbGoToImported" style="margin-top:16px;">届いたページを見る 📖</button>'+
+          '<button class="nb-share-btn cancel" onclick="nbShareClose()">閉じる</button>'+
         '</div>';
-
+      document.getElementById('nbGoToImported').addEventListener('click',function(){
+        nbShareClose(); nbCurrentId=firstId; nbRender();
+      });
       nbRender();
     }
 
