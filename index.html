@@ -7603,14 +7603,15 @@
           '<button class="nb-share-btn cancel" onclick="nbShareClose()">キャンセル</button>';
 
         document.getElementById('nbImportCode').addEventListener('input',function(){
-          document.getElementById('nbImportCodeEncWrap').style.display=this.value.trim().startsWith('NB1E:')?'block':'none';
+          const _v=this.value.trim().toUpperCase();
+            document.getElementById('nbImportCodeEncWrap').style.display=_v.startsWith('NB1E:')?'block':'none';
         });
         document.getElementById('nbImportCodeBtn').addEventListener('click',async function(){
           var code=(document.getElementById('nbImportCode').value||'').trim();
           if(!code){ nbShowImportWarn('コードを貼り付けてください。'); return; }
-          if(code.startsWith('NB1E:')){ await nbHandleEncryptedCode(code,'nbImportPwCode'); }
-          else if(code.startsWith('NB1:')){
-            try{ nbDoImport(JSON.parse(decodeURIComponent(escape(atob(code.slice(4)))))); }
+          if(code.toUpperCase().startsWith('NB1E:')){ await nbHandleEncryptedCode(code.replace(/^nb1e:/i,'NB1E:'),'nbImportPwCode'); }
+          else if(code.toUpperCase().startsWith('NB1:')){
+            try{ nbDoImport(JSON.parse(decodeURIComponent(escape(atob(code.replace(/^nb1:/i,'NB1:').slice(4)))))); }
             catch(e){ nbShowImportWarn('コードの読み取りに失敗しました。正しくコピーされているか確認してください。'); }
           } else { nbShowImportWarn('正しいコードではありません。NB1: または NB1E: から始まるコードを貼り付けてください。'); }
         });
