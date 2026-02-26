@@ -23,7 +23,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.13.0';
+    const APP_VERSION = 'v0.14.0';
     document.addEventListener('DOMContentLoaded', function() {
       document.title = 'やることリスト - ' + APP_VERSION;
     });
@@ -4122,17 +4122,7 @@
       document.getElementById('stopConditionInput').value = stopCondition;
     }
 
-    // 週間タスク追加モーダルを開く
-    function openDaySelectModal(sectionNum, taskText) {
-      const today = getLocalDateStr(new Date());
-      const dailyTasks = getDailyTasks(today);
-      const task = dailyTasks[sectionNum].find(t => t.text === taskText);
-      if (task) {
-        openDaySelectModalById(task.id);
-      }
-    }
-
-    // ID版：週間追加モーダルを開く
+    // 週間追加モーダルを開く（ID指定）
     function openDaySelectModalById(taskId) {
       const task = allTasks.find(t => t.id === taskId);
       if (!task) return;
@@ -4219,15 +4209,13 @@
       closeWeeklyTaskModal();
       
       // 週間ビューが表示されていたら更新
-      if (document.getElementById('weeklyView').style.display === 'block') {
+      if (isWeeklyViewVisible()) {
         renderWeeklyView();
       }
       
       // 日次ビューも再描画（今日または元の日付のタスクが変更された場合）
       const today = getLocalDateStr(new Date());
-      for (let sec = 1; sec <= 4; sec++) {
-        renderTasks(sec);
-      }
+      renderAllSections();
     }
 
     // 色をブレンドするヘルパー関数
@@ -4387,7 +4375,7 @@
               showInDaily: true,
             });
             renderWeeklyView();
-            for (let sec = 1; sec <= 4; sec++) renderTasks(sec);
+            renderAllSections();
           });
           col.appendChild(bg);
         }
@@ -4624,9 +4612,7 @@
       }
       
       // 日次も再描画
-      for (let sec = 1; sec <= 4; sec++) {
-        renderTasks(sec);
-      }
+      renderAllSections();
     }
     
     let deleteConfirmationShown = false;
@@ -4674,12 +4660,6 @@
       
     }
     
-    // 編集を保存（旧システム・デッドコード削除済み）
-    // → editWeeklyTaskByIdを使用してください
-    
-    // 編集モーダルから削除（旧システム・デッドコード削除済み）
-    // → editWeeklyTaskByIdを使用してください
-
     // ===== 月間ビュー関数 =====
     
     function renderMonthlyView() {
@@ -5029,9 +5009,7 @@
             renderMonthlyView();
             
             // 日次も再描画
-            for (let sec = 1; sec <= 4; sec++) {
-              renderTasks(sec);
-            }
+            renderAllSections();
           } catch (err) {}
         });
         
@@ -5068,23 +5046,21 @@
     let resizeStartY = 0;
     let resizeStartHeights = [];
 
-    function startMonthlyResize(e) {
-      e.preventDefault();
-      const weekRow = parseInt(e.target.dataset.weekRow);
+    function _startMonthlyResizeCore(weekRow, startY) {
       resizingRow = weekRow;
-      resizeStartY = e.clientY;
-      
-      const calendar = document.getElementById('monthlyCalendar');
-      const cells = calendar.querySelectorAll('.monthly-day-cell');
+      resizeStartY = startY;
+      const cells = document.getElementById('monthlyCalendar').querySelectorAll('.monthly-day-cell');
       const startIndex = (weekRow - 1) * 7;
       resizeStartHeights = [];
       for (let j = 0; j < 7; j++) {
-        const actualIndex = startIndex + j;
-        if (cells[actualIndex]) {
-          resizeStartHeights.push(cells[actualIndex].offsetHeight);
-        }
+        const cell = cells[startIndex + j];
+        if (cell) resizeStartHeights.push(cell.offsetHeight);
       }
-      
+    }
+
+    function startMonthlyResize(e) {
+      e.preventDefault();
+      _startMonthlyResizeCore(parseInt(e.target.dataset.weekRow), e.clientY);
       document.addEventListener('mousemove', onMonthlyResize);
       document.addEventListener('mouseup', stopMonthlyResize);
       document.body.style.cursor = 'ns-resize';
@@ -5093,22 +5069,7 @@
 
     function startMonthlyResizeTouchWrapper(e) {
       e.preventDefault();
-      const touch = e.touches[0];
-      const weekRow = parseInt(e.target.dataset.weekRow);
-      resizingRow = weekRow;
-      resizeStartY = touch.clientY;
-      
-      const calendar = document.getElementById('monthlyCalendar');
-      const cells = calendar.querySelectorAll('.monthly-day-cell');
-      const startIndex = (weekRow - 1) * 7;
-      resizeStartHeights = [];
-      for (let j = 0; j < 7; j++) {
-        const actualIndex = startIndex + j;
-        if (cells[actualIndex]) {
-          resizeStartHeights.push(cells[actualIndex].offsetHeight);
-        }
-      }
-      
+      _startMonthlyResizeCore(parseInt(e.target.dataset.weekRow), e.touches[0].clientY);
       document.addEventListener('touchmove', onMonthlyResizeTouch, { passive: false });
       document.addEventListener('touchend', stopMonthlyResizeTouch);
     }
@@ -5156,31 +5117,23 @@
       document.removeEventListener('touchend', stopMonthlyResizeTouch);
     }
 
-    // 月間カレンダーの幅調整
-    function adjustMonthlyWidth(percent) {
-      const calendar = document.getElementById('monthlyCalendar');
-      calendar.style.width = percent + '%';
-      calendar.style.minWidth = percent + '%';
+    // カレンダー幅調整（共通）
+    function adjustCalendarWidth(elementId, percent) {
+      const el = document.getElementById(elementId);
+      el.style.width = percent + '%';
+      el.style.minWidth = percent + '%';
     }
 
-    function resetMonthlyWidth() {
-      const slider = document.getElementById('monthlyWidthSlider');
-      slider.value = 100;
-      adjustMonthlyWidth(100);
+    function resetCalendarWidth(sliderId, elementId) {
+      document.getElementById(sliderId).value = 100;
+      adjustCalendarWidth(elementId, 100);
     }
 
-    // 週間カレンダーの幅調整
-    function adjustWeeklyWidth(percent) {
-      const container = document.getElementById('weeklyContainer');
-      container.style.width = percent + '%';
-      container.style.minWidth = percent + '%';
-    }
-
-    function resetWeeklyWidth() {
-      const slider = document.getElementById('weeklyWidthSlider');
-      slider.value = 100;
-      adjustWeeklyWidth(100);
-    }
+    // 後方互換ラッパー
+    function adjustMonthlyWidth(p) { adjustCalendarWidth('monthlyCalendar', p); }
+    function resetMonthlyWidth()   { resetCalendarWidth('monthlyWidthSlider', 'monthlyCalendar'); }
+    function adjustWeeklyWidth(p)  { adjustCalendarWidth('weeklyContainer', p); }
+    function resetWeeklyWidth()    { resetCalendarWidth('weeklyWidthSlider', 'weeklyContainer'); }
 
     // ===== 日次タイムラインビュー =====
     let currentTimelineDate = null;
@@ -5486,9 +5439,7 @@
       renderWeeklyView();
       
       // 日次も再描画
-      for (let sec = 1; sec <= 4; sec++) {
-        renderTasks(sec);
-      }
+      renderAllSections();
       
       // 振動フィードバック
       if (navigator.vibrate) {
@@ -5597,9 +5548,7 @@
       }
       
       // 日次も再描画
-      for (let i = 1; i <= 4; i++) {
-        renderTasks(i);
-      }
+      renderAllSections();
     }
     
     function deleteMonthlyTask() {
@@ -5617,9 +5566,7 @@
         }
         
         // 日次も再描画
-        for (let i = 1; i <= 4; i++) {
-          renderTasks(i);
-        }
+        renderAllSections();
       }
     }
 
@@ -5700,19 +5647,10 @@
       }
       
       // 日次も再描画
-      for (let sec = 1; sec <= 4; sec++) {
-        renderTasks(sec);
-      }
+      renderAllSections();
     }
 
-    // 週間タスクの削除
-    // 週間タスク削除（旧システム・デッドコード削除済み）
-    // → editWeeklyTaskByIdまたはdeleteTaskByIdを使用してください
-
-    // 週間データの保存（旧システム・デッドコード削除済み）
-    // → saveAllTasks()を使用してください
-
-    // 週間データの読み込み（旧システム・移行処理用に保持）
+    // 週間データの読み込み（移行処理用に保持）
     function loadWeeklyData() {
       const saved = localStorage.getItem('weeklyTasks');
       if (saved) {
@@ -5755,9 +5693,7 @@
       } else if (timerState === 'executing') {
         // 実行 → 完了（オレンジ解除）
         selectedTaskText = null;
-        for (let i = 1; i <= 4; i++) {
-          renderTasks(i);
-        }
+        renderAllSections();
         timerState = 'complete';
         updateTimerDisplay();
       } else if (timerState === 'complete') {
@@ -5797,9 +5733,7 @@
         document.getElementById('purposeInput').value = '';
         
         // ハイライト解除
-        for (let i = 1; i <= 4; i++) {
-          renderTasks(i);
-        }
+        renderAllSections();
         
         updateTimerDisplay();
       }
@@ -5838,9 +5772,7 @@
             // 実行終了：オレンジ解除
             selectedTaskText = null;
             // 全セクション再レンダリング
-            for (let i = 1; i <= 4; i++) {
-              renderTasks(i);
-            }
+            renderAllSections();
             timerState = 'complete';
             updateTimerDisplay();
           } else if (timerState === 'pomodoro') {
@@ -5955,24 +5887,13 @@
       }
     }
 
-    // タスク選択
-    function selectTask(sectionNum, index) {
-      const today = getLocalDateStr(new Date());
-      const dailyTasks = getDailyTasks(today);
-      if (dailyTasks[sectionNum] && dailyTasks[sectionNum][index]) {
-        selectTaskById(dailyTasks[sectionNum][index].id);
-      }
-    }
-
     // ID版：タスク選択
     function selectTaskById(taskId) {
       const task = allTasks.find(t => t.id === taskId);
       if (task) {
         selectedTaskText = task.text;
         // 全セクションを再レンダリング
-        for (let i = 1; i <= 4; i++) {
-          renderTasks(i);
-        }
+        renderAllSections();
       }
     }
 
@@ -6012,33 +5933,12 @@
         saveAllTasks();
         
         // 日次ビュー：全象限を再描画
-        for (let sec = 1; sec <= 4; sec++) {
-          renderTasks(sec);
-        }
+        renderAllSections();
         
         // 週間ビューが表示されていたら更新
-        if (document.getElementById('weeklyView').style.display === 'block') {
+        if (isWeeklyViewVisible()) {
           renderWeeklyView();
         }
-      }
-    }
-
-    // タスク完了トグル（旧版・互換性のため残す）
-    function toggleTask(sectionNum, index) {
-      const today = getLocalDateStr(new Date());
-      const dailyTasks = getDailyTasks(today);
-      const task = dailyTasks[sectionNum][index];
-      if (task) {
-        toggleTaskById(task.id);
-      }
-    }
-
-    // タスク編集（インライン）
-    function editTask(sectionNum, index, textSpan) {
-      const today = getLocalDateStr(new Date());
-      const dailyTasks = getDailyTasks(today);
-      if (dailyTasks[sectionNum] && dailyTasks[sectionNum][index]) {
-        editTaskById(dailyTasks[sectionNum][index].id, textSpan);
       }
     }
 
@@ -6147,9 +6047,7 @@
       
       // 全画面を再描画
       const dateStr = currentDailyDate || getLocalDateStr(new Date());
-      for (let sec = 1; sec <= 4; sec++) {
-        renderTasks(sec, dateStr);
-      }
+      renderAllSections(dateStr);
       renderWeeklyView();
       if (document.getElementById('monthlyView').style.display === 'block') {
         renderMonthlyView();
@@ -6169,9 +6067,7 @@
         
         // 全画面を再描画
         const dateStr = currentDailyDate || getLocalDateStr(new Date());
-        for (let sec = 1; sec <= 4; sec++) {
-          renderTasks(sec, dateStr);
-        }
+        renderAllSections(dateStr);
         renderWeeklyView();
         if (document.getElementById('monthlyView').style.display === 'block') {
           renderMonthlyView();
@@ -6204,12 +6100,10 @@
       }
       
       // 日次ビュー：全象限を再描画
-      for (let sec = 1; sec <= 4; sec++) {
-        renderTasks(sec);
-      }
+      renderAllSections();
       
       // 週間ビューが表示されていたら更新
-      if (document.getElementById('weeklyView').style.display === 'block') {
+      if (isWeeklyViewVisible()) {
         renderWeeklyView();
       }
       // タイムラインが表示されていたら更新
@@ -6284,6 +6178,16 @@
       setTimeout(() => {
         msg.classList.remove('show');
       }, 1000);
+    }
+
+    // 週間ビューが表示中か判定するヘルパー
+    function isWeeklyViewVisible() {
+      return document.getElementById('weeklyView').style.display === 'block';
+    }
+
+    // 全象限を再描画するヘルパー
+    function renderAllSections(dateStr = null) {
+      for (let sec = 1; sec <= 4; sec++) renderTasks(sec, dateStr);
     }
 
     // タスク表示（dateStrがnullなら今日）
@@ -6526,9 +6430,6 @@
       }
     }
 
-    // データ保存（旧システム・デッドコード削除済み）
-    // → saveAllTasks()を使用してください
-
     // データ読み込み（旧システム・移行処理用に保持）
     function loadData() {
       const saved = localStorage.getItem('todoData');
@@ -6558,9 +6459,7 @@
           //   document.getElementById('stopConditionText').textContent = stopCondition;
           // }
           
-          for (let i = 1; i <= 4; i++) {
-            renderTasks(i);
-          }
+          renderAllSections();
         } catch (e) {
           console.error('データの読み込みに失敗しました', e);
         }
@@ -6639,9 +6538,7 @@
       updateTimerDisplay();
       
       // 日次ビューを再描画
-      for (let i = 1; i <= 4; i++) {
-        renderTasks(i);
-      }
+      renderAllSections();
       
       // 週間ビューも再描画
       renderWeeklyView();
@@ -6779,22 +6676,12 @@
     }
 
     // 逃げログの表示切り替え
+    const SECTION_COLORS = ['#ffe6e6', '#e8f5e9', '#fffef5', '#f5f5f5'];
+
     function applyColors() {
-      const section1 = document.getElementById('section1');
-      const section2 = document.getElementById('section2');
-      const section3 = document.getElementById('section3');
-      const section4 = document.getElementById('section4');
-      
-      if (USE_COLORS) {
-        section1.style.backgroundColor = '#ffe6e6';
-        section2.style.backgroundColor = '#e8f5e9';
-        section3.style.backgroundColor = '#fffef5';
-        section4.style.backgroundColor = '#f5f5f5';
-      } else {
-        section1.style.backgroundColor = 'white';
-        section2.style.backgroundColor = 'white';
-        section3.style.backgroundColor = 'white';
-        section4.style.backgroundColor = 'white';
+      for (let i = 1; i <= 4; i++) {
+        document.getElementById('section' + i).style.backgroundColor =
+          USE_COLORS ? SECTION_COLORS[i - 1] : 'white';
       }
     }
 
@@ -6829,15 +6716,10 @@
     migrateToMasterData();
     
     // 日次ビューを初期描画
-    for (let i = 1; i <= 4; i++) {
-      renderTasks(i);
-    }
+    renderAllSections();
     
     setupAllSectionDrops();
     setupDayButtons();
-    
-    // 週間削除ボタンのイベント設定（旧システム・デッドコード削除済み）
-    // editWeeklyTaskByIdがpromptで直接編集するため不要
     
     // ページを開いたログを記録
     logAction('open');
@@ -6900,9 +6782,7 @@
           dailyView.style.display = 'grid';
           currentDailyDate = null;
           updateDate();
-          for (let i = 1; i <= 4; i++) {
-            renderTasks(i);
-          }
+          renderAllSections();
         }
         document.getElementById('navDaily').classList.add('active');
       } else if (view === 'weekly') {
@@ -7160,7 +7040,6 @@
 
     // 後方互換
     function nbSyncHeight() {}
-    function nbGrow(el) {}
     function nbGrowRight(el) {}
 
     // ---- 新規ページ ----
@@ -8040,9 +7919,7 @@
       if (mobileDate) mobileDate.textContent = dateText;
       
       // タスクを再描画（選択した日付で）
-      for (let i = 1; i <= 4; i++) {
-        renderTasks(i, dateStr);
-      }
+      renderAllSections(dateStr);
       
       // タスクIDが指定されていれば編集モーダルを開く
       if (openTaskId) {
