@@ -2784,7 +2784,7 @@
   </div>
 
   <!-- 日次タイムラインビュー -->
-  <div id="timelineView" style="display: none; width: 100%; margin: 0; padding: 10px; box-sizing: border-box;">
+  <div id="timelineView" style="display: none; max-width: 600px; margin: 0; padding: 10px; box-sizing: border-box;">
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding: 0 2px;">
       <button class="monthly-nav-btn" style="padding: 5px 8px; font-size: 0.72em; white-space: nowrap; flex-shrink: 0;" onclick="changeTimelineDate(-1)">◀ 前日</button>
       <h2 id="timelineTitle" style="margin: 0; font-size: 0.88em; text-align: center; white-space: nowrap; font-weight: 700;"></h2>
@@ -5336,6 +5336,33 @@
         container.appendChild(cell);
       }
 
+      // D&D: containerへのdrop（時刻変更）
+      container.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+      });
+      container.addEventListener('drop', (function(tlDateStr, tlRowH) {
+        return function(e) {
+          e.preventDefault();
+          var data;
+          try { data = JSON.parse(e.dataTransfer.getData('text/plain')); } catch(err) { return; }
+          if (!data || !data.taskId) return;
+          var task = allTasks.find(function(t) { return t.id === data.taskId; });
+          if (!task) return;
+          var rect = container.getBoundingClientRect();
+          var y = e.clientY - rect.top;
+          var totalMinutes = Math.round(y / tlRowH * 60);
+          totalMinutes = Math.max(0, Math.min(totalMinutes, 23 * 60 + 59));
+          var h = Math.floor(totalMinutes / 60);
+          var m = Math.round((totalMinutes % 60) / 5) * 5;
+          if (m >= 60) { h++; m = 0; }
+          var newTime = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+          updateTask(task.id, { date: tlDateStr, time: newTime });
+          renderTimelineView();
+          renderWeeklyView();
+        };
+      })(dateStr, TL_ROW_H));
+
       // container全体のクリック → タスクでない場所なら新規作成
       // (タスクはe.stopPropagationしないが data-taskid で判定)
       container.addEventListener('click', (function(tlDateStr, tlRowH) {
@@ -5429,11 +5456,28 @@
         var bdC = task.completed ? '#bbb'    : colors.bd;
 
         var taskDiv = document.createElement('div');
+        taskDiv.draggable = true;
+        taskDiv.dataset.taskId = task.id;
         taskDiv.style.cssText = 'position:absolute;left:' + leftVal + ';right:' + rightVal + ';top:' + topPx + 'px;height:' + blockH + 'px;' +
-          'border-radius:5px;padding:3px 7px;font-size:0.82em;cursor:pointer;overflow:hidden;box-sizing:border-box;z-index:10;' +
+          'border-radius:5px;padding:3px 7px;font-size:0.82em;cursor:grab;overflow:hidden;box-sizing:border-box;z-index:10;' +
           'background:' + bgC + ';border-left:3px solid ' + bdC + ';border:1px solid ' + bdC + ';' +
           (task.completed ? 'opacity:0.65;' : '');
-        taskDiv.dataset.isTlTask = '1'; // containerクリック判定用
+        taskDiv.dataset.isTlTask = '1';
+
+        taskDiv.addEventListener('dragstart', (function(t, td) {
+          return function(e) {
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', JSON.stringify({ taskId: t.id }));
+            td.style.opacity = '0.4';
+            td.style.cursor = 'grabbing';
+          };
+        })(task, taskDiv));
+        taskDiv.addEventListener('dragend', (function(t, td) {
+          return function() {
+            td.style.opacity = t.completed ? '0.65' : '1';
+            td.style.cursor = 'grab';
+          };
+        })(task, taskDiv));
 
         var line1 = document.createElement('div');
         line1.style.cssText = 'display:flex;align-items:center;gap:4px;overflow:hidden;';
