@@ -23,7 +23,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.16.0';
+    const APP_VERSION = 'v0.17.0';
     document.addEventListener('DOMContentLoaded', function() {
       document.title = 'やることリスト - ' + APP_VERSION;
     });
@@ -2999,21 +2999,8 @@
         <div style="font-size:0.73em;color:#aaa;margin-top:3px;">設定するとカレンダー上でブロック表示されます</div>
       </div>
       <div style="margin: 15px 0;">
-        <label style="display: block; margin-bottom: 8px; font-weight: bold;">カテゴリ（色分け）</label>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:7px 12px;border-radius:20px;border:1.5px solid #e0e0e0;font-size:0.88em;" id="catLabelNone">
-            <input type="radio" name="editCategory" value="" style="display:none;" id="catNone" onchange="updateCatStyle()"> なし
-          </label>
-          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:7px 12px;border-radius:20px;border:1.5px solid #43a047;font-size:0.88em;background:#e8f5e9;" id="catLabelPrivate">
-            <input type="radio" name="editCategory" value="private" style="display:none;" id="catPrivate" onchange="updateCatStyle()"> 🏠 プライベート
-          </label>
-          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:7px 12px;border-radius:20px;border:1.5px solid #1e88e5;font-size:0.88em;background:#e3f2fd;" id="catLabelWork">
-            <input type="radio" name="editCategory" value="work" style="display:none;" id="catWork" onchange="updateCatStyle()"> 💼 仕事
-          </label>
-          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:7px 12px;border-radius:20px;border:1.5px solid #e53935;font-size:0.88em;background:#fce4ec;" id="catLabelUrgent">
-            <input type="radio" name="editCategory" value="urgent" style="display:none;" id="catUrgent" onchange="updateCatStyle()"> 🔥 緊急・重要
-          </label>
-        </div>
+        <label style="display: block; margin-bottom: 8px; font-weight: bold;">カレンダー（色分け）</label>
+        <div id="editCalendarBtns" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
       </div>
       <div style="margin: 15px 0;">
         <label style="display: block; margin-bottom: 8px; font-weight: bold;">象限</label>
@@ -3100,22 +3087,8 @@
         </div>
       </div>
       <div style="margin: 15px 0;">
-        <label style="display: block; margin-bottom: 8px; font-weight: bold;">カテゴリ（色分け）</label>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;">
-          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;padding:6px 10px;border-radius:20px;border:1.5px solid #e0e0e0;font-size:0.85em;" id="createCatLabelNone">
-            <input type="radio" name="createCategory" value="" style="display:none;" id="createCatNone" checked onchange="updateCreateCatStyle()"> なし
-          </label>
-          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;padding:6px 10px;border-radius:20px;border:1.5px solid #43a047;font-size:0.85em;background:#e8f5e9;" id="createCatLabelPrivate">
-            <input type="radio" name="createCategory" value="private" style="display:none;" id="createCatPrivate" onchange="updateCreateCatStyle()"> 🏠 プライベート
-          </label>
-          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;padding:6px 10px;border-radius:20px;border:1.5px solid #1e88e5;font-size:0.85em;background:#e3f2fd;" id="createCatLabelWork">
-            <input type="radio" name="createCategory" value="work" style="display:none;" id="createCatWork" onchange="updateCreateCatStyle()"> 💼 仕事
-          </label>
-          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;padding:6px 10px;border-radius:20px;border:1.5px solid #e53935;font-size:0.85em;background:#fce4ec;" id="createCatLabelUrgent">
-            <input type="radio" name="createCategory" value="urgent" style="display:none;" id="createCatUrgent" onchange="updateCreateCatStyle()"> 🔥 緊急・重要
-          </label>
-        </div>
-      </div>
+        <label style="display: block; margin-bottom: 8px; font-weight: bold;">カレンダー（色分け）</label>
+        <div id="createCalendarBtns" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
         <div style="font-size: 0.75em; color: #888; margin-top: 4px;">※時間を設定すると週間ビューにも表示されます</div>
       </div>
       <div style="margin: 15px 0;">
@@ -4081,6 +4054,24 @@
             }
             localStorage.setItem('memoMigrationDone_v97', 'true');
           }
+
+          // category → calendarId マイグレーション（v0.17.0）
+          var catMigDone = localStorage.getItem('catMigrationDone_v170');
+          if (!catMigDone) {
+            var catMap = { private: 'private', work: 'work', urgent: 'default' };
+            var fixedCat = 0;
+            allTasks.forEach(function(task) {
+              if (task.category) {
+                if (!task.calendarId || task.calendarId === 'default') {
+                  task.calendarId = catMap[task.category] || 'default';
+                }
+                task.category = null;
+                fixedCat++;
+              }
+            });
+            if (fixedCat > 0) saveAllTasks();
+            localStorage.setItem('catMigrationDone_v170', 'true');
+          }
         } catch (e) {
           console.error('Failed to load allTasks:', e);
           allTasks = [];
@@ -4408,11 +4399,6 @@
         return ownerColorCache[ownerName];
       }
 
-      const CAT_COLOR = {
-        private: { bg:'#e8f5e9', bd:'#43a047', label:'🏠' },
-        work:    { bg:'#e3f2fd', bd:'#1e88e5', label:'💼' },
-        urgent:  { bg:'#fce4ec', bd:'#e53935', label:'🔥' },
-      };
       const SEC_COLOR = {
         1:{ bg:'#ffe6e6', bd:'#ff4444' },
         2:{ bg:'#e8f5e9', bd:'#4caf50' },
@@ -4557,13 +4543,11 @@
             if (dur > 0) blockH = Math.round(dur / 60 * ROW_H);
           }
 
-          const catColor      = task.category ? CAT_COLOR[task.category] : null;
-          const myName        = localStorage.getItem('profileName') || null;
-          const cal           = getCalendar(task.calendarId);
-          const calColor      = cal ? { bg: cal.color + '22', bd: cal.color } : null;
-          const ownerColor    = (!catColor && task.owner && task.owner !== myName)
-                                ? getOwnerColor(task.owner) : null;
-          const colors = catColor || calColor || ownerColor || SEC_COLOR[task.section] || SEC_COLOR[2];
+          const myName     = localStorage.getItem('profileName') || null;
+          const cal        = getCalendar(task.calendarId);
+          const calColor   = cal ? { bg: cal.color + '22', bd: cal.color } : null;
+          const ownerColor = (task.owner && task.owner !== myName) ? getOwnerColor(task.owner) : null;
+          const colors = calColor || ownerColor || SEC_COLOR[task.section] || SEC_COLOR[2];
           const bgC = task.completed ? '#e8e8e8' : colors.bg;
           const bdC = task.completed ? '#bbb'    : colors.bd;
 
@@ -4598,7 +4582,7 @@
 
           const titleSpan = document.createElement('span');
           titleSpan.className = 'wg-task-title';
-          titleSpan.textContent = (catColor ? catColor.label + ' ' : '') + task.text;
+          titleSpan.textContent = task.text;
           // 他のメンバーのタスクはオーナー名を小さく表示
           if (task.owner && task.owner !== myName && blockH >= 36) {
             const ownerBadge = document.createElement('div');
@@ -4701,10 +4685,9 @@
       // 終了時刻を設定
       setTimeSelect('weeklyEditEnd', task.endTime);
       
-      // カテゴリを設定
-      const catVal = task.category || '';
-      document.querySelectorAll('input[name="editCategory"]').forEach(r => { r.checked = r.value === catVal; });
-      updateCatStyle();
+      // カレンダー選択UIを生成
+      _editCalendarId = task.calendarId || 'default';
+      renderCalendarSelector('editCalendarBtns', _editCalendarId, function(id) { _editCalendarId = id; });
       
       // 象限を設定
       document.getElementById('editTaskSection').value = task.section || 2;
@@ -4724,21 +4707,37 @@
       editingWeeklyTaskId = null;
     }
 
-    function updateCatStyle() {
-      const map = { '':'catLabelNone', 'private':'catLabelPrivate', 'work':'catLabelWork', 'urgent':'catLabelUrgent' };
-      document.querySelectorAll('input[name="editCategory"]').forEach(r => {
-        const lbl = document.getElementById(map[r.value]);
-        if (lbl) lbl.style.boxShadow = r.checked ? '0 0 0 2px #333' : 'none';
+    // カレンダー選択ボタンを動的生成（共通）
+    function renderCalendarSelector(containerId, selectedCalId, onSelect) {
+      var container = document.getElementById(containerId);
+      if (!container) return;
+      container.innerHTML = '';
+      calendars.forEach(function(cal) {
+        var isSelected = cal.id === (selectedCalId || 'default');
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = cal.name;
+        btn.dataset.calId = cal.id;
+        btn.style.cssText = 'padding:6px 12px;border-radius:20px;font-size:0.85em;font-weight:600;cursor:pointer;transition:all 0.15s;border:1.5px solid ' + cal.color + ';' +
+          (isSelected ? 'background:' + cal.color + ';color:#fff;' : 'background:' + cal.color + '18;color:' + cal.color + ';');
+        btn.onclick = function() {
+          onSelect(cal.id);
+          container.querySelectorAll('button').forEach(function(b) {
+            var c = calendars.find(function(cc) { return cc.id === b.dataset.calId; });
+            if (!c) return;
+            b.style.background = c.color + '18';
+            b.style.color = c.color;
+          });
+          btn.style.background = cal.color;
+          btn.style.color = '#fff';
+        };
+        container.appendChild(btn);
       });
     }
 
-    function updateCreateCatStyle() {
-      const map = { '':'createCatLabelNone', 'private':'createCatLabelPrivate', 'work':'createCatLabelWork', 'urgent':'createCatLabelUrgent' };
-      document.querySelectorAll('input[name="createCategory"]').forEach(r => {
-        const lbl = document.getElementById(map[r.value]);
-        if (lbl) lbl.style.boxShadow = r.checked ? '0 0 0 2px #333' : 'none';
-      });
-    }
+    // 編集中・作成中のcalendarId保持
+    var _editCalendarId = 'default';
+    var _createCalendarId = 'default';
     
     function saveWeeklyEdit() {
       if (!editingWeeklyTaskId) return;
@@ -4749,8 +4748,7 @@
       const newTime = getTimeFromSelect('weeklyEdit');
       const newEndTime = getTimeFromSelect('weeklyEditEnd') || null;
       const newSection = parseInt(document.getElementById('editTaskSection').value);
-      const catRadio = document.querySelector('input[name="editCategory"]:checked');
-      const newCategory = catRadio && catRadio.value ? catRadio.value : null;
+      // calendarIdは_editCalendarIdを使用
       
       if (!newText) {
         alert('タスク名を入力してください');
@@ -4771,7 +4769,8 @@
         date: newDate,
         time: newTime,
         endTime: newEndTime,
-        category: newCategory,
+        calendarId: _editCalendarId || 'default',
+        category: null,
         section: newSection,
         showInWeekly: showInWeekly
       });
@@ -5408,12 +5407,7 @@
         };
       })(dateStr, TL_ROW_H));
 
-      // タスクブロック描画（週間ビューと同スタイル）
-      var CAT_COLOR_TL = {
-        private: { bg:'#e8f5e9', bd:'#43a047', label:'🏠' },
-        work:    { bg:'#e3f2fd', bd:'#1e88e5', label:'💼' },
-        urgent:  { bg:'#fce4ec', bd:'#e53935', label:'🔥' },
-      };
+      // タスクブロック描画（calendarIdで色決定）
       var SEC_COLOR_TL = {
         1:{ bg:'#ffe6e6', bd:'#ff4444' },
         2:{ bg:'#e8f5e9', bd:'#4caf50' },
@@ -5478,10 +5472,9 @@
           ? 'calc(' + (tcols - colIdx - 1) + ' * (100% - 52px) / ' + tcols + ' + 4px)'
           : '4px';
 
-        var catColor = task.category ? CAT_COLOR_TL[task.category] : null;
         var cal      = getCalendar(task.calendarId);
         var calColor = cal ? { bg: cal.color + '22', bd: cal.color } : null;
-        var colors   = catColor || calColor || SEC_COLOR_TL[task.section] || SEC_COLOR_TL[2];
+        var colors   = calColor || SEC_COLOR_TL[task.section] || SEC_COLOR_TL[2];
         var bgC = task.completed ? '#e8e8e8' : colors.bg;
         var bdC = task.completed ? '#bbb'    : colors.bd;
 
@@ -5502,7 +5495,7 @@
         var titleSpan = document.createElement('span');
         titleSpan.style.cssText = 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' +
           (task.completed ? 'text-decoration:line-through;opacity:0.6;' : '');
-        titleSpan.textContent = (catColor ? catColor.label + ' ' : '') + task.text;
+        titleSpan.textContent = task.text;
 
         // 鉛筆ボタン（編集）
         var editBtn = document.createElement('span');
@@ -5898,7 +5891,11 @@
       
       // 象限をデフォルトに
       document.getElementById('createTaskSection').value = '2';
-      
+
+      // カレンダー選択UIを生成
+      _createCalendarId = 'default';
+      renderCalendarSelector('createCalendarBtns', _createCalendarId, function(id) { _createCalendarId = id; });
+
       // 時間を設定（hourが渡されていれば）
       if (hour !== undefined && hour !== null) {
         setTimeSelect('create', `${String(hour).padStart(2, '0')}:00`);
@@ -5932,8 +5929,7 @@
       const taskTime = getTimeFromSelect('create');
       const taskEndTime = getTimeFromSelect('createEnd') || null;
       const taskSection = parseInt(document.getElementById('createTaskSection').value);
-      const catRadio = document.querySelector('input[name="createCategory"]:checked');
-      const taskCategory = catRadio && catRadio.value ? catRadio.value : null;
+      // calendarIdは_createCalendarIdを使用
       
       if (!taskText) {
         alert('タスク名を入力してください');
@@ -5949,8 +5945,9 @@
       const updates = {};
       if (taskMemo) updates.memo = taskMemo;
       if (taskEndTime) updates.endTime = taskEndTime;
-      if (taskCategory) updates.category = taskCategory;
-      if (Object.keys(updates).length > 0) updateTask(newTask.id, updates);
+      updates.calendarId = _createCalendarId || 'default';
+      updates.category = null;
+      updateTask(newTask.id, updates);
       
       closeCreateModal();
       renderWeeklyView();
