@@ -23,7 +23,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.14.0';
+    const APP_VERSION = 'v0.16.0';
     document.addEventListener('DOMContentLoaded', function() {
       document.title = 'やることリスト - ' + APP_VERSION;
     });
@@ -1130,19 +1130,19 @@
       left: 0;
       right: 0;
       height: 0;
-      border-top: 2px solid #f44336;
-      z-index: 20;
+      border-top: 1.5px solid rgba(244,67,54,0.45);
+      z-index: 25;
       pointer-events: none;
     }
     .wg-now-line::before {
       content: '';
       position: absolute;
-      left: -4px;
-      top: -4px;
-      width: 7px;
-      height: 7px;
+      left: -3px;
+      top: -3px;
+      width: 6px;
+      height: 6px;
       border-radius: 50%;
-      background: #f44336;
+      background: rgba(244,67,54,0.55);
     }
 
     /* 時間ラベル：wg-cell-bgと完全同構造（position:absolute + top:h*ROW_H） */
@@ -3141,6 +3141,8 @@
       <h2 id="weeklyTitle"></h2>
       <button class="monthly-nav-btn" onclick="changeWeek(1)">来週 ▶</button>
       <div id="weeklyWidthSliderWrap" style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 4px;">
+        <button onclick="openFamilyShareModal()" title="家族と共有"
+          style="font-size:0.72em;background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff;border:none;border-radius:6px;padding:3px 8px;cursor:pointer;font-weight:700;">👨‍👩‍👧</button>
         <span style="font-size: 0.65em; color: #bbb;">↔</span>
         <input type="range" id="weeklyWidthSlider" min="100" max="300" value="100" 
           style="width: 70px; accent-color: #4facfe; cursor: pointer;"
@@ -3148,6 +3150,8 @@
         <button onclick="resetWeeklyWidth()" style="font-size: 0.6em; color: #aaa; background: none; border: 1px solid #ddd; border-radius: 3px; padding: 1px 4px; cursor: pointer;">↺</button>
       </div>
     </div>
+    <!-- カレンダークイックフィルター -->
+    <div id="weeklyCalendarFilter" style="display:flex;gap:6px;padding:4px 12px 6px;flex-wrap:wrap;border-bottom:1px solid #f0f0f0;background:#fafafa;"></div>
     <div class="weekly-container" id="weeklyContainer">
       <!-- JavaScriptで動的に生成 -->
     </div>
@@ -3232,7 +3236,18 @@
           <button class="avatar-remove-btn" id="avatarRemoveBtn" onclick="removeAvatar()" style="display: none;">アイコンを削除</button>
         </div>
       </div>
-      
+
+      <!-- カレンダー管理セクション -->
+      <div class="settings-section">
+        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">📅 カレンダー</h3>
+        <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #8e8e8e;">表示するカレンダーを選択。OFFにすると全ビューで非表示になります。</p>
+        <div id="calendarSettingsList"></div>
+        <button onclick="addCalendarSetting()"
+          style="margin-top: 10px; background: none; border: 1.5px dashed #ccc; border-radius: 8px; padding: 8px 16px; font-size: 0.85em; color: #888; cursor: pointer; width: 100%;">
+          ＋ カレンダーを追加
+        </button>
+      </div>
+
       <div class="settings-section">
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">初期表示</h3>
         <div class="settings-item">
@@ -3263,27 +3278,6 @@
         </div>
       </div>
 
-      <!-- 月間表示モード -->
-      <div style="margin-top: 24px; border-top: 1px solid #efefef; padding-top: 18px;">
-        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">月間ビュー</h3>
-        <div>
-          <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #262626; font-size: 0.9em;">表示モード</label>
-          <p style="font-size: 0.8em; color: #8e8e8e; margin: 0 0 10px 0;">セルの高さの挙動を選択します</p>
-          <div class="settings-radio-group" id="monthlyModeGroup">
-            <label class="settings-radio-label">
-              <input type="radio" name="monthlyMode" value="fixed" checked>
-              <span>📐 固定高さ</span>
-              <span style="font-size: 0.75em; color: #8e8e8e; margin-left: 8px;">コンパクト表示</span>
-            </label>
-            <label class="settings-radio-label">
-              <input type="radio" name="monthlyMode" value="expand">
-              <span>📖 全タスク表示</span>
-              <span style="font-size: 0.75em; color: #8e8e8e; margin-left: 8px;">全文判読可能</span>
-            </label>
-          </div>
-        </div>
-      </div>
-
       <!-- 日次ビュー表示モード -->
       <div style="margin-top: 24px; border-top: 1px solid #efefef; padding-top: 18px;">
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">日次ビュー</h3>
@@ -3300,6 +3294,27 @@
               <input type="radio" name="dailyViewMode" value="timeline">
               <span>🕐 タイムライン</span>
               <span style="font-size: 0.75em; color: #8e8e8e; margin-left: 8px;">時間軸でスケジュール確認</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 月間表示モード -->
+      <div style="margin-top: 24px; border-top: 1px solid #efefef; padding-top: 18px;">
+        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">月間ビュー</h3>
+        <div>
+          <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #262626; font-size: 0.9em;">表示モード</label>
+          <p style="font-size: 0.8em; color: #8e8e8e; margin: 0 0 10px 0;">セルの高さの挙動を選択します</p>
+          <div class="settings-radio-group" id="monthlyModeGroup">
+            <label class="settings-radio-label">
+              <input type="radio" name="monthlyMode" value="fixed" checked>
+              <span>📐 固定高さ</span>
+              <span style="font-size: 0.75em; color: #8e8e8e; margin-left: 8px;">コンパクト表示</span>
+            </label>
+            <label class="settings-radio-label">
+              <input type="radio" name="monthlyMode" value="expand">
+              <span>📖 全タスク表示</span>
+              <span style="font-size: 0.75em; color: #8e8e8e; margin-left: 8px;">全文判読可能</span>
             </label>
           </div>
         </div>
@@ -3331,7 +3346,89 @@
       </div>
       
       <div class="settings-actions" style="margin-top: 30px; text-align: center;">
+        <!-- 家族共有ボタン -->
+        <div style="margin-bottom:16px;">
+          <button onclick="openFamilyShareModal()"
+            style="width:100%;padding:13px;border:none;border-radius:12px;background:linear-gradient(135deg,#4facfe 0%,#00f2fe 100%);color:#fff;font-size:0.95em;font-weight:700;cursor:pointer;letter-spacing:0.02em;">
+            👨‍👩‍👧 家族と共有する
+          </button>
+          <p style="margin:6px 0 0;font-size:0.76em;color:#aaa;">バックエンドなし・LINEでコードを送るだけ</p>
+        </div>
         <button class="modal-btn modal-btn-primary" style="padding: 14px 40px; font-size: 1em; border-radius: 12px;" onclick="saveSettings()">設定を保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 家族共有モーダル -->
+  <div id="familyShareModal" class="custom-modal" onclick="if(event.target.id==='familyShareModal') closeFamilyShareModal();">
+    <div class="modal-content" style="max-width:420px;padding:0;overflow:hidden;border-radius:16px;">
+      <div style="background:linear-gradient(135deg,#4facfe 0%,#00f2fe 100%);padding:18px 20px 14px;color:#fff;">
+        <div style="font-size:1.1em;font-weight:700;">👨‍👩‍👧 家族と共有</div>
+        <div style="font-size:0.8em;opacity:0.85;margin-top:4px;">バックエンドなし・コードをLINEで送るだけ</div>
+      </div>
+      <!-- タブ -->
+      <div style="display:flex;border-bottom:1px solid #eee;">
+        <button id="familyShareTab_send" onclick="familyShareSwitchTab('send')"
+          style="flex:1;padding:8px;border:none;border-bottom:2px solid #4facfe;background:#fff;font-weight:700;color:#1565c0;cursor:pointer;font-size:0.9em;">
+          📤 送る
+        </button>
+        <button id="familyShareTab_recv" onclick="familyShareSwitchTab('recv')"
+          style="flex:1;padding:8px;border:none;border-bottom:2px solid #eee;background:#fafafa;color:#888;cursor:pointer;font-size:0.9em;">
+          📥 受け取る
+        </button>
+      </div>
+      <!-- 送るペイン -->
+      <div id="familySharePane_send" style="padding:18px 20px;">
+        <!-- 送信者名未設定時に表示 -->
+        <div id="familySenderNameArea" style="display:none;background:#fff3e0;border-radius:8px;padding:10px;margin-bottom:12px;">
+          <label style="font-size:0.83em;font-weight:600;color:#e65100;display:block;margin-bottom:6px;">👤 あなたの名前（受け取る相手に表示されます）</label>
+          <div style="display:flex;gap:6px;">
+            <input id="familySenderNameInput" type="text" placeholder="例：きくモン" maxlength="20"
+              style="flex:1;padding:8px 10px;border:1.5px solid #ffb74d;border-radius:8px;font-size:0.88em;">
+            <button onclick="saveSenderName()"
+              style="padding:8px 14px;border:none;border-radius:8px;background:#ff8f00;color:#fff;font-weight:700;cursor:pointer;font-size:0.85em;">保存</button>
+          </div>
+        </div>
+        <p style="margin:0 0 10px;font-size:0.83em;color:#555;line-height:1.6;">
+          送信するカレンダーを選択してください。<br>
+          <span style="color:#7b1fa2;">🔒 秘密カレンダーは自動的に除外されます。</span>
+        </p>
+        <div id="familyCalCheckboxes" style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:6px;"></div>
+        <label style="font-size:0.83em;font-weight:600;color:#333;display:block;margin-bottom:4px;">🔑 パスワード（任意）</label>
+        <input id="familyExportPw" type="password" placeholder="家族だけが知るパスワード（省略可）"
+          style="width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:0.88em;box-sizing:border-box;margin-bottom:10px;">
+        <button id="familyGenCodeBtn" onclick="familyGenerateCode()"
+          style="width:100%;padding:10px;border:none;border-radius:8px;background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff;font-weight:700;cursor:pointer;font-size:0.9em;">
+          ✨ コードを生成する
+        </button>
+        <div id="familyExportMsg" style="font-size:0.78em;color:#888;min-height:16px;margin:6px 0 8px;"></div>
+        <textarea id="familyExportCode" readonly rows="3" placeholder="コードがここに表示されます"
+          style="width:100%;padding:8px;border:1.5px solid #ddd;border-radius:8px;font-size:0.72em;font-family:monospace;box-sizing:border-box;resize:none;background:#f9f9f9;"></textarea>
+        <button id="familyCopyBtn" onclick="familyCopyCode()"
+          style="width:100%;margin-top:8px;padding:9px;border:1.5px solid #4facfe;border-radius:8px;background:#fff;color:#1565c0;font-weight:700;cursor:pointer;font-size:0.88em;">
+          📋 コピー
+        </button>
+      </div>
+      <!-- 受け取るペイン -->
+      <div id="familySharePane_recv" style="padding:18px 20px;display:none;">
+        <p style="margin:0 0 12px;font-size:0.83em;color:#555;line-height:1.6;">
+          家族から受け取ったコードを貼り付けてください。<br>同じIDのタスクは自動的に更新されます。
+        </p>
+        <label style="font-size:0.83em;font-weight:600;color:#333;display:block;margin-bottom:4px;">📋 コード</label>
+        <textarea id="familyImportCode" rows="3" placeholder="FMLY1: または FMLY1E: で始まるコードを貼り付け"
+          style="width:100%;padding:8px;border:1.5px solid #ddd;border-radius:8px;font-size:0.72em;font-family:monospace;box-sizing:border-box;resize:none;margin-bottom:10px;"></textarea>
+        <label style="font-size:0.83em;font-weight:600;color:#333;display:block;margin-bottom:4px;">🔑 パスワード（暗号化の場合）</label>
+        <input id="familyImportPw" type="password" placeholder="FMLY1E: の場合のみ入力"
+          style="width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:0.88em;box-sizing:border-box;margin-bottom:10px;">
+        <button id="familyImportBtn" onclick="familyImportCode()"
+          style="width:100%;padding:10px;border:none;border-radius:8px;background:linear-gradient(135deg,#43a047,#66bb6a);color:#fff;font-weight:700;cursor:pointer;font-size:0.9em;">
+          📥 取り込む
+        </button>
+        <div id="familyImportMsg" style="font-size:0.8em;color:#888;min-height:18px;margin-top:8px;line-height:1.5;"></div>
+      </div>
+      <div style="padding:0 20px 16px;text-align:center;">
+        <button onclick="closeFamilyShareModal()"
+          style="background:none;border:none;color:#aaa;font-size:0.85em;cursor:pointer;padding:4px 12px;">閉じる</button>
       </div>
     </div>
   </div>
@@ -3630,6 +3727,55 @@
      * - 月間/年間ビューはdateフィールドで直接フィルタ（フラグ不要）
      */
     let allTasks = []; // 全タスクの唯一のデータソース
+
+    // ===== カレンダー定義 SSOT =====
+    const DEFAULT_CALENDARS = [
+      { id: 'default',  name: 'デフォルト',    color: '#4facfe', visible: true,  shareable: true  },
+      { id: 'work',     name: '仕事',          color: '#1e88e5', visible: true,  shareable: true  },
+      { id: 'private',  name: 'プライベート',  color: '#43a047', visible: true,  shareable: true  },
+      { id: 'secret',   name: '秘密',          color: '#7b1fa2', visible: true,  shareable: false },
+    ];
+    let calendars = [];
+
+    function saveCalendars() {
+      localStorage.setItem('calendars', JSON.stringify(calendars));
+    }
+
+    function loadCalendars() {
+      const saved = localStorage.getItem('calendars');
+      if (saved) {
+        try { calendars = JSON.parse(saved); } catch(e) { calendars = [...DEFAULT_CALENDARS]; }
+      } else {
+        calendars = [...DEFAULT_CALENDARS];
+        saveCalendars();
+      }
+    }
+
+    function getCalendar(id) {
+      return calendars.find(c => c.id === id) || calendars[0] || DEFAULT_CALENDARS[0];
+    }
+
+    // 表示ONのカレンダーIDセット（クイックフィルター用・セッション中のみ）
+    let activeCalendarIds = null; // null = 全表示
+    function getActiveCalendarIds() {
+      if (activeCalendarIds !== null) return activeCalendarIds;
+      // 設定のvisible=trueのもの
+      return new Set(calendars.filter(c => c.visible).map(c => c.id));
+    }
+    function isCalendarVisible(calendarId) {
+      const id = calendarId || 'default';
+      return getActiveCalendarIds().has(id);
+    }
+
+    // ===== デバイスID（端末固有・ユーザー非意識） =====
+    function getOrCreateDeviceId() {
+      let did = localStorage.getItem('deviceId');
+      if (!did) {
+        did = 'd-' + Math.random().toString(36).slice(2, 10);
+        localStorage.setItem('deviceId', did);
+      }
+      return did;
+    }
     let taskIdCounter = 1; // 互換性のため保持（実際はUUIDを使用）
 
     // 初期データ（テストデータ54件 - 大学3年生・マックバイト・彼氏あり）
@@ -3708,7 +3854,7 @@
      * - 週間タスク作成: createTask("会議", "2026-02-05", "09:00", 1, false, true)
      * - 日次＋週間: createTask("会議", "2026-02-05", "09:00", 1, true, true)
      */
-    function createTask(text, date, time, section, showInDaily = true, showInWeekly = false) {
+    function createTask(text, date, time, section, showInDaily = true, showInWeekly = false, calendarId = 'default') {
       // 同じ日・同じセクションの最大orderを取得
       const sameGroupTasks = allTasks.filter(t => t.date === date && t.section === section);
       const maxOrder = sameGroupTasks.length > 0 
@@ -3722,13 +3868,16 @@
         memo: null,
         date: date,
         time: time || null,
-        endTime: null,      // 終了時刻 "17:00"
-        category: null,     // "private"|"work"|"urgent"|null（カテゴリ色分け）
+        endTime: null,
+        category: null,
         section: section,
         order: maxOrder,
         completed: false,
         showInDaily: showInDaily,
         showInWeekly: showInWeekly,
+        calendarId: calendarId,          // どのカレンダーに属するか
+        owner: localStorage.getItem('profileName') || null,
+        ownerId: getOrCreateDeviceId(),  // 端末固有ID（識別用）
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
@@ -3788,33 +3937,20 @@
     function getDailyTasks(date) {
       const result = { 1: [], 2: [], 3: [], 4: [] };
       
-      
       allTasks
         .filter(t => {
-          // showInDailyがfalseなら除外
           if (!t.showInDaily) return false;
-          
-          // 日次専用タスク（週間非対応）→ 常に表示
-          if (!t.showInWeekly) {
-            return true;
-          }
-          
-          // 週間も対応 → その日だけ表示
-          const match = (t.date === date);
-          return match;
+          if (!isCalendarVisible(t.calendarId)) return false;
+          if (!t.showInWeekly) return true;
+          return (t.date === date);
         })
         .forEach(t => {
-          if (result[t.section]) {
-            result[t.section].push(t);
-          }
+          if (result[t.section]) result[t.section].push(t);
         });
       
-      // 各象限をorder順にソート（orderがなければ0扱い）
       for (let sec = 1; sec <= 4; sec++) {
         result[sec].sort((a, b) => (a.order || 0) - (b.order || 0));
       }
-      
-      
       return result;
     }
 
@@ -3836,13 +3972,16 @@
      */
     function getWeeklyTasks(startDate, endDate) {
       return allTasks
-        .filter(t => t.showInWeekly && t.time && t.date >= startDate && t.date <= endDate)
+        .filter(t =>
+          t.showInWeekly &&
+          t.time &&
+          t.date >= startDate &&
+          t.date <= endDate &&
+          isCalendarVisible(t.calendarId)
+        )
         .sort((a, b) => {
-          // まず日付順
           if (a.date !== b.date) return a.date.localeCompare(b.date);
-          // 同じ日なら時間順
           if (a.time !== b.time) return a.time.localeCompare(b.time);
-          // 同じ時間ならorder順
           return (a.order || 0) - (b.order || 0);
         });
     }
@@ -3855,6 +3994,8 @@
 
     // マスターデータ読み込み
     function loadAllTasks() {
+      loadCalendars();
+      getOrCreateDeviceId(); // 初回起動時にdeviceIdを発行
       const saved = localStorage.getItem('allTasks');
       if (saved) {
         try {
@@ -4180,7 +4321,8 @@
         return;
       }
       
-      const time = document.getElementById('weeklyTaskTime').value;
+      const rawTime = document.getElementById('weeklyTaskTime').value;
+      const time = rawTime || '09:00'; // 時間未入力なら09:00デフォルト
       
       // 今週の月曜日を基準に日付を計算
       const now = new Date();
@@ -4199,22 +4341,15 @@
         updateTask(pendingScheduleTask.taskId, {
           date: dateStr,
           time: time,
-          showInWeekly: true
+          showInWeekly: true,
+          showInDaily: true
         });
       } else {
-        // 新規タスクを作成（日次＋週間の両方に表示）
         createTask(pendingScheduleTask.taskText, dateStr, time, 1, true, true);
       }
       
       closeWeeklyTaskModal();
-      
-      // 週間ビューが表示されていたら更新
-      if (isWeeklyViewVisible()) {
-        renderWeeklyView();
-      }
-      
-      // 日次ビューも再描画（今日または元の日付のタスクが変更された場合）
-      const today = getLocalDateStr(new Date());
+      renderWeeklyView();
       renderAllSections();
     }
 
@@ -4228,6 +4363,7 @@
     function renderWeeklyView() {
       const container = document.getElementById('weeklyContainer');
       container.innerHTML = '';
+      renderCalendarFilter('weeklyCalendarFilter');
 
       // ── 月曜日算出 ────────────────────────────────────
       const baseDate = new Date(currentWeekDate);
@@ -4247,6 +4383,30 @@
       const nowMin   = now.getMinutes();
       const ROW_H    = 80;
       const TOTAL_H  = ROW_H * 24;
+
+      // ── owner（家族メンバー）カラーパレット ──────────────────
+      // 最大8人分。自分のprofileNameと照合して色を決定
+      const OWNER_PALETTE = [
+        { bg:'#e3f2fd', bd:'#1565c0' },  // 青
+        { bg:'#fce4ec', bd:'#c62828' },  // 赤
+        { bg:'#f3e5f5', bd:'#6a1b9a' },  // 紫
+        { bg:'#e8f5e9', bd:'#2e7d32' },  // 緑
+        { bg:'#fff8e1', bd:'#f57f17' },  // 黄
+        { bg:'#fbe9e7', bd:'#bf360c' },  // 橙
+        { bg:'#e0f7fa', bd:'#006064' },  // 青緑
+        { bg:'#f9fbe7', bd:'#558b2f' },  // 黄緑
+      ];
+      // ownerName → カラーのキャッシュ（描画中に一貫性を保つ）
+      const ownerColorCache = {};
+      let ownerColorIdx = 0;
+      function getOwnerColor(ownerName) {
+        if (!ownerName) return null;
+        if (!ownerColorCache[ownerName]) {
+          ownerColorCache[ownerName] = OWNER_PALETTE[ownerColorIdx % OWNER_PALETTE.length];
+          ownerColorIdx++;
+        }
+        return ownerColorCache[ownerName];
+      }
 
       const CAT_COLOR = {
         private: { bg:'#e8f5e9', bd:'#43a047', label:'🏠' },
@@ -4380,17 +4540,11 @@
           col.appendChild(bg);
         }
 
-        // ── 現在時刻ライン（今日のみ） ────────────────
-        if (isToday) {
-          const nowLine = document.createElement('div');
-          nowLine.className = 'wg-now-line';
-          nowLine.style.top = (nowHour * ROW_H + Math.round(nowMin / 60 * ROW_H)) + 'px';
-          col.appendChild(nowLine);
-        }
+        // ── 現在時刻ライン（今日のみ・タスクの後に追加してz-indexで前面へ） ──
 
-        // ── タスクブロック ────────────────────────────
+        body.appendChild(col);
         const tasksOnDay = allTasks.filter(t =>
-          t.kind === 'task' && t.date === dateStr && t.time
+          t.kind !== 'note' && t.date === dateStr && t.time && isCalendarVisible(t.calendarId)
         );
         tasksOnDay.forEach(task => {
           const [sh, sm] = task.time.split(':').map(Number);
@@ -4403,8 +4557,13 @@
             if (dur > 0) blockH = Math.round(dur / 60 * ROW_H);
           }
 
-          const catColor = task.category ? CAT_COLOR[task.category] : null;
-          const colors   = catColor || SEC_COLOR[task.section] || SEC_COLOR[2];
+          const catColor      = task.category ? CAT_COLOR[task.category] : null;
+          const myName        = localStorage.getItem('profileName') || null;
+          const cal           = getCalendar(task.calendarId);
+          const calColor      = cal ? { bg: cal.color + '22', bd: cal.color } : null;
+          const ownerColor    = (!catColor && task.owner && task.owner !== myName)
+                                ? getOwnerColor(task.owner) : null;
+          const colors = catColor || calColor || ownerColor || SEC_COLOR[task.section] || SEC_COLOR[2];
           const bgC = task.completed ? '#e8e8e8' : colors.bg;
           const bdC = task.completed ? '#bbb'    : colors.bd;
 
@@ -4440,6 +4599,13 @@
           const titleSpan = document.createElement('span');
           titleSpan.className = 'wg-task-title';
           titleSpan.textContent = (catColor ? catColor.label + ' ' : '') + task.text;
+          // 他のメンバーのタスクはオーナー名を小さく表示
+          if (task.owner && task.owner !== myName && blockH >= 36) {
+            const ownerBadge = document.createElement('div');
+            ownerBadge.style.cssText = 'font-size:0.68em;color:' + bdC + ';opacity:0.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;font-weight:600;';
+            ownerBadge.textContent = '👤 ' + task.owner;
+            taskDiv.appendChild(ownerBadge);
+          }
           if (task.completed) titleSpan.style.cssText = 'text-decoration:line-through;opacity:0.6;flex:1;overflow:hidden;text-overflow:ellipsis;';
 
           const editBtn = document.createElement('span');
@@ -4470,6 +4636,14 @@
 
           col.appendChild(taskDiv);
         });
+
+        // ── 現在時刻ライン（タスク全描画後に追加 → z-indexで必ず前面） ──
+        if (isToday) {
+          const nowLine = document.createElement('div');
+          nowLine.className = 'wg-now-line';
+          nowLine.style.top = (nowHour * ROW_H + Math.round(nowMin / 60 * ROW_H)) + 'px';
+          col.appendChild(nowLine);
+        }
 
         body.appendChild(col);
       });
@@ -4852,7 +5026,7 @@
         }
         
         // この日のタスクを表示（dailyStatusは除外）
-        const dayTasks = allTasks.filter(t => t.date === dateStr && (t.kind || 'task') === 'task');
+        const dayTasks = allTasks.filter(t => t.date === dateStr && (t.kind || 'task') === 'task' && isCalendarVisible(t.calendarId));
         dayTasks.forEach(task => {
           const taskDiv = document.createElement('div');
           taskDiv.className = 'monthly-task-item';
@@ -5154,21 +5328,30 @@
       const dateStr = getLocalDateStr(currentTimelineDate);
       const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
       const d = currentTimelineDate;
-      const title = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}（${weekdays[d.getDay()]}）`;
-      document.getElementById('timelineTitle').textContent = title;
+      document.getElementById('timelineTitle').textContent =
+        d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate() + '（' + weekdays[d.getDay()] + '）';
 
       const body = document.getElementById('timelineBody');
       body.innerHTML = '';
 
-      // この日のタスク取得
-      const tasks = allTasks.filter(t => t.date === dateStr && (t.kind || 'task') === 'task');
-      
-      // 時間別に振り分け
-      const hourMap = {};  // hour -> [tasks]
-      const noTimeTasks = [];
-      tasks.forEach(t => {
+      // 週間ビューと同じROW_H・スタイル
+      const TL_ROW_H = 80;
+      const now = new Date();
+      const isToday = dateStr === getLocalDateStr(now);
+      const nowHour = now.getHours();
+      const nowMin  = now.getMinutes();
+
+      // この日の全タスク取得（calendarフィルタ適用）
+      const dayTasks = allTasks.filter(function(t) {
+        return t.date === dateStr && (t.kind || 'task') === 'task' && isCalendarVisible(t.calendarId);
+      });
+
+      // 時刻ありタスクをhourMapに
+      var hourMap = {};
+      var noTimeTasks = [];
+      dayTasks.forEach(function(t) {
         if (t.time) {
-          const h = parseInt(t.time.split(':')[0]);
+          var h = parseInt(t.time.split(':')[0]);
           if (!hourMap[h]) hourMap[h] = [];
           hourMap[h].push(t);
         } else {
@@ -5176,100 +5359,232 @@
         }
       });
 
-      const now = new Date();
-      const currentHour = now.getHours();
-      const isToday = dateStr === getLocalDateStr(now);
+      // コンテナ（週間ビューのwg-day-colと同構造）
+      var container = document.createElement('div');
+      container.style.cssText = 'position:relative; width:100%; overflow:hidden;';
+      var totalH = 24 * TL_ROW_H;
+      container.style.height = totalH + 'px';
 
-      // 6:00～23:00 を描画
-      for (let h = 0; h <= 23; h++) {
-        const row = document.createElement('div');
-        const isCurrent = isToday && h === currentHour;
-        row.style.cssText = `
-          display: flex; border-bottom: 1px solid #f0f0f0; min-height: 44px;
-          ${isCurrent ? 'background: linear-gradient(90deg, #fff9c4 0%, #fffde7 100%); border-left: 3px solid #fbc02d;' : ''}
-          ${h === 12 ? 'border-top: 2px solid #ff5722;' : ''}
-        `;
+      // 時間グリッド背景
+      for (var h = 0; h < 24; h++) {
+        var cell = document.createElement('div');
+        var isCurrent = isToday && h === nowHour;
+        cell.style.cssText = 'position:absolute;left:0;right:0;height:' + TL_ROW_H + 'px;top:' + (h * TL_ROW_H) + 'px;' +
+          'box-sizing:border-box;border-bottom:1px solid #eee;' +
+          (isCurrent ? 'background:linear-gradient(90deg,#fff9c4 0%,#fffde7 100%);' : (h % 2 === 0 ? 'background:#fafafa;' : 'background:#fff;'));
 
         // 時間ラベル
-        const timeLabel = document.createElement('div');
-        timeLabel.style.cssText = `
-          width: 52px; min-width: 52px; padding: 8px 4px; text-align: center;
-          font-size: 0.8em; font-weight: 600; color: ${isCurrent ? '#e65100' : '#999'};
-          border-right: 1px solid #e0e0e0; display: flex; align-items: flex-start; justify-content: center;
-        `;
-        timeLabel.textContent = `${String(h).padStart(2,'0')}:00`;
-        row.appendChild(timeLabel);
+        var label = document.createElement('div');
+        label.style.cssText = 'position:absolute;left:0;top:4px;width:44px;text-align:right;font-size:0.72em;font-weight:600;color:' +
+          (isCurrent ? '#e65100' : '#bbb') + ';padding-right:6px;';
+        label.textContent = String(h).padStart(2,'0') + ':00';
+        cell.appendChild(label);
 
-        // タスク領域
-        const taskArea = document.createElement('div');
-        taskArea.style.cssText = 'flex: 1; padding: 4px 8px; display: flex; flex-direction: column; gap: 3px; cursor: pointer;';
-        taskArea.addEventListener('click', (e) => {
-          if (e.target === taskArea) openWeeklyTaskCreateModal(dateStr, h);
-        });
-
-        if (hourMap[h]) {
-          hourMap[h].forEach(t => {
-            const colors = {
-              1: { bg: '#ffe6e6', border: '#ff4444' },
-              2: { bg: '#e8f5e9', border: '#4caf50' },
-              3: { bg: '#fffef5', border: '#ffc107' },
-              4: { bg: '#f0f0f0', border: '#999' }
-            };
-            const c = colors[t.section] || colors[4];
-            const item = document.createElement('div');
-            item.style.cssText = `
-              padding: 4px 8px; border-radius: 4px; font-size: 0.85em;
-              background: ${c.bg}; border-left: 3px solid ${c.border};
-              ${t.completed ? 'text-decoration: line-through; opacity: 0.6;' : ''}
-              cursor: pointer;
-            `;
-            item.textContent = `${t.time} ${t.text}`;
-            if (t.memo) item.title = t.memo;
-            item.addEventListener('click', (e) => {
-              e.stopPropagation();
-              editWeeklyTaskById(t.id);
-            });
-            taskArea.appendChild(item);
-          });
+        // 区切り線（太め：6時・12時・18時）
+        if (h === 6 || h === 12 || h === 18) {
+          cell.style.borderTop = '2px solid #e0e0e0';
         }
-        row.appendChild(taskArea);
-        body.appendChild(row);
+
+        container.appendChild(cell);
       }
 
-      // 時間未設定タスク
-      if (noTimeTasks.length > 0) {
-        const section = document.createElement('div');
-        section.style.cssText = 'padding: 8px 12px; background: #fafafa; border-top: 2px solid #e0e0e0;';
-        const label = document.createElement('div');
-        label.style.cssText = 'font-size: 0.75em; color: #999; margin-bottom: 6px; font-weight: 600;';
-        label.textContent = '⏱ 時間未設定';
-        section.appendChild(label);
-        noTimeTasks.forEach(t => {
-          const colors = { 1: { bg: '#ffe6e6', border: '#ff4444' }, 2: { bg: '#e8f5e9', border: '#4caf50' }, 3: { bg: '#fffef5', border: '#ffc107' }, 4: { bg: '#f0f0f0', border: '#999' } };
-          const c = colors[t.section] || colors[4];
-          const item = document.createElement('div');
-          item.style.cssText = `padding: 4px 8px; border-radius: 4px; font-size: 0.85em; background: ${c.bg}; border-left: 3px solid ${c.border}; margin-bottom: 3px; cursor: pointer; ${t.completed ? 'text-decoration: line-through; opacity: 0.6;' : ''}`;
-          item.textContent = t.text;
-          item.addEventListener('click', () => editWeeklyTaskById(t.id));
-          section.appendChild(item);
+      // container全体のクリック → タスクでない場所なら新規作成
+      // (タスクはe.stopPropagationしないが data-taskid で判定)
+      container.addEventListener('click', (function(tlDateStr, tlRowH) {
+        return function(e) {
+          // taskDivかその子要素がターゲットなら無視
+          var el = e.target;
+          while (el && el !== container) {
+            if (el.dataset && el.dataset.isTlTask) return;
+            el = el.parentElement;
+          }
+          // クリック位置から時刻を計算
+          var rect = container.getBoundingClientRect();
+          var y = e.clientY - rect.top + container.scrollTop;
+          var hour = Math.floor(y / tlRowH);
+          if (hour < 0) hour = 0;
+          if (hour > 23) hour = 23;
+          openWeeklyTaskCreateModal(tlDateStr, hour);
+        };
+      })(dateStr, TL_ROW_H));
+
+      // タスクブロック描画（週間ビューと同スタイル）
+      var CAT_COLOR_TL = {
+        private: { bg:'#e8f5e9', bd:'#43a047', label:'🏠' },
+        work:    { bg:'#e3f2fd', bd:'#1e88e5', label:'💼' },
+        urgent:  { bg:'#fce4ec', bd:'#e53935', label:'🔥' },
+      };
+      var SEC_COLOR_TL = {
+        1:{ bg:'#ffe6e6', bd:'#ff4444' },
+        2:{ bg:'#e8f5e9', bd:'#4caf50' },
+        3:{ bg:'#fffef5', bd:'#ffc107' },
+        4:{ bg:'#f0f0f0', bd:'#999999' },
+      };
+      var myName = localStorage.getItem('profileName') || null;
+
+      // ── 重なり検出：グリーディー列割り当て ──────────────────
+      var timedTasks = dayTasks.filter(function(t) { return !!t.time; }).map(function(t) {
+        var parts = t.time.split(':').map(Number);
+        var sh = parts[0], sm = parts[1];
+        var topPx = sh * TL_ROW_H + Math.round(sm / 60 * TL_ROW_H);
+        var blockH = 36;
+        if (t.endTime) {
+          var ep = t.endTime.split(':').map(Number);
+          var dur = (ep[0]*60+ep[1]) - (sh*60+sm);
+          if (dur > 0) blockH = Math.round(dur / 60 * TL_ROW_H);
+        }
+        return { task: t, topPx: topPx, blockH: blockH, col: 0, totalCols: 1 };
+      });
+
+      // 列を割り当て
+      var colEnds = [];
+      timedTasks.forEach(function(item) {
+        var placed = false;
+        for (var c = 0; c < colEnds.length; c++) {
+          if (item.topPx >= colEnds[c]) {
+            item.col = c;
+            colEnds[c] = item.topPx + item.blockH;
+            placed = true;
+            break;
+          }
+        }
+        if (!placed) {
+          item.col = colEnds.length;
+          colEnds.push(item.topPx + item.blockH);
+        }
+      });
+
+      // 重なるタスク同士のtotalColsを揃える
+      timedTasks.forEach(function(item) {
+        var maxCol = item.col;
+        timedTasks.forEach(function(other) {
+          var os = Math.max(item.topPx, other.topPx);
+          var oe = Math.min(item.topPx + item.blockH, other.topPx + other.blockH);
+          if (oe > os) maxCol = Math.max(maxCol, other.col);
         });
-        body.appendChild(section);
-      }
+        item.totalCols = maxCol + 1;
+      });
 
-      // タスクがない場合
-      if (tasks.length === 0) {
-        const empty = document.createElement('div');
-        empty.style.cssText = 'text-align: center; padding: 40px; color: #ccc; font-size: 0.9em;';
-        empty.textContent = 'タスクがありません';
-        body.appendChild(empty);
-      }
+      timedTasks.forEach(function(item) {
+        var task    = item.task;
+        var topPx   = item.topPx;
+        var blockH  = item.blockH;
+        var tcols   = item.totalCols;
+        var colIdx  = item.col;
+        // 列幅を計算（左48pxは時間ラベル）
+        var availW  = 'calc((100% - 52px) / ' + tcols + ')';
+        var leftVal = 'calc(48px + ' + colIdx + ' * (100% - 52px) / ' + tcols + ')';
+        var rightVal = colIdx < tcols - 1
+          ? 'calc(' + (tcols - colIdx - 1) + ' * (100% - 52px) / ' + tcols + ' + 4px)'
+          : '4px';
 
-      // 現在時刻にスクロール
+        var catColor = task.category ? CAT_COLOR_TL[task.category] : null;
+        var cal      = getCalendar(task.calendarId);
+        var calColor = cal ? { bg: cal.color + '22', bd: cal.color } : null;
+        var colors   = catColor || calColor || SEC_COLOR_TL[task.section] || SEC_COLOR_TL[2];
+        var bgC = task.completed ? '#e8e8e8' : colors.bg;
+        var bdC = task.completed ? '#bbb'    : colors.bd;
+
+        var taskDiv = document.createElement('div');
+        taskDiv.style.cssText = 'position:absolute;left:' + leftVal + ';right:' + rightVal + ';top:' + topPx + 'px;height:' + blockH + 'px;' +
+          'border-radius:5px;padding:3px 7px;font-size:0.82em;cursor:pointer;overflow:hidden;box-sizing:border-box;z-index:10;' +
+          'background:' + bgC + ';border-left:3px solid ' + bdC + ';border:1px solid ' + bdC + ';' +
+          (task.completed ? 'opacity:0.65;' : '');
+        taskDiv.dataset.isTlTask = '1'; // containerクリック判定用
+
+        var line1 = document.createElement('div');
+        line1.style.cssText = 'display:flex;align-items:center;gap:4px;overflow:hidden;';
+
+        var timeSpan = document.createElement('span');
+        timeSpan.style.cssText = 'font-weight:700;font-size:0.84em;flex-shrink:0;color:#555;';
+        timeSpan.textContent = task.time + (task.endTime ? '–' + task.endTime : '');
+
+        var titleSpan = document.createElement('span');
+        titleSpan.style.cssText = 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' +
+          (task.completed ? 'text-decoration:line-through;opacity:0.6;' : '');
+        titleSpan.textContent = (catColor ? catColor.label + ' ' : '') + task.text;
+
+        // 鉛筆ボタン（編集）
+        var editBtn = document.createElement('span');
+        editBtn.textContent = '✏️';
+        editBtn.title = '編集';
+        editBtn.style.cssText = 'flex-shrink:0;font-size:0.82em;opacity:0.6;cursor:pointer;padding:0 2px;';
+        editBtn.addEventListener('click', (function(tid) {
+          return function(e) { e.stopPropagation(); editWeeklyTaskById(tid); };
+        })(task.id));
+
+        line1.appendChild(timeSpan);
+        line1.appendChild(titleSpan);
+        line1.appendChild(editBtn);
+        taskDiv.appendChild(line1);
+
+        if (task.memo && blockH >= 52) {
+          var memo = document.createElement('div');
+          memo.style.cssText = 'font-size:0.78em;color:#777;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;';
+          memo.textContent = '📍 ' + task.memo;
+          taskDiv.appendChild(memo);
+        }
+
+        // タスク本体クリック → 完了トグル（横線）
+        taskDiv.addEventListener('click', (function(t, ts, tdiv) {
+          return function(e) {
+            if (e.target.textContent === '✏️') return;
+            t.completed = !t.completed;
+            saveAllTasks();
+            ts.style.textDecoration = t.completed ? 'line-through' : '';
+            ts.style.opacity = t.completed ? '0.6' : '1';
+            tdiv.style.opacity = t.completed ? '0.65' : '1';
+          };
+        })(task, titleSpan, taskDiv));
+        container.appendChild(taskDiv);
+      });
+
+      // 現在時刻ライン（タスクの後に追加）
       if (isToday) {
-        setTimeout(() => {
-          const rows = body.children;
-          const targetIdx = Math.max(0, currentHour);
-          if (rows[targetIdx]) rows[targetIdx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        var nowLine = document.createElement('div');
+        nowLine.style.cssText = 'position:absolute;left:0;right:0;height:0;border-top:1.5px solid rgba(244,67,54,0.45);z-index:25;pointer-events:none;top:' +
+          (nowHour * TL_ROW_H + Math.round(nowMin / 60 * TL_ROW_H)) + 'px;';
+        var dot = document.createElement('div');
+        dot.style.cssText = 'position:absolute;left:41px;top:-3px;width:6px;height:6px;border-radius:50%;background:rgba(244,67,54,0.55);';
+        nowLine.appendChild(dot);
+        container.appendChild(nowLine);
+      }
+
+      body.appendChild(container);
+
+      // 時刻なしタスクセクション（下部に固定）
+      if (noTimeTasks.length > 0) {
+        var noTimeSection = document.createElement('div');
+        noTimeSection.style.cssText = 'padding:8px 12px;background:#fafafa;border-top:2px solid #e0e0e0;margin-top:4px;border-radius:0 0 8px 8px;';
+        var noTimeLabel = document.createElement('div');
+        noTimeLabel.style.cssText = 'font-size:0.75em;color:#999;margin-bottom:6px;font-weight:600;';
+        noTimeLabel.textContent = '⏱ 時間未設定';
+        noTimeSection.appendChild(noTimeLabel);
+        noTimeTasks.forEach(function(t) {
+          var cal = getCalendar(t.calendarId);
+          var calColor = cal ? { bg: cal.color + '22', bd: cal.color } : null;
+          var colors = calColor || SEC_COLOR_TL[t.section] || SEC_COLOR_TL[2];
+          var item = document.createElement('div');
+          item.style.cssText = 'padding:5px 8px;border-radius:5px;font-size:0.85em;margin-bottom:4px;cursor:pointer;' +
+            'background:' + colors.bg + ';border-left:3px solid ' + colors.bd + ';' +
+            (t.completed ? 'text-decoration:line-through;opacity:0.6;' : '');
+          item.textContent = t.text;
+          if (t.memo) item.title = t.memo;
+          item.addEventListener('click', function() { editWeeklyTaskById(t.id); });
+          noTimeSection.appendChild(item);
+        });
+        body.appendChild(noTimeSection);
+      }
+
+      // 現在時刻へスクロール
+      if (isToday) {
+        setTimeout(function() {
+          var scrollTop = Math.max(0, (nowHour - 1) * TL_ROW_H);
+          var bodyEl = document.getElementById('timelineBody');
+          if (bodyEl) bodyEl.scrollTop = scrollTop;
+          // timelineViewへのスクロール
+          var tlView = document.getElementById('timelineView');
+          if (tlView) tlView.scrollTop = scrollTop;
         }, 50);
       }
     }
@@ -7168,6 +7483,227 @@
     }
 
     // ===================================================
+    // 家族共有（FMLY1 / FMLY1E）
+    // ===================================================
+
+    // 共有対象タスクを絞り込む（calendarId指定 + shareable=falseを除外）
+    function getFamilyShareTasks(targetCalendarIds = null) {
+      return allTasks.filter(t => {
+        if (t.kind === 'note') return false;
+        const cal = getCalendar(t.calendarId);
+        if (cal && !cal.shareable) return false; // shareable=falseのカレンダーは除外
+        if (targetCalendarIds && !targetCalendarIds.includes(t.calendarId || 'default')) return false;
+        return true;
+      });
+    }
+
+    // 共有コード生成（calendarId指定対応）
+    async function buildFamilyCode(pw, targetCalendarIds = null) {
+      const shareTasks = getFamilyShareTasks(targetCalendarIds);
+      const myName = localStorage.getItem('profileName') || null;
+      const myDeviceId = getOrCreateDeviceId();
+      const payload = JSON.stringify({
+        type: 'yarukotolist-family-v1',
+        sender: myName,
+        senderId: myDeviceId,
+        exportedAt: new Date().toISOString(),
+        tasks: shareTasks.map(t => ({ ...t, ownerId: myDeviceId, owner: myName }))
+      });
+      if (pw) {
+        return await nbEncrypt(payload, pw)
+          .then(enc => enc.replace(/^NB1E:/, 'FMLY1E:'));
+      } else {
+        return 'FMLY1:' + btoa(unescape(encodeURIComponent(payload)));
+      }
+    }
+
+    // 受け取ったコードからタスクをインポート（IDコンフリクト対応）
+    async function importFamilyCode(code, pw) {
+      let raw;
+      try {
+        if (code.toUpperCase().startsWith('FMLY1E:')) {
+          const enc = 'NB1E:' + code.slice(7);
+          raw = await nbDecrypt(enc, pw);
+        } else if (code.toUpperCase().startsWith('FMLY1:')) {
+          raw = decodeURIComponent(escape(atob(code.slice(6))));
+        } else {
+          return { ok: false, msg: 'コードの形式が正しくありません（FMLY1: または FMLY1E: で始まる必要があります）' };
+        }
+      } catch (e) {
+        return { ok: false, msg: 'パスワードが違うか、コードが壊れています' };
+      }
+
+      let data;
+      try { data = JSON.parse(raw); } catch(e) {
+        return { ok: false, msg: 'データの解析に失敗しました' };
+      }
+      if (!data.tasks || !Array.isArray(data.tasks)) {
+        return { ok: false, msg: 'タスクデータが含まれていません' };
+      }
+
+      const sender     = data.sender   || '不明';
+      const senderId   = data.senderId || null;
+      let added = 0, updated = 0;
+
+      data.tasks.forEach(incoming => {
+        incoming.owner   = sender;
+        incoming.ownerId = senderId;
+        const existing = allTasks.find(t => t.id === incoming.id);
+        if (existing) {
+          // ownerIdで照合（太郎2人問題対応）
+          const sameOwner = senderId
+            ? existing.ownerId === senderId
+            : existing.owner === sender;
+          if (sameOwner) {
+            Object.assign(existing, incoming);
+            updated++;
+          }
+        } else {
+          allTasks.push(incoming);
+          added++;
+        }
+      });
+
+      saveAllTasks();
+      return { ok: true, sender, added, updated };
+    }
+
+    // 家族共有モーダルを開く
+    function openFamilyShareModal() {
+      document.getElementById('familyShareModal').classList.add('show');
+      // カレンダー選択チェックボックスを動的生成
+      const box = document.getElementById('familyCalCheckboxes');
+      if (box) {
+        box.innerHTML = '';
+        calendars.filter(function(c) { return c.shareable; }).forEach(function(cal) {
+          const label = document.createElement('label');
+          label.style.cssText = 'display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:0.8em;font-weight:600;cursor:pointer;border:1.5px solid ' + cal.color + ';color:' + cal.color + ';';
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.className = 'family-cal-checkbox';
+          cb.value = cal.id;
+          cb.checked = true;
+          cb.style.accentColor = cal.color;
+          label.appendChild(cb);
+          label.appendChild(document.createTextNode(' ' + cal.name));
+          box.appendChild(label);
+        });
+      }
+      // 名前未設定なら入力欄を表示
+      const myName = (localStorage.getItem('profileName') || '').trim();
+      const nameArea = document.getElementById('familySenderNameArea');
+      if (nameArea) nameArea.style.display = myName ? 'none' : 'block';
+      familyShareReset();
+    }
+
+    function closeFamilyShareModal() {
+      document.getElementById('familyShareModal').classList.remove('show');
+    }
+
+    function familyShareReset() {
+      document.getElementById('familyShareTab_send').click();
+    }
+
+    function familyShareSwitchTab(tab) {
+      ['send','recv'].forEach(t => {
+        const btn = document.getElementById('familyShareTab_' + t);
+        const pane = document.getElementById('familySharePane_' + t);
+        const active = t === tab;
+        btn.style.cssText = active
+          ? 'flex:1;padding:8px;border:none;border-bottom:2px solid #4facfe;background:#fff;font-weight:700;color:#1565c0;cursor:pointer;font-size:0.9em;'
+          : 'flex:1;padding:8px;border:none;border-bottom:2px solid #eee;background:#fafafa;color:#888;cursor:pointer;font-size:0.9em;';
+        pane.style.display = active ? 'block' : 'none';
+      });
+      // 送信タブを開いたらコードをリセット
+      if (tab === 'send') {
+        document.getElementById('familyExportCode').value = '';
+        document.getElementById('familyExportMsg').textContent = '';
+      }
+      if (tab === 'recv') {
+        document.getElementById('familyImportCode').value = '';
+        document.getElementById('familyImportMsg').textContent = '';
+        document.getElementById('familyImportMsg').style.color = '#888';
+      }
+    }
+
+    function saveSenderName() {
+      const inp = document.getElementById('familySenderNameInput');
+      const name = (inp ? inp.value : '').trim();
+      if (!name) return;
+      localStorage.setItem('profileName', name);
+      const settingInp = document.getElementById('profileNameInput');
+      if (settingInp) settingInp.value = name;
+      document.getElementById('familySenderNameArea').style.display = 'none';
+      document.getElementById('familyExportMsg').textContent = '名前を保存しました。コードを生成してください。';
+      document.getElementById('familyExportMsg').style.color = '#2e7d32';
+    }
+
+    async function familyGenerateCode() {
+      // 名前未設定チェック（promptは使わずUI内で処理）
+      const myName = (localStorage.getItem('profileName') || '').trim();
+      if (!myName) {
+        const nameArea = document.getElementById('familySenderNameArea');
+        if (nameArea) nameArea.style.display = 'block';
+        document.getElementById('familySenderNameInput').focus();
+        document.getElementById('familyExportMsg').textContent = '⚠️ まず送信者名を入力してください';
+        document.getElementById('familyExportMsg').style.color = '#e53935';
+        return;
+      }
+
+      // 送信するカレンダーを選択（チェックボックス）
+      const checkboxes = document.querySelectorAll('.family-cal-checkbox:checked');
+      const targetIds = checkboxes.length > 0
+        ? Array.from(checkboxes).map(cb => cb.value)
+        : null; // null = shareable全て
+
+      const pw  = document.getElementById('familyExportPw').value;
+      const btn = document.getElementById('familyGenCodeBtn');
+      btn.textContent = '⏳ 生成中...'; btn.disabled = true;
+      try {
+        const code = await buildFamilyCode(pw, targetIds);
+        document.getElementById('familyExportCode').value = code;
+        const cnt = getFamilyShareTasks(targetIds).length;
+        document.getElementById('familyExportMsg').textContent =
+          (pw ? '🔒 暗号化コード' : '🔓 コード') + ' 生成完了 (' + cnt + '件)';
+      } catch(e) {
+        document.getElementById('familyExportMsg').textContent = '生成に失敗しました: ' + e.message;
+      }
+      btn.textContent = '✨ コードを生成する'; btn.disabled = false;
+    }
+
+    function familyCopyCode() {
+      const code = document.getElementById('familyExportCode').value;
+      if (!code) return;
+      navigator.clipboard.writeText(code).then(() => {
+        document.getElementById('familyCopyBtn').textContent = '✅ コピー済み';
+        setTimeout(() => document.getElementById('familyCopyBtn').textContent = '📋 コピー', 1500);
+      });
+    }
+
+    async function familyImportCode() {
+      const code = document.getElementById('familyImportCode').value.trim();
+      const pw   = document.getElementById('familyImportPw').value;
+      const msg  = document.getElementById('familyImportMsg');
+      if (!code) { msg.textContent = 'コードを貼り付けてください'; msg.style.color = '#e53935'; return; }
+
+      const btn = document.getElementById('familyImportBtn');
+      btn.textContent = '⏳ 取り込み中...'; btn.disabled = true;
+      msg.textContent = ''; msg.style.color = '#888';
+
+      const result = await importFamilyCode(code, pw);
+      if (result.ok) {
+        msg.style.color = '#2e7d32';
+        msg.textContent = result.sender + 'さんのデータを取り込みました（新規:' + result.added + '件 更新:' + result.updated + '件）';
+        renderAllSections();
+        if (isWeeklyViewVisible()) renderWeeklyView();
+      } else {
+        msg.style.color = '#e53935';
+        msg.textContent = '⚠️ ' + result.msg;
+      }
+      btn.textContent = '📥 取り込む'; btn.disabled = false;
+    }
+
+    // ===================================================
     // 自由帳 エクスポート / インポート
     // ===================================================
 
@@ -7683,6 +8219,7 @@
     
     // 設定をUIに反映
     function loadSettingsUI() {
+      loadCalendarSettingsUI();
       // 初期ビュー
       const initialView = localStorage.getItem('initialView') || 'monthly';
       const radios = document.querySelectorAll('input[name="initialView"]');
@@ -7834,8 +8371,153 @@
       }
     }
     
+    // ===================================================
+    // カレンダー管理UI
+    // ===================================================
+
+    function loadCalendarSettingsUI() {
+      const list = document.getElementById('calendarSettingsList');
+      if (!list) return;
+      list.innerHTML = '';
+      calendars.forEach(function(cal, idx) {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f5f5f5;';
+
+        // 色ピッカー
+        const colorInput = document.createElement('input');
+        colorInput.type = 'color';
+        colorInput.value = cal.color;
+        colorInput.style.cssText = 'width:28px;height:28px;border:none;border-radius:6px;cursor:pointer;padding:0;';
+        colorInput.onchange = function() { updateCalendarField(idx, 'color', this.value); };
+
+        // 名前入力
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.value = cal.name;
+        nameInput.maxLength = 20;
+        nameInput.style.cssText = 'flex:1;padding:6px 8px;border:1.5px solid #eee;border-radius:8px;font-size:0.88em;';
+        nameInput.onchange = function() { updateCalendarField(idx, 'name', this.value); };
+
+        // 表示チェック
+        const visLabel = document.createElement('label');
+        visLabel.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:0.8em;color:#555;cursor:pointer;';
+        const visCheck = document.createElement('input');
+        visCheck.type = 'checkbox';
+        visCheck.checked = !!cal.visible;
+        visCheck.onchange = function() { updateCalendarField(idx, 'visible', this.checked); };
+        visLabel.appendChild(visCheck);
+        visLabel.appendChild(document.createTextNode('表示'));
+
+        // 共有可チェック
+        const shareLabel = document.createElement('label');
+        shareLabel.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:0.8em;color:#555;cursor:pointer;';
+        const shareCheck = document.createElement('input');
+        shareCheck.type = 'checkbox';
+        shareCheck.checked = !!cal.shareable;
+        shareCheck.onchange = function() { updateCalendarField(idx, 'shareable', this.checked); };
+        shareLabel.appendChild(shareCheck);
+        shareLabel.appendChild(document.createTextNode('共有可'));
+
+        row.appendChild(colorInput);
+        row.appendChild(nameInput);
+        row.appendChild(visLabel);
+        row.appendChild(shareLabel);
+
+        // 削除ボタン（複数ある場合のみ）
+        if (calendars.length > 1) {
+          const delBtn = document.createElement('button');
+          delBtn.textContent = '✕';
+          delBtn.style.cssText = 'background:none;border:none;color:#ccc;font-size:1.1em;cursor:pointer;padding:0 4px;';
+          delBtn.onclick = function() { removeCalendar(idx); };
+          row.appendChild(delBtn);
+        }
+
+        list.appendChild(row);
+      });
+    }
+
+    function updateCalendarField(idx, field, value) {
+      if (calendars[idx]) {
+        calendars[idx][field] = value;
+        // visible変更時はフィルターキャッシュをリセット
+        if (field === 'visible') activeCalendarIds = null;
+      }
+    }
+
+    function addCalendarSetting() {
+      if (calendars.length >= 10) { alert('カレンダーは最大10個です'); return; }
+      const colors = ['#e91e63','#ff5722','#009688','#607d8b','#795548'];
+      calendars.push({
+        id: 'cal-' + Date.now(),
+        name: 'カレンダー' + (calendars.length + 1),
+        color: colors[calendars.length % colors.length],
+        visible: true,
+        shareable: true
+      });
+      loadCalendarSettingsUI();
+    }
+
+    function removeCalendar(idx) {
+      const cal = calendars[idx];
+      if (!confirm(`「${cal.name}」を削除しますか？\nこのカレンダーのタスクは「デフォルト」に移動されます。`)) return;
+      // タスクのcalendarIdを付け替え
+      allTasks.forEach(t => { if (t.calendarId === cal.id) t.calendarId = 'default'; });
+      saveAllTasks();
+      calendars.splice(idx, 1);
+      loadCalendarSettingsUI();
+    }
+
+    // クイックフィルターバーを描画
+    function renderCalendarFilter(containerId) {
+      const bar = document.getElementById(containerId);
+      if (!bar) return;
+      bar.innerHTML = '';
+      const activeIds = getActiveCalendarIds();
+      calendars.filter(c => c.visible).forEach(cal => {
+        const btn = document.createElement('button');
+        const isOn = activeCalendarIds === null || activeCalendarIds.has(cal.id);
+        btn.style.cssText = `
+          padding:3px 10px;border-radius:20px;font-size:0.75em;font-weight:600;cursor:pointer;
+          border:1.5px solid ${cal.color};
+          background:${isOn ? cal.color : '#fff'};
+          color:${isOn ? '#fff' : cal.color};
+          transition:all 0.15s;
+        `;
+        btn.textContent = cal.name;
+        btn.onclick = () => {
+          if (activeCalendarIds === null) {
+            // 全ONの状態 → このカレンダーだけOFF
+            activeCalendarIds = new Set(calendars.filter(c => c.visible).map(c => c.id));
+            activeCalendarIds.delete(cal.id);
+          } else if (!activeCalendarIds.has(cal.id)) {
+            activeCalendarIds.add(cal.id);
+            // 全ONになったらnullに戻す
+            if (activeCalendarIds.size === calendars.filter(c => c.visible).length) {
+              activeCalendarIds = null;
+            }
+          } else {
+            activeCalendarIds.delete(cal.id);
+          }
+          renderCalendarFilter(containerId);
+          renderWeeklyView();
+        };
+        bar.appendChild(btn);
+      });
+      // 「全て」ボタン
+      if (activeCalendarIds !== null) {
+        const allBtn = document.createElement('button');
+        allBtn.style.cssText = 'padding:3px 10px;border-radius:20px;font-size:0.75em;font-weight:600;cursor:pointer;border:1.5px solid #ccc;background:#fff;color:#888;';
+        allBtn.textContent = '全て';
+        allBtn.onclick = () => { activeCalendarIds = null; renderCalendarFilter(containerId); renderWeeklyView(); };
+        bar.appendChild(allBtn);
+      }
+    }
+
     // 設定を保存
     function saveSettings() {
+      // カレンダー設定保存
+      saveCalendars();
+      activeCalendarIds = null; // フィルターリセット
       // 初期ビュー
       const selectedView = document.querySelector('input[name="initialView"]:checked');
       if (selectedView) {
@@ -8551,12 +9233,12 @@
         <label>メモ（任意）</label>
         <textarea id="taskEditMemo" rows="3" placeholder="詳細や持ち物など..."></textarea>
       </div>
-      <div class="task-edit-datetime" style="display: flex; gap: 12px; margin-bottom: 18px;">
+      <div class="task-edit-datetime" style="display: flex; gap: 12px; margin-bottom: 18px; align-items: flex-start;">
         <div style="flex: 1; min-width: 0;">
           <label>日付</label>
           <input type="date" id="taskEditDate">
         </div>
-        <div style="flex: 1; min-width: 0;">
+        <div style="flex: 0 0 auto; width: 180px;">
           <label>時間（任意）</label>
           <input type="hidden" id="taskEditTime">
           <div class="custom-time-picker" id="taskEditTimePicker">
