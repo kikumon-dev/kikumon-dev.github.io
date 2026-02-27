@@ -3139,6 +3139,8 @@
       <h2 id="monthlyTitle"></h2>
       <button class="monthly-nav-btn" onclick="changeMonth(1)">来月 ▶</button>
       <div id="widthSliderWrap" style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 4px;">
+        <button onclick="openFamilyShareModal()" title="家族と共有"
+          style="font-size:0.72em;background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff;border:none;border-radius:6px;padding:3px 8px;cursor:pointer;font-weight:700;">👨‍👩‍👧</button>
         <span style="font-size: 0.65em; color: #bbb;">↔</span>
         <input type="range" id="monthlyWidthSlider" min="100" max="300" value="100" 
           style="width: 70px; accent-color: #4facfe; cursor: pointer;"
@@ -3277,6 +3279,32 @@
 
       <!-- 月間表示モード -->
       <div style="margin-top: 24px; border-top: 1px solid #efefef; padding-top: 18px;">
+        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">週間ビュー</h3>
+        <div>
+          <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #262626; font-size: 0.9em;">表示日数</label>
+          <p style="font-size: 0.8em; color: #8e8e8e; margin: 0 0 10px 0;">週間ビューに表示する列数を選択します</p>
+          <div class="settings-radio-group" id="weeklyDaysGroup">
+            <label class="settings-radio-label">
+              <input type="radio" name="weeklyDays" value="3">
+              <span>📅 3日間</span>
+              <span style="font-size: 0.75em; color: #8e8e8e; margin-left: 8px;">縦長・詳細重視</span>
+            </label>
+            <label class="settings-radio-label">
+              <input type="radio" name="weeklyDays" value="5">
+              <span>📅 5日間</span>
+              <span style="font-size: 0.75em; color: #8e8e8e; margin-left: 8px;">平日のみ</span>
+            </label>
+            <label class="settings-radio-label">
+              <input type="radio" name="weeklyDays" value="7" checked>
+              <span>📅 7日間</span>
+              <span style="font-size: 0.75em; color: #8e8e8e; margin-left: 8px;">週全体（デフォルト）</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 月間表示モード -->
+      <div style="margin-top: 24px; border-top: 1px solid #efefef; padding-top: 18px;">
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">月間ビュー</h3>
         <div>
           <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #262626; font-size: 0.9em;">表示モード</label>
@@ -3396,7 +3424,7 @@
         <label style="font-size:0.83em;font-weight:600;color:#333;display:block;margin-bottom:4px;">🔑 パスワード（暗号化の場合）</label>
         <input id="familyImportPw" type="password" placeholder="FMLY1E: の場合のみ入力"
           style="width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:0.88em;box-sizing:border-box;margin-bottom:10px;">
-        <button id="familyImportBtn" onclick="familyImportCode()"
+        <button id="familyImportBtn" onclick="doFamilyImport()"
           style="width:100%;padding:10px;border:none;border-radius:8px;background:linear-gradient(135deg,#43a047,#66bb6a);color:#fff;font-weight:700;cursor:pointer;font-size:0.9em;">
           📥 取り込む
         </button>
@@ -4294,8 +4322,9 @@
         4:{ bg:'#f0f0f0', bd:'#999999' },
       };
 
+      const weeklyDaySetting = parseInt(localStorage.getItem('weeklyDays') || '7');
       const weekDates = [];
-      for (let i = 0; i < 7; i++) {
+      for (let i = 0; i < weeklyDaySetting; i++) {
         const d = new Date(monday);
         d.setDate(monday.getDate() + i);
         weekDates.push(d);
@@ -7198,8 +7227,13 @@
       var isSingle = nbSpreadMode !== 'spread';
 
       if (pages.length === 0 || !nbCurrentId) {
-        spread.innerHTML = '<div class="nb-empty-state"><span class="nb-empty-state-icon">📒</span><p>まだページがありません<br>メモ、アイデア、対策ノート、なんでも</p><button class="nb-empty-state-btn" onclick="nbNewPage()">＋ 最初のページを作る</button></div>';
-        return;
+        // ページがあれば1枚目を自動選択
+        if (pages.length > 0) {
+          nbCurrentId = pages[0].id;
+        } else {
+          spread.innerHTML = '<div class="nb-empty-state"><span class="nb-empty-state-icon">📒</span><p>まだページがありません<br>メモ、アイデア、対策ノート、なんでも</p><button class="nb-empty-state-btn" onclick="nbNewPage()">＋ 最初のページを作る</button></div>';
+          return;
+        }
       }
       var page = nbPage(nbCurrentId);
       if (!page) {
@@ -7473,9 +7507,12 @@
       data.tasks.forEach(incoming => {
         incoming.owner   = sender;
         incoming.ownerId = senderId;
+        // 相手のcalendarIdがこちらに存在しない場合はdefaultに
+        if (!calendars.find(c => c.id === incoming.calendarId)) {
+          incoming.calendarId = 'default';
+        }
         const existing = allTasks.find(t => t.id === incoming.id);
         if (existing) {
-          // ownerIdで照合（太郎2人問題対応）
           const sameOwner = senderId
             ? existing.ownerId === senderId
             : existing.owner === sender;
@@ -7490,7 +7527,10 @@
       });
 
       saveAllTasks();
-      return { ok: true, sender, added, updated };
+      // 取り込んだタスクの最古日付
+      const dates = data.tasks.map(t => t.date).filter(Boolean).sort();
+      const earliestDate = dates[0] || null;
+      return { ok: true, sender, added, updated, earliestDate };
     }
 
     // 家族共有モーダルを開く
@@ -7605,7 +7645,7 @@
       });
     }
 
-    async function familyImportCode() {
+    async function doFamilyImport() {
       const code = document.getElementById('familyImportCode').value.trim();
       const pw   = document.getElementById('familyImportPw').value;
       const msg  = document.getElementById('familyImportMsg');
@@ -7615,12 +7655,28 @@
       btn.textContent = '⏳ 取り込み中...'; btn.disabled = true;
       msg.textContent = ''; msg.style.color = '#888';
 
+      // 貼り間違え判定
+      if (code.toUpperCase().startsWith('NB1')) {
+        msg.style.color = '#e65100';
+        msg.textContent = '⚠️ それは「自由帳」のコードです。このページではなく、自由帳タブ内の「受け取る」から取り込んでください。';
+        btn.textContent = '📥 取り込む'; btn.disabled = false;
+        return;
+      }
+
       const result = await importFamilyCode(code, pw);
       if (result.ok) {
         msg.style.color = '#2e7d32';
         msg.textContent = result.sender + 'さんのデータを取り込みました（新規:' + result.added + '件 更新:' + result.updated + '件）';
+        // 取り込んだタスクの最古日付の月にジャンプ
+        if (result.earliestDate) {
+          const d = new Date(result.earliestDate);
+          currentMonthDate = new Date(d.getFullYear(), d.getMonth(), 1);
+        }
+        // 全ビュー再描画
         renderAllSections();
-        if (isWeeklyViewVisible()) renderWeeklyView();
+        renderMonthlyView();
+        renderWeeklyView();
+        if (document.getElementById('timelineView').style.display !== 'none') renderTimelineView();
       } else {
         msg.style.color = '#e53935';
         msg.textContent = '⚠️ ' + result.msg;
@@ -7956,10 +8012,20 @@
         document.getElementById('nbImportCodeBtn').addEventListener('click',async function(){
           var code=(document.getElementById('nbImportCode').value||'').trim();
           if(!code){ nbShowImportWarn('コードを貼り付けてください。'); return; }
+          // 貼り間違え判定
+          if(code.toUpperCase().startsWith('FMLY1')){ nbShowImportWarn('⚠️ それは「家族共有」のコードです。このページではなく、週間・月間ビュー右上の 👨‍👩‍👧 ボタンから取り込んでください。'); return; }
           if(code.toUpperCase().startsWith('NB1E:')){ await nbHandleEncryptedCode(code.replace(/^nb1e:/i,'NB1E:'),'nbImportPwCode'); }
           else if(code.toUpperCase().startsWith('NB1:')){
-            try{ nbDoImport(JSON.parse(decodeURIComponent(escape(atob(code.replace(/^nb1:/i,'NB1:').slice(4)))))); }
-            catch(e){ nbShowImportWarn('コードの読み取りに失敗しました。正しくコピーされているか確認してください。'); }
+            try{
+              var b64=code.replace(/^nb1:/i,'').trim();
+              var bin=atob(b64), bytes=new Uint8Array(bin.length);
+              for(var k=0;k<bin.length;k++) bytes[k]=bin.charCodeAt(k);
+              nbDoImport(JSON.parse(new TextDecoder('utf-8').decode(bytes)));
+            }
+            catch(e){
+              try{ nbDoImport(JSON.parse(decodeURIComponent(escape(atob(code.replace(/^nb1:/i,'NB1:').slice(4)))))); }
+              catch(e2){ nbShowImportWarn('コードの読み取りに失敗しました。正しくコピーされているか確認してください。'); }
+            }
           } else { nbShowImportWarn('正しいコードではありません。NB1: または NB1E: から始まるコードを貼り付けてください。'); }
         });
       }
@@ -8157,6 +8223,12 @@
       const monthlyRadios = document.querySelectorAll('input[name="monthlyMode"]');
       monthlyRadios.forEach(radio => {
         radio.checked = (radio.value === monthlyMode);
+      });
+
+      // 週間表示日数
+      const weeklyDays = localStorage.getItem('weeklyDays') || '7';
+      document.querySelectorAll('input[name="weeklyDays"]').forEach(radio => {
+        radio.checked = (radio.value === weeklyDays);
       });
 
       // 日次ビュー表示モード
@@ -8454,6 +8526,12 @@
       const selectedMonthlyMode = document.querySelector('input[name="monthlyMode"]:checked');
       if (selectedMonthlyMode) {
         localStorage.setItem('monthlyMode', selectedMonthlyMode.value);
+      }
+
+      // 週間表示日数
+      const selectedWeeklyDays = document.querySelector('input[name="weeklyDays"]:checked');
+      if (selectedWeeklyDays) {
+        localStorage.setItem('weeklyDays', selectedWeeklyDays.value);
       }
       
       // 日次ビュー表示モード
