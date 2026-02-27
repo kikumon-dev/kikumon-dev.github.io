@@ -23,7 +23,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.17.4';
+    const APP_VERSION = 'v0.17.5';
     document.addEventListener('DOMContentLoaded', function() {
       document.title = 'やることリスト - ' + APP_VERSION;
     });
@@ -4055,6 +4055,24 @@
             }
             localStorage.setItem('memoMigrationDone_v97', 'true');
           }
+
+          // category → calendarId マイグレーション（v0.17.0）
+          var catMigDone = localStorage.getItem('catMigrationDone_v170');
+          if (!catMigDone) {
+            var catMap = { private: 'private', work: 'work', urgent: 'default' };
+            var fixedCat = 0;
+            allTasks.forEach(function(task) {
+              if (task.category) {
+                if (!task.calendarId || task.calendarId === 'default') {
+                  task.calendarId = catMap[task.category] || 'default';
+                }
+                task.category = null;
+                fixedCat++;
+              }
+            });
+            if (fixedCat > 0) saveAllTasks();
+            localStorage.setItem('catMigrationDone_v170', 'true');
+          }
         } catch (e) {
           console.error('Failed to load allTasks:', e);
           allTasks = [];
@@ -4382,11 +4400,7 @@
         return ownerColorCache[ownerName];
       }
 
-      const CAT_COLOR = {
-        private: { bg:'#e8f5e9', bd:'#43a047', label:'🏠' },
-        work:    { bg:'#e3f2fd', bd:'#1e88e5', label:'💼' },
-        urgent:  { bg:'#fce4ec', bd:'#e53935', label:'🔥' },
-      };
+
       const SEC_COLOR = {
         1:{ bg:'#ffe6e6', bd:'#ff4444' },
         2:{ bg:'#e8f5e9', bd:'#4caf50' },
@@ -4531,13 +4545,11 @@
             if (dur > 0) blockH = Math.round(dur / 60 * ROW_H);
           }
 
-          const catColor      = task.category ? CAT_COLOR[task.category] : null;
-          const myName        = localStorage.getItem('profileName') || null;
-          const cal           = getCalendar(task.calendarId);
-          const calColor      = cal ? { bg: cal.color + '22', bd: cal.color } : null;
-          const ownerColor    = (!catColor && task.owner && task.owner !== myName)
-                                ? getOwnerColor(task.owner) : null;
-          const colors = catColor || calColor || ownerColor || SEC_COLOR[task.section] || SEC_COLOR[2];
+          const myName     = localStorage.getItem('profileName') || null;
+          const cal        = getCalendar(task.calendarId);
+          const calColor   = cal ? { bg: cal.color + '22', bd: cal.color } : null;
+          const ownerColor = (task.owner && task.owner !== myName) ? getOwnerColor(task.owner) : null;
+          const colors = calColor || ownerColor || SEC_COLOR[task.section] || SEC_COLOR[2];
           const bgC = task.completed ? '#e8e8e8' : colors.bg;
           const bdC = task.completed ? '#bbb'    : colors.bd;
 
@@ -4572,7 +4584,7 @@
 
           const titleSpan = document.createElement('span');
           titleSpan.className = 'wg-task-title';
-          titleSpan.textContent = (catColor ? catColor.label + ' ' : '') + task.text;
+          titleSpan.textContent = task.text;
           // 他のメンバーのタスクはオーナー名を小さく表示
           if (task.owner && task.owner !== myName && blockH >= 36) {
             const ownerBadge = document.createElement('div');
@@ -4736,8 +4748,7 @@
       const newTime = getTimeFromSelect('weeklyEdit');
       const newEndTime = getTimeFromSelect('weeklyEditEnd') || null;
       const newSection = parseInt(document.getElementById('editTaskSection').value);
-      const catRadio = document.querySelector('input[name="editCategory"]:checked');
-      const newCategory = catRadio && catRadio.value ? catRadio.value : null;
+      // calendarIdは_editCalendarIdを使用
       
       if (!newText) {
         alert('タスク名を入力してください');
@@ -4758,7 +4769,8 @@
         date: newDate,
         time: newTime,
         endTime: newEndTime,
-        category: newCategory,
+        calendarId: _editCalendarId || 'default',
+        category: null,
         section: newSection,
         showInWeekly: showInWeekly
       });
@@ -5395,12 +5407,7 @@
         };
       })(dateStr, TL_ROW_H));
 
-      // タスクブロック描画（週間ビューと同スタイル）
-      var CAT_COLOR_TL = {
-        private: { bg:'#e8f5e9', bd:'#43a047', label:'🏠' },
-        work:    { bg:'#e3f2fd', bd:'#1e88e5', label:'💼' },
-        urgent:  { bg:'#fce4ec', bd:'#e53935', label:'🔥' },
-      };
+      // タスクブロック描画（calendarIdで色決定）
       var SEC_COLOR_TL = {
         1:{ bg:'#ffe6e6', bd:'#ff4444' },
         2:{ bg:'#e8f5e9', bd:'#4caf50' },
@@ -5465,10 +5472,10 @@
           ? 'calc(' + (tcols - colIdx - 1) + ' * (100% - 52px) / ' + tcols + ' + 4px)'
           : '4px';
 
-        var catColor = task.category ? CAT_COLOR_TL[task.category] : null;
+
         var cal      = getCalendar(task.calendarId);
         var calColor = cal ? { bg: cal.color + '22', bd: cal.color } : null;
-        var colors   = catColor || calColor || SEC_COLOR_TL[task.section] || SEC_COLOR_TL[2];
+        var colors   = calColor || SEC_COLOR_TL[task.section] || SEC_COLOR_TL[2];
         var bgC = task.completed ? '#e8e8e8' : colors.bg;
         var bdC = task.completed ? '#bbb'    : colors.bd;
 
@@ -5489,7 +5496,7 @@
         var titleSpan = document.createElement('span');
         titleSpan.style.cssText = 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' +
           (task.completed ? 'text-decoration:line-through;opacity:0.6;' : '');
-        titleSpan.textContent = (catColor ? catColor.label + ' ' : '') + task.text;
+        titleSpan.textContent = task.text;
 
         // 鉛筆ボタン（編集）
         var editBtn = document.createElement('span');
@@ -5923,8 +5930,7 @@
       const taskTime = getTimeFromSelect('create');
       const taskEndTime = getTimeFromSelect('createEnd') || null;
       const taskSection = parseInt(document.getElementById('createTaskSection').value);
-      const catRadio = document.querySelector('input[name="createCategory"]:checked');
-      const taskCategory = catRadio && catRadio.value ? catRadio.value : null;
+      // calendarIdは_createCalendarIdを使用
       
       if (!taskText) {
         alert('タスク名を入力してください');
@@ -5940,8 +5946,9 @@
       const updates = {};
       if (taskMemo) updates.memo = taskMemo;
       if (taskEndTime) updates.endTime = taskEndTime;
-      if (taskCategory) updates.category = taskCategory;
-      if (Object.keys(updates).length > 0) updateTask(newTask.id, updates);
+      updates.calendarId = _createCalendarId || 'default';
+      updates.category = null;
+      updateTask(newTask.id, updates);
       
       closeCreateModal();
       renderWeeklyView();
