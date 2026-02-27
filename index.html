@@ -2784,7 +2784,7 @@
   </div>
 
   <!-- 日次タイムラインビュー -->
-  <div id="timelineView" style="display: none; max-width: 600px; margin: 0 auto; padding: 10px;">
+  <div id="timelineView" style="display: none; width: 100%; margin: 0; padding: 10px; box-sizing: border-box;">
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding: 0 2px;">
       <button class="monthly-nav-btn" style="padding: 5px 8px; font-size: 0.72em; white-space: nowrap; flex-shrink: 0;" onclick="changeTimelineDate(-1)">◀ 前日</button>
       <h2 id="timelineTitle" style="margin: 0; font-size: 0.88em; text-align: center; white-space: nowrap; font-weight: 700;"></h2>
@@ -3146,6 +3146,8 @@
         <button onclick="resetMonthlyWidth()" style="font-size: 0.6em; color: #aaa; background: none; border: 1px solid #ddd; border-radius: 3px; padding: 1px 4px; cursor: pointer;">↺</button>
       </div>
     </div>
+    <!-- カレンダークイックフィルター -->
+    <div id="monthlyCalendarFilter" style="display:flex;gap:6px;padding:4px 12px 6px;flex-wrap:wrap;border-bottom:1px solid #f0f0f0;background:#fafafa;"></div>
     <div id="monthlyCalendar" class="monthly-calendar">
       <!-- JavaScriptで動的に生成 -->
     </div>
@@ -3452,6 +3454,10 @@
           <button type="button" class="time-clear-btn" onclick="clearTimeSelect('monthly')" title="時間をクリア">✕</button>
         </div>
         <div style="font-size: 0.75em; color: #888; margin-top: 4px;">※時間を設定すると週間ビューにも表示されます</div>
+      </div>
+      <div style="margin: 15px 0;">
+        <label style="display: block; margin-bottom: 8px; font-weight: bold;">カレンダー（色分け）</label>
+        <div id="monthlyCalendarBtns" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
       </div>
       <div style="margin: 15px 0;">
         <label style="display: block; margin-bottom: 8px; font-weight: bold;">象限</label>
@@ -4235,7 +4241,7 @@
     function renderWeeklyView() {
       const container = document.getElementById('weeklyContainer');
       container.innerHTML = '';
-      renderCalendarFilter('weeklyCalendarFilter');
+      renderCalendarFilter('weeklyCalendarFilter', renderWeeklyView);
 
       // ── 月曜日算出 ────────────────────────────────────
       const baseDate = new Date(currentWeekDate);
@@ -4414,29 +4420,63 @@
         const tasksOnDay = allTasks.filter(t =>
           t.kind !== 'note' && t.date === dateStr && t.time && isCalendarVisible(t.calendarId)
         );
-        tasksOnDay.forEach(task => {
+
+        // 重なり解消: 列割り当て（タイムラインと同ロジック）
+        const wgItems = tasksOnDay.map(task => {
           const [sh, sm] = task.time.split(':').map(Number);
           const topPx = sh * ROW_H + Math.round(sm / 60 * ROW_H);
-
           let blockH = 36;
           if (task.endTime) {
             const [eh, em] = task.endTime.split(':').map(Number);
             const dur = (eh * 60 + em) - (sh * 60 + sm);
             if (dur > 0) blockH = Math.round(dur / 60 * ROW_H);
           }
+          return { task, topPx, blockH, col: 0, totalCols: 1 };
+        });
+        // 列割り当て
+        wgItems.forEach((item, idx) => {
+          const usedCols = new Set();
+          wgItems.slice(0, idx).forEach(other => {
+            const os = Math.max(item.topPx, other.topPx);
+            const oe = Math.min(item.topPx + item.blockH, other.topPx + other.blockH);
+            if (oe > os) usedCols.add(other.col);
+          });
+          let c = 0;
+          while (usedCols.has(c)) c++;
+          item.col = c;
+        });
+        // totalCols計算
+        wgItems.forEach((item, idx) => {
+          let maxCol = item.col;
+          wgItems.forEach((other, oidx) => {
+            if (oidx === idx) return;
+            const os = Math.max(item.topPx, other.topPx);
+            const oe = Math.min(item.topPx + item.blockH, other.topPx + other.blockH);
+            if (oe > os) maxCol = Math.max(maxCol, other.col);
+          });
+          item.totalCols = maxCol + 1;
+        });
 
+        wgItems.forEach(({ task, topPx, blockH, col: colIdx, totalCols }) => {
           const myName     = localStorage.getItem('profileName') || null;
-          const cal        = getCalendar(task.calendarId);
-          const calColor   = cal ? { bg: cal.color + '22', bd: cal.color } : null;
+          const taskCal    = getCalendar(task.calendarId);
+          const calColor   = taskCal ? { bg: taskCal.color + '22', bd: taskCal.color } : null;
           const ownerColor = (task.owner && task.owner !== myName) ? getOwnerColor(task.owner) : null;
           const colors = calColor || ownerColor || SEC_COLOR[task.section] || SEC_COLOR[2];
           const bgC = task.completed ? '#e8e8e8' : colors.bg;
           const bdC = task.completed ? '#bbb'    : colors.bd;
 
+          // 列幅計算
+          const leftPct  = (colIdx / totalCols * 100).toFixed(2) + '%';
+          const widthPct = (1 / totalCols * 100).toFixed(2) + '%';
+
           const taskDiv = document.createElement('div');
           taskDiv.className = 'wg-task';
           taskDiv.style.top    = topPx + 'px';
           taskDiv.style.height = blockH + 'px';
+          taskDiv.style.left   = 'calc(' + leftPct + ' + 3px)';
+          taskDiv.style.width  = 'calc(' + widthPct + ' - 6px)';
+          taskDiv.style.right  = 'auto';
           taskDiv.style.backgroundColor = bgC;
           taskDiv.style.borderLeftColor = bdC;
           taskDiv.style.borderColor     = bdC;
@@ -4501,7 +4541,7 @@
           });
 
           col.appendChild(taskDiv);
-        });
+        });  // wgItems.forEach終わり
 
         // ── 現在時刻ライン（タスク全描画後に追加 → z-indexで必ず前面） ──
         if (isToday) {
@@ -4594,10 +4634,51 @@
       var container = document.getElementById(containerId);
       if (!container) return;
       container.innerHTML = '';
-      calendars.forEach(function(cal) {
-        var btn = document.createElement('button');
-        btn.textContent = cal.name;
-        container.appendChild(btn);
+      container.style.cssText = 'display:flex;flex-direction:column;text-align:left;';
+      calendars.filter(function(c) { return c.visible; }).forEach(function(cal) {
+        var isSelected = cal.id === selectedCalId;
+        var row = document.createElement('div');
+        // 設定画面と完全に同じrow style
+        row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid #f5f5f5;cursor:pointer;text-align:left;';
+
+        // 設定画面と同じ color input 風スウォッチ（28×28px）
+        var swatch = document.createElement('span');
+        swatch.style.cssText = 'width:28px;height:28px;border-radius:6px;flex-shrink:0;display:inline-block;background:' + cal.color + ';border:1px solid rgba(0,0,0,0.08);';
+
+        // 名前（設定画面と同じ flex:1）
+        var label = document.createElement('span');
+        label.style.cssText = 'flex:1;font-size:0.88em;font-weight:' + (isSelected ? '700' : '400') + ';color:#222;';
+        label.textContent = cal.name;
+
+        // 選択中: チェックマーク（設定画面のチェックボックスに相当）
+        var check = document.createElement('span');
+        check.style.cssText = 'font-size:1em;font-weight:700;color:' + cal.color + ';visibility:' + (isSelected ? 'visible' : 'hidden') + ';';
+        check.textContent = '✓';
+
+        row.appendChild(swatch);
+        row.appendChild(label);
+        row.appendChild(check);
+
+        // 選択中行のハイライト
+        if (isSelected) {
+          row.style.background = cal.color + '0f';
+          row.style.marginLeft = '-2px';
+          row.style.paddingLeft = '2px';
+          row.style.borderLeft = '3px solid ' + cal.color;
+        }
+
+        row.addEventListener('mouseenter', function() {
+          if (!isSelected) row.style.background = '#f9f9f9';
+        });
+        row.addEventListener('mouseleave', function() {
+          if (!isSelected) row.style.background = '';
+        });
+        row.addEventListener('click', function() {
+          onSelect(cal.id);
+          renderCalendarSelector(containerId, cal.id, onSelect);
+        });
+
+        container.appendChild(row);
       });
     }
     var _editCalendarId = 'default';
@@ -4703,6 +4784,9 @@
     function renderMonthlyView() {
       const calendar = document.getElementById('monthlyCalendar');
       calendar.innerHTML = '';
+
+      // カレンダーフィルター描画
+      renderCalendarFilter('monthlyCalendarFilter', renderMonthlyView);
       
       // 月間表示モード取得
       const monthlyMode = localStorage.getItem('monthlyMode') || 'fixed';
@@ -5645,35 +5729,40 @@
       return `${date.getFullYear()}/${month}/${day}（${weekday}）`;
     }
     
+    var _monthlyCalendarId = 'default';
+
     function openMonthlyTaskAddModal(dateStr) {
       document.getElementById('monthlyModalTitle').textContent = 'タスク追加';
       document.getElementById('monthlyTaskInput').value = '';
       document.getElementById('monthlyTaskMemo').value = '';
       document.getElementById('monthlyTaskDate').value = dateStr;
       document.getElementById('monthlyTaskId').value = '';
-      clearTimeSelect('monthly'); // 時間なし
-      document.getElementById('monthlyTaskSection').value = '2'; // デフォルトは第2象限
+      clearTimeSelect('monthly');
+      document.getElementById('monthlyTaskSection').value = '2';
       document.getElementById('monthlyDeleteBtn').style.display = 'none';
+      _monthlyCalendarId = 'default';
+      renderCalendarSelector('monthlyCalendarBtns', _monthlyCalendarId, function(id) { _monthlyCalendarId = id; });
       document.getElementById('monthlyTaskModal').classList.add('show');
       document.getElementById('monthlyTaskInput').focus();
     }
-    
+
     function openMonthlyTaskEditModal(taskId) {
       const task = allTasks.find(t => t.id === taskId);
       if (!task) return;
-      
+
       document.getElementById('monthlyModalTitle').textContent = 'タスク編集';
       document.getElementById('monthlyTaskInput').value = task.text;
       document.getElementById('monthlyTaskMemo').value = task.memo || '';
       document.getElementById('monthlyTaskDate').value = task.date;
       document.getElementById('monthlyTaskId').value = task.id;
-      setTimeSelect('monthly', task.time); // 時間があれば設定
+      setTimeSelect('monthly', task.time);
       document.getElementById('monthlyTaskSection').value = task.section;
       document.getElementById('monthlyDeleteBtn').style.display = 'inline-block';
+      _monthlyCalendarId = task.calendarId || 'default';
+      renderCalendarSelector('monthlyCalendarBtns', _monthlyCalendarId, function(id) { _monthlyCalendarId = id; });
       document.getElementById('monthlyTaskModal').classList.add('show');
       document.getElementById('monthlyTaskInput').focus();
     }
-    
     function closeMonthlyTaskModal() {
       document.getElementById('monthlyTaskModal').classList.remove('show');
     }
@@ -5701,13 +5790,11 @@
       
       if (taskId) {
         // 編集（日付も更新）
-        updateTask(taskId, { text, memo: memo || null, date: dateStr, time, section, showInWeekly });
+        updateTask(taskId, { text, memo: memo || null, date: dateStr, time, section, showInWeekly, calendarId: _monthlyCalendarId || 'default' });
       } else {
         // 新規作成
         const newTask = createTask(text, dateStr, time, section, true, showInWeekly);
-        if (memo) {
-          updateTask(newTask.id, { memo });
-        }
+        updateTask(newTask.id, { memo: memo || null, calendarId: _monthlyCalendarId || 'default' });
       }
       
       closeMonthlyTaskModal();
@@ -8262,11 +8349,10 @@
     }
 
     // クイックフィルターバーを描画
-    function renderCalendarFilter(containerId) {
+    function renderCalendarFilter(containerId, onChangeCallback) {
       const bar = document.getElementById(containerId);
       if (!bar) return;
       bar.innerHTML = '';
-      const activeIds = getActiveCalendarIds();
       calendars.filter(c => c.visible).forEach(cal => {
         const btn = document.createElement('button');
         const isOn = activeCalendarIds === null || activeCalendarIds.has(cal.id);
@@ -8280,20 +8366,18 @@
         btn.textContent = cal.name;
         btn.onclick = () => {
           if (activeCalendarIds === null) {
-            // 全ONの状態 → このカレンダーだけOFF
             activeCalendarIds = new Set(calendars.filter(c => c.visible).map(c => c.id));
             activeCalendarIds.delete(cal.id);
           } else if (!activeCalendarIds.has(cal.id)) {
             activeCalendarIds.add(cal.id);
-            // 全ONになったらnullに戻す
             if (activeCalendarIds.size === calendars.filter(c => c.visible).length) {
               activeCalendarIds = null;
             }
           } else {
             activeCalendarIds.delete(cal.id);
           }
-          renderCalendarFilter(containerId);
-          renderWeeklyView();
+          renderCalendarFilter(containerId, onChangeCallback);
+          if (onChangeCallback) onChangeCallback();
         };
         bar.appendChild(btn);
       });
@@ -8302,7 +8386,11 @@
         const allBtn = document.createElement('button');
         allBtn.style.cssText = 'padding:3px 10px;border-radius:20px;font-size:0.75em;font-weight:600;cursor:pointer;border:1.5px solid #ccc;background:#fff;color:#888;';
         allBtn.textContent = '全て';
-        allBtn.onclick = () => { activeCalendarIds = null; renderCalendarFilter(containerId); renderWeeklyView(); };
+        allBtn.onclick = () => {
+          activeCalendarIds = null;
+          renderCalendarFilter(containerId, onChangeCallback);
+          if (onChangeCallback) onChangeCallback();
+        };
         bar.appendChild(allBtn);
       }
     }
