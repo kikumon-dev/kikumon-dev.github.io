@@ -23,7 +23,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.17.5';
+    const APP_VERSION = 'v0.18.0';
     document.addEventListener('DOMContentLoaded', function() {
       document.title = 'やることリスト - ' + APP_VERSION;
     });
@@ -3552,7 +3552,6 @@
     let escapeLog = [];
 
     // 週間タスク用（日付ごとの時間付きタスク）
-    let weeklyTasks = {};
     // 構造: { '2026-02-03': [{ text: 'タスク', time: '09:00', completed: false }, ...], ... }
 
     // 1分タイマー用
@@ -3753,7 +3752,7 @@
     let taskIdCounter = 1; // 互換性のため保持（実際はUUIDを使用）
 
     // 初期データ（テストデータ54件 - 大学3年生・マックバイト・彼氏あり）
-    const INITIAL_DATA = [{"id":"58c3b5d3-3dab-468e-b94d-644ad8ff2b67","text":"熱力学の宿題","date":"2026-02-09","time":"10:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"6db44052-8f93-481c-bd68-9d62ded414c0","text":"おばあちゃん家 様子見","date":"2026-02-09","time":"14:00","section":1,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"965653ab-a245-461f-99a5-efe137002ab4","text":"めし","date":"2026-02-09","time":"12:00","section":2,"order":0,"completed":true,"showInDaily":true,"showInWeekly":true},{"id":"01bf2de0-1d4f-493b-a62e-ce52f255ea16","text":"洗濯","date":"2026-02-09","time":"09:00","section":2,"order":1,"completed":true,"showInDaily":true,"showInWeekly":true},{"id":"3c916322-2347-43ff-ace2-f284d0b60c1f","text":"LINE返す","date":"2026-02-09","time":"20:00","section":3,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"5b60a61c-803c-42d1-9208-15e500884b35","text":"Netflix","date":"2026-02-09","time":"22:00","section":4,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"54267021-2c61-43f1-b554-be7f01f41a30","text":"材料力学 2限","date":"2026-02-10","time":"10:30","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"6b698034-60d9-4825-a2e2-86a0681a676f","text":"熱力学レポート提出","date":"2026-02-10","time":"23:59","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"d2b7ce67-23e0-42f5-84b2-7f9126258398","text":"マック 17:00-22:00","date":"2026-02-10","time":"17:00","section":2,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"36612121-39ac-4d7c-b0cf-6c310a6e9045","text":"新人トレーニング 佐藤さん","date":"2026-02-10","time":"18:00","section":1,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"68e1d1ea-89e1-4552-bde9-305d3544d0f1","text":"めし","date":"2026-02-10","time":"12:00","section":2,"order":2,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"2a6a6f00-8bae-41c8-8421-499cdf0fcf7c","text":"おばあちゃん病院付き添い 横浜市大","date":"2026-02-11","time":"10:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"2d5d4e32-05aa-4d42-bcc2-1111ecc31761","text":"ケアマネさん電話","date":"2026-02-11","time":"15:00","section":1,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"8369e595-04d8-4ef5-849b-b3b8e1c28f7e","text":"薬局 処方箋","date":"2026-02-11","time":"12:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"e24e5245-7517-46ca-81d8-b9d2e9ddf8ea","text":"部屋掃除","date":"2026-02-11","time":"16:00","section":4,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"42e13b28-a103-4b20-a755-647a405a7f64","text":"研究室ゼミ 発表","date":"2026-02-12","time":"14:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"35fbff5f-bd46-4579-81f7-f6a8405590ba","text":"ゼミ発表スライド最終確認","date":"2026-02-12","time":"09:00","section":1,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"28bc4e34-dd30-4486-95bd-7a4ffd509d1c","text":"マック 17:00-21:00","date":"2026-02-12","time":"17:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"b6435ad1-fb20-4a17-9a50-295d6360eb63","text":"めし","date":"2026-02-12","time":"12:00","section":2,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"a2169fc7-43f3-4b7b-9f07-858263188232","text":"バイトグループLINE確認","date":"2026-02-12","time":"22:00","section":3,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"65106b5a-1a3a-4552-b4f4-e45f7928764e","text":"流体力学 3限","date":"2026-02-13","time":"13:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"3d883e67-e613-4da8-880e-9a2d7f2f4d23","text":"友達とカラオケ まねきねこ横浜西口","date":"2026-02-13","time":"19:00","section":2,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"9fce656c-2605-4787-9c72-95eb7a1b8180","text":"ゆうかに誕プレ渡す","date":"2026-02-13","time":"19:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"30cc43fb-6da3-4bdd-beec-d10ed873d179","text":"めし","date":"2026-02-13","time":"12:00","section":2,"order":2,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"f9061ff5-b090-4a82-b5b0-508dafe7024f","text":"翔太と横浜デート","date":"2026-02-14","time":"11:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"95040bd3-e274-4732-8f67-8aa6e5990e8f","text":"bills 横浜赤レンガ ランチ","date":"2026-02-14","time":"12:00","section":2,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"93f82bee-882b-4229-912d-3fec6f116767","text":"チョコ渡す","date":"2026-02-14","time":"15:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"6808e0e0-2c91-4fc7-a7a7-2489bc403817","text":"MARINE & WALK 散歩","date":"2026-02-14","time":"14:00","section":2,"order":2,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"6cdf43d6-c0e1-47ab-a959-9bed00d9c534","text":"アニヴェルセル みなとみらい ディナー予約済","date":"2026-02-14","time":"18:00","section":2,"order":3,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"e0edd106-3c1a-4a2f-b5e4-64f909196648","text":"あいみょん ライブ 横浜アリーナ","date":"2026-02-15","time":"17:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"ed802d46-1e6f-4e8e-85ab-42448c30ec94","text":"AFLOAT 横浜 カット予約","date":"2026-02-15","time":"11:00","section":2,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"0b620f74-5f5d-43c1-a8fb-19e74ee67f63","text":"ライブ前にみさきと合流","date":"2026-02-15","time":"15:00","section":2,"order":2,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"63fd2b42-077b-4de0-baaf-39ac7548ca32","text":"めし","date":"2026-02-15","time":"13:00","section":2,"order":3,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"69dd6d27-c23a-4bf3-92d3-cf0afa32d108","text":"お母さん誕生日","date":"2026-02-16","time":"12:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"43704123-24b9-4914-94c2-4a0c9e270749","text":"実家帰る","date":"2026-02-16","time":"11:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"b73e666c-e5f0-476e-b8dc-d53294d18467","text":"プレゼント ルミネで買う","date":"2026-02-16","time":"10:00","section":1,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"fd196cc7-7214-4d1a-b97c-44a3aadd48c8","text":"妹の塾送り","date":"2026-02-16","time":"17:00","section":3,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"21f7fa53-d2d2-46a5-ad8b-ad1c86ac61b1","text":"マック 10:00-15:00","date":"2026-02-17","time":"10:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"2a5f452a-811a-4cca-bccd-f6c8edf600fa","text":"制御工学 4限","date":"2026-02-17","time":"14:30","section":2,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"ef02a42d-fbe5-4cdc-abbc-5bea28d64499","text":"履修登録確認","date":"2026-02-17","time":"20:00","section":3,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"9d8453d3-7a58-4868-b83a-b5e0a935907f","text":"店長MTG シフト調整","date":"2026-02-19","time":"16:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"2f071eb8-fe0e-4757-8eb3-3fd3bed88271","text":"マック 17:00-22:00","date":"2026-02-19","time":"17:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"fcc7da9e-dfa7-4c61-92ff-9f866ac3b198","text":"EXILE ライブ 東京ドーム","date":"2026-02-22","time":"16:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"7fe096fd-18e3-4b76-97fb-d45e1b47f8ee","text":"友達と現地集合 14:30","date":"2026-02-22","time":"14:30","section":2,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"24a1969e-302d-4631-9557-5ea289c957a1","text":"家賃支払日","date":"2026-02-27","time":"09:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"cefc7416-bd08-42cd-bb43-a9a93b7775b4","text":"おばあちゃん 月1通院","date":"2026-02-27","time":"10:00","section":1,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"4726c52b-6145-40de-a6ce-7c81a4e1159a","text":"ゼミ中間発表","date":"2026-03-12","time":"14:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"487ab703-72be-4fd7-ace4-cdf3251f08d7","text":"翔太 誕生日","date":"2026-03-21","time":"18:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"975c669a-5d59-4ab6-b6ae-8353bd427791","text":"春休み旅行 京都 計画","date":"2026-03-25","time":"10:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"1d5e68b8-87d9-40a1-8eeb-2542ff87d270","text":"新学期ガイダンス","date":"2026-04-01","time":"10:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"43a651ce-eb2a-4390-b6a1-5bebf9dd7451","text":"薬飲む","date":"2026-02-09","time":null,"section":2,"order":99,"completed":false,"showInDaily":true,"showInWeekly":false},{"id":"fe60d6cb-131f-421b-8372-304505a9eb98","text":"日記書く","date":"2026-02-09","time":null,"section":4,"order":99,"completed":false,"showInDaily":true,"showInWeekly":false},{"id":"ddfec598-b81c-4999-9aef-aab86bda0eba","text":"教科書 生協で買う","date":"2026-02-10","time":null,"section":3,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"740c0b4a-fe72-4369-b494-a3746de1f102","text":"メルカリ出品 冬服","date":"2026-02-11","time":null,"section":4,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true},{"id":"note-001","kind":"note","title":"翔太のこと","text":"2/14 バレンタイン\nanivercelle でディナー、すごく緊張した\nでもめちゃくちゃ楽しかった\n翔太がずっとニコニコしてたの、かわいかった\n誕生日 3/21 → プレゼント何にする？\nGUCCIの財布？予算3万くらいまで","margin":"2.14\nバレンタイン","createdAt":"2026-02-14T20:00:00.000Z","updatedAt":"2026-02-14T21:30:00.000Z","dateL":"2.14\nバレンタイン","textL":"2/14 バレンタイン\nanivercelle でディナー、すごく緊張した\nでもめちゃくちゃ楽しかった\n翔太がずっとニコニコしてたの、かわいかった\n誕生日 3/21 → プレゼント何にする？\nGUCCIの財布？予算3万くらいまで","dateR":"","textR":""},{"id":"note-002","kind":"note","title":"ゼミ発表メモ 2/12","text":"テーマ：都市型水害における排水システムの最適化\n\n発表の流れ\n1. 研究背景（気候変動と都市浸水）\n2. 先行研究レビュー\n3. 提案手法（遺伝的アルゴリズム適用）\n4. シミュレーション結果\n5. 考察・今後の課題\n\n先生からの指摘\n→ 境界条件の設定根拠が弱い\n→ 比較対象を増やす\n→ 3/12の中間発表までに修正","margin":"2.12\nゼミ","createdAt":"2026-02-12T16:00:00.000Z","updatedAt":"2026-02-12T18:00:00.000Z","dateL":"2.12\nゼミ","textL":"テーマ：都市型水害における排水システムの最適化\n\n発表の流れ\n1. 研究背景（気候変動と都市浸水）\n2. 先行研究レビュー\n3. 提案手法（遺伝的アルゴリズム適用）\n4. シミュレーション結果\n5. 考察・今後の課題\n\n先生からの指摘\n→ 境界条件の設定根拠が弱い\n→ 比較対象を増やす\n→ 3/12の中間発表までに修正","dateR":"","textR":""},{"id":"note-003","kind":"note","title":"今週の献立","text":"月　チキンと野菜の塩麹炒め / 味噌汁\n火　パスタ（トマト缶使い切り）\n水　鍋（白菜・豚バラ・えのき）\n木　バイトだから適当でOK\n金　翔太来るかも → 唐揚げ作る！\n土　実家帰るから不要\n日　残り物で","margin":"2/25〜\n今週","createdAt":"2026-02-24T21:00:00.000Z","updatedAt":"2026-02-24T21:15:00.000Z","dateL":"2/25〜\n今週","textL":"月　チキンと野菜の塩麹炒め / 味噌汁\n火　パスタ（トマト缶使い切り）\n水　鍋（白菜・豚バラ・えのき）\n木　バイトだから適当でOK\n金　翔太来るかも → 唐揚げ作る！\n土　実家帰るから不要\n日　残り物で","dateR":"","textR":""},{"id":"note-004","kind":"note","title":"友達の誕生日まとめ","text":"みさき　3/5　→ アクセ好き、AGETE系\nゆうか　2/13　→ 渡し済み✓ コスメセット\n翔太　　3/21　→ 財布か香水で迷い中\nりな　　4/8　→ 新学期近いからケアセット？\nお母さん 2/16 → 渡し済み✓ お花とケーキ\nおばあちゃん 8/3 → まだ先","margin":"誕生日\nリスト","createdAt":"2026-02-01T10:00:00.000Z","updatedAt":"2026-02-16T14:00:00.000Z","dateL":"誕生日\nリスト","textL":"みさき　3/5　→ アクセ好き、AGETE系\nゆうか　2/13　→ 渡し済み✓ コスメセット\n翔太　　3/21　→ 財布か香水で迷い中\nりな　　4/8　→ 新学期近いからケアセット？\nお母さん 2/16 → 渡し済み✓ お花とケーキ\nおばあちゃん 8/3 → まだ先","dateR":"","textR":""},{"id":"note-005","kind":"note","title":"春休み旅行 京都計画","text":"日程：3/25（水）〜3/28（土）3泊4日\nメンバー：みさき・ゆうか・わたし\n\n宿　京都駅近のホテルで検索中\n　→ ドーミーイン京都が安くて良さそう（1泊5800円）\n\n行きたいとこ\n・伏見稲荷（早朝！人少ない）\n・嵐山・竹林\n・錦市場でたべあるき\n・哲学の道（桜微妙かな）\n・清水寺夜間拝観\n\n予算　交通＋宿で3万くらい","margin":"3/25〜\n京都","createdAt":"2026-02-20T20:00:00.000Z","updatedAt":"2026-02-23T22:00:00.000Z","dateL":"3/25〜\n京都","textL":"日程：3/25（水）〜3/28（土）3泊4日\nメンバー：みさき・ゆうか・わたし\n\n宿　京都駅近のホテルで検索中\n　→ ドーミーイン京都が安くて良さそう（1泊5800円）\n\n行きたいとこ\n・伏見稲荷（早朝！人少ない）\n・嵐山・竹林\n・錦市場でたべあるき\n・哲学の道（桜微妙かな）\n・清水寺夜間拝観\n\n予算　交通＋宿で3万くらい","dateR":"","textR":""},{"id":"note-006","kind":"note","title":"バイトメモ（マック）","text":"店長：田中さん　副店長：橋本さん\n\nシフト基本　月水金＋週末どちらか\n時給 1150円（深夜 1438円）\n\n新人 佐藤さん（2/10〜）のトレーニング担当\n→ レジはだいぶ慣れてきた\n→ ドリンク作りはまだ確認必要\n\n3月のシフト希望\n・3/25〜28 京都旅行で全部NG\n・3/21 翔太誕生日なので夕方以降NG","margin":"バイト\nメモ","createdAt":"2026-02-05T18:00:00.000Z","updatedAt":"2026-02-19T17:30:00.000Z","dateL":"バイト\nメモ","textL":"店長：田中さん　副店長：橋本さん\n\nシフト基本　月水金＋週末どちらか\n時給 1150円（深夜 1438円）\n\n新人 佐藤さん（2/10〜）のトレーニング担当\n→ レジはだいぶ慣れてきた\n→ ドリンク作りはまだ確認必要\n\n3月のシフト希望\n・3/25〜28 京都旅行で全部NG\n・3/21 翔太誕生日なので夕方以降NG","dateR":"","textR":""},{"id":"note-007","kind":"note","title":"おばあちゃんのこと","text":"担当ケアマネ：山田さん（☎ 045-xxx-xxxx）\n主治医：横浜市大付属 内科 鈴木先生\n\n薬　血圧の薬（朝1錠）/ 胃薬（毎食後）\n通院　月1回 第4金曜 10:00〜\n\n最近の様子\n・2/11 少し足がむくんでいた\n・食欲は普通\n・転倒注意（浴室マット買い足したい）\n\nやること\n→ 浴室の滑り止めマット追加注文","margin":"おばあ\nちゃん","createdAt":"2026-01-15T10:00:00.000Z","updatedAt":"2026-02-11T15:30:00.000Z","dateL":"おばあ\nちゃん","textL":"担当ケアマネ：山田さん（☎ 045-xxx-xxxx）\n主治医：横浜市大付属 内科 鈴木先生\n\n薬　血圧の薬（朝1錠）/ 胃薬（毎食後）\n通院　月1回 第4金曜 10:00〜\n\n最近の様子\n・2/11 少し足がむくんでいた\n・食欲は普通\n・転倒注意（浴室マット買い足したい）\n\nやること\n→ 浴室の滑り止めマット追加注文","dateR":"","textR":""},{"id":"note-008","kind":"note","title":"2/25 日記","text":"今日は制御工学の課題が思ったより早く終わって、珍しく夜に余裕があった\n久しぶりにゆっくりお風呂入って、アロマたいた\nこのアプリ（yarukotolist）使い始めてみてる\n自由帳のページがノート感あっていい感じ\n翔太に「最近ちゃんとしてるじゃん」って言われた\nそれが一番うれしかったかもしれない","margin":"2.25\n日記","createdAt":"2026-02-25T22:30:00.000Z","updatedAt":"2026-02-25T22:45:00.000Z","dateL":"2.25\n日記","textL":"今日は制御工学の課題が思ったより早く終わって、珍しく夜に余裕があった\n久しぶりにゆっくりお風呂入って、アロマたいた\nこのアプリ（yarukotolist）使い始めてみてる\n自由帳のページがノート感あっていい感じ\n翔太に「最近ちゃんとしてるじゃん」って言われた\nそれが一番うれしかったかもしれない","dateR":"","textR":""},{"id":"note-009","kind":"note","title":"就活メモ（3年後半〜）","text":"志望業界（今のところ）\n1. インフラ・建設コンサル（専攻活かせる）\n2. 鉄道・電力などインフラ系\n3. 都市開発系デベロッパー\n\nインターン情報\n・日建設計　夏インターン → エントリー済\n・UR都市機構　秋インターン → 要確認\n\n資格\n→ 技術士補（卒業前に取れるか確認）\n→ TOEIC 現在 680点 → 750目標\n\n研究室の先輩に話聞く（3月に時間作る）","margin":"就活\nメモ","createdAt":"2026-02-10T14:00:00.000Z","updatedAt":"2026-02-22T20:00:00.000Z","dateL":"就活\nメモ","textL":"志望業界（今のところ）\n1. インフラ・建設コンサル（専攻活かせる）\n2. 鉄道・電力などインフラ系\n3. 都市開発系デベロッパー\n\nインターン情報\n・日建設計　夏インターン → エントリー済\n・UR都市機構　秋インターン → 要確認\n\n資格\n→ 技術士補（卒業前に取れるか確認）\n→ TOEIC 現在 680点 → 750目標\n\n研究室の先輩に話聞く（3月に時間作る）","dateR":"","textR":""},{"id":"note-010","kind":"note","title":"買い物リスト","text":"食材\n□ 卵　□ 豆腐　□ 鶏むね肉\n□ ほうれん草　□ えのき\n□ トマト缶（2個）\n\n日用品\n□ シャンプー（残り少ない）\n□ 浴室マット（おばあちゃん用）\n□ メモ帳（大学用）\n\n欲しいもの\n□ ニベア青缶（amazonで安い）\n□ 無印のアロマ詰め替え","margin":"買い物","createdAt":"2026-02-24T19:00:00.000Z","updatedAt":"2026-02-25T10:00:00.000Z","dateL":"買い物","textL":"食材\n□ 卵　□ 豆腐　□ 鶏むね肉\n□ ほうれん草　□ えのき\n□ トマト缶（2個）\n\n日用品\n□ シャンプー（残り少ない）\n□ 浴室マット（おばあちゃん用）\n□ メモ帳（大学用）\n\n欲しいもの\n□ ニベア青缶（amazonで安い）\n□ 無印のアロマ詰め替え","dateR":"","textR":""}];
+    const INITIAL_DATA = [{"id":"t001","text":"薬飲む（朝）","date":"2026-02-27","time":"08:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":false,"calendarId":"private"},{"id":"t002","text":"卒論 最終確認","date":"2026-02-27","time":"10:00","endTime":"12:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true,"calendarId":"study"},{"id":"t003","text":"麻辣湯 行く（ランチ）","date":"2026-02-27","time":"12:30","section":4,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true,"calendarId":"private"},{"id":"t004","text":"研究室 ゼミ発表","date":"2026-02-27","time":"14:00","endTime":"16:00","section":1,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true,"calendarId":"study"},{"id":"t005","text":"おばあちゃん誕生日 電話する","date":"2026-02-27","time":"19:00","section":1,"order":2,"completed":false,"showInDaily":true,"showInWeekly":true,"calendarId":"private"},{"id":"note-001","kind":"note","title":"卒論メモ","textL":"テーマ: 都市型水害における排水システムの最適化\n\n提出期限: 3/5（木）\nページ数: 残り8ページ\n\n修正点\n→ 境界条件の根拠を追記\n→ 図3のキャプション直す\n→ 参考文献の体裁統一","dateL":"卒論\nメモ","textR":"","dateR":"","createdAt":"2026-02-20T10:00:00.000Z","updatedAt":"2026-02-27T09:00:00.000Z"}];
     const INITIAL_PURPOSE = "熱力学レポート提出する";
     const INITIAL_STOP_CONDITION = "終わるまで寝ない。ただし2時で強制終了。";
 
@@ -3843,7 +3842,6 @@
         date: date,
         time: time || null,
         endTime: null,
-        category: null,
         section: section,
         order: maxOrder,
         completed: false,
@@ -3992,70 +3990,6 @@
             return;
           }
           
-          // orderフィールドがないタスクに初期値を付与（v9.6マイグレーション）
-          const orderMigrationDone = localStorage.getItem('orderMigrationDone_v96');
-          if (!orderMigrationDone) {
-            // 日付+セクションごとにグループ化してorderを付与
-            const groups = {};
-            allTasks.forEach(task => {
-              const key = `${task.date}_${task.section}`;
-              if (!groups[key]) groups[key] = [];
-              groups[key].push(task);
-            });
-            
-            let fixedCount = 0;
-            Object.values(groups).forEach(tasks => {
-              // 時間順にソート
-              tasks.sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
-              tasks.forEach((task, idx) => {
-                if (task.order === undefined) {
-                  task.order = idx;
-                  fixedCount++;
-                }
-              });
-            });
-            
-            if (fixedCount > 0) {
-              saveAllTasks();
-            }
-            localStorage.setItem('orderMigrationDone_v96', 'true');
-          }
-          
-          // データ修正：週間タスク（showInWeekly: true）でshowInDailyがfalseなら修正
-          const migrationDone = localStorage.getItem('showInDailyMigrationDone_v1');
-          if (!migrationDone) {
-            let fixedCount = 0;
-            allTasks.forEach(task => {
-              if (task.time && task.showInWeekly && !task.showInDaily) {
-                task.showInDaily = true;
-                fixedCount++;
-              }
-            });
-            
-            if (fixedCount > 0) {
-              saveAllTasks();
-            }
-            
-            localStorage.setItem('showInDailyMigrationDone_v1', 'true');
-          }
-          
-          // memoフィールドがないタスクに初期値を付与（v9.7マイグレーション）
-          const memoMigrationDone = localStorage.getItem('memoMigrationDone_v97');
-          if (!memoMigrationDone) {
-            let fixedCount = 0;
-            allTasks.forEach(task => {
-              if (task.memo === undefined) {
-                task.memo = null;
-                fixedCount++;
-              }
-            });
-            
-            if (fixedCount > 0) {
-              saveAllTasks();
-            }
-            localStorage.setItem('memoMigrationDone_v97', 'true');
-          }
-
           // category → calendarId マイグレーション（v0.17.0）
           var catMigDone = localStorage.getItem('catMigrationDone_v170');
           if (!catMigDone) {
@@ -4091,73 +4025,19 @@
           localStorage.setItem('stopCondition', INITIAL_STOP_CONDITION);
         }
       }
-    }
 
-    // 既存データを移行
-    function migrateToMasterData() {
-      // 既にマスターデータがあれば移行しない
-      if (allTasks.length > 0) return;
-      
-      const today = getLocalDateStr(new Date());
-      const migrated = [];
-      
-      // 日次データを移行
-      for (let sec = 1; sec <= 4; sec++) {
-        if (tasks[sec]) {
-          tasks[sec].forEach(oldTask => {
-            // "11:30 タスク" 形式を分解
-            const match = oldTask.text.match(/^(\d{2}:\d{2})\s+(.+)$/);
-            const time = match ? match[1] : null;
-            const text = match ? match[2] : oldTask.text;
-            
-            migrated.push({
-              id: generateTaskId(),
-              text: text,
-              date: today,
-              time: time,
-              section: sec,
-              completed: oldTask.completed || false,
-              showInDaily: true,
-              showInWeekly: false,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            });
-          });
+      // 逃げログの読み込み
+      const savedEscapeLog = localStorage.getItem('escapeLog');
+      if (savedEscapeLog) {
+        try {
+          escapeLog = JSON.parse(savedEscapeLog);
+        } catch (e) {
+          console.error('逃げログの読み込みに失敗しました', e);
         }
       }
-      
-      // 週間データを移行
-      if (weeklyTasks) {
-        Object.keys(weeklyTasks).forEach(dateStr => {
-          weeklyTasks[dateStr].forEach(oldTask => {
-            // 既に日次で移行済みかチェック
-            const exists = migrated.some(t => 
-              t.date === dateStr && 
-              t.text === oldTask.text && 
-              t.time === oldTask.time
-            );
-            
-            if (!exists) {
-              migrated.push({
-                id: generateTaskId(),
-                text: oldTask.text,
-                date: dateStr,
-                time: oldTask.time,
-                section: 1, // デフォルトで象限1
-                completed: oldTask.completed || false,
-                showInDaily: false,
-                showInWeekly: true,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-              });
-            }
-          });
-        });
-      }
-      
-      allTasks = migrated;
-      saveAllTasks();
     }
+
+
 
     // 日付表示
     function updateDate() {
@@ -4723,21 +4603,7 @@
     var _editCalendarId = 'default';
     var _createCalendarId = 'default';
 
-    function updateCatStyle() {
-      const map = { '':'catLabelNone', 'private':'catLabelPrivate', 'work':'catLabelWork', 'urgent':'catLabelUrgent' };
-      document.querySelectorAll('input[name="editCategory"]').forEach(r => {
-        const lbl = document.getElementById(map[r.value]);
-        if (lbl) lbl.style.boxShadow = r.checked ? '0 0 0 2px #333' : 'none';
-      });
-    }
 
-    function updateCreateCatStyle() {
-      const map = { '':'createCatLabelNone', 'private':'createCatLabelPrivate', 'work':'createCatLabelWork', 'urgent':'createCatLabelUrgent' };
-      document.querySelectorAll('input[name="createCategory"]').forEach(r => {
-        const lbl = document.getElementById(map[r.value]);
-        if (lbl) lbl.style.boxShadow = r.checked ? '0 0 0 2px #333' : 'none';
-      });
-    }
     
     function saveWeeklyEdit() {
       if (!editingWeeklyTaskId) return;
@@ -4770,7 +4636,6 @@
         time: newTime,
         endTime: newEndTime,
         calendarId: _editCalendarId || 'default',
-        category: null,
         section: newSection,
         showInWeekly: showInWeekly
       });
@@ -5947,7 +5812,6 @@
       if (taskMemo) updates.memo = taskMemo;
       if (taskEndTime) updates.endTime = taskEndTime;
       updates.calendarId = _createCalendarId || 'default';
-      updates.category = null;
       updateTask(newTask.id, updates);
       
       closeCreateModal();
@@ -5963,17 +5827,6 @@
       renderAllSections();
     }
 
-    // 週間データの読み込み（移行処理用に保持）
-    function loadWeeklyData() {
-      const saved = localStorage.getItem('weeklyTasks');
-      if (saved) {
-        try {
-          weeklyTasks = JSON.parse(saved);
-        } catch (e) {
-          console.error('週間データの読み込みに失敗しました', e);
-        }
-      }
-    }
 
     // タイマー関連関数
     function handleTimerClick() {
@@ -6743,51 +6596,6 @@
       }
     }
 
-    // データ読み込み（旧システム・移行処理用に保持）
-    function loadData() {
-      const saved = localStorage.getItem('todoData');
-      if (saved) {
-        try {
-          const data = JSON.parse(saved);
-          purpose = data.purpose || '';
-          purposeConfirmed = data.purposeConfirmed || false;
-          stopCondition = data.stopCondition || '';
-          stopConditionSaved = data.stopConditionSaved || false;
-          tasks = data.tasks || { 1: [], 2: [], 3: [], 4: [] };
-          
-          if (purposeConfirmed && purpose) {
-            document.getElementById('purposeGroup').style.display = 'none';
-            document.getElementById('purposeDisplay').style.display = 'flex';
-            document.getElementById('purposeText').textContent = '目的: ' + purpose;
-            
-            // 目的が確定済みの場合、タイマーはidle状態のまま
-            // （青いボタン「目の前の1分を〜」を表示）
-            updateTimerDisplay();
-          }
-          
-          // 止める仕組みは保存されていても、点検ボタンを押すまで表示しない
-          // if (stopConditionSaved && stopCondition) {
-          //   document.getElementById('stopConditionGroup').style.display = 'none';
-          //   document.getElementById('stopConditionDisplay').style.display = 'flex';
-          //   document.getElementById('stopConditionText').textContent = stopCondition;
-          // }
-          
-          renderAllSections();
-        } catch (e) {
-          console.error('データの読み込みに失敗しました', e);
-        }
-      }
-      
-      // 逃げログの読み込み
-      const savedEscapeLog = localStorage.getItem('escapeLog');
-      if (savedEscapeLog) {
-        try {
-          escapeLog = JSON.parse(savedEscapeLog);
-        } catch (e) {
-          console.error('逃げログの読み込みに失敗しました', e);
-        }
-      }
-    }
 
     // 全データクリア - モーダルを表示
     function clearAllData() {
@@ -6803,16 +6611,11 @@
     function executeDelete() {
       closeModal();
       
-      // 旧データ構造（互換性のため保持）
-      localStorage.removeItem('todoData');
-      localStorage.removeItem('deepDiveState');
-      localStorage.removeItem('useColors');
-      localStorage.removeItem('escapeLog');
-      
-      // マスターデータ
+      // データリセット
       localStorage.removeItem('allTasks');
       localStorage.removeItem('taskIdCounter');
-      localStorage.removeItem('showInDailyMigrationDone_v1');
+      localStorage.removeItem('escapeLog');
+      localStorage.removeItem('catMigrationDone_v170');
       
       // 目的・止める仕組み
       localStorage.removeItem('purpose');
@@ -7020,13 +6823,6 @@
     
     // マスターデータをロード
     loadAllTasks();
-    
-    // 既存データをロード（移行のため）
-    loadData();
-    loadWeeklyData();
-    
-    // 移行実行
-    migrateToMasterData();
     
     // 日次ビューを初期描画
     renderAllSections();
