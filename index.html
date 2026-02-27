@@ -23,7 +23,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.16.0';
+    const APP_VERSION = 'v0.17.4';
     document.addEventListener('DOMContentLoaded', function() {
       document.title = 'やることリスト - ' + APP_VERSION;
     });
@@ -2999,21 +2999,8 @@
         <div style="font-size:0.73em;color:#aaa;margin-top:3px;">設定するとカレンダー上でブロック表示されます</div>
       </div>
       <div style="margin: 15px 0;">
-        <label style="display: block; margin-bottom: 8px; font-weight: bold;">カテゴリ（色分け）</label>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:7px 12px;border-radius:20px;border:1.5px solid #e0e0e0;font-size:0.88em;" id="catLabelNone">
-            <input type="radio" name="editCategory" value="" style="display:none;" id="catNone" onchange="updateCatStyle()"> なし
-          </label>
-          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:7px 12px;border-radius:20px;border:1.5px solid #43a047;font-size:0.88em;background:#e8f5e9;" id="catLabelPrivate">
-            <input type="radio" name="editCategory" value="private" style="display:none;" id="catPrivate" onchange="updateCatStyle()"> 🏠 プライベート
-          </label>
-          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:7px 12px;border-radius:20px;border:1.5px solid #1e88e5;font-size:0.88em;background:#e3f2fd;" id="catLabelWork">
-            <input type="radio" name="editCategory" value="work" style="display:none;" id="catWork" onchange="updateCatStyle()"> 💼 仕事
-          </label>
-          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:7px 12px;border-radius:20px;border:1.5px solid #e53935;font-size:0.88em;background:#fce4ec;" id="catLabelUrgent">
-            <input type="radio" name="editCategory" value="urgent" style="display:none;" id="catUrgent" onchange="updateCatStyle()"> 🔥 緊急・重要
-          </label>
-        </div>
+        <label style="display: block; margin-bottom: 8px; font-weight: bold;">カレンダー（色分け）</label>
+        <div id="editCalendarBtns" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
       </div>
       <div style="margin: 15px 0;">
         <label style="display: block; margin-bottom: 8px; font-weight: bold;">象限</label>
@@ -3100,23 +3087,10 @@
         </div>
       </div>
       <div style="margin: 15px 0;">
-        <label style="display: block; margin-bottom: 8px; font-weight: bold;">カテゴリ（色分け）</label>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;">
-          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;padding:6px 10px;border-radius:20px;border:1.5px solid #e0e0e0;font-size:0.85em;" id="createCatLabelNone">
-            <input type="radio" name="createCategory" value="" style="display:none;" id="createCatNone" checked onchange="updateCreateCatStyle()"> なし
-          </label>
-          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;padding:6px 10px;border-radius:20px;border:1.5px solid #43a047;font-size:0.85em;background:#e8f5e9;" id="createCatLabelPrivate">
-            <input type="radio" name="createCategory" value="private" style="display:none;" id="createCatPrivate" onchange="updateCreateCatStyle()"> 🏠 プライベート
-          </label>
-          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;padding:6px 10px;border-radius:20px;border:1.5px solid #1e88e5;font-size:0.85em;background:#e3f2fd;" id="createCatLabelWork">
-            <input type="radio" name="createCategory" value="work" style="display:none;" id="createCatWork" onchange="updateCreateCatStyle()"> 💼 仕事
-          </label>
-          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;padding:6px 10px;border-radius:20px;border:1.5px solid #e53935;font-size:0.85em;background:#fce4ec;" id="createCatLabelUrgent">
-            <input type="radio" name="createCategory" value="urgent" style="display:none;" id="createCatUrgent" onchange="updateCreateCatStyle()"> 🔥 緊急・重要
-          </label>
-        </div>
-      </div>
+        <label style="display: block; margin-bottom: 8px; font-weight: bold;">カレンダー（色分け）</label>
+        <div id="createCalendarBtns" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
         <div style="font-size: 0.75em; color: #888; margin-top: 4px;">※時間を設定すると週間ビューにも表示されます</div>
+      </div>
       </div>
       <div style="margin: 15px 0;">
         <label style="display: block; margin-bottom: 8px; font-weight: bold;">象限</label>
@@ -4701,10 +4675,9 @@
       // 終了時刻を設定
       setTimeSelect('weeklyEditEnd', task.endTime);
       
-      // カテゴリを設定
-      const catVal = task.category || '';
-      document.querySelectorAll('input[name="editCategory"]').forEach(r => { r.checked = r.value === catVal; });
-      updateCatStyle();
+      // カレンダー選択UIを生成
+      _editCalendarId = task.calendarId || 'default';
+      renderCalendarSelector('editCalendarBtns', _editCalendarId, function(id) { _editCalendarId = id; });
       
       // 象限を設定
       document.getElementById('editTaskSection').value = task.section || 2;
@@ -4723,6 +4696,20 @@
       document.getElementById('weeklyTaskEditModal').classList.remove('show');
       editingWeeklyTaskId = null;
     }
+
+    // テスト用: この関数追加で月間が壊れるか？
+    function renderCalendarSelector(containerId, selectedCalId, onSelect) {
+      var container = document.getElementById(containerId);
+      if (!container) return;
+      container.innerHTML = '';
+      calendars.forEach(function(cal) {
+        var btn = document.createElement('button');
+        btn.textContent = cal.name;
+        container.appendChild(btn);
+      });
+    }
+    var _editCalendarId = 'default';
+    var _createCalendarId = 'default';
 
     function updateCatStyle() {
       const map = { '':'catLabelNone', 'private':'catLabelPrivate', 'work':'catLabelWork', 'urgent':'catLabelUrgent' };
@@ -5898,7 +5885,11 @@
       
       // 象限をデフォルトに
       document.getElementById('createTaskSection').value = '2';
-      
+
+      // カレンダー選択UI
+      _createCalendarId = 'default';
+      renderCalendarSelector('createCalendarBtns', _createCalendarId, function(id) { _createCalendarId = id; });
+
       // 時間を設定（hourが渡されていれば）
       if (hour !== undefined && hour !== null) {
         setTimeSelect('create', `${String(hour).padStart(2, '0')}:00`);
