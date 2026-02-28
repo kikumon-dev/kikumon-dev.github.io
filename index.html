@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.22.2';
+    const APP_VERSION = 'v0.22.5';
     // ===== iOS viewport高さ対策（キーボード表示時のモーダル拡大バグ防止） =====
     function setVhVar() {
       var vh = (window.visualViewport ? window.visualViewport.height : window.innerHeight) * 0.01;
@@ -1048,15 +1048,24 @@
 
     .weekly-header {
       display: flex;
-      justify-content: center;
+      justify-content: space-between;
       align-items: center;
-      gap: 20px;
-      padding: 12px 110px 12px 12px;
+      gap: 6px;
+      padding: 8px 10px 8px 6px;
       height: 48px;
       box-sizing: border-box;
       background-color: #ffffff;
       position: relative;
       border-bottom: 1px solid #e0e0e0;
+    }
+    .weekly-header h2 {
+      flex: 1;
+      text-align: center;
+      margin: 0;
+      font-size: 0.95em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     /* スクロールエリア：縦横スクロールをここで受け持つ */
@@ -1088,11 +1097,18 @@
       display: flex;
       flex-direction: row;
       position: sticky;
-      top: 0;               /* ← weekly-scroll-area内でtop:0 */
+      top: 0;
       z-index: 20;
       background: #f5f5f5;
       box-shadow: 0 2px 4px rgba(0,0,0,0.08);
       border-bottom: 2px solid #ddd;
+    }
+    #weeklyHeaderWrapper {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: #f5f5f5;
+      overflow: hidden;  /* スクロール内の幅を超えないよう */
     }
 
     .wg-header-cell {
@@ -1311,13 +1327,15 @@
     }
 
     .monthly-nav-btn {
-      padding: 8px 16px;
+      padding: 6px 10px;
       background-color: #f5f5f5;
       color: #666;
       border: none;
       border-radius: 8px;
       cursor: pointer;
-      font-size: 0.9em;
+      font-size: 0.85em;
+      white-space: nowrap;
+      flex-shrink: 0;
       transition: all 0.2s ease;
     }
 
@@ -1662,16 +1680,8 @@
         padding-right: 0;
       }
 
-      #weeklyWidthSliderWrap {
-        position: static !important;
-        transform: none !important;
-        margin-left: auto;
-        flex-shrink: 0;
-      }
-
       .weekly-header h2 {
-        font-size: 1em;
-        min-width: 100px;
+        font-size: 0.9em;
       }
 
       /* スマホ：今日を中心に3日表示 */
@@ -2716,6 +2726,43 @@
       .nb-date-col { width: 52px; }
       .nb-text-textarea { font-size: 0.88em; }
     }
+    /* 週間幅スライダー */
+    #weeklyWidthSlider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 80px;
+      height: 14px;          /* つまみと同じ高さにしてvertical centerを合わせる */
+      border-radius: 4px;
+      background: transparent;
+      outline: none;
+      cursor: pointer;
+      padding: 0;
+      margin: 0;
+    }
+    #weeklyWidthSlider::-webkit-slider-container {
+      align-items: center;
+    }
+    #weeklyWidthSlider::-webkit-slider-runnable-track {
+      height: 4px;
+      border-radius: 4px;
+      background: #dde3ea;
+    }
+    #weeklyWidthSlider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #4facfe;
+      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      border: 2px solid #fff;
+      margin-top: -5px;      /* (14px - 4px) / 2 = 5px 上にずらしてセンタリング */
+      transition: transform 0.15s ease;
+    }
+    #weeklyWidthSlider::-webkit-slider-thumb:hover {
+      transform: scale(1.25);
+    }
   </style>
   
   <script>
@@ -3169,23 +3216,24 @@
         <button class="monthly-nav-btn" onclick="changeWeek(-1)">◀ 先週</button>
         <h2 id="weeklyTitle"></h2>
         <button class="monthly-nav-btn" onclick="changeWeek(1)">来週 ▶</button>
-        <div id="weeklyWidthSliderWrap" style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 4px;">
+        <div id="weeklyWidthSliderWrap" style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
           <button onclick="openFamilyShareModal()" title="家族と共有"
-            style="font-size:0.72em;background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff;border:none;border-radius:6px;padding:3px 8px;cursor:pointer;font-weight:700;">👨‍👩‍👧</button>
-          <span style="font-size: 0.65em; color: #bbb;">↔</span>
+            style="font-size:0.72em;background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;font-weight:700;flex-shrink:0;">👨‍👩‍👧</button>
           <input type="range" id="weeklyWidthSlider" min="100" max="300" value="100"
-            style="width: 70px; accent-color: #4facfe; cursor: pointer;"
-            oninput="adjustWeeklyWidth(this.value)">
-          <button onclick="resetWeeklyWidth()" style="font-size: 0.6em; color: #aaa; background: none; border: 1px solid #ddd; border-radius: 3px; padding: 1px 4px; cursor: pointer;">↺</button>
+            title="ダブルタップでリセット"
+            style="flex-shrink: 0;"
+            oninput="adjustWeeklyWidth(this.value)"
+            ondblclick="resetWeeklyWidth()">
         </div>
       </div>
       <!-- カレンダークイックフィルター -->
       <div id="weeklyCalendarFilter" style="display:flex;gap:6px;padding:4px 12px 6px;flex-wrap:wrap;border-bottom:1px solid #f0f0f0;background:#fff;"></div>
     </div>
-    <!-- ★スクロールエリア：縦横ともにここだけがスクロールする -->
-    <div class="weekly-scroll-area">
+    <!-- ★wg-header（時間/曜日行）：横スクロールに追従させるためoverflow:auto内に入れる -->
+    <div class="weekly-scroll-area" id="weeklyScrollArea">
+      <div id="weeklyHeaderWrapper"></div><!-- JSでwg-headerをここに生成 -->
       <div class="weekly-container" id="weeklyContainer">
-        <!-- JavaScriptで動的に生成 -->
+        <!-- JSでwg-body(本体)をここに生成 -->
       </div>
     </div>
   </div>
@@ -3203,7 +3251,7 @@
           style="font-size:0.72em;background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff;border:none;border-radius:6px;padding:3px 8px;cursor:pointer;font-weight:700;">👨‍👩‍👧</button>
         <span style="font-size: 0.65em; color: #bbb;">↔</span>
         <input type="range" id="monthlyWidthSlider" min="100" max="300" value="100" 
-          style="width: 70px; accent-color: #4facfe; cursor: pointer;"
+          style="width: 50px; accent-color: #4facfe; cursor: pointer;"
           oninput="adjustMonthlyWidth(this.value)">
         <button onclick="resetMonthlyWidth()" style="font-size: 0.6em; color: #aaa; background: none; border: 1px solid #ddd; border-radius: 3px; padding: 1px 4px; cursor: pointer;">↺</button>
       </div>
@@ -4572,7 +4620,10 @@
       header.style.width = TOTAL_W + 'px';
       header.style.minWidth = TOTAL_W + 'px';
       container.style.minWidth = TOTAL_W + 'px';
-      container.appendChild(header);
+      // wg-headerはscroll-area内の専用wrapperに配置
+      const headerWrapper = document.getElementById('weeklyHeaderWrapper');
+      headerWrapper.innerHTML = '';
+      headerWrapper.appendChild(header);
 
       // ── 本体ラッパー（flex横並び） ────────────────────
       const body = document.createElement('div');
@@ -5493,10 +5544,15 @@
     function resetMonthlyWidth()   { resetCalendarWidth('monthlyWidthSlider', 'monthlyCalendar'); }
     function adjustWeeklyWidth(p) {
       localStorage.setItem('weeklyCellScale', p);
+      // スライダーの塗り色を更新
+      const pct = ((p - 100) / (300 - 100) * 100).toFixed(1);
+      const sl = document.getElementById('weeklyWidthSlider');
+      if (sl) sl.style.setProperty('--val', pct + '%');
       renderWeeklyView();
     }
     function resetWeeklyWidth() {
-      document.getElementById('weeklyWidthSlider').value = 100;
+      const sl = document.getElementById('weeklyWidthSlider');
+      if (sl) { sl.value = 100; sl.style.setProperty('--val', '0%'); }
       localStorage.removeItem('weeklyCellScale');
       renderWeeklyView();
     }
