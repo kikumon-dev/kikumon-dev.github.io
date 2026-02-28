@@ -12,7 +12,20 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.21.0';
+    const APP_VERSION = 'v0.22.2';
+    // ===== iOS viewport高さ対策（キーボード表示時のモーダル拡大バグ防止） =====
+    function setVhVar() {
+      var vh = (window.visualViewport ? window.visualViewport.height : window.innerHeight) * 0.01;
+      document.documentElement.style.setProperty('--vh', vh + 'px');
+    }
+    setVhVar();
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', setVhVar);
+      window.visualViewport.addEventListener('scroll', setVhVar);
+    } else {
+      window.addEventListener('resize', setVhVar);
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
       document.title = 'やることリスト - ' + APP_VERSION;
     });
@@ -50,25 +63,29 @@
       display: flex;
       background-color: #fff;
       border-bottom: 1px solid #efefef;
-      padding: 0 16px;
+      padding: 0 4px;
       position: sticky;
       top: 0;
       z-index: 100;
+      overflow: hidden;
+      white-space: nowrap;
     }
 
     .nav-tab {
-      padding: 14px 20px;
+      padding: 12px 10px;
       border: none;
       background: none;
       cursor: pointer;
-      font-size: 0.9em;
+      font-size: 0.78em;
       font-weight: 500;
       color: #8e8e8e;
       border-bottom: 1.5px solid transparent;
       margin-bottom: -1px;
       transition: color 0.2s ease, border-color 0.2s ease;
-      letter-spacing: 0.02em;
+      letter-spacing: 0;
       position: relative;
+      white-space: nowrap;    /* 折り返し禁止 */
+      flex-shrink: 0;
     }
 
     .nav-tab:hover {
@@ -96,7 +113,7 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       grid-template-rows: 1fr 1fr;
-      height: calc(100vh - 50px);
+      height: calc(var(--vh, 1vh) * 100 - 50px);
       gap: 0;
     }
 
@@ -539,6 +556,7 @@
       top: 0;
       width: 100%;
       height: 100%;
+      height: 100dvh;
       background-color: rgba(0, 0, 0, 0.5);
     }
 
@@ -548,6 +566,8 @@
       align-items: flex-start;
       padding: 20px;
       overflow-y: auto;
+      /* iOSキーボード表示時もモーダルが画面内に収まるように */
+      -webkit-overflow-scrolling: touch;
     }
 
     /* 逃げ出したメッセージ */
@@ -578,7 +598,8 @@
       width: 90%;
       box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
       text-align: center;
-      max-height: calc(100vh - 40px);
+      max-height: calc(100dvh - 40px);
+      max-height: calc(var(--vh, 1vh) * 100 - 40px);
       overflow-y: auto;
       margin: auto 0;
       /* スクロールバーで角丸が崩れるのを防止 */
@@ -1008,12 +1029,21 @@
     .weekly-view {
       display: none;
       width: 100%;
-      height: calc(100vh - 50px);
-      overflow: auto;
-      padding: 20px;
-      padding-top: 0;
+      height: calc(var(--vh, 1vh) * 100 - 50px);
+      overflow: hidden;          /* ← ビュー自体はスクロールしない */
+      padding: 0;
       box-sizing: border-box;
       background-color: #f5f5f5;
+      flex-direction: column;
+    }
+
+    /* stickyバー：横幅100%固定、横スクロール不可 */
+    .weekly-sticky-bar {
+      flex-shrink: 0;
+      width: 100%;
+      background: #fff;
+      z-index: 25;
+      box-shadow: 0 1px 0 #e0e0e0;
     }
 
     .weekly-header {
@@ -1021,15 +1051,20 @@
       justify-content: center;
       align-items: center;
       gap: 20px;
-      padding: 12px 0;
+      padding: 12px 110px 12px 12px;
       height: 48px;
       box-sizing: border-box;
-      background-color: #f5f5f5;
-      position: sticky;
-      top: 0;
-      z-index: 25;
+      background-color: #ffffff;
+      position: relative;
       border-bottom: 1px solid #e0e0e0;
-      padding-right: 110px;
+    }
+
+    /* スクロールエリア：縦横スクロールをここで受け持つ */
+    .weekly-scroll-area {
+      flex: 1;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      min-height: 0;
     }
 
     .weekly-header h2 {
@@ -1040,10 +1075,10 @@
     }
 
     .weekly-container {
-      min-width: 600px;
+      min-width: 0;
       position: relative;
       overflow: visible;
-      padding: 0 20px 20px 20px;
+      padding: 0 0 20px 0;
     }
 
     /* ===== 週間ビュー CSSグリッド方式 ===== */
@@ -1053,7 +1088,7 @@
       display: flex;
       flex-direction: row;
       position: sticky;
-      top: 84px;
+      top: 0;               /* ← weekly-scroll-area内でtop:0 */
       z-index: 20;
       background: #f5f5f5;
       box-shadow: 0 2px 4px rgba(0,0,0,0.08);
@@ -1071,9 +1106,15 @@
       box-sizing: border-box;
       overflow: hidden;
     }
+    /* 時間ヘッダーセル（1列目）はtime-colと幅・ボーダーを完全一致させる */
+    .wg-header-cell:first-child {
+      flex: 0 0 70px;
+      width: 70px;
+      border-right: 2px solid #ddd;
+      background: #fafafa;
+    }
     .wg-header-cell:not(:first-child) {
-      flex: 1 1 0;
-      width: auto;
+      flex: 0 0 auto;
       min-width: 0;
     }
     .wg-header-cell:last-child { border-right: none; }
@@ -1086,7 +1127,6 @@
       display: flex;
       flex-direction: row;
       align-items: flex-start;
-      width: 100%;
     }
 
     /* 時間ラベル列 */
@@ -1097,10 +1137,11 @@
       max-width: 70px;
       position: sticky;
       left: 0;
-      z-index: 10;
+      z-index: 3;
       box-sizing: border-box;
       border-right: 2px solid #ddd;
       background: #fafafa;
+      transform: translateZ(0);
     }
     /* sticky内のabsolute基準となるinner wrapper */
     .wg-time-inner {
@@ -1111,10 +1152,10 @@
 
     /* 日付列 */
     .wg-day-col {
-      flex: 1 1 0;
+      flex: 0 0 auto;
       min-width: 0;
       position: relative;
-      overflow: visible;
+      overflow: hidden;
       box-sizing: border-box;
       border-right: 1px solid #ddd;
       background-color: #fff;
@@ -1212,15 +1253,14 @@
       left: 3px;
       right: 3px;
       border-radius: 5px;
-      padding: 3px 7px;
-      font-size: 0.82em;
+      padding: 2px 5px;
+      font-size: 0.78em;
+      line-height: 1.3;
       cursor: pointer;
       overflow: hidden;
       box-sizing: border-box;
       z-index: 10;
       box-shadow: 0 1px 4px rgba(0,0,0,0.13);
-      border-left-width: 3px;
-      border-left-style: solid;
       border-style: solid;
       border-width: 1px;
       border-left-width: 3px;
@@ -1242,7 +1282,7 @@
     .monthly-view {
       display: none;
       width: 100%;
-      height: calc(100vh - 50px);
+      height: calc(var(--vh, 1vh) * 100 - 50px);
       overflow: auto;
       padding: 20px;
       box-sizing: border-box;
@@ -1459,7 +1499,7 @@
     .yearly-view {
       display: none;
       width: 100%;
-      height: calc(100vh - 50px);
+      height: calc(var(--vh, 1vh) * 100 - 50px);
       overflow: auto;
       padding: 10px;
       box-sizing: border-box;
@@ -1635,14 +1675,10 @@
       }
 
       /* スマホ：今日を中心に3日表示 */
-      .wg-header { top: 40px; font-size: 0.78em; }
-      .wg-header-cell:first-child { flex: 0 0 40px !important; width: 40px !important; }
+      .wg-header { top: 0; font-size: 0.78em; }
+      /* wg-header-cell幅はJS(CELL_W/TIME_W)で制御 */
       .wg-body { font-size: 0.78em; }
-      .wg-time-col {
-        flex: 0 0 40px !important;
-        width: 40px !important;
-        grid-template-rows: repeat(24, 50px) !important;
-      }
+      /* wg-time-col幅はJS(TIME_W)で制御 */
       .wg-day-col { grid-template-rows: repeat(24, 50px); }
       .wg-time-label { height: 50px; font-size: 0.75em; }
       .wg-cell-bg    { height: 50px; }
@@ -1857,7 +1893,7 @@
       padding: 30px;
       max-width: 600px;
       margin: 0 auto;
-      height: calc(100vh - 50px);
+      height: calc(var(--vh, 1vh) * 100 - 50px);
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
     }
@@ -2583,13 +2619,7 @@
       flex: 1;
       display: flex;
       overflow: hidden;
-      background-image: repeating-linear-gradient(
-        180deg,
-        transparent 0px, transparent 31px,
-        #dce8f3 31px, #dce8f3 32px
-      );
-      background-position: 0 8px;
-      background-attachment: local;
+      background: transparent;
     }
 
     /* 日付・メモ欄 */
@@ -2622,20 +2652,30 @@
     .nb-text-col {
       flex: 1;
       overflow-y: auto;
+      min-height: 0;
     }
     .nb-text-textarea {
       display: block;
       width: 100%;
-      min-height: 400px;
+      min-height: 100%;
+      height: auto;
       box-sizing: border-box;
       border: none;
-      background: transparent;
+      /* 罫線をtextarea自身の背景に適用→スクロールしても線が文字に追従 */
+      background-color: #fefcf7;
+      background-image: repeating-linear-gradient(
+        180deg,
+        transparent 0px, transparent 31px,
+        #dce8f3 31px, #dce8f3 32px
+      );
+      background-position: 0 8px;
+      background-attachment: local;
       font-size: 0.93em;
       line-height: 32px;
       color: #1a1a1a;
       outline: none;
       resize: none;
-      padding: 8px 24px 60px 14px;
+      padding: 8px 24px 200px 14px;
       font-family: -apple-system, 'Hiragino Sans', 'YuGothic', sans-serif;
       letter-spacing: 0.01em;
     }
@@ -3123,26 +3163,33 @@
 
   <!-- 週間ビュー -->
   <div id="weeklyView" class="weekly-view">
-    <div class="weekly-header">
-      <button class="monthly-nav-btn" onclick="changeWeek(-1)">◀ 先週</button>
-      <h2 id="weeklyTitle"></h2>
-      <button class="monthly-nav-btn" onclick="changeWeek(1)">来週 ▶</button>
-      <div id="weeklyWidthSliderWrap" style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 4px;">
-        <button onclick="openFamilyShareModal()" title="家族と共有"
-          style="font-size:0.72em;background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff;border:none;border-radius:6px;padding:3px 8px;cursor:pointer;font-weight:700;">👨‍👩‍👧</button>
-        <span style="font-size: 0.65em; color: #bbb;">↔</span>
-        <input type="range" id="weeklyWidthSlider" min="100" max="300" value="100" 
-          style="width: 70px; accent-color: #4facfe; cursor: pointer;"
-          oninput="adjustWeeklyWidth(this.value)">
-        <button onclick="resetWeeklyWidth()" style="font-size: 0.6em; color: #aaa; background: none; border: 1px solid #ddd; border-radius: 3px; padding: 1px 4px; cursor: pointer;">↺</button>
+    <!-- ★stickyバー：横スクロールに関係なく常に上部に固定 -->
+    <div id="weeklyStickyBar" class="weekly-sticky-bar">
+      <div class="weekly-header">
+        <button class="monthly-nav-btn" onclick="changeWeek(-1)">◀ 先週</button>
+        <h2 id="weeklyTitle"></h2>
+        <button class="monthly-nav-btn" onclick="changeWeek(1)">来週 ▶</button>
+        <div id="weeklyWidthSliderWrap" style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 4px;">
+          <button onclick="openFamilyShareModal()" title="家族と共有"
+            style="font-size:0.72em;background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff;border:none;border-radius:6px;padding:3px 8px;cursor:pointer;font-weight:700;">👨‍👩‍👧</button>
+          <span style="font-size: 0.65em; color: #bbb;">↔</span>
+          <input type="range" id="weeklyWidthSlider" min="100" max="300" value="100"
+            style="width: 70px; accent-color: #4facfe; cursor: pointer;"
+            oninput="adjustWeeklyWidth(this.value)">
+          <button onclick="resetWeeklyWidth()" style="font-size: 0.6em; color: #aaa; background: none; border: 1px solid #ddd; border-radius: 3px; padding: 1px 4px; cursor: pointer;">↺</button>
+        </div>
+      </div>
+      <!-- カレンダークイックフィルター -->
+      <div id="weeklyCalendarFilter" style="display:flex;gap:6px;padding:4px 12px 6px;flex-wrap:wrap;border-bottom:1px solid #f0f0f0;background:#fff;"></div>
+    </div>
+    <!-- ★スクロールエリア：縦横ともにここだけがスクロールする -->
+    <div class="weekly-scroll-area">
+      <div class="weekly-container" id="weeklyContainer">
+        <!-- JavaScriptで動的に生成 -->
       </div>
     </div>
-    <!-- カレンダークイックフィルター -->
-    <div id="weeklyCalendarFilter" style="display:flex;gap:6px;padding:4px 12px 6px;flex-wrap:wrap;border-bottom:1px solid #f0f0f0;background:#fff;position:sticky;top:48px;z-index:24;"></div>
-    <div class="weekly-container" id="weeklyContainer">
-      <!-- JavaScriptで動的に生成 -->
-    </div>
   </div>
+
 
   <!-- 月間ビュー -->
   <div id="monthlyView" class="monthly-view">
@@ -4476,20 +4523,36 @@
 
       const weeklyDaySetting = parseInt(localStorage.getItem('weeklyDays') || '7');
       const showTimeBar = (localStorage.getItem('weeklyTimeBar') || 'show') === 'show';
+      // スマホで7日設定の場合は今日中心の3日に自動調整
+      const isMobileView = window.innerWidth <= 768;
+      // 設定値通りに表示（スマホでも設定を尊重）
+      const effectiveDays = weeklyDaySetting;
       const weekDates = [];
-      for (let i = 0; i < weeklyDaySetting; i++) {
+      for (let i = 0; i < effectiveDays; i++) {
         const d = new Date(monday);
         d.setDate(monday.getDate() + i);
         weekDates.push(d);
       }
 
       // ── ヘッダー ──────────────────────────────────────
+      // ── 列幅計算（ヘッダーとボディで完全一致させる） ──────
+      const TIME_W = showTimeBar ? 70 : 0;  // 時刻バー幅
+      // スマホ: 画面幅をできる限り使って列幅計算（最小80px）
+      // スライダー倍率（100〜300%）を反映
+      const cellScale = parseFloat(localStorage.getItem('weeklyCellScale') || '100') / 100;
+      const baseCellW = isMobileView
+        ? Math.max(80, Math.floor((window.innerWidth - TIME_W) / effectiveDays))
+        : 120;
+      const CELL_W = Math.round(baseCellW * cellScale);
+
       const header = document.createElement('div');
       header.className = 'wg-header';
 
       const th0 = document.createElement('div');
       th0.className = 'wg-header-cell';
       th0.textContent = '時間';
+      th0.style.cssText = `flex:0 0 ${TIME_W}px;width:${TIME_W}px;min-width:${TIME_W}px;`;
+      if (!showTimeBar) th0.style.display = 'none';
       header.appendChild(th0);
 
       weekDates.forEach((d, i) => {
@@ -4497,21 +4560,30 @@
         const cell = document.createElement('div');
         cell.className = 'wg-header-cell';
         cell.dataset.col = String(i + 1);
+        cell.style.cssText = `flex:0 0 ${CELL_W}px;width:${CELL_W}px;min-width:${CELL_W}px;`;
         cell.textContent = `${d.getMonth()+1}/${d.getDate()}（${weekdays[i]}）`;
         if (i === 5) cell.classList.add('wg-sat');
         if (i === 6) cell.classList.add('wg-sun');
         if (ds === todayStr) cell.classList.add('wg-today');
         header.appendChild(cell);
       });
+      // ── 幅を確定（ヘッダー・ボディ・コンテナ全て同じ幅に固定）
+      const TOTAL_W = TIME_W + CELL_W * weekDates.length;
+      header.style.width = TOTAL_W + 'px';
+      header.style.minWidth = TOTAL_W + 'px';
+      container.style.minWidth = TOTAL_W + 'px';
       container.appendChild(header);
 
       // ── 本体ラッパー（flex横並び） ────────────────────
       const body = document.createElement('div');
       body.className = 'wg-body';
+      body.style.width = TOTAL_W + 'px';
+      body.style.minWidth = TOTAL_W + 'px';
 
       // ── 時間ラベル列 ──────────────────────────────────
       const timeCol = document.createElement('div');
       timeCol.className = 'wg-time-col';
+      timeCol.style.cssText = `flex:0 0 ${TIME_W}px;width:${TIME_W}px;min-width:${TIME_W}px;`;
       if (!showTimeBar) timeCol.style.display = 'none';
       // sticky要素はposition:absoluteの基準にならない
       // → 内側にrelativeなinnerラッパーを置いてabsoluteの基準にする
@@ -4542,7 +4614,7 @@
         const col = document.createElement('div');
         col.className = 'wg-day-col';
         col.dataset.col = String(colIdx + 1);
-        col.style.height = TOTAL_H + 'px';
+        col.style.cssText = `flex:0 0 ${CELL_W}px;width:${CELL_W}px;min-width:${CELL_W}px;height:${TOTAL_H}px;`;
 
         // ── 背景セル（各1時間、absoluteで積む） ──────
         for (let h = 0; h < 24; h++) {
@@ -4739,25 +4811,7 @@
 
       container.appendChild(body);
 
-      // ── スマホ：今日を中心に3日表示 ──────────────────
-      if (window.innerWidth <= 768) {
-        const todayColIdx = weekDates.findIndex(d => getLocalDateStr(d) === todayStr);
-        const center = todayColIdx >= 0 ? todayColIdx + 1 : 1;
-        const visible = new Set([
-          Math.max(1, center - 1),
-          center,
-          Math.min(7, center + 1)
-        ]);
-        container.querySelectorAll('[data-col]').forEach(cell => {
-          if (!visible.has(parseInt(cell.dataset.col))) {
-            cell.classList.add('wg-col-hidden');
-          }
-        });
-        const note = document.createElement('div');
-        note.textContent = '← → 前週・来週で切り替え';
-        note.style.cssText = 'text-align:center;font-size:0.72em;color:#aaa;margin-top:4px;';
-        container.appendChild(note);
-      }
+
     }
 
     // 週間タスクの編集（ID版）
@@ -5437,8 +5491,15 @@
     // 後方互換ラッパー
     function adjustMonthlyWidth(p) { adjustCalendarWidth('monthlyCalendar', p); }
     function resetMonthlyWidth()   { resetCalendarWidth('monthlyWidthSlider', 'monthlyCalendar'); }
-    function adjustWeeklyWidth(p)  { adjustCalendarWidth('weeklyContainer', p); }
-    function resetWeeklyWidth()    { resetCalendarWidth('weeklyWidthSlider', 'weeklyContainer'); }
+    function adjustWeeklyWidth(p) {
+      localStorage.setItem('weeklyCellScale', p);
+      renderWeeklyView();
+    }
+    function resetWeeklyWidth() {
+      document.getElementById('weeklyWidthSlider').value = 100;
+      localStorage.removeItem('weeklyCellScale');
+      renderWeeklyView();
+    }
 
     // ===== 日次タイムラインビュー =====
     let currentTimelineDate = null;
@@ -7253,7 +7314,7 @@
         }
         document.getElementById('navDaily').classList.add('active');
       } else if (view === 'weekly') {
-        weeklyView.style.display = 'block';
+        weeklyView.style.display = 'flex';
         document.getElementById('navWeekly').classList.add('active');
         currentWeekDate = new Date();
         renderWeeklyView();
@@ -7490,7 +7551,17 @@
         textTa.id = textId;
         textTa.placeholder = textPh;
         textTa.value = textVal;
-        textTa.addEventListener('input', nbOnChange);
+        // 入力に応じて高さを自動拡張
+        function autoResize(ta) {
+          ta.style.height = 'auto';
+          ta.style.height = Math.max(ta.scrollHeight, ta.parentElement.clientHeight) + 'px';
+        }
+        textTa.addEventListener('input', function() {
+          autoResize(textTa);
+          nbOnChange();
+        });
+        // 初期高さ設定
+        setTimeout(function() { autoResize(textTa); }, 0);
         textCol.appendChild(textTa);
 
         cornell.appendChild(dateCol);
