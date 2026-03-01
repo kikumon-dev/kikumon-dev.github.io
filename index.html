@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.24.45';
+    const APP_VERSION = 'v0.24.50';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -3337,6 +3337,26 @@
       
       <!-- プロフィールセクション -->
       <div class="settings-section">
+        <h3 style="margin: 0 0 20px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">プロフィール</h3>
+        <div class="settings-item">
+          <div class="profile-edit-area">
+            <div class="profile-avatar-edit" onclick="document.getElementById('avatarInput').click()">
+              <img id="profileAvatarPreview" src="" alt="avatar" style="display: none;">
+              <div id="profileAvatarPlaceholder" class="avatar-placeholder">📷</div>
+              <div class="avatar-edit-overlay">変更</div>
+            </div>
+            <input type="file" id="avatarInput" accept="image/*" style="display: none;" onchange="handleAvatarChange(event)">
+            <div class="profile-name-edit">
+              <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #262626; font-size: 0.9em;">表示名</label>
+              <input type="text" id="profileNameInput" placeholder="あなたの名前..." maxlength="20" style="width: 100%; padding: 12px; border: 2px solid #e8e8e8; border-radius: 10px; font-size: 1em; box-sizing: border-box;">
+            </div>
+          </div>
+          <button class="avatar-remove-btn" id="avatarRemoveBtn" onclick="removeAvatar()" style="display: none;">アイコンを削除</button>
+        </div>
+      </div>
+
+      <!-- カレンダー管理セクション -->
+      <div class="settings-section">
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">🏰 クラフトモード</h3>
         <div class="settings-item" style="margin-bottom: 16px;">
           <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
@@ -3359,26 +3379,6 @@
         </div>
       </div>
 
-      <div class="settings-section">
-        <h3 style="margin: 0 0 20px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">プロフィール</h3>
-        <div class="settings-item">
-          <div class="profile-edit-area">
-            <div class="profile-avatar-edit" onclick="document.getElementById('avatarInput').click()">
-              <img id="profileAvatarPreview" src="" alt="avatar" style="display: none;">
-              <div id="profileAvatarPlaceholder" class="avatar-placeholder">📷</div>
-              <div class="avatar-edit-overlay">変更</div>
-            </div>
-            <input type="file" id="avatarInput" accept="image/*" style="display: none;" onchange="handleAvatarChange(event)">
-            <div class="profile-name-edit">
-              <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #262626; font-size: 0.9em;">表示名</label>
-              <input type="text" id="profileNameInput" placeholder="あなたの名前..." maxlength="20" style="width: 100%; padding: 12px; border: 2px solid #e8e8e8; border-radius: 10px; font-size: 1em; box-sizing: border-box;">
-            </div>
-          </div>
-          <button class="avatar-remove-btn" id="avatarRemoveBtn" onclick="removeAvatar()" style="display: none;">アイコンを削除</button>
-        </div>
-      </div>
-
-      <!-- カレンダー管理セクション -->
       <div class="settings-section">
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">初期表示</h3>
         <div class="settings-item">
@@ -3433,12 +3433,6 @@
       <!-- 月間表示モード -->
       <div style="margin-top: 24px; border-top: 1px solid #efefef; padding-top: 18px;">
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">週間ビュー</h3>
-        <div style="margin-bottom:14px;padding:12px;background:#f0f4ff;border-radius:10px;border:1.5px solid #c5cae9;">
-          <label style="display:block;font-weight:600;font-size:0.88em;color:#3949ab;margin-bottom:6px;">📅 使用するカレンダー</label>
-          <p style="margin:0 0 8px 0;font-size:0.78em;color:#8e8e8e;">週間ビュー・月間ビューに表示するカレンダーを選択</p>
-          <div id="calendarToggleListSettings" style="display:flex;flex-direction:column;gap:6px;"></div>
-          <p style="margin:8px 0 0 0;font-size:0.75em;color:#aaa;">※カレンダーの追加・削除はGoogleカレンダーで行ってください</p>
-        </div>
         <div>
           <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #262626; font-size: 0.9em;">表示日数</label>
           <p style="font-size: 0.8em; color: #8e8e8e; margin: 0 0 10px 0;">週間ビューに表示する列数を選択します</p>
@@ -3522,17 +3516,37 @@
         </div>
       </div>
       
-      <div class="settings-actions" style="margin-top: 30px; text-align: center;">
-        <!-- 家族共有ボタン -->
-        <div style="margin-bottom:16px;">
-          <button onclick="openFamilyShareModal()"
-            style="width:100%;padding:13px;border:none;border-radius:12px;background:linear-gradient(135deg,#4facfe 0%,#00f2fe 100%);color:#fff;font-size:0.95em;font-weight:700;cursor:pointer;letter-spacing:0.02em;">
-            👨‍👩‍👧 家族と共有する
-          </button>
-          <p style="margin:6px 0 0;font-size:0.76em;color:#aaa;">バックエンドなし・LINEでコードを送るだけ</p>
+      <div class="settings-section">
+        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">📅 カレンダー</h3>
+        <!-- メインカレンダー設定 -->
+        <div style="margin-bottom:16px;padding:12px;background:#f8f9ff;border-radius:10px;border:1.5px solid #e8eaf6;">
+          <label style="display:block;font-weight:600;font-size:0.88em;color:#3949ab;margin-bottom:6px;">⭐ メインカレンダー</label>
+          <p style="margin:0 0 8px 0;font-size:0.78em;color:#8e8e8e;">タスク入力時にデフォルトで選ばれるカレンダー</p>
+          <select id="mainCalendarSelect"
+            style="width:100%;padding:8px 10px;border:1.5px solid #c5cae9;border-radius:8px;font-size:0.88em;background:#fff;color:#333;cursor:pointer;"
+            onchange="localStorage.setItem('mainCalendarId', this.value)">
+          </select>
+          <label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer;">
+            <input type="checkbox" id="autoMainCalendarCheck"
+              onchange="localStorage.setItem('autoMainCalendar', this.checked)"
+              style="width:16px;height:16px;accent-color:#3949ab;cursor:pointer;">
+            <span style="font-size:0.82em;color:#555;">タスク入力時にメインへ自動投入</span>
+          </label>
+          <p style="margin:4px 0 0 24px;font-size:0.75em;color:#aaa;">家族共有の場合はOFFにしてください</p>
         </div>
-        <!-- データ管理セクション -->
-        <div class="settings-section">
+        <!-- カレンダー一覧 -->
+        <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #8e8e8e;">表示するカレンダーを選択。OFFにすると全ビューで非表示になります。</p>
+        <div id="calendarSettingsList"></div>
+      </div>
+<div class="settings-section">
+        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">👨‍👩‍👧 家族と共有</h3>
+        <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #8e8e8e;">バックエンドなし・コードをLINEで送るだけで家族とタスクを共有できます。</p>
+        <button onclick="openFamilyShareModal()"
+          style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff;font-size:0.88em;font-weight:700;cursor:pointer;width:100%;">
+          👨‍👩‍👧 家族と共有する
+        </button>
+      </div>
+<div class="settings-section">
           <h3 style="margin:0 0 15px 0;color:#262626;font-size:1.05em;font-weight:600;border-bottom:1px solid #efefef;padding-bottom:12px;">🗄️ データ管理</h3>
           <div style="display:flex;flex-direction:column;gap:10px;">
             <button onclick="exportData()"
@@ -10404,8 +10418,8 @@ function _initThreeScene() {
   var dl=new THREE.DirectionalLight(0xffeedd,1.4); dl.position.set(10,20,10); dl.castShadow=true; scene.add(dl);
   var fl=new THREE.DirectionalLight(0x4466aa,0.4); fl.position.set(-10,5,-10); scene.add(fl);
   var ground=new THREE.Mesh(new THREE.PlaneGeometry(30,30),new THREE.MeshLambertMaterial({color:0x1a3a1a}));
-  ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
-  scene.add(new THREE.GridHelper(30,15,0x2a5a2a,0x1e3e1e));
+  ground.rotation.x=-Math.PI/2; ground.position.y=0; ground.receiveShadow=true; scene.add(ground);
+  // GridHelper削除（描画バグ原因のため）
   var sg=new THREE.BufferGeometry(),sp=[];
   for(var i=0;i<600;i++)sp.push((Math.random()-0.5)*150,Math.random()*60+10,(Math.random()-0.5)*150);
   sg.setAttribute('position',new THREE.Float32BufferAttribute(sp,3));
@@ -10420,7 +10434,7 @@ function _initThreeScene() {
     var tr=new THREE.Mesh(new THREE.CylinderGeometry(0,0.48,0.75,8),rm); tr.position.set(q[0],bh+0.6+0.37,q[1]); scene.add(tr);
   });
   var fp=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,1.4,4),new THREE.MeshLambertMaterial({color:0x888}));
-  fp.position.y=bh+1.4+0.7; scene.add(fp);
+  fp.position.set(0, bh+1.4+0.7, 0); scene.add(fp);
   var flag=new THREE.Mesh(new THREE.PlaneGeometry(0.55,0.32),new THREE.MeshLambertMaterial({color:0xe53935,side:THREE.DoubleSide}));
   flag.position.set(0.28,bh+1.9+0.7,0); scene.add(flag);
   // 木
@@ -10458,11 +10472,14 @@ function _initThreeScene() {
   }
   // Lv5: 教会
   if(has3('church')){
-    var cb=new THREE.Mesh(new THREE.BoxGeometry(1.5,2.0,1.5),bm); cb.position.set(4.5,-4.5,1.0); scene.add(cb);
-    var cr=new THREE.Mesh(new THREE.CylinderGeometry(0,0.9,1.2,4),new THREE.MeshLambertMaterial({color:0x7788bb})); cr.position.set(4.5,-4.5,1.0); cr.position.y=2.0+0.6; scene.add(cr);
-    // 十字
-    var cx2=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.6,0.08),gm); cx2.position.set(4.5,3.5,1.0); scene.add(cx2);
-    var cxh=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.08,0.08),gm); cxh.position.set(4.5,3.7,1.0); scene.add(cxh);
+    var cb=new THREE.Mesh(new THREE.BoxGeometry(1.5,2.0,1.5),bm);
+    cb.position.set(4.5, 1.0, 1.0); scene.add(cb);
+    var cr=new THREE.Mesh(new THREE.CylinderGeometry(0,0.9,1.2,4),new THREE.MeshLambertMaterial({color:0x7788bb}));
+    cr.position.set(4.5, 2.0+0.6, 1.0); scene.add(cr);
+    var cx2=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.6,0.08),gm);
+    cx2.position.set(4.5, 2.0+1.2+0.5, 1.0); scene.add(cx2);
+    var cxh=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.08,0.08),gm);
+    cxh.position.set(4.5, 2.0+1.2+0.7, 1.0); scene.add(cxh);
   }
   // Lv8: 船
   if(has3('ship')){
@@ -10484,8 +10501,10 @@ function _initThreeScene() {
   }
   // Lv12: 魔塔
   if(has3('dark_tower')){
-    var dt=new THREE.Mesh(new THREE.CylinderGeometry(0.6,0.8,5.0,8),new THREE.MeshLambertMaterial({color:0x222233})); dt.position.set(-6.5,-6.5,0); dt.position.y=2.5; scene.add(dt);
-    var dtr=new THREE.Mesh(new THREE.CylinderGeometry(0,0.9,1.5,8),new THREE.MeshLambertMaterial({color:0x110022})); dtr.position.set(-6.5,-6.5,0); dtr.position.y=5.0+0.75; scene.add(dtr);
+    var dt=new THREE.Mesh(new THREE.CylinderGeometry(0.6,0.8,5.0,8),new THREE.MeshLambertMaterial({color:0x222233}));
+    dt.position.set(-6.5, 2.5, -6.5); scene.add(dt);
+    var dtr=new THREE.Mesh(new THREE.CylinderGeometry(0,0.9,1.5,8),new THREE.MeshLambertMaterial({color:0x110022}));
+    dtr.position.set(-6.5, 5.0+0.75, -6.5); scene.add(dtr);
     // 紫発光（PointLight）
     var pl=new THREE.PointLight(0x8800cc,1.5,8); pl.position.set(-6.5,7.0,-6.5); scene.add(pl);
   }
