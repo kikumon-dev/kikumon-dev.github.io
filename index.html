@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.25.1';
+    const APP_VERSION = 'v0.25.2';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -9920,11 +9920,17 @@ var LEVEL_CONFIG = [
 
 // レベル計算（タスク数→Lv1〜19）
 function calcLevel(total) {
+  var maxExp = LEVEL_CONFIG[LEVEL_CONFIG.length-1].exp;
+  var ng = Math.floor(total / maxExp); // 周回数（0=1周目）
+  var ng_total = total % maxExp;        // 周回内のタスク数
   var lv = 1;
   for (var i = 0; i < LEVEL_CONFIG.length; i++) {
-    if (total >= LEVEL_CONFIG[i].exp) lv = i + 1;
+    if (ng_total >= LEVEL_CONFIG[i].exp) lv = i + 1;
     else break;
   }
+  // NG情報をグローバルに保持（getCraftStats等で利用）
+  calcLevel._ng = ng;
+  calcLevel._ng_total = ng_total;
   return Math.min(lv, LEVEL_CONFIG.length);
 }
 
@@ -9948,21 +9954,27 @@ function getCraftStats() {
   var nextExp=nextCfg?nextCfg.exp:prevExp+9999;
   var pct=nextExp>prevExp?Math.min(100,Math.round((total-prevExp)/(nextExp-prevExp)*100)):100;
   var isEnding = (level >= LEVEL_CONFIG.length);
-  return {gold:gold,stone:stone,wood:wood,earth:earth,total:total,level:level,pct:pct,nextExp:nextExp,cfg:cfg,isEnding:isEnding};
+  var ng = (typeof calcLevel._ng !== 'undefined') ? calcLevel._ng : 0;
+  return {gold:gold,stone:stone,wood:wood,earth:earth,total:total,level:level,pct:pct,nextExp:nextExp,cfg:cfg,isEnding:isEnding,ng:ng};
 }
 
 function updateCraftHUD() {
   var s=getCraftStats();
   function set(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
   function setW(id,v){var e=document.getElementById(id);if(e)e.style.width=v;}
-  var _cfg=LEVEL_CONFIG[Math.min(s.level-1,LEVEL_CONFIG.length-1)]; set('craftKingdomName', (_cfg?_cfg.name:'アリアハン')+'王国');
+  var _cfg=LEVEL_CONFIG[Math.min(s.level-1,LEVEL_CONFIG.length-1)];
+  var _ngStr = s.ng > 0 ? '👑'+s.ng+'周目 ' : '';
+  set('craftKingdomName', _ngStr+(_cfg?_cfg.name:'アリアハン')+'王国');
   set('craftLevel','Lv.'+s.level);
   set('craftGold',s.gold); set('craftStone',s.stone);
   set('craftWood',s.wood); set('craftEarth',s.earth);
   setW('craftExpBar', s.pct+'%');
   var cfg=LEVEL_CONFIG[s.level-1];
   var nextCfgInfo=LEVEL_CONFIG[s.level]||null;
-  var nextMsg = s.isEnding ? ' ／ 🏆伝説完結！タスクを続けよう' : (nextCfgInfo ? ' ／ 次まで '+(nextCfgInfo.exp-s.total)+' タスク' : ' ／ 伝説完結！');
+  var _expInNg = s.ng > 0 ? (s.total % 114) : s.total;
+  var nextMsg = s.isEnding
+    ? ' ／ 🏆伝説完結！次タスクで' + (s.ng+1) + '周目へ'
+    : (nextCfgInfo ? ' ／ 次まで '+(nextCfgInfo.exp - _expInNg)+' タスク' : ' ／ 伝説完結！');
   if(cfg) set('craftNextInfo', (cfg.label||'') + nextMsg);
 }
 
@@ -10453,6 +10465,24 @@ function _showEnding() {
   showCraftMessage('🏆 伝説完結！勇者よ故郷に帰れ！');
 }
 
+function _showNewGame(ngCount) {
+  // 花火演出（_showEndingと同じ基盤）
+  _showEnding();
+  var endMsg = document.getElementById('craftEndingOverlay');
+  if (endMsg) {
+    var ngWords = ['2', '3', '4', '5', '6', '7', '8', '9', '10', '∞'];
+    var ngStr = ngWords[Math.min(ngCount-1, ngWords.length-1)] || ngCount;
+    endMsg.innerHTML =
+      '<div style="font-size:2.2em;color:#ff6b6b;text-shadow:0 0 20px #ff4444;font-weight:bold;">👑 ' + ngStr + '周目突入！</div>' +
+      '<div style="font-size:1.0em;color:#ffd700;margin-top:10px;">強くてニューゲーム開始！</div>' +
+      '<div style="font-size:0.85em;color:#aaa;margin-top:6px;">アリアハンから再び旅立て</div>';
+    endMsg.style.display = 'flex';
+    setTimeout(function(){ if(endMsg) endMsg.style.display='none'; }, 8000);
+  }
+  showCraftMessage('👑 ' + ngCount + '周目！強くてニューゲーム！');
+}
+
+
 function onTaskCompleted(task) {
   if ((typeof localStorage!=='undefined' ? localStorage.getItem('craftModeEnabled') : null) !== 'true') return;
   var emo={1:'💎',2:'🥇',3:'🥈',4:'🥉'}[task.section||4]||'🥉';
@@ -10462,8 +10492,11 @@ function onTaskCompleted(task) {
   var cur=getCraftStats();
   var craftView=document.getElementById('craftView');
   if(craftView&&craftView.style.display!=='none'){
-    if(cur.isEnding && !prev_stats_isEnding){
-      // エンディング演出
+    if(cur.isEnding && cur.ng > prev_stats.ng){
+      // 強くてニューゲーム突入！
+      _showNewGame(cur.ng);
+    } else if(cur.isEnding && !prev_stats_isEnding){
+      // エンディング演出（初回）
       _showEnding();
     } else if(cur.level>prev){
       var _nc=LEVEL_CONFIG[Math.min(cur.level-1,LEVEL_CONFIG.length-1)];
