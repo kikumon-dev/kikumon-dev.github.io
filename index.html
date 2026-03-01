@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.25.2';
+    const APP_VERSION = 'v0.25.3';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -10492,11 +10492,11 @@ function onTaskCompleted(task) {
   var cur=getCraftStats();
   var craftView=document.getElementById('craftView');
   if(craftView&&craftView.style.display!=='none'){
-    if(cur.isEnding && cur.ng > prev_stats.ng){
+    if(cur.ng > prev_stats.ng){
       // 強くてニューゲーム突入！
       _showNewGame(cur.ng);
     } else if(cur.isEnding && !prev_stats_isEnding){
-      // エンディング演出（初回）
+      // エンディング演出（初回Lv20到達）
       _showEnding();
     } else if(cur.level>prev){
       var _nc=LEVEL_CONFIG[Math.min(cur.level-1,LEVEL_CONFIG.length-1)];
