@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.24.33';
+    const APP_VERSION = 'v0.24.42';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -8677,20 +8677,32 @@
       const r3d = document.getElementById('craftMode3D');
       if (r2d) r2d.checked = renderMode === '2d';
       if (r3d) r3d.checked = renderMode === '3d';
-      if (r2d) r2d.onchange = function(){ if(this.checked){
-          localStorage.setItem('craftRenderMode','2d');
-          if(typeof _craftAnimFrame!=='undefined'&&_craftAnimFrame){ cancelAnimationFrame(_craftAnimFrame); _craftAnimFrame=null; }
-          _craftInitialized=false;
-          var cv=document.getElementById('craftView');
-          if(cv&&cv.style.display!=='none'){ var canvas=document.getElementById('craftCanvas'); if(canvas){var ctx=canvas.getContext('2d');if(ctx)ctx.clearRect(0,0,canvas.width,canvas.height);} initCraftWorld(); }
-        } };
-      if (r3d) r3d.onchange = function(){ if(this.checked){
-          localStorage.setItem('craftRenderMode','3d');
-          if(typeof _craftAnimFrame!=='undefined'&&_craftAnimFrame){ cancelAnimationFrame(_craftAnimFrame); _craftAnimFrame=null; }
-          _craftInitialized=false;
-          var cv=document.getElementById('craftView');
-          if(cv&&cv.style.display!=='none'){ var canvas=document.getElementById('craftCanvas'); if(canvas){var ctx=canvas.getContext('2d');if(ctx)ctx.clearRect(0,0,canvas.width,canvas.height);} initCraftWorld(); }
-        } };
+      if (r2d) // 描画モード切替：canvasを作り直してから再起動
+      function _switchRenderMode(mode) {
+        localStorage.setItem('craftRenderMode', mode);
+        // アニメ停止
+        if (typeof _craftAnimFrame !== 'undefined' && _craftAnimFrame) {
+          cancelAnimationFrame(_craftAnimFrame); _craftAnimFrame = null;
+        }
+        _craftInitialized = false;
+        // canvasを作り直す（WebGL↔Canvas2Dのコンテキスト競合を回避）
+        var oldC = document.getElementById('craftCanvas');
+        if (oldC && oldC.parentNode) {
+          var par = oldC.parentNode;
+          var nc = document.createElement('canvas');
+          nc.id = 'craftCanvas';
+          nc.style.cssText = oldC.style.cssText || '';
+          nc.style.position = 'absolute';
+          nc.style.top = '0'; nc.style.left = '0';
+          nc.style.width = '100%'; nc.style.height = '100%';
+          nc.style.display = 'block';
+          par.replaceChild(nc, oldC);
+        }
+        // craftViewが表示中でも非表示でも再起動
+        initCraftWorld();
+      }
+      r2d.onchange = function(){ if(this.checked) _switchRenderMode('2d'); };
+      if (r3d) r3d.onchange = function(){ if(this.checked) _switchRenderMode('3d'); };
       loadCalendarSettingsUI();
       // 初期ビュー
       const initialView = localStorage.getItem('initialView') || 'monthly';
@@ -9961,16 +9973,50 @@ var _craftZoom = 1.0;
 var _craftDragActive = false;
 var _craftLastX = 0;
 
-var KINGDOM_NAMES = ['アリアハン','カザーブ','ロマリア','ノアニール','マイラ','ランシール','テドン','バハラタ','ドムドーラ','ダーマ神殿'];
-
+// ドラクエ3オマージュ　ゲームバランス
+// ─────────────────────────────────
+// 「みっちり」= 1日12タスク → 1日2レベルアップ（6タスクで1段階）
+// 「普通」   = 1日3タスク  → 2日で1レベルアップ
+// コンプまで：みっちり約10日 / 普通約38日（1ヶ月弱）
+// ─────────────────────────────────
+// 正確な攻略順（ダーマ神殿は中盤前半・船入手後すぐ）
+// アリアハン→レーベ→ロマリア→カザーブ→ノアニール
+// →アッサラーム→イシス→ポルトガ→バハラタ→ダーマ神殿
+// →ランシール→テドン→ジパング→サマンオサ→バラモス城
+// →ラダトーム→ゾーマ城→ゼニスの城→しんりゅう→凱旋
+// ─────────────────────────────────
 var LEVEL_CONFIG = [
-  {exp:5,  label:'粗末な砦'},
-  {exp:15, label:'小さな城'},
-  {exp:30, label:'城下町'},
-  {exp:55, label:'栄えた王国'},
-  {exp:90, label:'大王国'},
-  {exp:999,label:'伝説の王城'},
+  {exp:0,   name:'アリアハン',   label:'出発の朝・粗末な砦',           buildings:['castle']},
+  {exp:6,   name:'レーベ',       label:'最初の宿場村',                 buildings:['castle','house']},
+  {exp:12,  name:'ロマリア',     label:'大陸最初の王国',               buildings:['castle','tower','house']},
+  {exp:18,  name:'カザーブ',     label:'山越えの村',                   buildings:['castle','tower','house','well']},
+  {exp:24,  name:'ノアニール',   label:'眠りの呪いが解けた村',         buildings:['castle','tower','house','well','church']},
+  {exp:30,  name:'アッサラーム', label:'砂漠の怪しい商都',             buildings:['castle','tower','house','well','church','market']},
+  {exp:36,  name:'イシス',       label:'女王の砂漠王国',               buildings:['castle','tower','house','church','market','temple']},
+  {exp:42,  name:'ポルトガ',     label:'船を手に入れた港の王国',       buildings:['castle','tower','house','church','market','temple','ship']},
+  {exp:48,  name:'バハラタ',     label:'東方の香辛料の町',             buildings:['castle','tower','house','church','market','temple','ship']},
+  {exp:54,  name:'ダーマ神殿',   label:'転職の聖地・悟りの道',         buildings:['castle','tower','house','church','market','temple','ship','shrine']},
+  {exp:60,  name:'ランシール',   label:'神聖な祈りの神殿都市',         buildings:['castle','tower','house','church','market','temple','ship','shrine','fortress']},
+  {exp:66,  name:'テドン',       label:'夜にだけ現れる滅びの村',       buildings:['castle','tower','house','church','market','temple','ship','shrine','fortress','dark_tower']},
+  {exp:72,  name:'ジパング',     label:'ヤマタノオロチの島国',         buildings:['castle','tower','house','church','market','temple','ship','shrine','fortress','dark_tower','palace']},
+  {exp:78,  name:'サマンオサ',   label:'魔王に乗っ取られた大国',       buildings:['castle','tower','house','church','market','temple','ship','shrine','fortress','dark_tower','palace']},
+  {exp:84,  name:'バラモス城',   label:'魔王討伐・しかし真の闇へ…',   buildings:['castle','tower','house','church','market','temple','ship','shrine','fortress','dark_tower','palace','dark_castle']},
+  {exp:90,  name:'ラダトーム',   label:'アレフガルド・光なき世界',     buildings:['castle','tower','house','church','market','temple','ship','shrine','fortress','dark_tower','palace','dark_castle','light_orb']},
+  {exp:96,  name:'ゾーマ城',     label:'暗黒皇帝ゾーマへ・最終決戦',  buildings:['castle','tower','house','church','market','temple','ship','shrine','fortress','dark_tower','palace','dark_castle','light_orb']},
+  {exp:102, name:'ゼニスの城',   label:'天空の白き城・神竜への挑戦',   buildings:['castle','tower','house','church','market','temple','ship','shrine','fortress','dark_tower','palace','dark_castle','light_orb','zenith']},
+  {exp:108, name:'しんりゅう',   label:'伝説の白き神竜・願いを叶えよ',buildings:['castle','tower','house','church','market','temple','ship','shrine','fortress','dark_tower','palace','dark_castle','light_orb','zenith','dragon']},
+  {exp:114, name:'アリアハン',   label:'勇者よ故郷へ帰れ・最高の城', buildings:['all']},
 ];
+
+// レベル計算（タスク数→Lv1〜19）
+function calcLevel(total) {
+  var lv = 1;
+  for (var i = 0; i < LEVEL_CONFIG.length; i++) {
+    if (total >= LEVEL_CONFIG[i].exp) lv = i + 1;
+    else break;
+  }
+  return Math.min(lv, LEVEL_CONFIG.length);
+}
 
 function getCraftStats() {
   // window.allTasksが未設定の場合はlocalStorageから読む
@@ -9985,28 +10031,27 @@ function getCraftStats() {
     if(s===1)gold++; else if(s===2)stone++; else if(s===3)wood++; else earth++;
   });
   var total=gold+stone+wood+earth;
-  var level=1;
-  for(var i=0;i<LEVEL_CONFIG.length;i++){
-    if(total>=LEVEL_CONFIG[i].exp) level=i+2; else break;
-  }
-  level=Math.min(level,LEVEL_CONFIG.length);
-  var prevExp=level>=2?LEVEL_CONFIG[level-2].exp:0;
-  var nextExp=LEVEL_CONFIG[level-1]?LEVEL_CONFIG[level-1].exp:999;
+  var level=calcLevel(total);
+  var cfg=LEVEL_CONFIG[level-1];
+  var nextCfg=LEVEL_CONFIG[level]||null;
+  var prevExp=cfg?cfg.exp:0;
+  var nextExp=nextCfg?nextCfg.exp:prevExp+9999;
   var pct=nextExp>prevExp?Math.min(100,Math.round((total-prevExp)/(nextExp-prevExp)*100)):100;
-  return {gold:gold,stone:stone,wood:wood,earth:earth,total:total,level:level,pct:pct,nextExp:nextExp};
+  return {gold:gold,stone:stone,wood:wood,earth:earth,total:total,level:level,pct:pct,nextExp:nextExp,cfg:cfg};
 }
 
 function updateCraftHUD() {
   var s=getCraftStats();
   function set(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
   function setW(id,v){var e=document.getElementById(id);if(e)e.style.width=v;}
-  set('craftKingdomName', KINGDOM_NAMES[Math.min(s.level-1,9)]+'王国');
+  var _cfg=LEVEL_CONFIG[Math.min(s.level-1,LEVEL_CONFIG.length-1)]; set('craftKingdomName', (_cfg?_cfg.name:'アリアハン')+'王国');
   set('craftLevel','Lv.'+s.level);
   set('craftGold',s.gold); set('craftStone',s.stone);
   set('craftWood',s.wood); set('craftEarth',s.earth);
   setW('craftExpBar', s.pct+'%');
   var cfg=LEVEL_CONFIG[s.level-1];
-  set('craftNextInfo', cfg&&s.total<999 ? '次のレベルまで あと '+(cfg.exp-s.total)+' タスク' : '最高レベル達成！');
+  var nextCfgInfo=LEVEL_CONFIG[s.level]||null;
+  if(cfg) set('craftNextInfo', (cfg.label||'') + (nextCfgInfo ? ' ／ 次まで '+(nextCfgInfo.exp-s.total)+' タスク' : ' ／ 伝説完結！'));
 }
 
 function showCraftMessage(msg) {
@@ -10256,8 +10301,18 @@ function initCraftWorld() {
 
   // 2Dモード
   _craftInitialized = true;
-  var canvas = document.getElementById('craftCanvas');
-  if (!canvas) { _craftInitialized=false; return; }
+  // canvasを毎回作り直す（WebGL→2D切替時にコンテキスト競合を回避）
+  var oldCanvas = document.getElementById('craftCanvas');
+  if (!oldCanvas) { _craftInitialized=false; return; }
+  var parent = oldCanvas.parentNode;
+  var newCanvas = document.createElement('canvas');
+  newCanvas.id = 'craftCanvas';
+  newCanvas.style.cssText = oldCanvas.style.cssText;
+  newCanvas.style.position = 'absolute';
+  newCanvas.style.top = '0'; newCanvas.style.left = '0';
+  newCanvas.style.width = '100%'; newCanvas.style.height = '100%';
+  parent.replaceChild(newCanvas, oldCanvas);
+  var canvas = newCanvas;
   var ctx = canvas.getContext('2d');
   if (!ctx) { _craftInitialized=false; return; }
 
@@ -10296,7 +10351,7 @@ function initCraftWorld() {
   loop();
   updateCraftHUD();
   var stats=getCraftStats();
-  showCraftMessage('ようこそ '+KINGDOM_NAMES[Math.min(stats.level-1,9)]+'王国へ！');
+  var _wc=LEVEL_CONFIG[Math.min(stats.level-1,LEVEL_CONFIG.length-1)]; showCraftMessage('ようこそ '+(_wc?_wc.name:'アリアハン')+'王国へ！');
 }
 
 // Three.js 3D初期化
@@ -10309,8 +10364,17 @@ function _initThreeScene() {
     if(typeof localStorage!=='undefined') localStorage.setItem('craftRenderMode','2d');
     initCraftWorld(); return;
   }
-  var canvas=document.getElementById('craftCanvas');
-  if(!canvas){_craftInitialized=false;return;}
+  // canvasを作り直す（2D→WebGL切替時のコンテキスト競合を回避）
+  var oldC3=document.getElementById('craftCanvas');
+  if(!oldC3){_craftInitialized=false;return;}
+  var p3=oldC3.parentNode;
+  var newC3=document.createElement('canvas');
+  newC3.id='craftCanvas';
+  newC3.style.cssText=oldC3.style.cssText;
+  newC3.style.position='absolute'; newC3.style.top='0'; newC3.style.left='0';
+  newC3.style.width='100%'; newC3.style.height='100%';
+  p3.replaceChild(newC3,oldC3);
+  var canvas=newC3;
   var p=canvas.parentNode;
   canvas.width=p?p.clientWidth:window.innerWidth;
   canvas.height=p?p.clientHeight:(window.innerHeight-50);
@@ -10349,12 +10413,75 @@ function _initThreeScene() {
   fp.position.y=bh+1.4+0.7; scene.add(fp);
   var flag=new THREE.Mesh(new THREE.PlaneGeometry(0.55,0.32),new THREE.MeshLambertMaterial({color:0xe53935,side:THREE.DoubleSide}));
   flag.position.set(0.28,bh+1.9+0.7,0); scene.add(flag);
-  [[-4,3],[4,3],[4,-3],[-4,-3],[6,0],[-6,0]].forEach(function(q){
+  // 木
+  [[-4,3],[4,3],[4,-3],[-4,-3],[6,0],[-6,0],[2,6],[-6,4],[5,-5],[-3,-6]].forEach(function(q){
     var tr2=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.15,0.9,6),new THREE.MeshLambertMaterial({color:0x6b4423}));
     tr2.position.set(q[0],0.45,q[1]); scene.add(tr2);
     var lf=new THREE.Mesh(new THREE.SphereGeometry(0.5,6,6),new THREE.MeshLambertMaterial({color:0x2d7a2d}));
     lf.position.set(q[0],1.2,q[1]); scene.add(lf);
   });
+
+  // 建物をレベルに応じて追加
+  var cfg3=LEVEL_CONFIG[Math.min(stats.level-1,LEVEL_CONFIG.length-1)];
+  var bs3=cfg3?cfg3.buildings:['castle'];
+  var hasAll3=bs3.indexOf('all')>=0;
+  function has3(b){return hasAll3||bs3.indexOf(b)>=0;}
+  var wm=new THREE.MeshLambertMaterial({color:0xe8d5b0});
+  var rm2=new THREE.MeshLambertMaterial({color:0xcc5533});
+  var bm=new THREE.MeshLambertMaterial({color:0xf0ede0});
+  var gm=new THREE.MeshLambertMaterial({color:0xffd700,emissive:0x443300});
+
+  // Lv2: 塔
+  if(has3('tower')){
+    [[3.5,-2],[- 3.5,2]].forEach(function(p){
+      var tw=new THREE.Mesh(new THREE.CylinderGeometry(0.4,0.5,3.0,8),new THREE.MeshLambertMaterial({color:0xb0a090}));
+      tw.position.set(p[0],1.5,p[1]); scene.add(tw);
+      var tr3=new THREE.Mesh(new THREE.CylinderGeometry(0,0.6,0.9,8),rm); tr3.position.set(p[0],3.0+0.45,p[1]); scene.add(tr3);
+    });
+  }
+  // Lv3: 民家
+  if(has3('house')){
+    [[-4.5,-0.5],[3.5,3.0],[-2.0,4.5]].forEach(function(p){
+      var hb=new THREE.Mesh(new THREE.BoxGeometry(1.3,1.2,1.3),wm); hb.position.set(p[0],0.6,p[1]); scene.add(hb);
+      var hr=new THREE.Mesh(new THREE.CylinderGeometry(0,1.0,0.9,4),rm2); hr.position.set(p[0],1.2+0.45,p[1]); hr.rotation.y=Math.PI/4; scene.add(hr);
+    });
+  }
+  // Lv5: 教会
+  if(has3('church')){
+    var cb=new THREE.Mesh(new THREE.BoxGeometry(1.5,2.0,1.5),bm); cb.position.set(4.5,-4.5,1.0); scene.add(cb);
+    var cr=new THREE.Mesh(new THREE.CylinderGeometry(0,0.9,1.2,4),new THREE.MeshLambertMaterial({color:0x7788bb})); cr.position.set(4.5,-4.5,1.0); cr.position.y=2.0+0.6; scene.add(cr);
+    // 十字
+    var cx2=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.6,0.08),gm); cx2.position.set(4.5,3.5,1.0); scene.add(cx2);
+    var cxh=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.08,0.08),gm); cxh.position.set(4.5,3.7,1.0); scene.add(cxh);
+  }
+  // Lv8: 船
+  if(has3('ship')){
+    var shipBody=new THREE.Mesh(new THREE.BoxGeometry(3.5,0.5,1.2),new THREE.MeshLambertMaterial({color:0x8b6340})); shipBody.position.set(-5.5,0.25,4.0); scene.add(shipBody);
+    var mast=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,3.0,6),new THREE.MeshLambertMaterial({color:0x666})); mast.position.set(-5.5,1.75,4.0); scene.add(mast);
+    var sail=new THREE.Mesh(new THREE.PlaneGeometry(1.2,1.0),new THREE.MeshLambertMaterial({color:0xeeeecc,side:THREE.DoubleSide})); sail.position.set(-5.1,2.5,4.0); scene.add(sail);
+  }
+  // Lv10: 宮殿（金色）
+  if(has3('palace')){
+    var pb2=new THREE.Mesh(new THREE.BoxGeometry(2.5,2.8,2.5),new THREE.MeshLambertMaterial({color:0xfff5c0})); pb2.position.set(-1.0,-6.0,0); pb2.position.y=1.4; scene.add(pb2);
+    var pr2=new THREE.Mesh(new THREE.CylinderGeometry(0,1.8,2.0,4),gm); pr2.position.set(-1.0,-6.0,0); pr2.position.y=2.8+1.0; pr2.rotation.y=Math.PI/4; scene.add(pr2);
+  }
+  // Lv11: 神社（朱色）
+  if(has3('shrine')){
+    var sb=new THREE.Mesh(new THREE.BoxGeometry(1.6,1.5,1.6),new THREE.MeshLambertMaterial({color:0xcc3300})); sb.position.set(6.0,0.75,2.0); scene.add(sb);
+    var sr=new THREE.Mesh(new THREE.CylinderGeometry(0,1.2,1.0,4),new THREE.MeshLambertMaterial({color:0x880000})); sr.position.set(6.0,1.5+0.5,2.0); sr.rotation.y=Math.PI/4; scene.add(sr);
+  }
+  // Lv12: 魔塔
+  if(has3('dark_tower')){
+    var dt=new THREE.Mesh(new THREE.CylinderGeometry(0.6,0.8,5.0,8),new THREE.MeshLambertMaterial({color:0x222233})); dt.position.set(-6.5,-6.5,0); dt.position.y=2.5; scene.add(dt);
+    var dtr=new THREE.Mesh(new THREE.CylinderGeometry(0,0.9,1.5,8),new THREE.MeshLambertMaterial({color:0x110022})); dtr.position.set(-6.5,-6.5,0); dtr.position.y=5.0+0.75; scene.add(dtr);
+    // 紫発光（PointLight）
+    var pl=new THREE.PointLight(0x8800cc,1.5,8); pl.position.set(-6.5,7.0,-6.5); scene.add(pl);
+  }
+  // Lv14: 光の宝珠（PointLight）
+  if(has3('light_orb')){
+    var gl2=new THREE.PointLight(0xffffaa,2.0,15); gl2.position.set(0,bh+4,0); scene.add(gl2);
+    var orbM=new THREE.Mesh(new THREE.SphereGeometry(0.3,8,8),new THREE.MeshLambertMaterial({color:0xffffcc,emissive:0xffff00})); orbM.position.set(0,bh+4,0); scene.add(orbM);
+  }
   var drag={on:false,lx:0,ly:0};
   canvas.addEventListener('mousedown',function(e){drag.on=true;drag.lx=e.clientX;drag.ly=e.clientY;});
   canvas.addEventListener('mouseup',function(){drag.on=false;});
@@ -10374,7 +10501,7 @@ function _initThreeScene() {
   window.addEventListener('resize',function(){var cw=canvas.clientWidth,ch=canvas.clientHeight;renderer.setSize(cw,ch);camera.aspect=cw/ch;camera.updateProjectionMatrix();});
   (function animate(){_craftAnimFrame=requestAnimationFrame(animate);renderer.render(scene,camera);})();
   updateCraftHUD();
-  showCraftMessage('🏰 3Dモードで起動しました！');
+  var _3c=LEVEL_CONFIG[Math.min(getCraftStats().level-1,LEVEL_CONFIG.length-1)]; showCraftMessage('🏰 3D: '+(_3c?_3c.name:'アリアハン')+'王国へ！');
 }
 
 function onTaskCompleted(task) {
@@ -10387,8 +10514,9 @@ function onTaskCompleted(task) {
   var craftView=document.getElementById('craftView');
   if(craftView&&craftView.style.display!=='none'){
     if(cur.level>prev){
-      var kn=KINGDOM_NAMES[Math.min(cur.level-1,9)];
-      setTimeout(function(){showCraftMessage('🎉 Lv.'+cur.level+' '+kn+'王国に進化した！');},200);
+      var _nc=LEVEL_CONFIG[Math.min(cur.level-1,LEVEL_CONFIG.length-1)];
+      var kn=_nc?_nc.name:'アリアハン';
+      setTimeout(function(){showCraftMessage('🎉 '+kn+'王国に進化！ '+(_nc?_nc.label:''));},200);
     } else {
       showCraftMessage(emo+' '+name+'を獲得！ 合計'+cur.total+'個');
     }
