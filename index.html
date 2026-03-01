@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.24.32';
+    const APP_VERSION = 'v0.24.33';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -3922,6 +3922,7 @@
      * - 月間/年間ビューはdateフィールドで直接フィルタ（フラグ不要）
      */
     let allTasks = []; // 全タスクの唯一のデータソース
+    window.allTasks = allTasks; // クラフトモードから参照できるよう公開
 
     // ===== カレンダー定義 SSOT =====
     const DEFAULT_CALENDARS = [
@@ -4310,6 +4311,7 @@
     function saveAllTasks() {
       localStorage.setItem('allTasks', JSON.stringify(allTasks));
       localStorage.setItem('taskIdCounter', taskIdCounter.toString());
+      window.allTasks = allTasks; // クラフトモードと同期
     }
 
     // マスターデータ読み込み
@@ -4328,7 +4330,7 @@
           // データが空配列の場合も初期データを使用
           if (allTasks.length === 0 && INITIAL_DATA && INITIAL_DATA.length > 0) {
             allTasks = INITIAL_DATA;
-            saveAllTasks();
+            saveAllTasks(); window.allTasks = allTasks;
             if (INITIAL_PURPOSE) {
               localStorage.setItem('purpose', INITIAL_PURPOSE);
             }
@@ -4357,7 +4359,7 @@
                 fixedCat++;
               }
             });
-            if (fixedCat > 0) saveAllTasks();
+            if (fixedCat > 0) saveAllTasks(); window.allTasks = allTasks;
             localStorage.setItem('catMigrationDone_v170', 'true');
           }
         } catch (e) {
@@ -4369,7 +4371,7 @@
       // LocalStorageにデータがない、または空の場合は初期データを使用
       if (allTasks.length === 0 && INITIAL_DATA && INITIAL_DATA.length > 0) {
         allTasks = INITIAL_DATA;
-        saveAllTasks();
+        saveAllTasks(); window.allTasks = allTasks;
         
         if (INITIAL_PURPOSE) {
           localStorage.setItem('purpose', INITIAL_PURPOSE);
@@ -8675,8 +8677,20 @@
       const r3d = document.getElementById('craftMode3D');
       if (r2d) r2d.checked = renderMode === '2d';
       if (r3d) r3d.checked = renderMode === '3d';
-      if (r2d) r2d.onchange = function(){ if(this.checked){ localStorage.setItem('craftRenderMode','2d'); _craftInitialized=false; } };
-      if (r3d) r3d.onchange = function(){ if(this.checked){ localStorage.setItem('craftRenderMode','3d'); _craftInitialized=false; } };
+      if (r2d) r2d.onchange = function(){ if(this.checked){
+          localStorage.setItem('craftRenderMode','2d');
+          if(typeof _craftAnimFrame!=='undefined'&&_craftAnimFrame){ cancelAnimationFrame(_craftAnimFrame); _craftAnimFrame=null; }
+          _craftInitialized=false;
+          var cv=document.getElementById('craftView');
+          if(cv&&cv.style.display!=='none'){ var canvas=document.getElementById('craftCanvas'); if(canvas){var ctx=canvas.getContext('2d');if(ctx)ctx.clearRect(0,0,canvas.width,canvas.height);} initCraftWorld(); }
+        } };
+      if (r3d) r3d.onchange = function(){ if(this.checked){
+          localStorage.setItem('craftRenderMode','3d');
+          if(typeof _craftAnimFrame!=='undefined'&&_craftAnimFrame){ cancelAnimationFrame(_craftAnimFrame); _craftAnimFrame=null; }
+          _craftInitialized=false;
+          var cv=document.getElementById('craftView');
+          if(cv&&cv.style.display!=='none'){ var canvas=document.getElementById('craftCanvas'); if(canvas){var ctx=canvas.getContext('2d');if(ctx)ctx.clearRect(0,0,canvas.width,canvas.height);} initCraftWorld(); }
+        } };
       loadCalendarSettingsUI();
       // 初期ビュー
       const initialView = localStorage.getItem('initialView') || 'monthly';
@@ -9959,7 +9973,12 @@ var LEVEL_CONFIG = [
 ];
 
 function getCraftStats() {
-  var completed = (window.allTasks||[]).filter(function(t){return t.completed;});
+  // window.allTasksが未設定の場合はlocalStorageから読む
+  var _tasks = window.allTasks;
+  if (!_tasks || _tasks.length === 0) {
+    try { _tasks = JSON.parse(localStorage.getItem('allTasks')||'[]'); } catch(e){ _tasks=[]; }
+  }
+  var completed = (_tasks||[]).filter(function(t){return t.completed;});
   var gold=0,stone=0,wood=0,earth=0;
   completed.forEach(function(t){
     var s=t.section||4;
