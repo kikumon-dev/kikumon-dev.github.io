@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.25.15';
+    const APP_VERSION = 'v0.25.16';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -3552,14 +3552,6 @@
         <div id="calendarSettingsList"></div>
       </div>
 <div class="settings-section">
-        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">👨‍👩‍👧 家族と共有</h3>
-        <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #8e8e8e;">バックエンドなし・コードをLINEで送るだけで家族とタスクを共有できます。</p>
-        <button onclick="openFamilyShareModal()"
-          style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff;font-size:0.88em;font-weight:700;cursor:pointer;width:100%;">
-          👨‍👩‍👧 家族と共有する
-        </button>
-      </div>
-<div class="settings-section">
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">🏰 王国を訪問する</h3>
         <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #8e8e8e;">仲間の王国コードを入力して訪問できます。Lv.5以上で自分の王国コードを発行できます。</p>
         <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #e07048;">⚠️ 名前や性別を変更した場合は、王国コードを再発行してください。</p>
@@ -3569,10 +3561,18 @@
             👑 王国コードを発行する
           </button>
           <button onclick="openKingdomVisitModal()"
-            style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:1.5px solid #4facfe;border-radius:10px;background:#fff;color:#4facfe;font-size:0.88em;font-weight:700;cursor:pointer;width:100%;">
+            style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#ffc8dc,#ffa0bc);color:#fff;font-size:0.88em;font-weight:700;cursor:pointer;width:100%;box-shadow:0 4px 12px rgba(255,160,188,0.35);letter-spacing:0.03em;">
             🗺️ 仲間の王国を訪問する
           </button>
         </div>
+      </div>
+<div class="settings-section">
+        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">👨‍👩‍👧 家族と共有</h3>
+        <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #8e8e8e;">バックエンドなし・コードをLINEで送るだけで家族とタスクを共有できます。</p>
+        <button onclick="openFamilyShareModal()"
+          style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff;font-size:0.88em;font-weight:700;cursor:pointer;width:100%;">
+          👨‍👩‍👧 家族と共有する
+        </button>
       </div>
 <div class="settings-section">
           <h3 style="margin:0 0 15px 0;color:#262626;font-size:1.05em;font-weight:600;border-bottom:1px solid #efefef;padding-bottom:12px;">🗄️ データ管理</h3>
@@ -3593,7 +3593,7 @@
           </div>
         </div>
 
-        <button class="modal-btn modal-btn-primary" style="padding: 14px 40px; font-size: 1em; border-radius: 12px;" onclick="saveSettings()">設定を保存</button>
+        <div style="text-align:center;margin-top:8px;"><button class="modal-btn modal-btn-primary" style="padding:14px 40px;font-size:1em;border-radius:12px;" onclick="saveSettings()">設定を保存</button></div>
       </div>
     </div>
   </div>
