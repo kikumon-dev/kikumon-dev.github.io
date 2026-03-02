@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.24.65';
+    const APP_VERSION = 'v0.24.64';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -10267,8 +10267,8 @@ function renderVisitKingdom(data) {
 
   var info = document.getElementById('visitKingdomInfo');
   if (info) {
-    var roleLabel = gender === 'princess' ? 'の姫の王国' : 'の王国';
-    info.innerHTML = '👑 ' + (data.name||'名もなき王') + roleLabel + '&nbsp;|&nbsp;Lv.' + data.level + '&nbsp;|&nbsp;累計' + data.total + 'タスク';
+    var roleLabel = gender === 'princess' ? '👑姫' : '👑王';
+    info.innerHTML = roleLabel + ' ' + (data.name||'名もなき王') + '&nbsp;|&nbsp;Lv.' + data.level + '&nbsp;|&nbsp;累計' + data.total + 'タスク';
   }
 
   // 訪問通知メッセージ
