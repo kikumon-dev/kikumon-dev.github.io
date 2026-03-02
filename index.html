@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.24.67';
+    const APP_VERSION = 'v0.24.84';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -3355,11 +3355,11 @@
               <div style="margin-top:12px;">
                 <label style="display:block;margin-bottom:8px;font-weight:600;color:#262626;font-size:0.9em;">あなたは？</label>
                 <div style="display:flex;gap:8px;">
-                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 16px;border:2px solid #e8e8e8;border-radius:20px;font-size:0.9em;" id="genderLabelKing">
-                    <input type="radio" name="profileGender" value="king" id="genderKing" style="display:none;" onchange="saveGender()"> 👑 王
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 16px;border:2px solid #e8e8e8;border-radius:20px;font-size:0.9em;" id="genderLabelKing" onclick="selectGender('king')">
+                    👑 王
                   </label>
-                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 16px;border:2px solid #e8e8e8;border-radius:20px;font-size:0.9em;" id="genderLabelPrincess">
-                    <input type="radio" name="profileGender" value="princess" id="genderPrincess" style="display:none;" onchange="saveGender()"> 👑 姫
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 16px;border:2px solid #e8e8e8;border-radius:20px;font-size:0.9em;" id="genderLabelPrincess" onclick="selectGender('princess')">
+                    👑 姫
                   </label>
                 </div>
               </div>
@@ -3562,6 +3562,7 @@
 <div class="settings-section">
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">🏰 王国を訪問する</h3>
         <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #8e8e8e;">仲間の王国コードを入力して訪問できます。Lv.5以上で自分の王国コードを発行できます。</p>
+        <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #e07048;">⚠️ 名前や性別を変更した場合は、王国コードを再発行してください。</p>
         <div id="kingdomShareArea">
           <button onclick="openKingdomShareModal()" id="kingdomShareBtn"
             style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#ffd700,#ff8800);color:#fff;font-size:0.88em;font-weight:700;cursor:pointer;width:100%;margin-bottom:10px;">
@@ -6641,6 +6642,10 @@
 
 
     // 性別設定
+    function selectGender(val) {
+      localStorage.setItem('profileGender', val);
+      updateGenderUI(val);
+    }
     function saveGender() {
       const val = document.querySelector('input[name="profileGender"]:checked');
       if (val) {
@@ -8840,8 +8845,6 @@
       const savedName = localStorage.getItem('profileName') || '';
       // 性別設定の初期化
       const savedGender = localStorage.getItem('profileGender') || 'king';
-      const genderRadio = document.getElementById(savedGender === 'princess' ? 'genderPrincess' : 'genderKing');
-      if (genderRadio) genderRadio.checked = true;
       updateGenderUI(savedGender);
       const savedAvatar = localStorage.getItem('profileAvatar') || '';
       
@@ -9230,72 +9233,76 @@
 
     // 設定を保存
     function saveSettings() {
-      // カレンダー設定保存
-      saveCalendars();
-      activeCalendarIds = null; // フィルターリセット
-      // 初期ビュー
-      const selectedView = document.querySelector('input[name="initialView"]:checked');
-      if (selectedView) {
-        localStorage.setItem('initialView', selectedView.value);
-      }
-      
-      // 月間表示モード
-      const selectedMonthlyMode = document.querySelector('input[name="monthlyMode"]:checked');
-      if (selectedMonthlyMode) {
-        localStorage.setItem('monthlyMode', selectedMonthlyMode.value);
-      }
+      try {
+        // カレンダー設定保存
+        saveCalendars();
+        activeCalendarIds = null;
 
-      // 週間表示日数
-      const selectedWeeklyDays = document.querySelector('input[name="weeklyDays"]:checked');
-      if (selectedWeeklyDays) {
-        localStorage.setItem('weeklyDays', selectedWeeklyDays.value);
-      }
+        // 各ラジオボタン（null安全）
+        var _sv = document.querySelector('input[name="initialView"]:checked');
+        if (_sv) localStorage.setItem('initialView', _sv.value);
+        var _mm = document.querySelector('input[name="monthlyMode"]:checked');
+        if (_mm) localStorage.setItem('monthlyMode', _mm.value);
+        var _wd = document.querySelector('input[name="weeklyDays"]:checked');
+        if (_wd) localStorage.setItem('weeklyDays', _wd.value);
+        var _tb = document.querySelector('input[name="weeklyTimeBar"]:checked');
+        if (_tb) localStorage.setItem('weeklyTimeBar', _tb.value);
+        var _dm = document.querySelector('input[name="dailyViewMode"]:checked');
+        if (_dm) localStorage.setItem('dailyViewMode', _dm.value);
 
-      // 週間時刻バー
-      const selectedTimeBar = document.querySelector('input[name="weeklyTimeBar"]:checked');
-      if (selectedTimeBar) {
-        localStorage.setItem('weeklyTimeBar', selectedTimeBar.value);
-      }
-      
-      // 日次ビュー表示モード
-      const selectedDailyMode = document.querySelector('input[name="dailyViewMode"]:checked');
-      if (selectedDailyMode) {
-        localStorage.setItem('dailyViewMode', selectedDailyMode.value);
-      }
-      
-      // シンプルモード
-      const simpleToggle = document.getElementById('simpleModeToggle');
-      localStorage.setItem('simpleMode', simpleToggle.checked ? 'on' : 'off');
-      
-      // スタンプ設定保存
-      saveStampSettings();
-      
-      // プロフィール名
-      const profileName = document.getElementById('profileNameInput').value.trim();
-      localStorage.setItem('profileName', profileName);
-      
-      // アバター
-      const avatarPreview = document.getElementById('profileAvatarPreview');
-      if (avatarPreview.style.display !== 'none' && avatarPreview.src) {
-        localStorage.setItem('profileAvatar', avatarPreview.src);
-      } else {
-        localStorage.removeItem('profileAvatar');
-      }
-      
-      // ナビバー更新
-      updateNavAvatar();
-      
-      // シンプルモード適用
-      applySimpleMode();
-      
-      // 保存完了メッセージ
-      alert('設定を保存しました！');
-      
-      // シンプルモード時は月間に強制移動
-      if (simpleToggle.checked) {
-        switchView('monthly');
-      } else {
-        switchView(selectedView.value);
+        // シンプルモード
+        var simpleToggle = document.getElementById('simpleModeToggle');
+        if (simpleToggle) localStorage.setItem('simpleMode', simpleToggle.checked ? 'on' : 'off');
+
+        // スタンプ設定
+        saveStampSettings();
+
+        // プロフィール名
+        var profileNameEl = document.getElementById('profileNameInput');
+        if (profileNameEl) localStorage.setItem('profileName', profileNameEl.value.trim());
+
+        // 性別：selectGenderでlocalStorageに既に書き込み済みなので読むだけ
+        // （何も選択されていない場合のフォールバックのみ）
+        if (!localStorage.getItem('profileGender')) {
+          localStorage.setItem('profileGender', 'king');
+        }
+
+        // アバター
+        var avatarPreview = document.getElementById('profileAvatarPreview');
+        if (avatarPreview && avatarPreview.style.display !== 'none' && avatarPreview.src) {
+          localStorage.setItem('profileAvatar', avatarPreview.src);
+        } else {
+          localStorage.removeItem('profileAvatar');
+        }
+
+        // ナビバー更新・シンプルモード適用
+        updateNavAvatar();
+        applySimpleMode();
+
+        // 保存完了（alertの代わりにトースト表示）
+        var _toastEl = document.getElementById('settingsSaveToast');
+        if (!_toastEl) {
+          _toastEl = document.createElement('div');
+          _toastEl.id = 'settingsSaveToast';
+          _toastEl.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.85);color:#ffd700;padding:16px 28px;border-radius:14px;font-size:1em;font-weight:bold;z-index:99999;text-align:center;pointer-events:none;border:1px solid rgba(255,215,0,0.4);';
+          document.body.appendChild(_toastEl);
+        }
+        var _g = localStorage.getItem('profileGender') || 'king';
+        var _gLabel = _g === 'princess' ? '姫' : '王';
+        var _n = localStorage.getItem('profileName') || '旅人';
+        _toastEl.innerHTML = '✅ 保存しました！ ' + _n + '（' + _gLabel + '）<br><span style="font-size:0.82em;color:#ffcc66;">⚠️ 名前や性別を変更した場合は、王国コードを再発行してください</span>';
+        _toastEl.style.display = 'block';
+        setTimeout(function(){ _toastEl.style.display = 'none'; }, 2000);
+        if (typeof showCraftMessage === 'function') showCraftMessage('✅ 設定を保存しました！');
+
+        // 画面遷移
+        if (simpleToggle && simpleToggle.checked) {
+          switchView('monthly');
+        } else if (_sv) {
+          switchView(_sv.value);
+        }
+      } catch(e) {
+        alert('保存エラー: ' + e.message);
       }
     }
     
@@ -10163,7 +10170,9 @@ var _kingdomCode = null;
 // 王国データをエンコード（タスクの中身は含まない）
 function buildKingdomCode() {
   var stats = getCraftStats();
-  var myName = localStorage.getItem('profileName') || '名もなき王';
+  var myName = localStorage.getItem('profileName') || '';
+  var _gender2 = localStorage.getItem('profileGender') || 'king';
+  if (!myName) myName = _gender2 === 'princess' ? '旅人' : '旅人';
   var gender = localStorage.getItem('profileGender') || 'king';
   var payload = JSON.stringify({
     type: 'yarukotolist-kingdom-v1',
@@ -10259,52 +10268,80 @@ function renderVisitKingdom(data) {
   if (!view) return;
   view.style.display = 'flex';
 
+  // コードに入っている名前・性別を優先（発行時点の情報）
   var gender = data.gender || 'king';
-  // 「きくモンの王国」シンプルに
-  var title = data.name + 'の王国';
+  var _ownerName = (data.name && data.name.trim()) ? data.name.trim() : '旅人';
   var ngLabel = data.ng > 0 ? '👑' + data.ng + '周目 ' : '';
-  document.getElementById('visitKingdomTitle').textContent = ngLabel + (data.kingdomName || 'アリアハン王国');
+  var kingdomFullName = ngLabel + (data.kingdomName || 'アリアハン王国');
 
+  // 表示名ロジック
+  // 王：「きくモンの王国」
+  // 姫：「きくモン姫の王国」（名前に姫を接続）
+  var ownerLabel;
+  if (gender === 'princess') {
+    ownerLabel = _ownerName + '姫の王国';
+  } else {
+    ownerLabel = _ownerName + 'の王国';
+  }
+  window._visitOwnerLabel = ownerLabel;
+
+  // オーナー名を上部overlayに表示
+  var titleEl = document.getElementById('visitKingdomTitle');
+  if (titleEl) titleEl.textContent = '👑 ' + ownerLabel;
+
+  // 下バナー → 王国名・レベル・タスク数
   var info = document.getElementById('visitKingdomInfo');
   if (info) {
-    var roleLabel = gender === 'princess' ? 'の姫の王国' : 'の王国';
-    info.innerHTML = '👑 ' + (data.name||'名もなき王') + roleLabel + '&nbsp;|&nbsp;Lv.' + data.level + '&nbsp;|&nbsp;累計' + data.total + 'タスク';
+    info.innerHTML = '🏰 ' + kingdomFullName + '&nbsp;|&nbsp;Lv.' + data.level + '&nbsp;|&nbsp;累計' + data.total + 'タスク';
   }
 
-  // 訪問通知メッセージ
-  setTimeout(function(){
-    showCraftMessage('🗺️ ' + (data.name || '仲間') + 'の王国に到着！');
-  }, 400);
+  // 訪問通知メッセージ（姫対応）
+  var arrivalMsg = gender === 'princess'
+    ? '🗺️ ' + _ownerName + '姫の王国に到着！'
+    : '🗺️ ' + _ownerName + 'の王国に到着！';
+  setTimeout(function(){ showCraftMessage(arrivalMsg); }, 400);
 
-  // 3D優先、無理なら2D
-  // DOMが確実に表示された後に描画するためrAF+100ms待ちで実行
   var _visitLevel = data.level;
   var _visitNg = data.ng || 0;
-  var renderMode = localStorage.getItem('craftRenderMode') || '2d';
 
   function _doRenderVisit() {
-    if (renderMode === '3d') {
-      if (typeof THREE !== 'undefined') {
-        renderVisitCanvas3D(_visitLevel);
+    // localStorageに関係なく、WebGLが実際に使えるか直接テスト
+    var canUse3D = false;
+    if (typeof THREE !== 'undefined') {
+      try {
+        var testC = document.createElement('canvas');
+        var gl = testC.getContext('webgl') || testC.getContext('experimental-webgl');
+        if (gl) canUse3D = true;
+      } catch(e) {}
+    }
+    if (canUse3D) {
+      renderVisitCanvas3D(_visitLevel);
+    } else if (typeof THREE === 'undefined') {
+      // Three.jsをロードしてリトライ
+      if (!document.querySelector('script[data-threejs-loading]') && !document.querySelector('script[src*="three.min"]')) {
+        var s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+        s.setAttribute('data-threejs-loading', '1');
+        s.onload = function(){
+          s.removeAttribute('data-threejs-loading');
+          _doRenderVisit();
+        };
+        s.onerror = function(){ renderVisitCanvas(_visitLevel, _visitNg); };
+        document.head.appendChild(s);
       } else {
-        // Three.jsロード待ち（最大10秒）
+        // 既にロード中→待つ
         var _retry = 0;
         var _timer = setInterval(function(){
           _retry++;
-          if (typeof THREE !== 'undefined') {
-            clearInterval(_timer);
-            renderVisitCanvas3D(_visitLevel);
-          } else if (_retry > 33) {
-            clearInterval(_timer);
-            renderVisitCanvas(_visitLevel, _visitNg);
-          }
+          if (typeof THREE !== 'undefined') { clearInterval(_timer); _doRenderVisit(); }
+          else if (_retry > 33) { clearInterval(_timer); renderVisitCanvas(_visitLevel, _visitNg); }
         }, 300);
       }
     } else {
       renderVisitCanvas(_visitLevel, _visitNg);
     }
   }
-  // DOMの表示確定後に実行（display:flex反映を待つ）
+  // DOMの表示確定後に実行
   requestAnimationFrame(function(){
     setTimeout(_doRenderVisit, 50);
   });
@@ -10347,7 +10384,7 @@ function renderVisitCanvas3D(visitLevel) {
   var scene = new THREE.Scene();
   scene.fog = new THREE.Fog(0x0d1b2a, 30, 80);
   var camera = new THREE.PerspectiveCamera(35, W/H, 0.1, 200);
-  var theta = Math.PI/4, phi = 0.6, radius = 26;
+  var theta = Math.PI/4, phi = 0.58, radius = 36;
   camera.position.set(radius*Math.sin(theta)*Math.cos(phi), radius*Math.sin(phi), radius*Math.cos(theta)*Math.cos(phi));
   camera.lookAt(0, 1, 0);
 
@@ -11201,15 +11238,17 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
 <!-- ===== 王国訪問ビュー ===== -->
-<div id="kingdomVisitView" style="display:none;position:fixed;inset:0;background:#0d1b2a;z-index:9998;flex-direction:column;">
-  <div style="background:#1a1a2e;border-bottom:1px solid #333;padding:12px 16px;display:flex;align-items:center;gap:12px;">
-    <button onclick="closeKingdomVisitView()" style="background:none;border:none;color:#4facfe;font-size:1em;cursor:pointer;padding:4px 8px;">← 戻る</button>
-    <div id="visitKingdomTitle" style="color:#ffd700;font-weight:bold;font-size:1em;flex:1;text-align:center;"></div>
-  </div>
-  <div style="flex:1;position:relative;overflow:hidden;">
-    <canvas id="visitCraftCanvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
-    <div id="visitKingdomInfo" style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:12px 24px;border-radius:20px;text-align:center;font-size:0.85em;border:1px solid rgba(255,215,0,0.3);"></div>
-  </div>
+<div id="kingdomVisitView" style="display:none;position:fixed;inset:0;background:#0d1b2a;z-index:9998;">
+  <!-- canvas全画面 -->
+  <canvas id="visitCraftCanvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+  <!-- 戻るボタン（左上） -->
+  <button onclick="closeKingdomVisitView()" style="position:absolute;top:16px;left:16px;z-index:10;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.3);color:#fff;font-size:0.95em;cursor:pointer;padding:8px 14px;border-radius:20px;backdrop-filter:blur(4px);">← 戻る</button>
+  <!-- オーナー名（上中央・SafariUI下に配置） -->
+  <div id="visitKingdomTitle" style="position:absolute;top:72px;left:0;right:0;z-index:10;text-align:center;color:#ffd700;font-size:1.15em;font-weight:bold;text-shadow:0 2px 10px rgba(0,0,0,0.9),0 0 20px rgba(255,215,0,0.4);pointer-events:none;padding:8px 20px;"></div>
+  <!-- 王国情報（下） -->
+  <div id="visitKingdomInfo" style="position:absolute;bottom:24px;left:50%;transform:translateX(-50%);z-index:10;background:rgba(0,0,0,0.75);color:#fff;padding:10px 20px;border-radius:20px;text-align:center;font-size:0.85em;border:1px solid rgba(255,215,0,0.3);white-space:nowrap;backdrop-filter:blur(4px);"></div>
+  <!-- 不要になったので非表示 -->
+  <div id="visitKingdomNameOverlay" style="display:none;"></div>
 </div>
 </body>
 </html>
