@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.24.57';
+    const APP_VERSION = 'v0.24.58';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -7494,6 +7494,14 @@
         if (craftView) craftView.style.display = 'block';
         document.getElementById('navCraft').classList.add('active');
         initCraftWorld();
+        // おかえりメッセージ（初回訪問済み＆1日1回のみ）
+        if (localStorage.getItem('tutorialSeen')) {
+          var _today = new Date().toDateString();
+          if (localStorage.getItem('okaeriDate') !== _today) {
+            localStorage.setItem('okaeriDate', _today);
+            setTimeout(function(){ showCraftMessage('👑 おかえり、王よ'); }, 600);
+          }
+        }
       }
       
       // 状態を保存（設定画面以外）
