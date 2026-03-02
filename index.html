@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.24.51';
+    const APP_VERSION = 'v0.24.52';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -3372,10 +3372,9 @@
               <input type="radio" name="craftRenderMode" value="2d" id="craftMode2D"> 2D（軽量・安定）
             </label>
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.85em;">
-              <input type="radio" name="craftRenderMode" value="3d" id="craftMode3D"> 3D（Three.js）
+              <input type="radio" name="craftRenderMode" value="3d" id="craftMode3D"> 3D
             </label>
           </div>
-          <p style="margin:4px 0 0 0;font-size:0.75em;color:#e53935;">※3DはGitHub Pagesなど外部環境で動作します。アーティファクト内では自動で2Dに切り替わります。</p>
         </div>
       </div>
 
