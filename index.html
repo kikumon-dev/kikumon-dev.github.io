@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.25.06';
+    const APP_VERSION = 'v0.25.15';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -6712,9 +6712,7 @@
         // currentDailyDateが設定されていればその日付、なければ今日
         const targetDate = currentDailyDate || getLocalDateStr(new Date());
         
-        // showInWeekly:false → 日次専用タスク（その日だけ表示）
-        // showInDaily:true, showInWeekly:true に変更し date一致で表示
-        const newTask = createTask(text, targetDate, null, sectionNum, true, true);
+        const newTask = createTask(text, targetDate, null, sectionNum, 'daily_only');
         
         input.value = '';
         renderAllSections(targetDate);
