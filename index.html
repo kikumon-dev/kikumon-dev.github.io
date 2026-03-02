@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.24.84';
+    const APP_VERSION = 'v0.24.85';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -10394,12 +10394,6 @@ function renderVisitCanvas3D(visitLevel) {
 
   var ground = new THREE.Mesh(new THREE.PlaneGeometry(30,30), new THREE.MeshLambertMaterial({color:0x1a3a1a}));
   ground.rotation.x = -Math.PI/2; ground.receiveShadow=true; scene.add(ground);
-
-  // 星
-  var sg = new THREE.BufferGeometry(), sp = [];
-  for(var i=0;i<600;i++) sp.push((Math.random()-0.5)*150, Math.random()*60+10, (Math.random()-0.5)*150);
-  sg.setAttribute('position', new THREE.Float32BufferAttribute(sp,3));
-  scene.add(new THREE.Points(sg, new THREE.PointsMaterial({color:0xffffff,size:0.15})));
 
   var cm = new THREE.MeshLambertMaterial({color:0xd4c5a9});
   var rm = new THREE.MeshLambertMaterial({color:0x4a6fa5});
