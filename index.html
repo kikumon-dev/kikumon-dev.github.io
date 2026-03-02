@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.25.16';
+    const APP_VERSION = 'v0.25.17';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -3393,6 +3393,21 @@
       </div>
 
       <div class="settings-section">
+        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">🏰 王国を訪問する</h3>
+        <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #8e8e8e;">仲間の王国コードを入力して訪問できます。Lv.5以上で自分の王国コードを発行できます。</p>
+        <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #e07048;">⚠️ 名前や性別を変更した場合は、王国コードを再発行してください。</p>
+        <div id="kingdomShareArea">
+          <button onclick="openKingdomShareModal()" id="kingdomShareBtn"
+            style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#ffd700,#ff8800);color:#fff;font-size:0.88em;font-weight:700;cursor:pointer;width:100%;margin-bottom:10px;">
+            👑 王国コードを発行する
+          </button>
+          <button onclick="openKingdomVisitModal()"
+            style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#ffc8dc,#ffa0bc);color:#fff;font-size:0.88em;font-weight:700;cursor:pointer;width:100%;box-shadow:0 4px 12px rgba(255,160,188,0.35);letter-spacing:0.03em;">
+            🗺️ 仲間の王国を訪問する
+          </button>
+        </div>
+      </div>
+<div class="settings-section">
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">初期表示</h3>
         <div class="settings-item">
           <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #262626; font-size: 0.9em;">アプリ起動時のビュー</label>
@@ -3550,21 +3565,6 @@
         <!-- カレンダー一覧 -->
         <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #8e8e8e;">表示するカレンダーを選択。OFFにすると全ビューで非表示になります。</p>
         <div id="calendarSettingsList"></div>
-      </div>
-<div class="settings-section">
-        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">🏰 王国を訪問する</h3>
-        <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #8e8e8e;">仲間の王国コードを入力して訪問できます。Lv.5以上で自分の王国コードを発行できます。</p>
-        <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #e07048;">⚠️ 名前や性別を変更した場合は、王国コードを再発行してください。</p>
-        <div id="kingdomShareArea">
-          <button onclick="openKingdomShareModal()" id="kingdomShareBtn"
-            style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#ffd700,#ff8800);color:#fff;font-size:0.88em;font-weight:700;cursor:pointer;width:100%;margin-bottom:10px;">
-            👑 王国コードを発行する
-          </button>
-          <button onclick="openKingdomVisitModal()"
-            style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#ffc8dc,#ffa0bc);color:#fff;font-size:0.88em;font-weight:700;cursor:pointer;width:100%;box-shadow:0 4px 12px rgba(255,160,188,0.35);letter-spacing:0.03em;">
-            🗺️ 仲間の王国を訪問する
-          </button>
-        </div>
       </div>
 <div class="settings-section">
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">👨‍👩‍👧 家族と共有</h3>
