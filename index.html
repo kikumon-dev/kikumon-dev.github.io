@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.24.53';
+    const APP_VERSION = 'v0.24.55';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -8716,11 +8716,14 @@
           nc.style.display = 'block';
           par.replaceChild(nc, oldC);
         }
-        // craftViewが表示中でも非表示でも再起動
-        // initCraftWorldは別スクリプトブロックのため遅延呼び出し
-        setTimeout(function(){
-          if(typeof initCraftWorld === 'function') initCraftWorld();
-        }, 50);
+        // クラフトタブが表示中の場合のみ即再起動、非表示なら次回タブ表示時に初期化
+        var craftView = document.getElementById('craftView');
+        if (craftView && craftView.style.display !== 'none') {
+          setTimeout(function(){
+            if(typeof initCraftWorld === 'function') initCraftWorld();
+          }, 50);
+        }
+        // 非表示の場合は_craftInitialized=falseのままにしておく→タブ開時に自動初期化
       }
       r2d.onchange = function(){ if(this.checked) _switchRenderMode('2d'); };
       if (r3d) r3d.onchange = function(){ if(this.checked) _switchRenderMode('3d'); };
@@ -10373,8 +10376,15 @@ function initCraftWorld() {
 
   function resize() {
     var p=canvas.parentNode;
-    canvas.width  = p ? p.clientWidth  : window.innerWidth;
-    canvas.height = p ? p.clientHeight : (window.innerHeight-50);
+    var w = p ? p.clientWidth  : window.innerWidth;
+    var h = p ? p.clientHeight : (window.innerHeight-50);
+    // canvasが非表示状態でサイズ0の場合はリトライ
+    if (w === 0 || h === 0) {
+      setTimeout(function(){ _craftInitialized=false; initCraftWorld(); }, 100);
+      return;
+    }
+    canvas.width  = w;
+    canvas.height = h;
   }
   resize();
   window.addEventListener('resize', resize);
