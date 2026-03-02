@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.24.52';
+    const APP_VERSION = 'v0.24.53';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -10029,14 +10029,19 @@ var LEVEL_CONFIG = [
   {exp:114, name:'アリアハン',   label:'勇者よ故郷へ帰れ・最高の城', buildings:['all']},
 ];
 
-// レベル計算（タスク数→Lv1〜19）
+// レベル計算（タスク数→Lv1〜20、周回対応）
+var CRAFT_CYCLE = 114; // 1周のタスク数
 function calcLevel(total) {
+  var cycleTotal = total % CRAFT_CYCLE;
   var lv = 1;
   for (var i = 0; i < LEVEL_CONFIG.length; i++) {
-    if (total >= LEVEL_CONFIG[i].exp) lv = i + 1;
+    if (cycleTotal >= LEVEL_CONFIG[i].exp) lv = i + 1;
     else break;
   }
   return Math.min(lv, LEVEL_CONFIG.length);
+}
+function calcNG(total) {
+  return Math.floor(total / CRAFT_CYCLE); // 0=初周, 1=2周目...
 }
 
 function getCraftStats() {
@@ -10052,28 +10057,39 @@ function getCraftStats() {
     if(s===1)gold++; else if(s===2)stone++; else if(s===3)wood++; else earth++;
   });
   var total=gold+stone+wood+earth;
+  var ng=calcNG(total);
   var level=calcLevel(total);
+  var cycleTotal = total % CRAFT_CYCLE;
   var cfg=LEVEL_CONFIG[level-1];
   var nextCfg=LEVEL_CONFIG[level]||null;
   var prevExp=cfg?cfg.exp:0;
-  var nextExp=nextCfg?nextCfg.exp:prevExp+9999;
-  var pct=nextExp>prevExp?Math.min(100,Math.round((total-prevExp)/(nextExp-prevExp)*100)):100;
-  var isEnding = (level >= LEVEL_CONFIG.length);
-  return {gold:gold,stone:stone,wood:wood,earth:earth,total:total,level:level,pct:pct,nextExp:nextExp,cfg:cfg,isEnding:isEnding};
+  var nextExp=nextCfg?nextCfg.exp:CRAFT_CYCLE;
+  var pct=nextExp>prevExp?Math.min(100,Math.round((cycleTotal-prevExp)/(nextExp-prevExp)*100)):100;
+  var isEnding = (level >= LEVEL_CONFIG.length) && (ng === 0);
+  return {gold:gold,stone:stone,wood:wood,earth:earth,total:total,ng:ng,level:level,cycleTotal:cycleTotal,pct:pct,nextExp:nextExp,cfg:cfg,isEnding:isEnding};
 }
 
 function updateCraftHUD() {
   var s=getCraftStats();
   function set(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
   function setW(id,v){var e=document.getElementById(id);if(e)e.style.width=v;}
-  var _cfg=LEVEL_CONFIG[Math.min(s.level-1,LEVEL_CONFIG.length-1)]; set('craftKingdomName', (_cfg?_cfg.name:'アリアハン')+'王国');
+  var _cfg=LEVEL_CONFIG[Math.min(s.level-1,LEVEL_CONFIG.length-1)];
+  var ngLabel = s.ng > 0 ? '👑'+s.ng+'周目 ' : '';
+  set('craftKingdomName', ngLabel+(_cfg?_cfg.name:'アリアハン')+'王国');
   set('craftLevel','Lv.'+s.level);
   set('craftGold',s.gold); set('craftStone',s.stone);
   set('craftWood',s.wood); set('craftEarth',s.earth);
   setW('craftExpBar', s.pct+'%');
   var cfg=LEVEL_CONFIG[s.level-1];
   var nextCfgInfo=LEVEL_CONFIG[s.level]||null;
-  var nextMsg = s.isEnding ? ' ／ 🏆伝説完結！タスクを続けよう' : (nextCfgInfo ? ' ／ 次まで '+(nextCfgInfo.exp-s.total)+' タスク' : ' ／ 伝説完結！');
+  var nextMsg;
+  if (s.isEnding) {
+    nextMsg = ' ／ 🏆伝説完結！あと' + (CRAFT_CYCLE - s.cycleTotal) + 'タスクで2周目へ';
+  } else if (nextCfgInfo) {
+    nextMsg = ' ／ 次まで '+(nextCfgInfo.exp - s.cycleTotal)+' タスク';
+  } else {
+    nextMsg = ' ／ あと'+(CRAFT_CYCLE - s.cycleTotal)+'タスクで'+(s.ng+2)+'周目へ';
+  }
   if(cfg) set('craftNextInfo', (cfg.label||'') + nextMsg);
 }
 
