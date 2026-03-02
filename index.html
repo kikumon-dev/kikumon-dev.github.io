@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.25.03';
+    const APP_VERSION = 'v0.25.04';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -10940,11 +10940,6 @@ function _initThreeScene() {
   var theta=Math.PI/4, phi=0.6, radius=26;
   function setCam(){camera.position.set(radius*Math.sin(theta)*Math.cos(phi),radius*Math.sin(phi),radius*Math.cos(theta)*Math.cos(phi));camera.lookAt(0,1,0);}
   setCam();
-  scene.add(new THREE.AmbientLight(0x334466,0.8));
-  var dl=new THREE.DirectionalLight(0xffeedd,1.4); dl.position.set(10,20,10); dl.castShadow=true; scene.add(dl);
-  var fl=new THREE.DirectionalLight(0x4466aa,0.4); fl.position.set(-10,5,-10); scene.add(fl);
-  var ground=new THREE.Mesh(new THREE.PlaneGeometry(30,30),new THREE.MeshLambertMaterial({color:_skyCol.ground}));
-  ground.rotation.x=-Math.PI/2; ground.position.y=0; ground.receiveShadow=true; scene.add(ground);
   var stats=getCraftStats();
   var gender3d = localStorage.getItem('profileGender') || 'king';
   var _flagRef = {};
@@ -11061,10 +11056,11 @@ function buildKingdomScene(params) {
   // ライト
   scene.add(new THREE.AmbientLight(0x334466, 0.8));
   var dl = new THREE.DirectionalLight(0xffeedd, 1.4); dl.position.set(10,20,10); dl.castShadow=true; scene.add(dl);
-  scene.add(new THREE.DirectionalLight(0x4466aa, 0.4)).position.set(-10,5,-10);
+  var fl2=new THREE.DirectionalLight(0x4466aa, 0.4); fl2.position.set(-10,5,-10); scene.add(fl2);
 
   // 地面
-  var ground = new THREE.Mesh(new THREE.PlaneGeometry(50,50), new THREE.MeshLambertMaterial({color:skyCol.ground}));
+  var _sc = getSkyColor();
+  var ground = new THREE.Mesh(new THREE.PlaneGeometry(50,50), new THREE.MeshLambertMaterial({color:_sc.ground}));
   ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
 
   // 城の色
