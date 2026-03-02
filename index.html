@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.25.3';
+    const APP_VERSION = 'v0.24.51';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -3538,7 +3538,7 @@
         <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #8e8e8e;">表示するカレンダーを選択。OFFにすると全ビューで非表示になります。</p>
         <div id="calendarSettingsList"></div>
       </div>
-      <div class="settings-section">
+<div class="settings-section">
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">👨‍👩‍👧 家族と共有</h3>
         <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #8e8e8e;">バックエンドなし・コードをLINEで送るだけで家族とタスクを共有できます。</p>
         <button onclick="openFamilyShareModal()"
@@ -3546,7 +3546,7 @@
           👨‍👩‍👧 家族と共有する
         </button>
       </div>
-      <div class="settings-section">
+<div class="settings-section">
           <h3 style="margin:0 0 15px 0;color:#262626;font-size:1.05em;font-weight:600;border-bottom:1px solid #efefef;padding-bottom:12px;">🗄️ データ管理</h3>
           <div style="display:flex;flex-direction:column;gap:10px;">
             <button onclick="exportData()"
@@ -5029,9 +5029,9 @@
         var mainCal = calendars.find(function(c){ return c.id === mainId; });
         if (mainCal) {
           // カレンダー色計算（スタンプと同じ）
-          let r = parseInt(mainCal.color.slice(1,3),16);
-          let g = parseInt(mainCal.color.slice(3,5),16);
-          let b = parseInt(mainCal.color.slice(5,7),16);
+          var r = parseInt(mainCal.color.slice(1,3),16);
+          var g = parseInt(mainCal.color.slice(3,5),16);
+          var b = parseInt(mainCal.color.slice(5,7),16);
           var bgR = Math.round(r+(255-r)*0.6), bgG = Math.round(g+(255-g)*0.6), bgB = Math.round(b+(255-b)*0.6);
           var txR = Math.round(r*0.55), txG = Math.round(g*0.55), txB = Math.round(b*0.55);
           var bgColor = '#'+[bgR,bgG,bgB].map(function(v){return v.toString(16).padStart(2,'0');}).join('');
@@ -5057,9 +5057,9 @@
       // 通常表示: 横並びタブ
       visibleCals.forEach(function(cal) {
         var isSelected = cal.id === selectedCalId;
-        let r = parseInt(cal.color.slice(1,3),16);
-        let g = parseInt(cal.color.slice(3,5),16);
-        let b = parseInt(cal.color.slice(5,7),16);
+        var r = parseInt(cal.color.slice(1,3),16);
+        var g = parseInt(cal.color.slice(3,5),16);
+        var b = parseInt(cal.color.slice(5,7),16);
         var bgR = Math.round(r+(255-r)*0.6), bgG = Math.round(g+(255-g)*0.6), bgB = Math.round(b+(255-b)*0.6);
         var txR = Math.round(r*0.55), txG = Math.round(g*0.55), txB = Math.round(b*0.55);
         var bgColor = '#'+[bgR,bgG,bgB].map(function(v){return v.toString(16).padStart(2,'0');}).join('');
@@ -5723,7 +5723,7 @@
       container.style.height = totalH + 'px';
 
       // 時間グリッド背景
-      for (let h = 0; h < 24; h++) {
+      for (var h = 0; h < 24; h++) {
         var cell = document.createElement('div');
         var isCurrent = isToday && h === nowHour;
         cell.style.cssText = 'position:absolute;left:0;right:0;height:' + TL_ROW_H + 'px;top:' + (h * TL_ROW_H) + 'px;' +
@@ -5845,9 +5845,9 @@
       });
 
       timedTasks.forEach(function(item) {
-        let task    = item.task;
-        let topPx   = item.topPx;
-        let blockH  = item.blockH;
+        var task    = item.task;
+        var topPx   = item.topPx;
+        var blockH  = item.blockH;
         var tcols   = item.totalCols;
         var colIdx  = item.col;
         // 列幅を計算（左48pxは時間ラベル）
@@ -5959,8 +5959,8 @@
         noTimeLabel.textContent = '⏱ 時間未設定';
         noTimeSection.appendChild(noTimeLabel);
         noTimeTasks.forEach(function(t) {
-          let cal = getCalendar(t.calendarId);
-          let calColor = cal ? { bg: cal.color + '22', bd: cal.color } : null;
+          var cal = getCalendar(t.calendarId);
+          var calColor = cal ? { bg: cal.color + '22', bd: cal.color } : null;
           var colors = calColor || SEC_COLOR_TL[t.section] || SEC_COLOR_TL[2];
           var item = document.createElement('div');
           item.style.cssText = 'padding:5px 8px;border-radius:5px;font-size:0.85em;margin-bottom:4px;cursor:pointer;' +
@@ -8718,7 +8718,10 @@
           par.replaceChild(nc, oldC);
         }
         // craftViewが表示中でも非表示でも再起動
-        initCraftWorld();
+        // initCraftWorldは別スクリプトブロックのため遅延呼び出し
+        setTimeout(function(){
+          if(typeof initCraftWorld === 'function') initCraftWorld();
+        }, 50);
       }
       r2d.onchange = function(){ if(this.checked) _switchRenderMode('2d'); };
       if (r3d) r3d.onchange = function(){ if(this.checked) _switchRenderMode('3d'); };
@@ -9868,8 +9871,117 @@
 
     // 起動時にシンプルモード適用
     applySimpleMode();
-  
+  </script>
 
+  <!-- タスク編集モーダル -->
+  <!-- 検索モーダル -->
+  <div id="searchModal" class="custom-modal" onclick="if(event.target.id==='searchModal') closeSearchModal();">
+    <div class="modal-content" style="max-width:480px;text-align:left;max-height:80vh;display:flex;flex-direction:column;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span style="font-size:1.2em;">🔍</span>
+        <input type="text" id="searchInput" placeholder="タスクを検索..." autocomplete="off"
+          style="flex:1;padding:8px 12px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:1em;outline:none;"
+          oninput="renderSearchResults()">
+        <button onclick="closeSearchModal()" style="background:none;border:none;font-size:1.2em;cursor:pointer;color:#aaa;padding:4px;">✕</button>
+      </div>
+      <div style="font-size:0.78em;color:#aaa;margin-bottom:8px;">
+        <span id="searchCount">0件</span>ヒット　<span style="color:#ccc;">完了済みも含む</span>
+      </div>
+      <div id="searchResults" style="overflow-y:auto;flex:1;"></div>
+    </div>
+  </div>
+
+  <div id="taskEditModal" class="custom-modal" onclick="if(event.target.id==='taskEditModal') closeTaskEditModal();">
+    <div class="modal-content" style="max-width: 420px; text-align: left;">
+      <h3 style="margin: 0 0 24px 0; text-align: center; font-size: 1.15em; color: #333; font-weight: 600;">タスク編集</h3>
+      <input type="hidden" id="taskEditId">
+      <div style="margin-bottom: 18px;">
+        <label>タスク名</label>
+        <input type="text" id="taskEditText">
+      </div>
+      <div style="margin-bottom: 18px;">
+        <label>メモ（任意）</label>
+        <textarea id="taskEditMemo" rows="3" placeholder="詳細や持ち物など..."></textarea>
+      </div>
+      <div class="task-edit-datetime" style="display: flex; gap: 12px; margin-bottom: 18px; align-items: flex-start;">
+        <div style="flex: 1; min-width: 0;">
+          <label>日付</label>
+          <input type="date" id="taskEditDate">
+        </div>
+        <div style="flex: 0 0 auto; width: 180px;">
+          <label>時間（任意）</label>
+          <input type="hidden" id="taskEditTime">
+          <div class="custom-time-picker" id="taskEditTimePicker">
+            <div class="time-select-wrapper">
+              <select class="time-select" id="taskEditHourSelect">
+                <option value="">--</option>
+                <option value="0">00</option><option value="1">01</option><option value="2">02</option><option value="3">03</option>
+                <option value="4">04</option><option value="5">05</option><option value="6">06</option><option value="7">07</option>
+                <option value="8">08</option><option value="9">09</option><option value="10">10</option><option value="11">11</option>
+                <option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option>
+                <option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option>
+                <option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option>
+              </select>
+              <div class="time-label">時</div>
+            </div>
+            <span class="time-separator">:</span>
+            <div class="time-select-wrapper">
+              <select class="time-select" id="taskEditMinuteSelect">
+                <option value="">--</option>
+                <option value="0">00</option><option value="5">05</option><option value="10">10</option><option value="15">15</option>
+                <option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option>
+                <option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option>
+              </select>
+              <div class="time-label">分</div>
+            </div>
+            <button type="button" class="time-clear-btn" onclick="clearTimeSelect('taskEdit')" title="時間をクリア">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 繰り返し設定 -->
+      <div style="margin-bottom: 18px;">
+        <label>🔁 繰り返し</label>
+        <select id="taskEditRepeat" style="width:100%;padding:8px 10px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:0.9em;background:#fff;">
+          <option value="none">なし</option>
+          <option value="daily">毎日</option>
+          <option value="weekday">平日のみ（月〜金）</option>
+          <option value="weekly">毎週（同じ曜日）</option>
+          <option value="monthly">毎月（同じ日付）</option>
+        </select>
+        <div id="taskEditRepeatEndWrap" style="display:none;margin-top:8px;">
+          <label style="font-size:0.82em;color:#888;">繰り返し終了日（任意）</label>
+          <input type="date" id="taskEditRepeatEnd" style="width:100%;padding:8px 10px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:0.9em;">
+        </div>
+      </div>
+      <div class="modal-buttons" style="margin-top: 24px;">
+        <button class="modal-btn modal-btn-cancel" onclick="closeTaskEditModal()">キャンセル</button>
+        <button class="modal-btn modal-btn-delete" onclick="deleteTaskFromEditModal()">削除</button>
+        <button class="modal-btn modal-btn-save" onclick="saveTaskEdit()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- カスタム確認モーダル -->
+  <div id="customModal" class="custom-modal" onclick="if(event.target.id==='customModal') closeModal();">
+    <div class="modal-content">
+      <div class="modal-title">確認</div>
+      <div id="modal-message" class="modal-message">本当に全データをクリアしますか？<br>この操作は取り消せません。</div>
+      <div class="modal-buttons">
+        <button id="modal-cancel-btn" class="modal-btn modal-btn-cancel">キャンセル</button>
+        <button id="modal-confirm-btn" class="modal-btn modal-btn-confirm">削除</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 自由帳 エクスポート/インポートモーダル -->
+  <div id="nbShareModal" class="nb-share-modal" onclick="if(event.target.id==='nbShareModal') nbShareClose();">
+    <div class="nb-share-modal-box" id="nbShareModalBox">
+      <!-- JSで中身を生成 -->
+    </div>
+  </div>
+
+<script>
 // ===================================================
 // 🏰 クラフトモード エンジン v3.0
 // Canvas2D アイソメトリック描画（シンプル・確実版）
@@ -9920,17 +10032,11 @@ var LEVEL_CONFIG = [
 
 // レベル計算（タスク数→Lv1〜19）
 function calcLevel(total) {
-  var maxExp = LEVEL_CONFIG[LEVEL_CONFIG.length-1].exp;
-  var ng = Math.floor(total / maxExp); // 周回数（0=1周目）
-  var ng_total = total % maxExp;        // 周回内のタスク数
   var lv = 1;
   for (var i = 0; i < LEVEL_CONFIG.length; i++) {
-    if (ng_total >= LEVEL_CONFIG[i].exp) lv = i + 1;
+    if (total >= LEVEL_CONFIG[i].exp) lv = i + 1;
     else break;
   }
-  // NG情報をグローバルに保持（getCraftStats等で利用）
-  calcLevel._ng = ng;
-  calcLevel._ng_total = ng_total;
   return Math.min(lv, LEVEL_CONFIG.length);
 }
 
@@ -9954,27 +10060,21 @@ function getCraftStats() {
   var nextExp=nextCfg?nextCfg.exp:prevExp+9999;
   var pct=nextExp>prevExp?Math.min(100,Math.round((total-prevExp)/(nextExp-prevExp)*100)):100;
   var isEnding = (level >= LEVEL_CONFIG.length);
-  var ng = (typeof calcLevel._ng !== 'undefined') ? calcLevel._ng : 0;
-  return {gold:gold,stone:stone,wood:wood,earth:earth,total:total,level:level,pct:pct,nextExp:nextExp,cfg:cfg,isEnding:isEnding,ng:ng};
+  return {gold:gold,stone:stone,wood:wood,earth:earth,total:total,level:level,pct:pct,nextExp:nextExp,cfg:cfg,isEnding:isEnding};
 }
 
 function updateCraftHUD() {
   var s=getCraftStats();
   function set(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
   function setW(id,v){var e=document.getElementById(id);if(e)e.style.width=v;}
-  var _cfg=LEVEL_CONFIG[Math.min(s.level-1,LEVEL_CONFIG.length-1)];
-  var _ngStr = s.ng > 0 ? '👑'+s.ng+'周目 ' : '';
-  set('craftKingdomName', _ngStr+(_cfg?_cfg.name:'アリアハン')+'王国');
+  var _cfg=LEVEL_CONFIG[Math.min(s.level-1,LEVEL_CONFIG.length-1)]; set('craftKingdomName', (_cfg?_cfg.name:'アリアハン')+'王国');
   set('craftLevel','Lv.'+s.level);
   set('craftGold',s.gold); set('craftStone',s.stone);
   set('craftWood',s.wood); set('craftEarth',s.earth);
   setW('craftExpBar', s.pct+'%');
   var cfg=LEVEL_CONFIG[s.level-1];
   var nextCfgInfo=LEVEL_CONFIG[s.level]||null;
-  var _expInNg = s.ng > 0 ? (s.total % 114) : s.total;
-  var nextMsg = s.isEnding
-    ? ' ／ 🏆伝説完結！次タスクで' + (s.ng+1) + '周目へ'
-    : (nextCfgInfo ? ' ／ 次まで '+(nextCfgInfo.exp - _expInNg)+' タスク' : ' ／ 伝説完結！');
+  var nextMsg = s.isEnding ? ' ／ 🏆伝説完結！タスクを続けよう' : (nextCfgInfo ? ' ／ 次まで '+(nextCfgInfo.exp-s.total)+' タスク' : ' ／ 伝説完結！');
   if(cfg) set('craftNextInfo', (cfg.label||'') + nextMsg);
 }
 
@@ -10207,12 +10307,28 @@ function initCraftWorld() {
   if (_craftInitialized) { updateCraftHUD(); return; }
 
   if (renderMode === '3d') {
+    // Three.jsがすでに読み込み済みなら直接初期化
+    if (typeof THREE !== 'undefined') {
+      _craftInitialized = true;
+      _initThreeScene();
+      return;
+    }
+    // 読み込み中なら重複ロードを防ぐ
+    if (document.querySelector('script[data-threejs-loading]')) {
+      setTimeout(initCraftWorld, 100);
+      return;
+    }
     _craftInitialized = true;
     var s = document.createElement('script');
     s.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
     s.crossOrigin = 'anonymous';
-    s.onload = function(){ _initThreeScene(); };
+    s.setAttribute('data-threejs-loading', '1');
+    s.onload = function(){
+      s.removeAttribute('data-threejs-loading');
+      _initThreeScene();
+    };
     s.onerror = function(){
+      s.removeAttribute('data-threejs-loading');
       _craftInitialized=false;
       if(typeof localStorage!=='undefined') localStorage.setItem('craftRenderMode','2d');
       var r2=document.getElementById('craftMode2D'); if(r2)r2.checked=true;
@@ -10465,24 +10581,6 @@ function _showEnding() {
   showCraftMessage('🏆 伝説完結！勇者よ故郷に帰れ！');
 }
 
-function _showNewGame(ngCount) {
-  // 花火演出（_showEndingと同じ基盤）
-  _showEnding();
-  var endMsg = document.getElementById('craftEndingOverlay');
-  if (endMsg) {
-    var ngWords = ['2', '3', '4', '5', '6', '7', '8', '9', '10', '∞'];
-    var ngStr = ngWords[Math.min(ngCount-1, ngWords.length-1)] || ngCount;
-    endMsg.innerHTML =
-      '<div style="font-size:2.2em;color:#ff6b6b;text-shadow:0 0 20px #ff4444;font-weight:bold;">👑 ' + ngStr + '周目突入！</div>' +
-      '<div style="font-size:1.0em;color:#ffd700;margin-top:10px;">強くてニューゲーム開始！</div>' +
-      '<div style="font-size:0.85em;color:#aaa;margin-top:6px;">アリアハンから再び旅立て</div>';
-    endMsg.style.display = 'flex';
-    setTimeout(function(){ if(endMsg) endMsg.style.display='none'; }, 8000);
-  }
-  showCraftMessage('👑 ' + ngCount + '周目！強くてニューゲーム！');
-}
-
-
 function onTaskCompleted(task) {
   if ((typeof localStorage!=='undefined' ? localStorage.getItem('craftModeEnabled') : null) !== 'true') return;
   var emo={1:'💎',2:'🥇',3:'🥈',4:'🥉'}[task.section||4]||'🥉';
@@ -10492,11 +10590,8 @@ function onTaskCompleted(task) {
   var cur=getCraftStats();
   var craftView=document.getElementById('craftView');
   if(craftView&&craftView.style.display!=='none'){
-    if(cur.ng > prev_stats.ng){
-      // 強くてニューゲーム突入！
-      _showNewGame(cur.ng);
-    } else if(cur.isEnding && !prev_stats_isEnding){
-      // エンディング演出（初回Lv20到達）
+    if(cur.isEnding && !prev_stats_isEnding){
+      // エンディング演出
       _showEnding();
     } else if(cur.level>prev){
       var _nc=LEVEL_CONFIG[Math.min(cur.level-1,LEVEL_CONFIG.length-1)];
@@ -10512,118 +10607,6 @@ function onTaskCompleted(task) {
     }
   }
 }
-
-  </script>
-
-
-  <!-- タスク編集モーダル -->
-  <!-- 検索モーダル -->
-  <div id="searchModal" class="custom-modal" onclick="if(event.target.id==='searchModal') closeSearchModal();">
-    <div class="modal-content" style="max-width:480px;text-align:left;max-height:80vh;display:flex;flex-direction:column;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-        <span style="font-size:1.2em;">🔍</span>
-        <input type="text" id="searchInput" placeholder="タスクを検索..." autocomplete="off"
-          style="flex:1;padding:8px 12px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:1em;outline:none;"
-          oninput="renderSearchResults()">
-        <button onclick="closeSearchModal()" style="background:none;border:none;font-size:1.2em;cursor:pointer;color:#aaa;padding:4px;">✕</button>
-      </div>
-      <div style="font-size:0.78em;color:#aaa;margin-bottom:8px;">
-        <span id="searchCount">0件</span>ヒット　<span style="color:#ccc;">完了済みも含む</span>
-      </div>
-      <div id="searchResults" style="overflow-y:auto;flex:1;"></div>
-    </div>
-  </div>
-
-  <div id="taskEditModal" class="custom-modal" onclick="if(event.target.id==='taskEditModal') closeTaskEditModal();">
-    <div class="modal-content" style="max-width: 420px; text-align: left;">
-      <h3 style="margin: 0 0 24px 0; text-align: center; font-size: 1.15em; color: #333; font-weight: 600;">タスク編集</h3>
-      <input type="hidden" id="taskEditId">
-      <div style="margin-bottom: 18px;">
-        <label>タスク名</label>
-        <input type="text" id="taskEditText">
-      </div>
-      <div style="margin-bottom: 18px;">
-        <label>メモ（任意）</label>
-        <textarea id="taskEditMemo" rows="3" placeholder="詳細や持ち物など..."></textarea>
-      </div>
-      <div class="task-edit-datetime" style="display: flex; gap: 12px; margin-bottom: 18px; align-items: flex-start;">
-        <div style="flex: 1; min-width: 0;">
-          <label>日付</label>
-          <input type="date" id="taskEditDate">
-        </div>
-        <div style="flex: 0 0 auto; width: 180px;">
-          <label>時間（任意）</label>
-          <input type="hidden" id="taskEditTime">
-          <div class="custom-time-picker" id="taskEditTimePicker">
-            <div class="time-select-wrapper">
-              <select class="time-select" id="taskEditHourSelect">
-                <option value="">--</option>
-                <option value="0">00</option><option value="1">01</option><option value="2">02</option><option value="3">03</option>
-                <option value="4">04</option><option value="5">05</option><option value="6">06</option><option value="7">07</option>
-                <option value="8">08</option><option value="9">09</option><option value="10">10</option><option value="11">11</option>
-                <option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option>
-                <option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option>
-                <option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option>
-              </select>
-              <div class="time-label">時</div>
-            </div>
-            <span class="time-separator">:</span>
-            <div class="time-select-wrapper">
-              <select class="time-select" id="taskEditMinuteSelect">
-                <option value="">--</option>
-                <option value="0">00</option><option value="5">05</option><option value="10">10</option><option value="15">15</option>
-                <option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option>
-                <option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option>
-              </select>
-              <div class="time-label">分</div>
-            </div>
-            <button type="button" class="time-clear-btn" onclick="clearTimeSelect('taskEdit')" title="時間をクリア">✕</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 繰り返し設定 -->
-      <div style="margin-bottom: 18px;">
-        <label>🔁 繰り返し</label>
-        <select id="taskEditRepeat" style="width:100%;padding:8px 10px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:0.9em;background:#fff;">
-          <option value="none">なし</option>
-          <option value="daily">毎日</option>
-          <option value="weekday">平日のみ（月〜金）</option>
-          <option value="weekly">毎週（同じ曜日）</option>
-          <option value="monthly">毎月（同じ日付）</option>
-        </select>
-        <div id="taskEditRepeatEndWrap" style="display:none;margin-top:8px;">
-          <label style="font-size:0.82em;color:#888;">繰り返し終了日（任意）</label>
-          <input type="date" id="taskEditRepeatEnd" style="width:100%;padding:8px 10px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:0.9em;">
-        </div>
-      </div>
-      <div class="modal-buttons" style="margin-top: 24px;">
-        <button class="modal-btn modal-btn-cancel" onclick="closeTaskEditModal()">キャンセル</button>
-        <button class="modal-btn modal-btn-delete" onclick="deleteTaskFromEditModal()">削除</button>
-        <button class="modal-btn modal-btn-save" onclick="saveTaskEdit()">保存</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- カスタム確認モーダル -->
-  <div id="customModal" class="custom-modal" onclick="if(event.target.id==='customModal') closeModal();">
-    <div class="modal-content">
-      <div class="modal-title">確認</div>
-      <div id="modal-message" class="modal-message">本当に全データをクリアしますか？<br>この操作は取り消せません。</div>
-      <div class="modal-buttons">
-        <button id="modal-cancel-btn" class="modal-btn modal-btn-cancel">キャンセル</button>
-        <button id="modal-confirm-btn" class="modal-btn modal-btn-confirm">削除</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 自由帳 エクスポート/インポートモーダル -->
-  <div id="nbShareModal" class="nb-share-modal" onclick="if(event.target.id==='nbShareModal') nbShareClose();">
-    <div class="nb-share-modal-box" id="nbShareModalBox">
-      <!-- JSで中身を生成 -->
-    </div>
-  </div>
-
-
+</script>
 </body>
 </html>
