@@ -1,3 +1,8 @@
+
+Yarukotolist v0 24 63 · HTML
+コピー
+
+コードサイズが大きいため、シンタックスハイライトが無効になりました。
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -12,7 +17,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.24.58';
+    const APP_VERSION = 'v0.24.63';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -3352,6 +3357,17 @@
             <div class="profile-name-edit">
               <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #262626; font-size: 0.9em;">表示名</label>
               <input type="text" id="profileNameInput" placeholder="あなたの名前..." maxlength="20" style="width: 100%; padding: 12px; border: 2px solid #e8e8e8; border-radius: 10px; font-size: 1em; box-sizing: border-box;">
+              <div style="margin-top:12px;">
+                <label style="display:block;margin-bottom:8px;font-weight:600;color:#262626;font-size:0.9em;">あなたは？</label>
+                <div style="display:flex;gap:8px;">
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 16px;border:2px solid #e8e8e8;border-radius:20px;font-size:0.9em;" id="genderLabelKing">
+                    <input type="radio" name="profileGender" value="king" id="genderKing" style="display:none;" onchange="saveGender()"> 👑 王
+                  </label>
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 16px;border:2px solid #e8e8e8;border-radius:20px;font-size:0.9em;" id="genderLabelPrincess">
+                    <input type="radio" name="profileGender" value="princess" id="genderPrincess" style="display:none;" onchange="saveGender()"> 👑 姫
+                  </label>
+                </div>
+              </div>
             </div>
           </div>
           <button class="avatar-remove-btn" id="avatarRemoveBtn" onclick="removeAvatar()" style="display: none;">アイコンを削除</button>
@@ -3547,6 +3563,20 @@
           style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff;font-size:0.88em;font-weight:700;cursor:pointer;width:100%;">
           👨‍👩‍👧 家族と共有する
         </button>
+      </div>
+<div class="settings-section">
+        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">🏰 王国を訪問する</h3>
+        <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #8e8e8e;">仲間の王国コードを入力して訪問できます。Lv.5以上で自分の王国コードを発行できます。</p>
+        <div id="kingdomShareArea">
+          <button onclick="openKingdomShareModal()" id="kingdomShareBtn"
+            style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#ffd700,#ff8800);color:#fff;font-size:0.88em;font-weight:700;cursor:pointer;width:100%;margin-bottom:10px;">
+            👑 王国コードを発行する
+          </button>
+          <button onclick="openKingdomVisitModal()"
+            style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:1.5px solid #4facfe;border-radius:10px;background:#fff;color:#4facfe;font-size:0.88em;font-weight:700;cursor:pointer;width:100%;">
+            🗺️ 仲間の王国を訪問する
+          </button>
+        </div>
       </div>
 <div class="settings-section">
           <h3 style="margin:0 0 15px 0;color:#262626;font-size:1.05em;font-weight:600;border-bottom:1px solid #efefef;padding-bottom:12px;">🗄️ データ管理</h3>
@@ -6614,21 +6644,48 @@
       }
     }
 
+
+    // 性別設定
+    function saveGender() {
+      const val = document.querySelector('input[name="profileGender"]:checked');
+      if (val) {
+        localStorage.setItem('profileGender', val.value);
+        updateGenderUI(val.value);
+      }
+    }
+    function updateGenderUI(val) {
+      const kingLabel = document.getElementById('genderLabelKing');
+      const princessLabel = document.getElementById('genderLabelPrincess');
+      if (!kingLabel || !princessLabel) return;
+      if (val === 'princess') {
+        princessLabel.style.borderColor = '#4facfe';
+        princessLabel.style.background = '#e8f4ff';
+        kingLabel.style.borderColor = '#e8e8e8';
+        kingLabel.style.background = '';
+      } else {
+        kingLabel.style.borderColor = '#4facfe';
+        kingLabel.style.background = '#e8f4ff';
+        princessLabel.style.borderColor = '#e8e8e8';
+        princessLabel.style.background = '';
+      }
+    }
+
+
     // タスク追加
     function addTask(sectionNum) {
       const input = document.getElementById('input' + sectionNum);
       const text = input.value.trim();
       
       if (text) {
-        const today = getLocalDateStr(new Date());
+        // currentDailyDateが設定されていればその日付、なければ今日
+        const targetDate = currentDailyDate || getLocalDateStr(new Date());
         
-        
-        // 日次タスクは日次のみに表示
-        const newTask = createTask(text, today, null, sectionNum, true, false);
-        
+        // showInWeekly:false → 日次専用タスク（その日だけ表示）
+        // showInDaily:true, showInWeekly:true に変更し date一致で表示
+        const newTask = createTask(text, targetDate, null, sectionNum, true, true);
         
         input.value = '';
-        renderTasks(sectionNum);
+        renderAllSections(targetDate);
       }
     }
 
@@ -7499,7 +7556,11 @@
           var _today = new Date().toDateString();
           if (localStorage.getItem('okaeriDate') !== _today) {
             localStorage.setItem('okaeriDate', _today);
-            setTimeout(function(){ showCraftMessage('👑 おかえり、王よ'); }, 600);
+            setTimeout(function(){
+              var _gender = localStorage.getItem('profileGender') || 'king';
+              var _msg = _gender === 'princess' ? '👑 おかえり、姫よ' : '👑 おかえり、王よ';
+              showCraftMessage(_msg);
+            }, 600);
           }
         }
       }
@@ -8782,6 +8843,11 @@
       
       // プロフィール
       const savedName = localStorage.getItem('profileName') || '';
+      // 性別設定の初期化
+      const savedGender = localStorage.getItem('profileGender') || 'king';
+      const genderRadio = document.getElementById(savedGender === 'princess' ? 'genderPrincess' : 'genderKing');
+      if (genderRadio) genderRadio.checked = true;
+      updateGenderUI(savedGender);
       const savedAvatar = localStorage.getItem('profileAvatar') || '';
       
       document.getElementById('profileNameInput').value = savedName;
@@ -9881,6 +9947,19 @@
     localStorage.removeItem('simpleMemos');
     // v0.12.0: nbPages → allTasks統合
     localStorage.removeItem('nbPages');
+    // v0.24.59: showInWeekly:false の日次専用タスクをdate付きに移行
+    // （毎日全部表示されてしまう問題を修正）
+    if (!localStorage.getItem('migration_v0_24_59')) {
+      allTasks.forEach(t => {
+        if (t.kind === 'task' && t.showInDaily && !t.showInWeekly) {
+          t.showInWeekly = true;
+          // dateがない場合は今日付けで保存
+          if (!t.date) t.date = getLocalDateStr(new Date());
+        }
+      });
+      saveAllTasks();
+      localStorage.setItem('migration_v0_24_59', '1');
+    }
 
     // 起動時にシンプルモード適用
     applySimpleMode();
@@ -10082,6 +10161,242 @@ function getCraftStats() {
   var isEnding = (level >= LEVEL_CONFIG.length) && (ng === 0);
   return {gold:gold,stone:stone,wood:wood,earth:earth,total:total,ng:ng,level:level,cycleTotal:cycleTotal,pct:pct,nextExp:nextExp,cfg:cfg,isEnding:isEnding};
 }
+
+// ===== 王国訪問機能 =====
+var _kingdomCode = null;
+
+// 王国データをエンコード（タスクの中身は含まない）
+function buildKingdomCode() {
+  var stats = getCraftStats();
+  var myName = localStorage.getItem('profileName') || '名もなき王';
+  var gender = localStorage.getItem('profileGender') || 'king';
+  var payload = JSON.stringify({
+    type: 'yarukotolist-kingdom-v1',
+    name: myName,
+    gender: gender,
+    level: stats.level,
+    ng: stats.ng,
+    total: stats.total,
+    kingdomName: (document.getElementById('craftKingdomName') ? document.getElementById('craftKingdomName').textContent : 'アリアハン王国'),
+    exportedAt: new Date().toISOString()
+  });
+  return 'KDM1:' + btoa(unescape(encodeURIComponent(payload)));
+}
+
+// 王国コード発行モーダルを開く
+function openKingdomShareModal() {
+  var code = buildKingdomCode();
+  _kingdomCode = code;
+  var el = document.getElementById('kingdomCodeDisplay');
+  if (el) el.textContent = code;
+  var modal = document.getElementById('kingdomShareModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeKingdomShareModal() {
+  var modal = document.getElementById('kingdomShareModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function copyKingdomCode() {
+  if (!_kingdomCode) return;
+  navigator.clipboard.writeText(_kingdomCode).then(function() {
+    showCraftMessage('👑 王国コードをコピーしました！');
+    closeKingdomShareModal();
+  }).catch(function() {
+    // フォールバック
+    var ta = document.createElement('textarea');
+    ta.value = _kingdomCode;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showCraftMessage('👑 王国コードをコピーしました！');
+    closeKingdomShareModal();
+  });
+}
+
+// 王国訪問モーダルを開く
+function openKingdomVisitModal() {
+  var modal = document.getElementById('kingdomVisitModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeKingdomVisitModal() {
+  var modal = document.getElementById('kingdomVisitModal');
+  if (modal) modal.style.display = 'none';
+  var inp = document.getElementById('kingdomVisitInput');
+  if (inp) inp.value = '';
+}
+
+// 王国を訪問する
+function visitKingdom() {
+  var code = (document.getElementById('kingdomVisitInput').value || '').trim();
+  if (!code.toUpperCase().startsWith('KDM1:')) {
+    alert('KDM1: で始まるコードを入力してください');
+    return;
+  }
+  var raw;
+  try {
+    raw = decodeURIComponent(escape(atob(code.slice(5))));
+  } catch(e) {
+    alert('コードが壊れています');
+    return;
+  }
+  var data;
+  try {
+    data = JSON.parse(raw);
+  } catch(e) {
+    alert('コードの形式が正しくありません');
+    return;
+  }
+  if (data.type !== 'yarukotolist-kingdom-v1') {
+    alert('コードの形式が正しくありません');
+    return;
+  }
+  closeKingdomVisitModal();
+  renderVisitKingdom(data);
+}
+
+// 訪問した王国を描画
+function renderVisitKingdom(data) {
+  var view = document.getElementById('kingdomVisitView');
+  if (!view) return;
+  view.style.display = 'flex';
+
+  var gender = data.gender || 'king';
+  var title = data.name + 'の' + (gender === 'princess' ? '姫の' : '王の') + '王国';
+  var ngLabel = data.ng > 0 ? '👑' + data.ng + '周目 ' : '';
+  document.getElementById('visitKingdomTitle').textContent = ngLabel + (data.kingdomName || 'アリアハン王国');
+
+  var info = document.getElementById('visitKingdomInfo');
+  if (info) {
+    info.innerHTML = '🏰 ' + title + '&nbsp;&nbsp;|&nbsp;&nbsp;Lv.' + data.level + '&nbsp;&nbsp;|&nbsp;&nbsp;累計' + data.total + 'タスク';
+  }
+
+  // 訪問通知メッセージ
+  setTimeout(function(){
+    showCraftMessage('🗺️ ' + (data.name || '仲間') + 'の王国に到着！');
+  }, 400);
+
+  // 2Dで王国を描画（訪問先のlevelで）
+  renderVisitCanvas(data.level, data.ng || 0);
+}
+
+function closeKingdomVisitView() {
+  var view = document.getElementById('kingdomVisitView');
+  if (view) view.style.display = 'none';
+}
+
+// 訪問先の王国をcanvasに描画（2Dのみ）
+function renderVisitCanvas(level, ng) {
+  var canvas = document.getElementById('visitCraftCanvas');
+  if (!canvas) return;
+  var p = canvas.parentNode;
+  canvas.width = p ? p.clientWidth : window.innerWidth;
+  canvas.height = p ? p.clientHeight : window.innerHeight;
+  var ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  // 背景
+  var bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  bg.addColorStop(0, '#0d1b2a');
+  bg.addColorStop(1, '#1a3a5c');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // 星
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  for (var i = 0; i < 60; i++) {
+    ctx.fillRect(Math.random()*canvas.width, Math.random()*(canvas.height*0.6), 1.5, 1.5);
+  }
+
+  // 地面
+  var cfg = LEVEL_CONFIG[Math.min(level-1, LEVEL_CONFIG.length-1)];
+  var W = canvas.width, H = canvas.height;
+  var cx = W/2, cy = H*0.55;
+  var tileW = Math.min(W*0.55, 320);
+  var tileH = tileW * 0.5;
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.beginPath();
+  ctx.moveTo(0, -tileH/2);
+  ctx.lineTo(tileW/2, 0);
+  ctx.lineTo(0, tileH/2);
+  ctx.lineTo(-tileW/2, 0);
+  ctx.closePath();
+  ctx.fillStyle = '#1a4a1a';
+  ctx.fill();
+  ctx.strokeStyle = '#2d7a2d';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // レベルに応じた建物を簡易描画
+  var scale = tileW / 320;
+  drawVisitBuildings(ctx, cfg, scale, W, H, cy);
+  ctx.restore();
+}
+
+function drawVisitBuildings(ctx, cfg, scale, W, H, cy) {
+  if (!cfg || !cfg.buildings) return;
+  var buildings = cfg.buildings;
+  var s = scale;
+
+  // 城（常に中央）
+  if (buildings.includes('castle') || buildings.includes('all')) {
+    // 城本体
+    ctx.fillStyle = '#d4c5a9';
+    ctx.fillRect(-22*s, -70*s, 44*s, 55*s);
+    // 屋根
+    ctx.fillStyle = '#4a6fa5';
+    ctx.beginPath();
+    ctx.moveTo(0, -90*s);
+    ctx.lineTo(28*s, -70*s);
+    ctx.lineTo(-28*s, -70*s);
+    ctx.closePath();
+    ctx.fill();
+    // 旗
+    ctx.fillStyle = '#e53935';
+    ctx.fillRect(-3*s, -105*s, 16*s, 10*s);
+    ctx.fillStyle = '#888';
+    ctx.fillRect(-3*s, -110*s, 3*s, 25*s);
+  }
+
+  // 家
+  if (buildings.includes('house') || buildings.includes('all')) {
+    ctx.fillStyle = '#c9b99a';
+    ctx.fillRect(-70*s, -35*s, 28*s, 28*s);
+    ctx.fillStyle = '#e07048';
+    ctx.beginPath();
+    ctx.moveTo(-56*s, -48*s);
+    ctx.lineTo(-42*s, -35*s);
+    ctx.lineTo(-70*s, -35*s);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // 教会
+  if (buildings.includes('church') || buildings.includes('all')) {
+    ctx.fillStyle = '#e8e8f0';
+    ctx.fillRect(42*s, -45*s, 24*s, 32*s);
+    ctx.fillStyle = '#ffd700';
+    ctx.fillRect(51*s, -58*s, 6*s, 16*s);
+    ctx.fillRect(46*s, -51*s, 16*s, 5*s);
+  }
+
+  // 木
+  var treePos = [[-90*s,-15*s],[90*s,-10*s],[-50*s,10*s],[60*s,5*s]];
+  treePos.slice(0, Math.min(buildings.length, 4)).forEach(function(pos){
+    ctx.fillStyle = '#6b4423';
+    ctx.fillRect(pos[0]-3*s, pos[1], 6*s, 14*s);
+    ctx.fillStyle = '#2d7a2d';
+    ctx.beginPath();
+    ctx.arc(pos[0], pos[1]-2*s, 12*s, 0, Math.PI*2);
+    ctx.fill();
+  });
+}
+
 
 function updateCraftHUD() {
   var s=getCraftStats();
@@ -10703,5 +11018,41 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 </script>
+
+<!-- ===== 王国コード発行モーダル ===== -->
+<div id="kingdomShareModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#1a1a2e;border:1px solid #ffd700;border-radius:16px;padding:32px 28px;max-width:360px;width:90%;color:#fff;position:relative;box-shadow:0 0 40px rgba(255,215,0,0.3);">
+    <div style="font-size:2em;text-align:center;margin-bottom:8px;">👑</div>
+    <h2 style="text-align:center;color:#ffd700;font-size:1.1em;margin:0 0 20px 0;">王国コードを発行する</h2>
+    <p style="font-size:0.83em;color:#aaa;margin:0 0 16px 0;text-align:center;">このコードを仲間に渡すと、あなたの王国を見てもらえます</p>
+    <div id="kingdomCodeDisplay" style="background:#0d1b2a;border:1px solid #ffd700;border-radius:8px;padding:12px;font-family:monospace;font-size:0.8em;color:#ffd700;word-break:break-all;margin-bottom:16px;min-height:48px;display:flex;align-items:center;justify-content:center;"></div>
+    <button onclick="copyKingdomCode()" style="width:100%;padding:11px;background:linear-gradient(135deg,#ffd700,#ff8800);border:none;border-radius:8px;color:#fff;font-size:0.95em;font-weight:bold;cursor:pointer;margin-bottom:8px;">📋 コードをコピー</button>
+    <button onclick="closeKingdomShareModal()" style="width:100%;padding:11px;background:transparent;border:1px solid #555;border-radius:8px;color:#aaa;font-size:0.9em;cursor:pointer;">閉じる</button>
+  </div>
+</div>
+
+<!-- ===== 王国訪問モーダル ===== -->
+<div id="kingdomVisitModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#1a1a2e;border:1px solid #4facfe;border-radius:16px;padding:32px 28px;max-width:400px;width:90%;color:#fff;position:relative;box-shadow:0 0 40px rgba(79,172,254,0.3);">
+    <div style="font-size:2em;text-align:center;margin-bottom:8px;">🗺️</div>
+    <h2 style="text-align:center;color:#4facfe;font-size:1.1em;margin:0 0 20px 0;">仲間の王国を訪問する</h2>
+    <textarea id="kingdomVisitInput" rows="3" placeholder="KDM1: で始まるコードを貼り付け"
+      style="width:100%;padding:10px;border:1.5px solid #4facfe;border-radius:8px;background:#0d1b2a;color:#fff;font-size:0.85em;box-sizing:border-box;resize:none;margin-bottom:12px;"></textarea>
+    <button onclick="visitKingdom()" style="width:100%;padding:11px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:8px;color:#fff;font-size:0.95em;font-weight:bold;cursor:pointer;margin-bottom:8px;">🏰 訪問する</button>
+    <button onclick="closeKingdomVisitModal()" style="width:100%;padding:11px;background:transparent;border:1px solid #555;border-radius:8px;color:#aaa;font-size:0.9em;cursor:pointer;">閉じる</button>
+  </div>
+</div>
+
+<!-- ===== 王国訪問ビュー ===== -->
+<div id="kingdomVisitView" style="display:none;position:fixed;inset:0;background:#0d1b2a;z-index:9998;flex-direction:column;">
+  <div style="background:#1a1a2e;border-bottom:1px solid #333;padding:12px 16px;display:flex;align-items:center;gap:12px;">
+    <button onclick="closeKingdomVisitView()" style="background:none;border:none;color:#4facfe;font-size:1em;cursor:pointer;padding:4px 8px;">← 戻る</button>
+    <div id="visitKingdomTitle" style="color:#ffd700;font-weight:bold;font-size:1em;flex:1;text-align:center;"></div>
+  </div>
+  <div style="flex:1;position:relative;overflow:hidden;">
+    <canvas id="visitCraftCanvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+    <div id="visitKingdomInfo" style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:12px 24px;border-radius:20px;text-align:center;font-size:0.85em;border:1px solid rgba(255,215,0,0.3);"></div>
+  </div>
+</div>
 </body>
 </html>
