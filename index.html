@@ -4039,7 +4039,7 @@
     let taskIdCounter = 1; // 互換性のため保持（実際はUUIDを使用）
 
     // 初期データ（テストデータ54件 - 大学3年生・マックバイト・彼氏あり）
-    const INITIAL_DATA = [{"id":"t001","text":"薬飲む（朝）","date":"2026-02-27","time":"08:00","section":2,"order":0,"completed":false,"showInDaily":true,"showInWeekly":false,"calendarId":"private"},{"id":"t002","text":"卒論 最終確認","date":"2026-02-27","time":"10:00","endTime":"12:00","section":1,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true,"calendarId":"study"},{"id":"t003","text":"麻辣湯 行く（ランチ）","date":"2026-02-27","time":"12:30","section":4,"order":0,"completed":false,"showInDaily":true,"showInWeekly":true,"calendarId":"private"},{"id":"t004","text":"研究室 ゼミ発表","date":"2026-02-27","time":"14:00","endTime":"16:00","section":1,"order":1,"completed":false,"showInDaily":true,"showInWeekly":true,"calendarId":"study"},{"id":"t005","text":"おばあちゃん誕生日 電話する","date":"2026-02-27","time":"19:00","section":1,"order":2,"completed":false,"showInDaily":true,"showInWeekly":true,"calendarId":"private"},{"id":"note-001","kind":"note","title":"卒論メモ","textL":"テーマ: 都市型水害における排水システムの最適化\n\n提出期限: 3/5（木）\nページ数: 残り8ページ\n\n修正点\n→ 境界条件の根拠を追記\n→ 図3のキャプション直す\n→ 参考文献の体裁統一","dateL":"卒論\nメモ","textR":"","dateR":"","createdAt":"2026-02-20T10:00:00.000Z","updatedAt":"2026-02-27T09:00:00.000Z"}];
+    const INITIAL_DATA = [{"id":"t001","text":"薬飲む（朝）","date":"2026-02-27","time":"08:00","section":2,"order":0,"completed":false,"displayScope":"daily_only","calendarId":"private"},{"id":"t002","text":"卒論 最終確認","date":"2026-02-27","time":"10:00","endTime":"12:00","section":1,"order":0,"completed":false,"displayScope":"both","calendarId":"study"},{"id":"t003","text":"麻辣湯 行く（ランチ）","date":"2026-02-27","time":"12:30","section":4,"order":0,"completed":false,"displayScope":"both","calendarId":"private"},{"id":"t004","text":"研究室 ゼミ発表","date":"2026-02-27","time":"14:00","endTime":"16:00","section":1,"order":1,"completed":false,"displayScope":"both","calendarId":"study"},{"id":"t005","text":"おばあちゃん誕生日 電話する","date":"2026-02-27","time":"19:00","section":1,"order":2,"completed":false,"displayScope":"both","calendarId":"private"},{"id":"note-001","kind":"note","title":"卒論メモ","textL":"テーマ: 都市型水害における排水システムの最適化\n\n提出期限: 3/5（木）\nページ数: 残り8ページ\n\n修正点\n→ 境界条件の根拠を追記\n→ 図3のキャプション直す\n→ 参考文献の体裁統一","dateL":"卒論\nメモ","textR":"","dateR":"","createdAt":"2026-02-20T10:00:00.000Z","updatedAt":"2026-02-27T09:00:00.000Z"}];
     const INITIAL_PURPOSE = "熱力学レポート提出する";
     const INITIAL_STOP_CONDITION = "終わるまで寝ない。ただし2時で強制終了。";
 
@@ -4114,7 +4114,22 @@
      * - 週間タスク作成: createTask("会議", "2026-02-05", "09:00", 1, false, true)
      * - 日次＋週間: createTask("会議", "2026-02-05", "09:00", 1, true, true)
      */
-    function createTask(text, date, time, section, showInDaily = true, showInWeekly = false, calendarId = null) {
+    // displayScope: 'daily_only' | 'both' | 'weekly_only'
+    // 後方互換: 第5引数にshowInDailyのbool or displayScope文字列を受け取る
+    function createTask(text, date, time, section, scopeOrDaily = 'daily_only', legacyWeekly = false, calendarId = null) {
+      // 引数の正規化
+      let _scope;
+      if (typeof scopeOrDaily === 'string' && ['daily_only','both','weekly_only'].includes(scopeOrDaily)) {
+        _scope = scopeOrDaily;
+      } else {
+        // 旧bool引数の互換
+        const d = (scopeOrDaily === true || scopeOrDaily === undefined);
+        const w = legacyWeekly === true;
+        if (d && w)  _scope = 'both';
+        else if (d)  _scope = 'daily_only';
+        else if (w)  _scope = 'weekly_only';
+        else         _scope = 'daily_only';
+      }
       // calendarIdが未指定またはdefaultの場合はメインカレンダーを使う
       if (!calendarId || calendarId === 'default') {
         const mainId = localStorage.getItem('mainCalendarId');
@@ -4137,8 +4152,7 @@
         section: section,
         order: maxOrder,
         completed: false,
-        showInDaily: showInDaily,
-        showInWeekly: showInWeekly,
+        displayScope: _scope,
         calendarId: calendarId,          // どのカレンダーに属するか
         owner: localStorage.getItem('profileName') || null,
         ownerId: getOrCreateDeviceId(),  // 端末固有ID（識別用）
@@ -4307,10 +4321,11 @@
       
       allTasks
         .filter(t => {
-          if (!t.showInDaily) return false;
+          const sc = t.displayScope || (t.showInDaily && !t.showInWeekly ? 'daily_only' : t.showInDaily && t.showInWeekly ? 'both' : null);
+          if (!sc || sc === 'weekly_only') return false;
           if (!isCalendarVisible(t.calendarId)) return false;
-          if (!t.showInWeekly) return true;
-          return (t.date === date);
+          if (sc === 'daily_only') return true;
+          return (t.date === date); // both: その日だけ
         })
         .forEach(t => {
           if (result[t.section]) result[t.section].push(t);
@@ -4341,7 +4356,7 @@
     function getWeeklyTasks(startDate, endDate) {
       return allTasks
         .filter(t =>
-          t.showInWeekly &&
+          (t.displayScope === 'both' || t.displayScope === 'weekly_only' || (!t.displayScope && t.showInWeekly)) &&
           t.time &&
           t.date >= startDate &&
           t.date <= endDate &&
@@ -4362,6 +4377,30 @@
     }
 
     // マスターデータ読み込み
+    // ===== displayScope マイグレーション =====
+    function migrateToDisplayScope() {
+      if (localStorage.getItem('migration_displayScope_v1')) return;
+      let changed = false;
+      allTasks.forEach(t => {
+        if (t.kind !== 'task') return;
+        if (t.displayScope) return; // 移行済み
+        const d = t.showInDaily !== false;
+        const w = t.showInWeekly === true;
+        if (d && w)       t.displayScope = 'both';
+        else if (d && !w) t.displayScope = 'daily_only';
+        else if (!d && w) t.displayScope = 'weekly_only';
+        else              t.displayScope = 'daily_only';
+        delete t.showInDaily;
+        delete t.showInWeekly;
+        changed = true;
+      });
+      if (changed) {
+        saveAllTasks();
+        console.log('[migration] displayScope移行完了:', allTasks.length, 'タスク');
+      }
+      localStorage.setItem('migration_displayScope_v1', '1');
+    }
+
     function loadAllTasks() {
       loadCalendars();
       getOrCreateDeviceId(); // 初回起動時にdeviceIdを発行
@@ -4614,11 +4653,10 @@
         updateTask(pendingScheduleTask.taskId, {
           date: dateStr,
           time: time,
-          showInWeekly: true,
-          showInDaily: true
+          displayScope: 'both'
         });
       } else {
-        createTask(pendingScheduleTask.taskText, dateStr, time, 1, true, true);
+        createTask(pendingScheduleTask.taskText, dateStr, time, 1, 'both');
       }
       
       closeWeeklyTaskModal();
@@ -4829,8 +4867,7 @@
             updateTask(data.taskId, {
               date: dateStr,
               time: String(h).padStart(2,'0') + ':00',
-              showInWeekly: true,
-              showInDaily: true,
+              displayScope: 'both'
             });
             renderWeeklyView();
             renderAllSections();
@@ -5132,8 +5169,8 @@
         return;
       }
       
-      // 時間があれば週間に表示
-      const showInWeekly = newTime ? true : false;
+      // 時刻あり→both（日次＋週間）、なし→daily_only
+      const _newScope = newTime ? 'both' : 'daily_only';
       
       updateTask(editingWeeklyTaskId, { 
         text: newText,
@@ -5143,7 +5180,7 @@
         endTime: newEndTime,
         calendarId: _editCalendarId || 'default',
         section: newSection,
-        showInWeekly: showInWeekly
+        displayScope: _newScope
       });
       
       closeWeeklyEditModal();
@@ -6268,15 +6305,13 @@
         return;
       }
       
-      // 時間があれば週間にも表示
-      const showInWeekly = time ? true : false;
+      // 時刻あり→both、なし→daily_only
+      const _mScope = time ? 'both' : 'daily_only';
       
       if (taskId) {
-        // 編集（日付も更新）
-        updateTask(taskId, { text, memo: memo || null, date: dateStr, time, section, showInWeekly, calendarId: _monthlyCalendarId || 'default' });
+        updateTask(taskId, { text, memo: memo || null, date: dateStr, time, section, displayScope: _mScope, calendarId: _monthlyCalendarId || 'default' });
       } else {
-        // 新規作成
-        const newTask = createTask(text, dateStr, time, section, true, showInWeekly);
+        const newTask = createTask(text, dateStr, time, section, _mScope);
         updateTask(newTask.id, { memo: memo || null, calendarId: _monthlyCalendarId || 'default' });
       }
       
@@ -6370,10 +6405,7 @@
         return;
       }
       
-      const showInDaily = true;
-      const showInWeekly = true;
-      
-      const newTask = createTask(taskText, creatingTask.dateStr, taskTime, taskSection, showInDaily, showInWeekly);
+      const newTask = createTask(taskText, creatingTask.dateStr, taskTime, taskSection, 'both');
       
       // メモ・終了時刻・カテゴリを設定
       const updates = {};
@@ -7441,6 +7473,7 @@
     
     // マスターデータをロード
     loadAllTasks();
+    migrateToDisplayScope();
     
     // 日次ビューを初期描画
     renderAllSections();
@@ -9949,16 +9982,9 @@
     localStorage.removeItem('simpleMemos');
     // v0.12.0: nbPages → allTasks統合
     localStorage.removeItem('nbPages');
-    // v0.24.59: showInWeekly:false の日次専用タスクをdate付きに移行
-    // （毎日全部表示されてしまう問題を修正）
-    if (!localStorage.getItem('migration_v0_24_59')) {
-      allTasks.forEach(t => {
-        if (t.kind === 'task' && t.showInDaily && !t.showInWeekly) {
-          t.showInWeekly = true;
-          // dateがない場合は今日付けで保存
-          if (!t.date) t.date = getLocalDateStr(new Date());
-        }
-      });
+    // v0.24.59: 無効化（displayScope移行により不要）
+    if (false && !localStorage.getItem('migration_v0_24_59')) {
+      // 旧マイグレーションは逆効果だったため廃止
       saveAllTasks();
       localStorage.setItem('migration_v0_24_59', '1');
     }
