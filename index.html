@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.24.64';
+    const APP_VERSION = 'v0.24.66';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -10267,8 +10267,8 @@ function renderVisitKingdom(data) {
 
   var info = document.getElementById('visitKingdomInfo');
   if (info) {
-    var roleLabel = gender === 'princess' ? '👑姫' : '👑王';
-    info.innerHTML = roleLabel + ' ' + (data.name||'名もなき王') + '&nbsp;|&nbsp;Lv.' + data.level + '&nbsp;|&nbsp;累計' + data.total + 'タスク';
+    var roleLabel = gender === 'princess' ? 'の姫の王国' : 'の王国';
+    info.innerHTML = '👑 ' + (data.name||'名もなき王') + roleLabel + '&nbsp;|&nbsp;Lv.' + data.level + '&nbsp;|&nbsp;累計' + data.total + 'タスク';
   }
 
   // 訪問通知メッセージ
@@ -10276,10 +10276,26 @@ function renderVisitKingdom(data) {
     showCraftMessage('🗺️ ' + (data.name || '仲間') + 'の王国に到着！');
   }, 400);
 
-  // 3D優先、無理なら2D
+  // 3D優先、無理なら2D（Three.jsロード待ちリトライあり）
   var renderMode = localStorage.getItem('craftRenderMode') || '2d';
-  if (renderMode === '3d' && typeof THREE !== 'undefined') {
-    renderVisitCanvas3D(data.level);
+  if (renderMode === '3d') {
+    if (typeof THREE !== 'undefined') {
+      renderVisitCanvas3D(data.level);
+    } else {
+      // Three.jsがまだロード中→ロード後に再試行
+      var _visitLevel = data.level;
+      var _visitRetry = 0;
+      var _visitTimer = setInterval(function(){
+        _visitRetry++;
+        if (typeof THREE !== 'undefined') {
+          clearInterval(_visitTimer);
+          renderVisitCanvas3D(_visitLevel);
+        } else if (_visitRetry > 30) {
+          clearInterval(_visitTimer);
+          renderVisitCanvas(_visitLevel, 0); // 10秒待ってもダメなら2D
+        }
+      }, 300);
+    }
   } else {
     renderVisitCanvas(data.level, data.ng || 0);
   }
