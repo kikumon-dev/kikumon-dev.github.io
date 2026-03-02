@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.24.66';
+    const APP_VERSION = 'v0.24.67';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -10276,29 +10276,38 @@ function renderVisitKingdom(data) {
     showCraftMessage('🗺️ ' + (data.name || '仲間') + 'の王国に到着！');
   }, 400);
 
-  // 3D優先、無理なら2D（Three.jsロード待ちリトライあり）
+  // 3D優先、無理なら2D
+  // DOMが確実に表示された後に描画するためrAF+100ms待ちで実行
+  var _visitLevel = data.level;
+  var _visitNg = data.ng || 0;
   var renderMode = localStorage.getItem('craftRenderMode') || '2d';
-  if (renderMode === '3d') {
-    if (typeof THREE !== 'undefined') {
-      renderVisitCanvas3D(data.level);
+
+  function _doRenderVisit() {
+    if (renderMode === '3d') {
+      if (typeof THREE !== 'undefined') {
+        renderVisitCanvas3D(_visitLevel);
+      } else {
+        // Three.jsロード待ち（最大10秒）
+        var _retry = 0;
+        var _timer = setInterval(function(){
+          _retry++;
+          if (typeof THREE !== 'undefined') {
+            clearInterval(_timer);
+            renderVisitCanvas3D(_visitLevel);
+          } else if (_retry > 33) {
+            clearInterval(_timer);
+            renderVisitCanvas(_visitLevel, _visitNg);
+          }
+        }, 300);
+      }
     } else {
-      // Three.jsがまだロード中→ロード後に再試行
-      var _visitLevel = data.level;
-      var _visitRetry = 0;
-      var _visitTimer = setInterval(function(){
-        _visitRetry++;
-        if (typeof THREE !== 'undefined') {
-          clearInterval(_visitTimer);
-          renderVisitCanvas3D(_visitLevel);
-        } else if (_visitRetry > 30) {
-          clearInterval(_visitTimer);
-          renderVisitCanvas(_visitLevel, 0); // 10秒待ってもダメなら2D
-        }
-      }, 300);
+      renderVisitCanvas(_visitLevel, _visitNg);
     }
-  } else {
-    renderVisitCanvas(data.level, data.ng || 0);
   }
+  // DOMの表示確定後に実行（display:flex反映を待つ）
+  requestAnimationFrame(function(){
+    setTimeout(_doRenderVisit, 50);
+  });
 }
 
 function closeKingdomVisitView() {
@@ -10319,8 +10328,12 @@ function renderVisitCanvas3D(visitLevel) {
   nc.style.width = '100%'; nc.style.height = '100%';
   p.replaceChild(nc, canvas);
   canvas = nc;
-  canvas.width = p.clientWidth || window.innerWidth;
-  canvas.height = p.clientHeight || window.innerHeight;
+  // parentが非表示でサイズ0の場合はwindowサイズで代替
+  var _vw = p.clientWidth || p.offsetWidth || window.innerWidth;
+  var _vh = p.clientHeight || p.offsetHeight || window.innerHeight;
+  canvas.width = _vw;
+  canvas.height = _vh;
+  if (_vw < 10 || _vh < 10) { renderVisitCanvas(visitLevel, 0); return; }
   var W = canvas.width, H = canvas.height;
 
   var renderer;
