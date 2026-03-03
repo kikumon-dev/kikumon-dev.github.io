@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.25.17';
+    const APP_VERSION = 'v0.26.41';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -420,24 +420,6 @@
     .schedule-btn:hover {
       color: #2196F3;
       opacity: 1;
-    }
-
-    .edit-task-btn {
-      font-size: 1em;
-      cursor: pointer;
-      padding: 0 6px;
-      line-height: 1;
-      opacity: 0.15;
-      filter: grayscale(100%);
-      transition: opacity 0.2s;
-    }
-
-    .edit-task-btn:hover {
-      opacity: 0.7;
-    }
-    
-    .task-item:hover .edit-task-btn {
-      opacity: 0.5;
     }
 
     .clear-all-btn {
@@ -1882,7 +1864,7 @@
         display: none !important;
       }
       /* タスクのボタンを印刷時に非表示 */
-      .edit-task-btn {
+      .edit-task-btn, .wg-task-edit {
         display: none !important;
       }
       .escape-btn {
@@ -3043,7 +3025,8 @@
       </div>
       <div style="margin: 15px 0;">
         <label style="display: block; margin-bottom: 8px; font-weight: bold;">メモ（任意）</label>
-        <textarea id="editTaskMemo" rows="3" placeholder="詳細や持ち物など..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.95em; box-sizing: border-box; resize: vertical; font-family: inherit;"></textarea>
+        <textarea id="editTaskMemo" rows="3" placeholder="詳細や持ち物など..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.95em; box-sizing: border-box; resize: vertical; font-family: inherit;" oninput="updateMemoPreview('editTaskMemo','editTaskMemoPreview')"></textarea>
+        <div id="editTaskMemoPreview" style="display:none; margin-top:6px; padding:8px; background:#f8f8f8; border-radius:4px; font-size:0.9em; color:#333; word-break:break-all;"></div>
       </div>
       <div style="margin: 15px 0;">
         <label style="display: block; margin-bottom: 8px; font-weight: bold;">日付</label>
@@ -3118,6 +3101,20 @@
           <option value="3">緊急だが重要ではない</option>
           <option value="4">緊急でも重要でもない</option>
         </select>
+      </div>
+      <div style="margin: 15px 0;">
+        <label style="display: block; margin-bottom: 8px; font-weight: bold;">🔁 繰り返し</label>
+        <select id="weeklyEditRepeat" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:4px;font-size:0.9em;background:#fff;" onchange="document.getElementById('weeklyEditRepeatEndWrap').style.display=this.value!=='none'?'block':'none'">
+          <option value="none">なし</option>
+          <option value="daily">毎日</option>
+          <option value="weekday">平日のみ（月〜金）</option>
+          <option value="weekly">毎週（同じ曜日）</option>
+          <option value="monthly">毎月（同じ日付）</option>
+        </select>
+        <div id="weeklyEditRepeatEndWrap" style="display:none;margin-top:8px;">
+          <label style="font-size:0.82em;color:#888;">繰り返し終了日（任意）</label>
+          <input type="date" id="weeklyEditRepeatEnd" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:4px;font-size:0.9em;">
+        </div>
       </div>
       <div class="modal-buttons" style="margin-top: 20px;">
         <button class="modal-btn modal-btn-cancel" onclick="closeWeeklyEditModal()">キャンセル</button>
@@ -3208,6 +3205,20 @@
           <option value="3">緊急だが重要ではない</option>
           <option value="4">緊急でも重要でもない</option>
         </select>
+      </div>
+      <div style="margin: 15px 0;">
+        <label style="display: block; margin-bottom: 8px; font-weight: bold;">🔁 繰り返し</label>
+        <select id="createRepeat" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:4px;font-size:0.9em;background:#fff;" onchange="document.getElementById('createRepeatEndWrap').style.display=this.value!=='none'?'block':'none'">
+          <option value="none">なし</option>
+          <option value="daily">毎日</option>
+          <option value="weekday">平日のみ（月〜金）</option>
+          <option value="weekly">毎週（同じ曜日）</option>
+          <option value="monthly">毎月（同じ日付）</option>
+        </select>
+        <div id="createRepeatEndWrap" style="display:none;margin-top:8px;">
+          <label style="font-size:0.82em;color:#888;">繰り返し終了日（任意）</label>
+          <input type="date" id="createRepeatEnd" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:4px;font-size:0.9em;">
+        </div>
       </div>
       <div class="modal-buttons" style="margin-top: 20px;">
         <button class="modal-btn modal-btn-cancel" onclick="closeCreateModal()">キャンセル</button>
@@ -3335,9 +3346,17 @@
     <div class="settings-container">
       <h2 style="margin: 0 0 30px 0; color: #262626; font-size: 1.4em; font-weight: 700; letter-spacing: -0.01em;">設定</h2>
       <div style="margin-bottom:24px;">
-        <button onclick="showTutorial()" style="width:100%;padding:12px 16px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:10px;color:#fff;font-size:0.95em;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">🏰 はじめての方へ</button>
+        <button onclick="showTutorial()" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:transparent;border:1px solid #b0d4f1;border-radius:20px;color:#5aaadd;font-size:0.82em;font-weight:600;cursor:pointer;margin-bottom:4px;">🏰 はじめての方へ →</button>
       </div>
       
+      <!-- ===== 管理者メニュー ===== -->
+      <div id="adminMenuSection" style="display:none;margin-bottom:20px;background:#1a1a2e;border:2px solid #ffd700;border-radius:14px;padding:20px;box-shadow:0 0 20px rgba(255,215,0,0.2);">
+        <h3 style="margin:0 0 14px 0;color:#ffd700;font-size:1em;font-weight:700;display:flex;align-items:center;gap:8px;">👑 管理者メニュー </h3>
+        <p style="font-size:0.82em;color:#aaa;margin:0 0 14px 0;">スタートデッキコードを生成してDiscordで配布できます。</p>
+        <button onclick="copyStarterDeckCode()" style="width:100%;padding:11px;background:linear-gradient(135deg,#ffd700,#ff8800);border:none;border-radius:10px;color:#7a4800;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(255,150,0,0.3);margin-bottom:8px;">📋 スタートデッキコードをコピー</button>
+        <button onclick="toggleAdminMode()" style="width:100%;padding:9px;background:transparent;border:1px solid #555;border-radius:8px;color:#888;font-size:0.82em;cursor:pointer;">🔒 管理者モードを解除する</button>
+      </div>
+
       <!-- プロフィールセクション -->
       <div class="settings-section">
         <h3 style="margin: 0 0 20px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">プロフィール</h3>
@@ -3351,7 +3370,7 @@
             <input type="file" id="avatarInput" accept="image/*" style="display: none;" onchange="handleAvatarChange(event)">
             <div class="profile-name-edit">
               <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #262626; font-size: 0.9em;">表示名</label>
-              <input type="text" id="profileNameInput" placeholder="あなたの名前..." maxlength="20" style="width: 100%; padding: 12px; border: 2px solid #e8e8e8; border-radius: 10px; font-size: 1em; box-sizing: border-box;">
+              <input type="text" id="profileNameInput" placeholder="あなたの名前..." maxlength="20" style="width: 100%; padding: 12px; border: 2px solid #e8e8e8; border-radius: 10px; font-size: 1em; box-sizing: border-box;" oninput="localStorage.setItem('profileName', this.value.trim()); var ind = document.getElementById('profileNameUnsaved'); if(ind) ind.style.display='none';">
               <div style="margin-top:12px;">
                 <label style="display:block;margin-bottom:8px;font-weight:600;color:#262626;font-size:0.9em;">あなたは？</label>
                 <div style="display:flex;gap:8px;">
@@ -3366,6 +3385,8 @@
             </div>
           </div>
           <button class="avatar-remove-btn" id="avatarRemoveBtn" onclick="removeAvatar()" style="display: none;">アイコンを削除</button>
+          <!-- プロフィール即時保存ボタン -->
+          <button onclick="saveProfileQuick()" style="margin-top:14px;width:100%;padding:11px;background:linear-gradient(135deg,#4facfe,#00c6fb);border:none;border-radius:10px;color:#fff;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(79,172,254,0.3);">👑 名前・性別を保存する</button>
         </div>
       </div>
 
@@ -3398,11 +3419,11 @@
         <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #e07048;">⚠️ 名前や性別を変更した場合は、王国コードを再発行してください。</p>
         <div id="kingdomShareArea">
           <button onclick="openKingdomShareModal()" id="kingdomShareBtn"
-            style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#ffd700,#ff8800);color:#fff;font-size:0.88em;font-weight:700;cursor:pointer;width:100%;margin-bottom:10px;">
+            style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#ffd700,#ff8800);color:#7a4800;font-size:0.88em;font-weight:700;cursor:pointer;width:100%;margin-bottom:10px;text-shadow:none;">
             👑 王国コードを発行する
           </button>
           <button onclick="openKingdomVisitModal()"
-            style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#ffc8dc,#ffa0bc);color:#fff;font-size:0.88em;font-weight:700;cursor:pointer;width:100%;box-shadow:0 4px 12px rgba(255,160,188,0.35);letter-spacing:0.03em;">
+            style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#ffc8dc,#ffa0bc);color:#9c3060;font-size:0.88em;font-weight:700;cursor:pointer;width:100%;box-shadow:0 4px 12px rgba(255,160,188,0.35);letter-spacing:0.03em;text-shadow:none;">
             🗺️ 仲間の王国を訪問する
           </button>
         </div>
@@ -3730,6 +3751,20 @@
           <option value="3">緊急だが重要ではない</option>
           <option value="4">緊急でも重要でもない</option>
         </select>
+      </div>
+      <div style="margin: 15px 0;">
+        <label style="display: block; margin-bottom: 8px; font-weight: bold;">🔁 繰り返し</label>
+        <select id="monthlyEditRepeat" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:4px;font-size:0.9em;background:#fff;" onchange="document.getElementById('monthlyEditRepeatEndWrap').style.display=this.value!=='none'?'block':'none'">
+          <option value="none">なし</option>
+          <option value="daily">毎日</option>
+          <option value="weekday">平日のみ（月〜金）</option>
+          <option value="weekly">毎週（同じ曜日）</option>
+          <option value="monthly">毎月（同じ日付）</option>
+        </select>
+        <div id="monthlyEditRepeatEndWrap" style="display:none;margin-top:8px;">
+          <label style="font-size:0.82em;color:#888;">繰り返し終了日（任意）</label>
+          <input type="date" id="monthlyEditRepeatEnd" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:4px;font-size:0.9em;">
+        </div>
       </div>
       <div class="modal-buttons" style="margin-top: 20px;">
         <button class="modal-btn modal-btn-cancel" onclick="closeMonthlyTaskModal()">キャンセル</button>
@@ -4272,7 +4307,7 @@
           if (t.memo) {
             const memoEl = document.createElement('div');
             memoEl.style.cssText = 'font-size:0.78em;color:#888;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
-            memoEl.textContent = t.memo;
+            renderMemoWithLinks(memoEl, t.memo);
             info.appendChild(memoEl);
           }
           info.appendChild(meta);
@@ -4992,7 +5027,7 @@
           if (task.memo && blockH >= 52) {
             const memoLine = document.createElement('div');
             memoLine.className = 'wg-task-memo';
-            memoLine.textContent = '📍 ' + task.memo;
+            memoLine.innerHTML = ''; memoLine.appendChild(document.createTextNode('📍 ')); renderMemoWithLinks(memoLine, task.memo);
             taskDiv.appendChild(memoLine);
           }
 
@@ -5039,7 +5074,7 @@
       document.getElementById('editTaskId').value = task.id;
       
       // メモを設定
-      document.getElementById('editTaskMemo').value = task.memo || '';
+      document.getElementById('editTaskMemo').value = task.memo || ''; setTimeout(function(){ updateMemoPreview('editTaskMemo','editTaskMemoPreview'); }, 0);
       
       // 日付を設定
       document.getElementById('editTaskDate').value = task.date || '';
@@ -5058,6 +5093,10 @@
       document.getElementById('editTaskSection').value = task.section || 2;
       
       // モーダルを表示
+      var wRepSel = document.getElementById('weeklyEditRepeat');
+      if (wRepSel) { wRepSel.value = task.repeat || 'none'; document.getElementById('weeklyEditRepeatEndWrap').style.display = (task.repeat && task.repeat !== 'none') ? 'block' : 'none'; document.getElementById('weeklyEditRepeatEnd').value = task.repeatEnd || ''; }
+      var _wRep = document.getElementById('weeklyEditRepeat');
+      if (_wRep) { _wRep.value = task.repeat || 'none'; var _wRew = document.getElementById('weeklyEditRepeatEndWrap'); if(_wRew) _wRew.style.display = (task.repeat && task.repeat !== 'none') ? 'block' : 'none'; var _wRed = document.getElementById('weeklyEditRepeatEnd'); if(_wRed) _wRed.value = task.repeatEnd || ''; }
       document.getElementById('weeklyTaskEditModal').classList.add('show');
       
       // 入力欄にフォーカス
@@ -5172,6 +5211,8 @@
       // 時刻あり→both（日次＋週間）、なし→daily_only
       const _newScope = newTime ? 'both' : 'daily_only';
       
+      var _wRepVal = document.getElementById('weeklyEditRepeat') ? document.getElementById('weeklyEditRepeat').value : 'none';
+      var _wRepEnd = document.getElementById('weeklyEditRepeatEnd') ? document.getElementById('weeklyEditRepeatEnd').value : '';
       updateTask(editingWeeklyTaskId, { 
         text: newText,
         memo: newMemo || null,
@@ -5180,9 +5221,15 @@
         endTime: newEndTime,
         calendarId: _editCalendarId || 'default',
         section: newSection,
-        displayScope: _newScope
+        displayScope: _newScope,
+        repeat: _wRepVal !== 'none' ? _wRepVal : null,
+        repeatEnd: _wRepEnd || null,
+        repeatGroupId: _wRepVal !== 'none' ? editingWeeklyTaskId : null
       });
-      
+
+      var _wRepContinue = applyRepeatSave(editingWeeklyTaskId, null, _wRepVal, _wRepEnd, newDate);
+      if (!_wRepContinue) return;
+
       closeWeeklyEditModal();
       renderWeeklyView();
       renderMonthlyView();
@@ -5534,12 +5581,10 @@
           iconContainer.style.marginLeft = '4px';
           iconContainer.style.flexShrink = '0';
           
-          // 📝編集ボタン
+          // ✏️編集ボタン
           const editBtn = document.createElement('span');
-          editBtn.textContent = '📝';
-          editBtn.style.cursor = 'pointer';
-          editBtn.style.fontSize = '0.7em';
-          editBtn.style.opacity = task.memo ? '1' : '0.5';
+          editBtn.className = 'wg-task-edit';
+          editBtn.textContent = '✏️';
           editBtn.title = task.memo ? 'メモあり - 編集' : '編集';
           editBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -5982,7 +6027,7 @@
         if (task.memo && blockH >= 52) {
           var memo = document.createElement('div');
           memo.style.cssText = 'font-size:0.78em;color:#777;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;';
-          memo.textContent = '📍 ' + task.memo;
+          memo.innerHTML = ''; memo.appendChild(document.createTextNode('📍 ')); renderMemoWithLinks(memo, task.memo);
           taskDiv.appendChild(memo);
         }
 
@@ -6028,12 +6073,58 @@
           var calColor = cal ? { bg: cal.color + '22', bd: cal.color } : null;
           var colors = calColor || SEC_COLOR_TL[t.section] || SEC_COLOR_TL[2];
           var item = document.createElement('div');
-          item.style.cssText = 'padding:5px 8px;border-radius:5px;font-size:0.85em;margin-bottom:4px;cursor:pointer;' +
+          item.style.cssText = 'padding:5px 8px;border-radius:5px;font-size:0.85em;margin-bottom:4px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:6px;' +
             'background:' + colors.bg + ';border-left:3px solid ' + colors.bd + ';' +
             (t.completed ? 'text-decoration:line-through;opacity:0.6;' : '');
-          item.textContent = t.text;
-          if (t.memo) item.title = t.memo;
-          item.addEventListener('click', function() { editWeeklyTaskById(t.id); });
+          // テキスト部分
+          var itemText = document.createElement('span');
+          itemText.textContent = t.text;
+          itemText.style.cssText = 'flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+          item.appendChild(itemText);
+          // 鉛筆アイコン（メモあり or 常に表示）
+          var editBtn = document.createElement('span');
+          editBtn.className = 'wg-task-edit';
+          editBtn.textContent = '✏️';
+          editBtn.title = '編集';
+          editBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            editWeeklyTaskById(t.id);
+          });
+          item.appendChild(editBtn);
+          // タップ→完了トグル
+          (function(taskId, itemEl) {
+            var longTimer = null;
+            var longPressed = false;
+            itemEl.addEventListener('mousedown', function() {
+              longPressed = false;
+              longTimer = setTimeout(function(){
+                longTimer = null; longPressed = true;
+              }, 600);
+            });
+            itemEl.addEventListener('mouseup', function() {
+              if (longTimer) { clearTimeout(longTimer); longTimer = null; }
+            });
+            itemEl.addEventListener('touchstart', function(e) {
+              longPressed = false;
+              longTimer = setTimeout(function(){
+                longTimer = null; longPressed = true;
+              }, 600);
+            }, {passive:true});
+            itemEl.addEventListener('touchend', function() {
+              if (longTimer) { clearTimeout(longTimer); longTimer = null; }
+            });
+            itemEl.addEventListener('click', function(e) {
+              if (longPressed) { longPressed = false; return; }
+              e.stopPropagation();
+              toggleTaskById(taskId);
+              var tasks = window.allTasks || [];
+              var t2 = tasks.find ? tasks.find(function(x){ return x.id === taskId; }) : null;
+              if (t2) {
+                itemEl.style.textDecoration = t2.completed ? 'line-through' : '';
+                itemEl.style.opacity = t2.completed ? '0.55' : '1';
+              }
+            });
+          })(t.id, item);
           noTimeSection.appendChild(item);
         });
         body.appendChild(noTimeSection);
@@ -6255,10 +6346,11 @@
       document.getElementById('monthlyModalTitle').textContent = 'タスク追加';
       document.getElementById('monthlyTaskInput').value = '';
       document.getElementById('monthlyTaskMemo').value = '';
+      var _mRepN = document.getElementById('monthlyEditRepeat'); if(_mRepN){ _mRepN.value='none'; document.getElementById('monthlyEditRepeatEndWrap').style.display='none'; document.getElementById('monthlyEditRepeatEnd').value=''; }
       document.getElementById('monthlyTaskDate').value = dateStr;
       document.getElementById('monthlyTaskId').value = '';
       clearTimeSelect('monthly');
-      document.getElementById('monthlyTaskSection').value = '2';
+      document.getElementById('monthlyTaskSection').value = '1';
       document.getElementById('monthlyDeleteBtn').style.display = 'none';
       _monthlyCalendarId = localStorage.getItem('mainCalendarId') || (calendars[0] && calendars[0].id) || calendars[0]?.id;
       renderCalendarSelector('monthlyCalendarBtns', _monthlyCalendarId, function(id) { _monthlyCalendarId = id; });
@@ -6273,6 +6365,7 @@
       document.getElementById('monthlyModalTitle').textContent = 'タスク編集';
       document.getElementById('monthlyTaskInput').value = task.text;
       document.getElementById('monthlyTaskMemo').value = task.memo || '';
+      var _mRep = document.getElementById('monthlyEditRepeat'); if(_mRep){ _mRep.value = task.repeat || 'none'; var _mRew = document.getElementById('monthlyEditRepeatEndWrap'); if(_mRew) _mRew.style.display = (task.repeat&&task.repeat!=='none')?'block':'none'; var _mRed = document.getElementById('monthlyEditRepeatEnd'); if(_mRed) _mRed.value = task.repeatEnd||''; }
       document.getElementById('monthlyTaskDate').value = task.date;
       document.getElementById('monthlyTaskId').value = task.id;
       setTimeSelect('monthly', task.time);
@@ -6308,11 +6401,18 @@
       // 時刻あり→both、なし→daily_only
       const _mScope = time ? 'both' : 'daily_only';
       
+      const _mRepVal = document.getElementById('monthlyEditRepeat') ? document.getElementById('monthlyEditRepeat').value : 'none';
+      const _mRepEnd = document.getElementById('monthlyEditRepeatEnd') ? document.getElementById('monthlyEditRepeatEnd').value : '';
       if (taskId) {
-        updateTask(taskId, { text, memo: memo || null, date: dateStr, time, section, displayScope: _mScope, calendarId: _monthlyCalendarId || 'default' });
+        updateTask(taskId, { text, memo: memo || null, date: dateStr, time, section, displayScope: _mScope, calendarId: _monthlyCalendarId || 'default', repeat: _mRepVal !== 'none' ? _mRepVal : null, repeatEnd: _mRepEnd || null, repeatGroupId: _mRepVal !== 'none' ? taskId : null });
+        var _mRepContinue = applyRepeatSave(taskId, null, _mRepVal, _mRepEnd, dateStr);
+        if (!_mRepContinue) return;
       } else {
         const newTask = createTask(text, dateStr, time, section, _mScope);
-        updateTask(newTask.id, { memo: memo || null, calendarId: _monthlyCalendarId || 'default' });
+        const _mUpdates = { memo: memo || null, calendarId: _monthlyCalendarId || 'default' };
+        if (_mRepVal !== 'none') { _mUpdates.repeat = _mRepVal; _mUpdates.repeatEnd = _mRepEnd || null; _mUpdates.repeatGroupId = newTask.id; }
+        updateTask(newTask.id, _mUpdates);
+        if (_mRepVal !== 'none') generateRepeatTasks(Object.assign({}, newTask, _mUpdates), _mRepVal, _mRepEnd, dateStr, newTask.id);
       }
       
       closeMonthlyTaskModal();
@@ -6357,7 +6457,7 @@
       document.getElementById('createTaskMemo').value = '';
       
       // 象限をデフォルトに
-      document.getElementById('createTaskSection').value = '2';
+      document.getElementById('createTaskSection').value = '1';
 
       // カレンダー選択UI: 自動投入ONならメインを初期選択
       const _mainId = localStorage.getItem('mainCalendarId') || (calendars[0] && calendars[0].id) || 'work';
@@ -6405,15 +6505,26 @@
         return;
       }
       
+      const _cRepeat = document.getElementById('createRepeat') ? document.getElementById('createRepeat').value : 'none';
+      const _cRepeatEnd = document.getElementById('createRepeatEnd') ? document.getElementById('createRepeatEnd').value : '';
       const newTask = createTask(taskText, creatingTask.dateStr, taskTime, taskSection, 'both');
       
-      // メモ・終了時刻・カテゴリを設定
+      // メモ・終了時刻・カテゴリ・繰り返しを設定
       const updates = {};
       if (taskMemo) updates.memo = taskMemo;
       if (taskEndTime) updates.endTime = taskEndTime;
       updates.calendarId = _createCalendarId || 'default';
+      if (_cRepeat !== 'none') {
+        updates.repeat = _cRepeat;
+        updates.repeatEnd = _cRepeatEnd || null;
+        updates.repeatGroupId = newTask.id;
+      }
       updateTask(newTask.id, updates);
-      
+      if (_cRepeat !== 'none') {
+        generateRepeatTasks(Object.assign({}, newTask, updates), _cRepeat, _cRepeatEnd, creatingTask.dateStr, newTask.id);
+      }
+      // モーダルを閉じる前にリセット
+      var _crEl = document.getElementById('createRepeat'); if(_crEl) { _crEl.value='none'; document.getElementById('createRepeatEndWrap').style.display='none'; }
       closeCreateModal();
       renderWeeklyView();
       renderMonthlyView();
@@ -6674,9 +6785,19 @@
 
 
     // 性別設定
+    // 王姫パターン: 王王姫姫王姫王姫王王
+    var _genderSeq = [];
+    var _ADMIN_PATTERN = ['king','king','princess','princess','king','princess','king','princess','king','king'];
     function selectGender(val) {
       localStorage.setItem('profileGender', val);
       updateGenderUI(val);
+      // 管理者パターン検知
+      _genderSeq.push(val);
+      if (_genderSeq.length > _ADMIN_PATTERN.length) _genderSeq.shift();
+      if (_genderSeq.length === _ADMIN_PATTERN.length) {
+        var match = _ADMIN_PATTERN.every(function(v,i){ return v === _genderSeq[i]; });
+        if (match) { _genderSeq = []; toggleAdminMode(); }
+      }
     }
     function saveGender() {
       const val = document.querySelector('input[name="profileGender"]:checked');
@@ -6800,11 +6921,12 @@
       
       document.getElementById('taskEditId').value = taskId;
       document.getElementById('taskEditText').value = task.text;
-      document.getElementById('taskEditMemo').value = task.memo || '';
+      document.getElementById('taskEditMemo').value = task.memo || ''; setTimeout(function(){ updateMemoPreview('taskEditMemo','taskEditMemoPreview'); }, 0);
       document.getElementById('taskEditDate').value = task.date || '';
       
       // セレクトに時間を設定
       setTimeSelect('taskEdit', task.time);
+      setTimeSelect('taskEditEnd', task.endTime);
       
       // 繰り返し設定
       const repeatSel = document.getElementById('taskEditRepeat');
@@ -6836,6 +6958,7 @@
       const memo = document.getElementById('taskEditMemo').value.trim();
       const date = document.getElementById('taskEditDate').value;
       const time = getTimeFromSelect('taskEdit');
+      const endTime = getTimeFromSelect('taskEditEnd') || null;
       const repeat = document.getElementById('taskEditRepeat').value;
       const repeatEnd = document.getElementById('taskEditRepeatEnd').value;
       
@@ -6845,56 +6968,15 @@
       // 元タスクを更新
       const baseTask = allTasks.find(t => t.id === taskId);
       updateTask(taskId, { 
-        text, memo: memo || null, date, time,
+        text, memo: memo || null, date, time, endTime,
         repeat: repeat !== 'none' ? repeat : null,
         repeatEnd: repeatEnd || null,
         repeatGroupId: baseTask?.repeatGroupId || (repeat !== 'none' ? taskId : null)
       });
       
-      // 繰り返しタスクを生成（既存の同グループタスクを一旦削除して再生成）
-      if (repeat !== 'none') {
-        const groupId = taskId;
-        // 同グループの将来タスクを削除（本タスク以外）
-        const today = getLocalDateStr(new Date());
-        allTasks = allTasks.filter(t => 
-          t.repeatGroupId !== groupId || t.id === taskId || t.date < date
-        );
-        
-        // 繰り返しタスクを生成
-        const startDate = new Date(date + 'T00:00:00');
-        const endDate = repeatEnd ? new Date(repeatEnd + 'T00:00:00') 
-                                  : new Date(startDate.getTime() + 90 * 86400000); // デフォルト90日
-        
-        let cur = new Date(startDate);
-        let count = 0;
-        cur.setDate(cur.getDate() + 1); // 翌日から生成（元タスクは既にある）
-        
-        while (cur <= endDate && count < 365) {
-          const ds = getLocalDateStr(cur);
-          const dow = cur.getDay(); // 0=日,1=月...6=土
-          let shouldCreate = false;
-          if (repeat === 'daily') shouldCreate = true;
-          else if (repeat === 'weekday') shouldCreate = (dow >= 1 && dow <= 5);
-          else if (repeat === 'weekly') shouldCreate = (dow === startDate.getDay());
-          else if (repeat === 'monthly') shouldCreate = (cur.getDate() === startDate.getDate());
-          
-          if (shouldCreate) {
-            const newT = {
-              ...baseTask,
-              id: generateTaskId(),
-              date: ds,
-              completed: false,
-              repeatGroupId: groupId,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            };
-            allTasks.push(newT);
-            count++;
-          }
-          cur.setDate(cur.getDate() + 1);
-        }
-        saveAllTasks();
-      }
+      // 繰り返し処理（共通関数）
+      var _repeatContinue = applyRepeatSave(taskId, null, repeat, repeatEnd, date);
+      if (!_repeatContinue) return; // 確認ダイアログ待ち
       
       closeTaskEditModal();
       const dateStr = currentDailyDate || getLocalDateStr(new Date());
@@ -7167,10 +7249,9 @@
         };
         
         const editBtn = document.createElement('span');
-        editBtn.className = 'edit-task-btn';
-        editBtn.textContent = '📝';
+        editBtn.className = 'wg-task-edit';
+        editBtn.textContent = '✏️';
         editBtn.title = task.memo ? 'メモあり - クリックで編集' : '編集・メモ追加';
-        editBtn.style.opacity = task.memo ? '1' : '0.4';
         editBtn.onclick = (e) => {
           e.stopPropagation();
           editTaskById(task.id, textSpan);
@@ -7268,9 +7349,11 @@
     }
 
 
-    // 全データクリア - モーダルを表示
+    // 全データクリア - showConfirm経由
     function clearAllData() {
-      document.getElementById('customModal').classList.add('show');
+      showConfirm('本当に全データをクリアしますか？\nこの操作は取り消せません。', function() {
+        executeDataReset();
+      });
     }
 
     // モーダルを閉じる
@@ -7302,7 +7385,7 @@
     }
 
     // データを実際に削除
-    function executeDelete() {
+    function executeDataReset() {
       closeModal();
       
       // データリセット
@@ -9262,6 +9345,27 @@
       }
     }
 
+    // プロフィール即時保存
+    function saveProfileQuick() {
+      var nameEl = document.getElementById('profileNameInput');
+      var name = nameEl ? nameEl.value.trim() : '';
+      if (name) localStorage.setItem('profileName', name);
+      var gender = localStorage.getItem('profileGender') || 'king';
+      var gLabel = gender === 'princess' ? '姫' : '王';
+      // 設定保存トーストと同じ方式
+      var _toastEl = document.getElementById('settingsSaveToast');
+      if (!_toastEl) {
+        _toastEl = document.createElement('div');
+        _toastEl.id = 'settingsSaveToast';
+        _toastEl.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.85);color:#ffd700;padding:16px 28px;border-radius:14px;font-size:1em;font-weight:bold;z-index:99999;text-align:center;pointer-events:none;border:1px solid rgba(255,215,0,0.4);';
+        document.body.appendChild(_toastEl);
+      }
+      _toastEl.innerHTML = '✅ 保存しました！ ' + (name||'旅人') + '（' + gLabel + '）<br><span style="font-size:0.82em;color:#ffcc66;">⚠️ 名前や性別を変更した場合は、王国コードを再発行してください</span>';
+      _toastEl.style.display = 'block';
+      clearTimeout(_toastEl._t);
+      _toastEl._t = setTimeout(function(){ _toastEl.style.display = 'none'; }, 2500);
+    }
+
     // 設定を保存
     function saveSettings() {
       try {
@@ -10019,15 +10123,16 @@
       </div>
       <div style="margin-bottom: 18px;">
         <label>メモ（任意）</label>
-        <textarea id="taskEditMemo" rows="3" placeholder="詳細や持ち物など..."></textarea>
+        <textarea id="taskEditMemo" rows="3" placeholder="詳細や持ち物など..." oninput="updateMemoPreview('taskEditMemo','taskEditMemoPreview')"></textarea>
+        <div id="taskEditMemoPreview" style="display:none; margin-top:6px; padding:8px; background:#f8f8f8; border-radius:4px; font-size:0.9em; color:#333; word-break:break-all;"></div>
       </div>
-      <div class="task-edit-datetime" style="display: flex; gap: 12px; margin-bottom: 18px; align-items: flex-start;">
+      <div class="task-edit-datetime" style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; align-items: flex-start;">
         <div style="flex: 1; min-width: 0;">
           <label>日付</label>
           <input type="date" id="taskEditDate">
         </div>
         <div style="flex: 0 0 auto; width: 180px;">
-          <label>時間（任意）</label>
+          <label>開始時間（任意）</label>
           <input type="hidden" id="taskEditTime">
           <div class="custom-time-picker" id="taskEditTimePicker">
             <div class="time-select-wrapper">
@@ -10053,6 +10158,34 @@
               <div class="time-label">分</div>
             </div>
             <button type="button" class="time-clear-btn" onclick="clearTimeSelect('taskEdit')" title="時間をクリア">✕</button>
+          </div>
+        </div>
+        <div style="flex: 0 0 auto; width: 180px;">
+          <label>終了時間（任意）</label>
+          <div class="custom-time-picker" id="taskEditEndTimePicker">
+            <div class="time-select-wrapper">
+              <select class="time-select" id="taskEditEndHourSelect">
+                <option value="">--</option>
+                <option value="0">00</option><option value="1">01</option><option value="2">02</option><option value="3">03</option>
+                <option value="4">04</option><option value="5">05</option><option value="6">06</option><option value="7">07</option>
+                <option value="8">08</option><option value="9">09</option><option value="10">10</option><option value="11">11</option>
+                <option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option>
+                <option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option>
+                <option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option>
+              </select>
+              <div class="time-label">時</div>
+            </div>
+            <span class="time-separator">:</span>
+            <div class="time-select-wrapper">
+              <select class="time-select" id="taskEditEndMinuteSelect">
+                <option value="">--</option>
+                <option value="0">00</option><option value="5">05</option><option value="10">10</option><option value="15">15</option>
+                <option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option>
+                <option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option>
+              </select>
+              <div class="time-label">分</div>
+            </div>
+            <button type="button" class="time-clear-btn" onclick="clearTimeSelect('taskEditEnd')" title="終了時間をクリア">✕</button>
           </div>
         </div>
       </div>
@@ -10127,29 +10260,29 @@ var _craftLastX = 0;
 // ─────────────────────────────────
 var LEVEL_CONFIG = [
   {exp:0,   name:'アリアハン',   label:'出発の朝・粗末な砦',           buildings:['castle']},
-  {exp:6,   name:'レーベ',       label:'最初の宿場村',                 buildings:['castle','house']},
-  {exp:12,  name:'ロマリア',     label:'大陸最初の王国',               buildings:['castle','tower','house']},
-  {exp:18,  name:'カザーブ',     label:'山越えの村',                   buildings:['castle','tower','house','well']},
-  {exp:24,  name:'ノアニール',   label:'眠りの呪いが解けた村',         buildings:['castle','tower','house','well','church']},
-  {exp:30,  name:'アッサラーム', label:'砂漠の怪しい商都',             buildings:['castle','tower','house','well','church','market']},
-  {exp:36,  name:'イシス',       label:'女王の砂漠王国',               buildings:['castle','tower','house','church','market','temple']},
-  {exp:42,  name:'ポルトガ',     label:'船を手に入れた港の王国',       buildings:['castle','tower','house','church','market','temple','ship']},
-  {exp:48,  name:'バハラタ',     label:'東方の香辛料の町',             buildings:['castle','tower','house','church','market','temple','ship']},
-  {exp:54,  name:'ダーマ神殿',   label:'転職の聖地・悟りの道',         buildings:['castle','tower','house','church','market','temple','ship','shrine']},
-  {exp:60,  name:'ランシール',   label:'神聖な祈りの神殿都市',         buildings:['castle','tower','house','church','market','temple','ship','shrine','fortress']},
-  {exp:66,  name:'テドン',       label:'夜にだけ現れる滅びの村',       buildings:['castle','tower','house','church','market','temple','ship','shrine','fortress','dark_tower']},
-  {exp:72,  name:'ジパング',     label:'ヤマタノオロチの島国',         buildings:['castle','tower','house','church','market','temple','ship','shrine','fortress','dark_tower','palace']},
-  {exp:78,  name:'サマンオサ',   label:'魔王に乗っ取られた大国',       buildings:['castle','tower','house','church','market','temple','ship','shrine','fortress','dark_tower','palace']},
-  {exp:84,  name:'バラモス城',   label:'魔王討伐・しかし真の闇へ…',   buildings:['castle','tower','house','church','market','temple','ship','shrine','fortress','dark_tower','palace','dark_castle']},
-  {exp:90,  name:'ラダトーム',   label:'アレフガルド・光なき世界',     buildings:['castle','tower','house','church','market','temple','ship','shrine','fortress','dark_tower','palace','dark_castle','light_orb']},
-  {exp:96,  name:'ゾーマ城',     label:'暗黒皇帝ゾーマへ・最終決戦',  buildings:['castle','tower','house','church','market','temple','ship','shrine','fortress','dark_tower','palace','dark_castle','light_orb']},
-  {exp:102, name:'ゼニスの城',   label:'天空の白き城・神竜への挑戦',   buildings:['castle','tower','house','church','market','temple','ship','shrine','fortress','dark_tower','palace','dark_castle','light_orb','zenith']},
-  {exp:108, name:'しんりゅう',   label:'伝説の白き神竜・願いを叶えよ',buildings:['castle','tower','house','church','market','temple','ship','shrine','fortress','dark_tower','palace','dark_castle','light_orb','zenith','dragon']},
-  {exp:114, name:'アリアハン',   label:'勇者よ故郷へ帰れ・最高の城', buildings:['all']},
+  {exp:5,   name:'レーベ',       label:'最初の宿場村',                 buildings:['castle','house']},
+  {exp:10,  name:'ロマリア',     label:'大陸最初の王国',               buildings:['castle','tower','house']},
+  {exp:15,  name:'カザーブ',     label:'山越えの村',                   buildings:['castle','tower','house','well']},
+  {exp:20,  name:'ノアニール',   label:'眠りの呪いが解けた村',         buildings:['castle','tower','house','well','church']},
+  {exp:25,  name:'アッサラーム', label:'砂漠の怪しい商都',             buildings:['castle','tower','house','well','church','market']},
+  {exp:30,  name:'イシス',       label:'女王の砂漠王国',               buildings:['castle','tower','house','church','market','temple']},
+  {exp:35,  name:'ポルトガ',     label:'船を手に入れた港の王国',       buildings:['castle','tower','house','church','market','temple','ship']},
+  {exp:40,  name:'バハラタ',     label:'東方の香辛料の町',             buildings:['castle','tower','house','church','market','temple','ship']},
+  {exp:45,  name:'ダーマ神殿',   label:'転職の聖地・悟りの道',         buildings:['castle','tower','house','church','market','temple','ship','shrine']},
+  {exp:50,  name:'ランシール',   label:'神聖な祈りの神殿都市',         buildings:['castle','tower','house','church','market','temple','ship','shrine','fortress']},
+  {exp:55,  name:'テドン',       label:'夜にだけ現れる滅びの村',       buildings:['castle','tower','house','church','market','temple','ship','shrine','fortress','dark_tower']},
+  {exp:60,  name:'ジパング',     label:'ヤマタノオロチの島国',         buildings:['castle','tower','house','church','market','temple','ship','shrine','fortress','dark_tower','palace']},
+  {exp:65,  name:'サマンオサ',   label:'魔王に乗っ取られた大国',       buildings:['castle','tower','house','church','market','temple','ship','shrine','fortress','dark_tower','palace']},
+  {exp:70,  name:'バラモス城',   label:'魔王討伐・しかし真の闇へ…',   buildings:['castle','tower','house','church','market','temple','ship','shrine','fortress','dark_tower','palace','dark_castle']},
+  {exp:75,  name:'ラダトーム',   label:'アレフガルド・光なき世界',     buildings:['castle','tower','house','church','market','temple','ship','shrine','fortress','dark_tower','palace','dark_castle','light_orb']},
+  {exp:80,  name:'ゾーマ城',     label:'暗黒皇帝ゾーマへ・最終決戦',  buildings:['castle','tower','house','church','market','temple','ship','shrine','fortress','dark_tower','palace','dark_castle','light_orb']},
+  {exp:85, name:'ゼニスの城',   label:'天空の白き城・神竜への挑戦',   buildings:['castle','tower','house','church','market','temple','ship','shrine','fortress','dark_tower','palace','dark_castle','light_orb','zenith']},
+  {exp:90, name:'しんりゅう',   label:'伝説の白き神竜・願いを叶えよ',buildings:['castle','tower','house','church','market','temple','ship','shrine','fortress','dark_tower','palace','dark_castle','light_orb','zenith','dragon']},
+  {exp:95, name:'アリアハン',   label:'勇者よ故郷へ帰れ・最高の城', buildings:['all']},
 ];
 
 // レベル計算（タスク数→Lv1〜20、周回対応）
-var CRAFT_CYCLE = 114; // 1周のタスク数
+var CRAFT_CYCLE = 95; // 1周のタスク数
 function calcLevel(total) {
   var cycleTotal = total % CRAFT_CYCLE;
   var lv = 1;
@@ -10260,28 +10393,52 @@ function closeKingdomVisitModal() {
 // 王国を訪問する
 function visitKingdom() {
   var code = (document.getElementById('kingdomVisitInput').value || '').trim();
-  if (!code.toUpperCase().startsWith('KDM1:')) {
-    alert('KDM1: で始まるコードを入力してください');
+  var upper = code.toUpperCase();
+
+  // SDK1: デッキコード判定
+  if (upper.startsWith('SDK1:')) {
+    var raw2;
+    try { raw2 = decodeURIComponent(escape(atob(code.slice(5)))); }
+    catch(e) { alert('コードが壊れています'); return; }
+    var deck;
+    try { deck = JSON.parse(raw2); }
+    catch(e) { alert('コードの形式が正しくありません'); return; }
+    if (deck.type !== 'yarukotolist-deck-v1') { alert('コードの形式が正しくありません'); return; }
+    if (!confirm((deck.title||'デッキ') + ' ' + deck.tasks.length + '枚を受け取りますか？')) return;
+    var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
+    deck.tasks.forEach(function(d) {
+      var t = (typeof createTask === 'function') ? createTask(d.text, today, null, d.section||1, 'daily_only') : null;
+      if (t && d.memo && typeof updateTask === 'function') updateTask(t.id, { memo: d.memo });
+    });
+    if (typeof saveAllTasks === 'function') saveAllTasks();
+    if (typeof renderAllSections === 'function') renderAllSections(today);
+    closeKingdomVisitModal();
+    var _toastEl = document.getElementById('settingsSaveToast');
+    if (!_toastEl) {
+      _toastEl = document.createElement('div');
+      _toastEl.id = 'settingsSaveToast';
+      _toastEl.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.85);color:#ffd700;padding:16px 28px;border-radius:14px;font-size:1em;font-weight:bold;z-index:99999;text-align:center;pointer-events:none;border:1px solid rgba(255,215,0,0.4);';
+      document.body.appendChild(_toastEl);
+    }
+    _toastEl.innerHTML = '👑 ' + (deck.title||'デッキ') + 'を受け取った！<br><span style="font-size:0.82em;color:#ffcc66;">日次にタスクが追加されたよ！</span>';
+    _toastEl.style.display = 'block';
+    clearTimeout(_toastEl._t);
+    _toastEl._t = setTimeout(function(){ _toastEl.style.display = 'none'; }, 3000);
+    return;
+  }
+
+  // KDM1: 王国コード
+  if (!upper.startsWith('KDM1:')) {
+    alert('KDM1: または SDK1: で始まるコードを入力してください');
     return;
   }
   var raw;
-  try {
-    raw = decodeURIComponent(escape(atob(code.slice(5))));
-  } catch(e) {
-    alert('コードが壊れています');
-    return;
-  }
+  try { raw = decodeURIComponent(escape(atob(code.slice(5)))); }
+  catch(e) { alert('コードが壊れています'); return; }
   var data;
-  try {
-    data = JSON.parse(raw);
-  } catch(e) {
-    alert('コードの形式が正しくありません');
-    return;
-  }
-  if (data.type !== 'yarukotolist-kingdom-v1') {
-    alert('コードの形式が正しくありません');
-    return;
-  }
+  try { data = JSON.parse(raw); }
+  catch(e) { alert('コードの形式が正しくありません'); return; }
+  if (data.type !== 'yarukotolist-kingdom-v1') { alert('コードの形式が正しくありません'); return; }
   closeKingdomVisitModal();
   renderVisitKingdom(data);
 }
@@ -10456,6 +10613,30 @@ function renderVisitCanvas3D(visitLevel) {
       _vfp.setZ(_vfi, _vwave);
     }
     _vfp.needsUpdate=true;
+    // 小旗はためき（メイン旗と同じ方式）
+    if (window._smallFlags && window._smallFlags.length > 0) {
+      var _st = Date.now()*0.003;
+      window._smallFlags.forEach(function(sf, si) {
+        var _sfp = sf.geo.attributes.position;
+        for (var _sfi=0; _sfi<_sfp.count; _sfi++) {
+          var _sbx = sf.baseX[_sfi];
+          var _sw = _sbx > 0 ? Math.sin(_st*2.5+_sbx*5+si)*0.14*_sbx : 0;
+          _sfp.setZ(_sfi, _sw);
+        }
+        _sfp.needsUpdate = true;
+      });
+    }
+    // 進捗星の回転＋ふわふわ
+    var _starObj = scene.getObjectByName('progressStar');
+    if (_starObj) {
+      var _st2 = Date.now()*0.002;
+      if (!_starObj._baseY) _starObj._baseY = _starObj.position.y;
+      _starObj.rotation.y = _st2;
+      _starObj.rotation.x = _st2 * 0.7;
+      _starObj.position.y = _starObj._baseY + Math.sin(_st2*1.5)*0.15;
+      var _sl = scene.getObjectByName('progressStarLight');
+      if (_sl) _sl.position.y = _starObj.position.y;
+    }
     renderer.render(scene,camera);
   })();
 
@@ -10778,6 +10959,8 @@ function drawKingdom(ctx, cw, ch, t, stats) {
 
   // 城（Lv1〜）: 中央 gx=-1〜1, gz=-1〜1
   var castleH = 1.2 + lv*0.25;
+  var prog = stats.pct || 0; // 0〜100 レベル内進捗
+
   // 城壁外枠
   drawBox(ctx,-1.5,-1.5,3,3,castleH*0.6, cx,cy,tW,tH,'#b8a88a','#988870','#a89880');
   // 城本体（内側・高く）
@@ -10785,9 +10968,58 @@ function drawKingdom(ctx, cw, ch, t, stats) {
   // 屋根
   drawRoof(ctx,-0.8,-0.8,1.6,1.6,castleH,tH*2.5, cx,cy,tW,tH,'#4a6fa5');
 
-  // 旗
-  var castleTop=toScreen(-0.0,-0.0,cx,cy,tW,tH);
+  // 【進捗20%〜】城の窓が光る
+  if (prog >= 20) {
+    var winPos = toScreen(-0.1, -0.1, cx, cy, tW, tH);
+    var winY = winPos.y - castleH * tH * 1.8 * 0.55;
+    var glowAlpha = 0.6 + Math.sin(t*1.5)*0.2;
+    ctx.save();
+    ctx.shadowBlur = 8; ctx.shadowColor = 'rgba(255,220,80,0.9)';
+    ctx.fillStyle = 'rgba(255,220,80,' + glowAlpha + ')';
+    ctx.fillRect(winPos.x - 4, winY - 4, 5, 5);
+    ctx.fillRect(winPos.x + 3, winY - 4, 5, 5);
+    ctx.restore();
+  }
+
+  // 【進捗40%〜】旗が増える（塔の旗2本追加）
+  var castleTop = toScreen(-0.0,-0.0,cx,cy,tW,tH);
   drawFlag(ctx, castleTop.x, castleTop.y - castleH*tH*1.8 - tH*2.5 - 5, t);
+  if (prog >= 40) {
+    var fp1 = toScreen(1.8, -1.8, cx, cy, tW, tH);
+    var fp2 = toScreen(-2.2, 0.8, cx, cy, tW, tH);
+    // 小さい旗（青）
+    function drawSmallFlag(px, py) {
+      ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(px,py-18);
+      ctx.strokeStyle='#aaa'; ctx.lineWidth=1.5; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(px,py-18);
+      ctx.quadraticCurveTo(px+10+Math.sin(t*2.5+1)*3, py-13, px+1, py-8);
+      ctx.fillStyle='#1565c0'; ctx.fill();
+    }
+    drawSmallFlag(fp1.x, fp1.y - castleH*tH*1.2);
+    drawSmallFlag(fp2.x, fp2.y - castleH*tH*1.1);
+  }
+
+  // 【進捗60%〜】城壁に金のバナー（2D: 縦線で表現）
+  if (prog >= 60) {
+    var bannerPos2d = [[-1.2,-1.2],[1.2,-1.2],[-1.2,1.2],[1.2,1.2]];
+    bannerPos2d.forEach(function(bp) {
+      var bpos = toScreen(bp[0]*0.6, bp[1]*0.6, cx, cy, tW, tH);
+      var by = bpos.y - castleH*tH*1.8*0.45;
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,215,0,0.85)';
+      ctx.fillRect(bpos.x - 2, by - 8, 4, 14);
+      ctx.restore();
+    });
+  }
+
+  // 【進捗80%〜】屋根が金色に輝く
+  if (prog >= 80) {
+    var glow = 0.4 + Math.sin(t*1.2)*0.2;
+    ctx.save();
+    ctx.shadowBlur = 16; ctx.shadowColor = 'rgba(255,215,0,0.7)';
+    drawRoof(ctx,-0.8,-0.8,1.6,1.6,castleH,tH*2.5, cx,cy,tW,tH,'rgba(255,200,30,'+( 0.8+glow*0.2)+')');
+    ctx.restore();
+  }
 
   // Lv2: 塔
   if(lv>=2){
@@ -10969,12 +11201,13 @@ function _initThreeScene() {
   var _flagRef = {};
   var _kResult = buildKingdomScene({
     scene:scene, level:stats.level, ng:stats.ng,
-    gender:gender3d, total:stats.total,
+    gender:gender3d, total:stats.total, pct:stats.pct,
     seasCol:_seasCol, flagReturn:_flagRef
   });
   var bh = _kResult.bh;
   window._flagMesh = _flagRef.mesh;
   window._flagBaseX = _flagRef.baseX;
+  window._smallFlags = _flagRef.smallFlags || [];
   var drag={on:false,lx:0,ly:0};
   canvas.addEventListener('mousedown',function(e){drag.on=true;drag.lx=e.clientX;drag.ly=e.clientY;});
   canvas.addEventListener('mouseup',function(){drag.on=false;});
@@ -11076,6 +11309,7 @@ function buildKingdomScene(params) {
   var total    = params.total    || 0;
   var seasCol  = params.seasCol  || getSeasonColors();
   var skyCol   = getSkyColor();
+  var pct      = params.pct      || 0;
 
   // ライト
   scene.add(new THREE.AmbientLight(0x334466, 0.8));
@@ -11103,6 +11337,68 @@ function buildKingdomScene(params) {
     var tw=new THREE.Mesh(new THREE.CylinderGeometry(0.32,0.32,bh+0.6,8),cm); tw.position.set(q[0],(bh+0.6)/2,q[1]); scene.add(tw);
     var tr=new THREE.Mesh(new THREE.CylinderGeometry(0,0.48,0.75,8),rm); tr.position.set(q[0],bh+0.6+0.37,q[1]); scene.add(tr);
   });
+
+  // 【進捗20%〜】城正面に窓2枚（城壁より少し手前に配置）
+  if (pct >= 20) {
+    var winM = new THREE.MeshLambertMaterial({color:0xffee44, emissive:0xffcc00, emissiveIntensity:1.2});
+    var winY = bh * 0.52;
+    var win1 = new THREE.Mesh(new THREE.PlaneGeometry(0.24, 0.28), winM);
+    win1.position.set(-0.42, winY, 1.25); // 城壁より完全に外側
+    win1.renderOrder = 1;
+    scene.add(win1);
+    var win2 = new THREE.Mesh(new THREE.PlaneGeometry(0.24, 0.28), winM);
+    win2.position.set( 0.42, winY, 1.25);
+    win2.renderOrder = 1;
+    scene.add(win2);
+    var ptLight = new THREE.PointLight(0xffcc44, 0.7, 3.5);
+    ptLight.position.set(0, winY, 1.8); scene.add(ptLight);
+  }
+
+  // 【進捗40%〜】旗2本追加（塔の上・メイン旗と同じ方式）
+  if (pct >= 40) {
+    var sm = new THREE.MeshLambertMaterial({color:0x1565c0, side:THREE.DoubleSide});
+    var smallFlags = [];
+    [[-1.2,-1.2],[1.2,1.2]].forEach(function(q, si2){
+      // 旗竿
+      var sfp = new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.8,4), new THREE.MeshLambertMaterial({color:0x888888}));
+      var poleY = bh+0.6+0.75+0.4;
+      sfp.position.set(q[0], poleY, q[1]); scene.add(sfp);
+      // 旗（メイン旗と同じPlaneGeometry+baseX方式）
+      var sfGeo = new THREE.PlaneGeometry(0.38,0.22,8,4);
+      var sf = new THREE.Mesh(sfGeo, sm);
+      sf.position.set(q[0]+0.19, bh+0.6+0.75+0.75, q[1]);
+      scene.add(sf);
+      var sfBaseX = [];
+      var sfPos = sfGeo.attributes.position;
+      for(var sfi=0;sfi<sfPos.count;sfi++) sfBaseX.push(sfPos.getX(sfi));
+      smallFlags.push({mesh:sf, geo:sfGeo, baseX:sfBaseX});
+    });
+    if (params.flagReturn) params.flagReturn.smallFlags = smallFlags;
+  }
+
+  // 【進捗60%〜】城壁に金のバナーを掲げる
+  if (pct >= 60) {
+    var bannerM = new THREE.MeshLambertMaterial({color:0xffd700, emissive:0xcc9900, emissiveIntensity:0.6, side:THREE.DoubleSide});
+    [[-0.55, 1.22], [0.55, 1.22], [-0.55, -1.22], [0.55, -1.22]].forEach(function(q) {
+      var banner = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 0.55), bannerM);
+      banner.position.set(q[0], bh * 0.5, q[1]);
+      scene.add(banner);
+    });
+  }
+
+  // 【進捗80%〜】旗竿直上に小さな金の星がふわふわ
+  if (pct >= 80) {
+    var starM = new THREE.MeshLambertMaterial({color:0xffd700, emissive:0xffdd00, emissiveIntensity:1.5});
+    var starY = bh + 1.4 + 0.7 + 1.5;
+    var star = new THREE.Mesh(new THREE.OctahedronGeometry(0.18), starM);
+    star.position.set(0, starY, 0);
+    star.name = 'progressStar';
+    scene.add(star);
+    var starLight = new THREE.PointLight(0xffd700, 0.9, 5);
+    starLight.position.set(0, starY, 0);
+    starLight.name = 'progressStarLight';
+    scene.add(starLight);
+  }
 
   // 旗竿
   var fp=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,1.4,4),new THREE.MeshLambertMaterial({color:0x888888}));
@@ -11337,6 +11633,33 @@ function onTaskCompleted(task) {
 <button id="tutorialHelpBtn" onclick="showTutorial()" style="position:fixed;bottom:24px;right:20px;width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;color:#fff;font-size:1.2em;font-weight:bold;cursor:pointer;box-shadow:0 4px 15px rgba(79,172,254,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;">?</button>
 <script>
 // ===== チュートリアル =====
+// ===== 王国スタートデッキ =====
+function receiveStarterDeck() {
+  if (localStorage.getItem('starterDeckReceived')) return;
+  var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
+  var deck = [
+    // 第1象限：本質的・緊急
+    { text: '✅ このタスクを完了してみよう（タップで完了！）', section: 1, memo: '完了すると王国の建材が貯まるよ！城タブで確認してみて。' },
+    { text: '👑 王国コードを発行してみよう', section: 1, memo: '設定→王国を訪問する→王国コードを発行する。Lv.5になったら解放！' },
+    // 第2象限：本質的・非緊急
+    { text: '🏰 3Dモードで王国を眺めてみよう', section: 1, memo: '上のナビから城アイコン🏰をタップ！タスクをこなすほど王国が育つ。' },
+    { text: '📅 タスクに日付と時刻を入れてみよう', section: 1, memo: 'タスクを長押し→編集で日時設定。週間ビューに予定が現れるよ！' },
+    { text: '🌸 季節ごとに王国の景色が変わる', section: 1, memo: '春は桜、秋は紅葉…。ゲームのように世界が変わっていく。' },
+    // 第3象限：些細・緊急
+    { text: '⚙️ 設定で名前と性別を設定しよう', section: 1, memo: '王・姫で王国のセリフが変わる！プロフィールから設定できるよ。' },
+    // 第4象限：些末・排除
+    { text: '✨ このタスクを完了して王国に貢献しよう', section: 1, memo: 'タスクをタップすると取り消し線が入って完了！完了もカウントされて王国が育つよ。削除は長押しメニューから。' },
+  ];
+  deck.forEach(function(d) {
+    var t = (typeof createTask === 'function') ? createTask(d.text, today, null, d.section, 'daily_only') : null;
+    if (t && d.memo && typeof updateTask === 'function') updateTask(t.id, { memo: d.memo });
+  });
+  if (typeof saveAllTasks === 'function') saveAllTasks();
+  if (typeof renderAllSections === 'function') renderAllSections(today);
+  localStorage.setItem('starterDeckReceived', '1');
+  if (typeof showCraftMessage === 'function') showCraftMessage('👑 王国スタートデッキを受け取った！');
+}
+
 function showTutorial() {
   var el = document.getElementById('tutorialOverlay');
   if (el) { el.style.display = 'flex'; }
@@ -11356,6 +11679,211 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(showTutorial, 800);
   }
 });
+
+// ===== 管理者モード =====
+// 王王姫姫王姫王姫王王 の順でタップで発動
+
+
+// 共通：繰り返しタスクの将来分を削除
+function deleteRepeatFutureTasks(groupId, fromDate) {
+  var today = fromDate || getLocalDateStr(new Date());
+  var before = allTasks.length;
+  allTasks = allTasks.filter(function(t) {
+    return t.repeatGroupId !== groupId || t.date < today;
+  });
+  return before - allTasks.length;
+}
+
+// 共通：繰り返しタスク生成
+function generateRepeatTasks(baseTask, repeat, repeatEnd, startDate, groupId) {
+  var sd = new Date(startDate + 'T00:00:00');
+  var ed = repeatEnd ? new Date(repeatEnd + 'T00:00:00')
+                     : new Date(sd.getTime() + 90 * 86400000);
+  var cur = new Date(sd);
+  cur.setDate(cur.getDate() + 1);
+  var count = 0;
+  while (cur <= ed && count < 365) {
+    var ds = getLocalDateStr(cur);
+    var dow = cur.getDay();
+    var ok = false;
+    if (repeat === 'daily') ok = true;
+    else if (repeat === 'weekday') ok = (dow >= 1 && dow <= 5);
+    else if (repeat === 'weekly') ok = (dow === sd.getDay());
+    else if (repeat === 'monthly') ok = (cur.getDate() === sd.getDate());
+    if (ok) {
+      allTasks.push(Object.assign({}, baseTask, {
+        id: generateTaskId(),
+        date: ds,
+        completed: false,
+        repeatGroupId: groupId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }));
+      count++;
+    }
+    cur.setDate(cur.getDate() + 1);
+  }
+  saveAllTasks();
+  return count;
+}
+
+// 共通：繰り返し保存処理（全モーダル共通）
+function applyRepeatSave(taskId, task, repeat, repeatEnd, date) {
+  var baseTask = allTasks.find(function(t){ return t.id === taskId; });
+  var prevRepeat = baseTask ? (baseTask.repeat || 'none') : 'none';
+  var groupId = (baseTask && baseTask.repeatGroupId) || taskId;
+
+  if (repeat !== 'none') {
+    // 繰り返しあり→将来タスクを一旦削除して再生成
+    deleteRepeatFutureTasks(groupId, date);
+    generateRepeatTasks(baseTask || task, repeat, repeatEnd, date, groupId);
+  } else if (prevRepeat !== 'none') {
+    // 繰り返し解除→将来タスク削除
+    var count = allTasks.filter(function(t){
+      return t.repeatGroupId === groupId && t.date >= date && t.id !== taskId;
+    }).length;
+    if (count > 0) {
+      showConfirm(
+        '繰り返しを解除すると将来の' + count + '件のタスクが削除されます。よろしいですか？',
+        function() {
+          deleteRepeatFutureTasks(groupId, date);
+          updateTask(taskId, { repeat: null, repeatEnd: null, repeatGroupId: null });
+          saveAllTasks();
+          renderAllSections(); renderWeeklyView(); renderMonthlyView();
+        }
+      );
+      return false; // 通常の保存フローを中断
+    } else {
+      deleteRepeatFutureTasks(groupId, date);
+    }
+  }
+  return true;
+}
+
+// URLをリンク化するユーティリティ
+
+// メモプレビュー更新（URLをリンク化して表示）
+function updateMemoPreview(textareaId, previewId) {
+  var ta = document.getElementById(textareaId);
+  var pv = document.getElementById(previewId);
+  if (!ta || !pv) return;
+  var val = ta.value;
+  if (!val || !/https?:\/\//.test(val)) {
+    pv.style.display = 'none';
+    return;
+  }
+  pv.style.display = 'block';
+  renderMemoWithLinks(pv, val);
+}
+
+// モーダルを開いた時にプレビュー初期化
+function initMemoPreview(textareaId, previewId) {
+  var ta = document.getElementById(textareaId);
+  if (ta) updateMemoPreview(textareaId, previewId);
+}
+
+function renderMemoWithLinks(el, memoText) {
+  if (!memoText) { el.textContent = ''; return; }
+  var urlRegex = /(https?:\/\/[^\s　、。！），]+)/g;
+  var parts = memoText.split(urlRegex);
+  el.innerHTML = '';
+  parts.forEach(function(part) {
+    if (urlRegex.test(part)) {
+      var a = document.createElement('a');
+      a.href = part;
+      a.textContent = part;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.style.cssText = 'color:#4a9eff;word-break:break-all;';
+      el.appendChild(a);
+    } else {
+      el.appendChild(document.createTextNode(part));
+    }
+    urlRegex.lastIndex = 0;
+  });
+}
+
+function toggleAdminMode() {
+  var el = document.getElementById('adminMenuSection');
+  if (localStorage.getItem('adminMode')) {
+    localStorage.removeItem('adminMode');
+    if (el) el.style.display = 'none';
+    showAdminToast('\u{1F512} \u89E3\u9664\u3057\u307E\u3057\u305F');
+  } else {
+    localStorage.setItem('adminMode', '1');
+    if (el) el.style.display = 'block';
+    showAdminToast('\u{1F451} \u30E2\u30FC\u30C9\uFF1AON');
+  }
+}
+
+function showAdminToast(msg) {
+  var t = document.getElementById('settingsSaveToast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'settingsSaveToast';
+    t.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.85);color:#ffd700;padding:16px 28px;border-radius:14px;font-size:1em;font-weight:bold;z-index:99999;text-align:center;pointer-events:none;border:1px solid rgba(255,215,0,0.4);';
+    document.body.appendChild(t);
+  }
+  t.innerHTML = msg;
+  t.style.display = 'block';
+  clearTimeout(t._t);
+  t._t = setTimeout(function(){ t.style.display = 'none'; }, 2000);
+}
+
+function buildStarterDeckCode() {
+  var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
+  var myName = localStorage.getItem('profileName') || 'admin';
+  var deck = [
+    { text: '\u2705 \u3053\u306E\u30BF\u30B9\u30AF\u3092\u5B8C\u4E86\u3057\u3066\u307F\u3088\u3046\uFF08\u30BF\u30C3\u30D7\u3067\u5B8C\u4E86\uFF01\uFF09', section: 1, memo: '\u30BF\u30C3\u30D7\u3059\u308B\u3068\u53D6\u308A\u6D88\u3057\u7DDA\u3067\u5B8C\u4E86\uFF01\u5B8C\u4E86\u3059\u308B\u3068\u738B\u56FD\u306E\u5EFA\u6750\u304C\u8C4A\u307E\u308B\u3088\u3002\u2698\uFE0F\u9577\u62BC\u3057\u2192\u7DE8\u96C6\u3067\u30BF\u30B9\u30AF\u306E\u8A73\u7D30\u3092\u898B\u308C\u308B\uFF01' },
+    { text: '\u{1F3F0} \u57CE\u30A2\u30A4\u30B3\u30F3\u3092\u30BF\u30C3\u30D7\u3057\u3066\u738B\u56FD\u3092\u773A\u3081\u3088\u3046', section: 1, memo: '\u4E0A\u306E\u30CA\u30D3\u304B\u3089\u57CE\u30A2\u30A4\u30B3\u30F3\u3092\u30BF\u30C3\u30D7\uFF01\u30BF\u30B9\u30AF\u3092\u3053\u306A\u3059\u307B\u3069\u738B\u56FD\u304C\u5EFA\u3066\u5BC4\u3089\u308C\u308B\u3002\u5B63\u7BC0\u3084\u591C\u3082\u5909\u308F\u308B\u3088\u3002' },
+    { text: '\u{1F4C5} \u30BF\u30B9\u30AF\u306B\u65E5\u4ED8\u3068\u6642\u523B\u3092\u5165\u308C\u3066\u307F\u3088\u3046', section: 1, memo: '\u30BF\u30B9\u30AF\u3092\u9577\u62BC\u3057\u2192\u7DE8\u96C6\u3067\u65E5\u6642\u8A2D\u5B9A\u3002\u9031\u9593\u30BF\u30D6\u306B\u4E88\u5B9A\u304C\u73FE\u308C\u308B\u3088\uFF01\u30BF\u30A4\u30E0\u30E9\u30A4\u30F3\u30C3\u307D\u304F\u306A\u308B\u3002' },
+    { text: '\u2699\uFE0F \u8A2D\u5B9A\u3067\u540D\u524D\u3068\u738B\u30FB\u59EB\u3092\u8A2D\u5B9A\u3057\u3088\u3046', section: 1, memo: '\u8A2D\u5B9A\uFF08\u6B6F\u8ECA\u30A2\u30A4\u30B3\u30F3\uFF09\u2192\u30D7\u30ED\u30D5\u30A3\u30FC\u30EB\u3002\u738B\u30FB\u59EB\u3067\u738B\u56FD\u306E\u30BB\u30EA\u30D5\u304C\u5909\u308F\u308B\uFF01Lv.5\u3067\u738B\u56FD\u30B3\u30FC\u30C9\u3082\u767A\u884C\u3067\u304D\u308B\u3088\u3002' },
+    { text: '\u{1F451} \u4ECA\u65E5\u306E\u300C\u3084\u308B\u3053\u3068\u300D\u3092\u3053\u3053\u306B\u66F8\u3053\u3046', section: 1, memo: '\u6700\u4E0A\u306E\u5165\u529B\u6B04\u306B\u30BF\u30B9\u30AF\u3092\u5165\u529B\u3057\u3066Enter\u3002\u7B2C1\u8C61\u9650\uFF08\u7D1A\u6025\u304B\u3064\u91CD\u8981\uFF09\u306B\u306F\u4ECA\u65E5\u5FC5\u305A\u3084\u308B\u3053\u3068\u3092\u3002\u5B8C\u4E86\u3057\u305F\u3089\u738B\u56FD\u304C\u80B2\u3064\uFF01' },
+  ];
+  var payload = JSON.stringify({
+    type: 'yarukotolist-deck-v1',
+    title: '\u738B\u56FD\u30B9\u30BF\u30FC\u30C8\u30C7\u30C3\u30AD',
+    tasks: deck,
+    createdBy: myName,
+    createdAt: today
+  });
+  return 'SDK1:' + btoa(unescape(encodeURIComponent(payload)));
+}
+
+function copyStarterDeckCode() {
+  var code = buildStarterDeckCode();
+  var done = function() {
+    var t = document.getElementById('settingsSaveToast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'settingsSaveToast';
+      t.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.85);color:#ffd700;padding:16px 28px;border-radius:14px;font-size:1em;font-weight:bold;z-index:99999;text-align:center;pointer-events:none;border:1px solid rgba(255,215,0,0.4);';
+      document.body.appendChild(t);
+    }
+    t.innerHTML = '\u{1F4CB} \u30B3\u30D4\u30FC\u3057\u307E\u3057\u305F';
+    t.style.display = 'block';
+    clearTimeout(t._t);
+    t._t = setTimeout(function(){ t.style.display = 'none'; }, 2000);
+  };
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code).then(done).catch(function() {
+      var ta = document.createElement('textarea');
+      ta.value = code; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta); done();
+    });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = code; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta); done();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  if (localStorage.getItem('adminMode')) {
+    var el = document.getElementById('adminMenuSection');
+    if (el) el.style.display = 'block';
+  }
+});
 </script>
 
 <!-- ===== 王国コード発行モーダル ===== -->
@@ -11372,12 +11900,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- ===== 王国訪問モーダル ===== -->
 <div id="kingdomVisitModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
-  <div style="background:#1a1a2e;border:1px solid #4facfe;border-radius:16px;padding:32px 28px;max-width:400px;width:90%;color:#fff;position:relative;box-shadow:0 0 40px rgba(79,172,254,0.3);">
+  <div style="background:#1a1a2e;border:1px solid #ffc8dc;border-radius:16px;padding:32px 28px;max-width:400px;width:90%;color:#fff;position:relative;box-shadow:0 0 40px rgba(255,160,188,0.35);">
     <div style="font-size:2em;text-align:center;margin-bottom:8px;">🗺️</div>
-    <h2 style="text-align:center;color:#4facfe;font-size:1.1em;margin:0 0 20px 0;">仲間の王国を訪問する</h2>
-    <textarea id="kingdomVisitInput" rows="3" placeholder="KDM1: で始まるコードを貼り付け"
-      style="width:100%;padding:10px;border:1.5px solid #4facfe;border-radius:8px;background:#0d1b2a;color:#fff;font-size:0.85em;box-sizing:border-box;resize:none;margin-bottom:12px;"></textarea>
-    <button onclick="visitKingdom()" style="width:100%;padding:11px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:8px;color:#fff;font-size:0.95em;font-weight:bold;cursor:pointer;margin-bottom:8px;">🏰 訪問する</button>
+    <h2 style="text-align:center;color:#ffb7d5;font-size:1.1em;margin:0 0 20px 0;">仲間の王国を訪問する</h2>
+    <textarea id="kingdomVisitInput" rows="3" placeholder="KDM1: または SDK1: で始まるコードを貼り付け"
+      style="width:100%;padding:10px;border:1.5px solid #ffc8dc;border-radius:8px;background:#0d1b2a;color:#fff;font-size:0.85em;box-sizing:border-box;resize:none;margin-bottom:12px;"></textarea>
+    <button onclick="visitKingdom()" style="width:100%;padding:11px;background:linear-gradient(135deg,#ffc8dc,#ffa0bc);border:none;border-radius:8px;color:#9c3060;font-size:0.95em;font-weight:bold;cursor:pointer;margin-bottom:8px;box-shadow:0 4px 12px rgba(255,160,188,0.3);">🏰 訪問する</button>
     <button onclick="closeKingdomVisitModal()" style="width:100%;padding:11px;background:transparent;border:1px solid #555;border-radius:8px;color:#aaa;font-size:0.9em;cursor:pointer;">閉じる</button>
   </div>
 </div>
