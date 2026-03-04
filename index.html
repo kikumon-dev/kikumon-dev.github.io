@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.27.4';
+    const APP_VERSION = 'v0.27.7';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -3376,6 +3376,15 @@
         <button onclick="toggleAdminMode()" style="width:100%;padding:9px;background:transparent;border:1px solid #555;border-radius:8px;color:#888;font-size:0.82em;cursor:pointer;">🔒 管理者モードを解除する</button>
       </div>
 
+      <!-- 🚢 貿易港（β）セクション -->
+      <div style="margin-bottom:24px;background:linear-gradient(135deg,#0d1b2a,#1a2a3a);border:2px solid #4facfe;border-radius:14px;padding:20px;box-shadow:0 0 20px rgba(79,172,254,0.15);">
+        <h3 style="margin:0 0 6px 0;color:#4facfe;font-size:1em;font-weight:700;display:flex;align-items:center;gap:8px;">🚢 貿易港（β）</h3>
+        <p style="font-size:0.78em;color:#aaa;margin:0 0 14px 0;">SDK1: で始まるデッキコードを貼り付けて王国に取り込もう。<br><span style="color:#ffd700;font-weight:600;">あ、王国が動いた！</span></p>
+        <textarea id="deckImportInput" rows="3" placeholder="SDK1: で始まるコードをここに貼り付け..."
+          style="width:100%;padding:10px;border:1.5px solid #4facfe;border-radius:8px;background:#0a1520;color:#fff;font-size:0.82em;box-sizing:border-box;resize:none;margin-bottom:10px;font-family:monospace;"></textarea>
+        <button onclick="importDeckFromSettings()" style="width:100%;padding:11px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:10px;color:#003355;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(79,172,254,0.3);" onclick="importDeckFromSettings()">📦 王国に輸入する</button>
+      </div>
+
       <!-- プロフィールセクション -->
       <div class="settings-section">
         <h3 style="margin: 0 0 20px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">プロフィール</h3>
@@ -3512,7 +3521,6 @@
             </label>
           </div>
         </div>
-      </div>
 
       <!-- 月間表示モード -->
       <div style="margin-top: 24px; border-top: 1px solid #efefef; padding-top: 18px;">
@@ -10820,7 +10828,7 @@ function visitKingdom() {
       _toastEl.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.85);color:#ffd700;padding:16px 28px;border-radius:14px;font-size:1em;font-weight:bold;z-index:99999;text-align:center;pointer-events:none;border:1px solid rgba(255,215,0,0.4);';
       document.body.appendChild(_toastEl);
     }
-    _toastEl.innerHTML = '👑 ' + (deck.title||'デッキ') + 'を受け取った！<br><span style="font-size:0.82em;color:#ffcc66;">日次にタスクが追加されたよ！</span>';
+    _toastEl.innerHTML = '✨ あ、王国が動いた！<br><span style="font-size:0.82em;color:#ffcc66;">' + (deck.title||'デッキ') + 'を取り込んだ！</span>';
     _toastEl.style.display = 'block';
     clearTimeout(_toastEl._t);
     _toastEl._t = setTimeout(function(){ _toastEl.style.display = 'none'; }, 3000);
@@ -12229,6 +12237,42 @@ function showAdminToast(msg) {
   t.style.display = 'block';
   clearTimeout(t._t);
   t._t = setTimeout(function(){ t.style.display = 'none'; }, 2000);
+}
+
+function importDeckFromSettings() {
+  var code = (document.getElementById('deckImportInput').value || '').trim();
+  if (!code) { alert('コードを入力してください'); return; }
+  var upper = code.toUpperCase();
+  if (!upper.startsWith('SDK1:')) { alert('SDK1: で始まるコードを入力してください'); return; }
+  var raw;
+  try { raw = decodeURIComponent(escape(atob(code.slice(5)))); }
+  catch(e) { alert('コードが壊れています'); return; }
+  var deck;
+  try { deck = JSON.parse(raw); }
+  catch(e) { alert('コードの形式が正しくありません'); return; }
+  if (deck.type !== 'yarukotolist-deck-v1') { alert('コードの形式が正しくありません'); return; }
+  if (!confirm((deck.title||'デッキ') + '（' + deck.tasks.length + '枚）を王国に取り込みますか？')) return;
+  var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
+  deck.tasks.forEach(function(d) {
+    var t = (typeof createTask === 'function') ? createTask(d.text, today, null, d.section||1, 'both') : null;
+    if (t && d.memo && typeof updateTask === 'function') updateTask(t.id, { memo: d.memo });
+  });
+  if (typeof saveAllTasks === 'function') saveAllTasks();
+  if (typeof renderAllSections === 'function') renderAllSections(today);
+  // 入力欄をクリア
+  document.getElementById('deckImportInput').value = '';
+  // トースト「あ、王国が動いた！」
+  var toast = document.getElementById('settingsSaveToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'settingsSaveToast';
+    toast.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.88);color:#ffd700;padding:18px 32px;border-radius:16px;font-size:1.05em;font-weight:bold;z-index:99999;text-align:center;pointer-events:none;border:1.5px solid rgba(255,215,0,0.5);box-shadow:0 0 24px rgba(255,215,0,0.2);';
+    document.body.appendChild(toast);
+  }
+  toast.innerHTML = '✨ あ、王国が動いた！<br><span style="font-size:0.82em;color:#ffcc66;">' + (deck.title||'デッキ') + 'を取り込んだ！</span>';
+  toast.style.display = 'block';
+  clearTimeout(toast._t);
+  toast._t = setTimeout(function(){ toast.style.display = 'none'; }, 3500);
 }
 
 function buildStarterDeckCode() {
