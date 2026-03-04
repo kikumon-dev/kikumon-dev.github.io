@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.26.63';
+    const APP_VERSION = 'v0.27.0';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -1003,19 +1003,17 @@
         text-align: left;
       }
 
-      /* スマホ縦画面：日付を右寄せで表示 */
+      /* スマホ縦画面：日付表示 */
       .date-display-mobile {
         display: block !important;
-        text-align: right;
-        font-size: 0.85em;
-        font-weight: 900;
-        color: #333;
-        margin-bottom: 4px;
       }
 
-      /* スマホ：第1象限のh4 */
-      #section1 .header-row h4 {
-        font-size: 0.95em;
+      /* スマホ：第1象限のheader-rowは横並びを維持 */
+      #section1 .header-row {
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        flex-wrap: nowrap !important;
       }
 
       /* スマホ縦画面：第2象限の日付を非表示 */
@@ -2866,10 +2864,10 @@
   <div class="container">
     <!-- 左上: 緊急かつ重要 -->
     <div class="section" id="section1">
-      <!-- スマホ縦画面用：日付を第1象限タイトルの上に表示 -->
-      <div class="date-display-mobile" id="dateDisplayMobile"></div>
-      <div class="header-row">
-        <h4>やることリスト【緊急かつ重要】</h4>
+      <div class="header-row" style="justify-content:space-between; align-items:center;">
+        <h4 style="font-size:0.88em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60%; flex-shrink:1;">やることリスト【緊急かつ重要】</h4>
+        <!-- スマホ縦画面用：日付を右寄せ -->
+        <div class="date-display-mobile" id="dateDisplayMobile" style="font-size:0.82em; font-weight:900; white-space:nowrap; color:#333; flex-shrink:0;"></div>
         <div class="purpose-group" id="purposeGroup" style="display: none;">
           <label>目的:</label>
           <input type="text" id="purposeInput" placeholder="本質的な目的を一行で入力...">
@@ -4639,13 +4637,8 @@
       const mobileDate = document.getElementById('dateDisplayMobile');
       if (mobileDate) {
         mobileDate.textContent = dateStr;
-        // スマホで確実に表示（mediaクエリに依存せず直接制御）
         if (window.innerWidth <= 768) {
           mobileDate.style.display = 'block';
-          mobileDate.style.textAlign = 'right';
-          mobileDate.style.fontWeight = '900';
-          mobileDate.style.fontSize = '0.85em';
-          mobileDate.style.marginBottom = '4px';
         }
       }
     }
@@ -6956,14 +6949,13 @@
     // タスク追加
     function addTask(sectionNum) {
       const input = document.getElementById('input' + sectionNum);
+      if (!input) { console.error('[addTask] input not found:', sectionNum); return; }
       const text = input.value.trim();
       
       if (text) {
         // currentDailyDateが設定されていればその日付、なければ今日
         const targetDate = currentDailyDate || getLocalDateStr(new Date());
-        
         const newTask = createTask(text, targetDate, null, sectionNum, 'daily_only');
-        
         input.value = '';
         renderAllSections(targetDate);
       }
@@ -7265,6 +7257,7 @@
     // タスク表示（dateStrがnullなら今日）
     function renderTasks(sectionNum, dateStr = null) {
       const list = document.getElementById('list' + sectionNum);
+      if (!list) return; // nullガード
       list.innerHTML = '';
       
       // マスターデータからタスクを取得
