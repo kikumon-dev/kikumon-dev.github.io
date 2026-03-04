@@ -4552,6 +4552,10 @@
       localStorage.setItem('migration_displayScope_v1', '1');
     }
 
+    // メインカレンダーIDを取得（全箇所共通）
+    function getMainCalendarId() {
+      return localStorage.getItem('mainCalendarId') || (calendars[0] && calendars[0].id) || 'work';
+    }
     function loadAllTasks() {
       loadCalendars();
       getOrCreateDeviceId(); // 初回起動時にdeviceIdを発行
@@ -4812,7 +4816,7 @@
           displayScope: 'both'
         });
       } else {
-        createTask(pendingScheduleTask.taskText, dateStr, time, 1, 'both');
+        createTask(pendingScheduleTask.taskText, dateStr, time, 1, 'both', getMainCalendarId());
       }
       
       closeWeeklyTaskModal();
@@ -6533,8 +6537,8 @@
         var _mRepContinue = applyRepeatSave(taskId, null, _mRepVal, _mRepEnd, dateStr);
         if (!_mRepContinue) return;
       } else {
-        const newTask = createTask(text, dateStr, time, section, _mScope);
-        const _mUpdates = { memo: memo || null, calendarId: _monthlyCalendarId || 'default' };
+        const newTask = createTask(text, dateStr, time, section, _mScope, _monthlyCalendarId || getMainCalendarId());
+        const _mUpdates = { memo: memo || null, calendarId: _monthlyCalendarId || getMainCalendarId() };
         if (_mRepVal !== 'none') { _mUpdates.repeat = _mRepVal; _mUpdates.repeatEnd = _mRepEnd || null; _mUpdates.repeatGroupId = newTask.id; }
         updateTask(newTask.id, _mUpdates);
         if (_mRepVal !== 'none') generateRepeatTasks(Object.assign({}, newTask, _mUpdates), _mRepVal, _mRepEnd, dateStr, newTask.id);
@@ -6587,7 +6591,7 @@
       // カレンダー選択UI: 自動投入ONならメインを初期選択
       const _mainId = localStorage.getItem('mainCalendarId') || (calendars[0] && calendars[0].id) || 'work';
       const _autoMain = localStorage.getItem('autoMainCalendar') === 'true';
-      _createCalendarId = _autoMain ? _mainId : (_createCalendarId || _mainId);
+      _createCalendarId = _mainId; // 常にメインカレンダーを初期選択
       renderCalendarSelector('createCalendarBtns', _createCalendarId, function(id) { _createCalendarId = id; });
 
       // 時間を設定（hourが渡されていれば）
@@ -6632,13 +6636,14 @@
       
       const _cRepeat = document.getElementById('createRepeat') ? document.getElementById('createRepeat').value : 'none';
       const _cRepeatEnd = document.getElementById('createRepeatEnd') ? document.getElementById('createRepeatEnd').value : '';
-      const newTask = createTask(taskText, creatingTask.dateStr, taskTime, taskSection, 'both');
+      const _finalCalId = _createCalendarId || getMainCalendarId();
+      const newTask = createTask(taskText, creatingTask.dateStr, taskTime, taskSection, 'both', _finalCalId);
       
       // メモ・終了時刻・カテゴリ・繰り返しを設定
       const updates = {};
       if (taskMemo) updates.memo = taskMemo;
       if (taskEndTime) updates.endTime = taskEndTime;
-      updates.calendarId = _createCalendarId || 'default';
+      updates.calendarId = _finalCalId;
       if (_cRepeat !== 'none') {
         updates.repeat = _cRepeat;
         updates.repeatEnd = _cRepeatEnd || null;
@@ -6952,13 +6957,17 @@
     // タスク追加
     function addTask(sectionNum) {
       const input = document.getElementById('input' + sectionNum);
-      if (!input) { console.error('[addTask] input not found:', sectionNum); return; }
+      if (!input) return;
       const text = input.value.trim();
       
       if (text) {
-        // currentDailyDateが設定されていればその日付、なければ今日
+        // mainCalendarIdが未設定なら表示中の最初のカレンダーを自動設定
+        if (!localStorage.getItem('mainCalendarId')) {
+          const firstCal = calendars.find(c => c.visible);
+          if (firstCal) localStorage.setItem('mainCalendarId', firstCal.id);
+        }
         const targetDate = currentDailyDate || getLocalDateStr(new Date());
-        const newTask = createTask(text, targetDate, null, sectionNum, 'daily_only');
+        const newTask = createTask(text, targetDate, null, sectionNum, 'daily_only', getMainCalendarId());
         input.value = '';
         renderAllSections(targetDate);
       }
@@ -11893,7 +11902,7 @@ function receiveStarterDeck() {
     { text: '🌸 季節ごとに王国の景色が変わる', section: 4, memo: '春は桜、秋は紅葉…。ゲームのように世界が変わっていく。' },
   ];
   deck.forEach(function(d) {
-    var t = (typeof createTask === 'function') ? createTask(d.text, today, null, d.section, 'daily_only') : null;
+    var t = (typeof createTask === 'function') ? createTask(d.text, today, null, d.section, 'daily_only', (typeof getMainCalendarId === 'function' ? getMainCalendarId() : 'work')) : null;
     if (t && d.memo && typeof updateTask === 'function') updateTask(t.id, { memo: d.memo });
   });
   if (typeof saveAllTasks === 'function') saveAllTasks();
