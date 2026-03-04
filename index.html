@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.26.42';
+    const APP_VERSION = 'v0.26.43';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -10101,7 +10101,93 @@
 
     // 起動時にシンプルモード適用
     applySimpleMode();
-  </script>
+  
+// ===== デッキショップ =====
+var OFFICIAL_DECKS = [
+  {
+    id: 'deck_walk',
+    title: '🚶 散歩習慣',
+    desc: '外に出るだけでOK。毎日の小さな冒険。',
+    tasks: [
+      { text: '👟 靴を履いて外に出る', section: 1, memo: '出るだけでOK。距離は関係ない。玄関を出た時点で勝ち。' },
+      { text: '🌿 いつもと違う道を1本歩く', section: 2, memo: '新しい発見が脳を活性化。王国の探索イベント。' },
+      { text: '☀️ 空を1回見上げる', section: 2, memo: '深呼吸しながら。スマホをポケットにしまって空を見る。' },
+      { text: '🎵 好きな音楽を聴きながら歩く', section: 2, memo: '散歩が楽しみになる仕掛け。インプットの時間にしてもOK。' },
+      { text: '🏰 今日も王国の外を冒険した！', section: 2, memo: '歩いた分だけ王国が広がる。毎日の散歩が勇者を強くする。' }
+    ]
+  },
+  {
+    id: 'deck_clean',
+    title: '🧹 お掃除',
+    desc: '1箇所だけ。きれいな王国は清潔な毎日から。',
+    tasks: [
+      { text: '🚽 トイレを拭く', section: 1, memo: '1分でOK。毎日やると汚れが溜まらない。王国の清潔度UP！' },
+      { text: '🪟 換気する', section: 2, memo: '窓を5分開けるだけ。空気が変わると気分も変わる。' },
+      { text: '🧺 洗濯を回す', section: 1, memo: '回すだけでOK。まず回すことが大事。' },
+      { text: '🌀 床を1部屋だけ掃除する', section: 2, memo: '全部屋やらなくていい。今日は1部屋だけ。' },
+      { text: '✨ 今日のお掃除完了！', section: 2, memo: 'タップして完了。きれいな王国は清潔な毎日から生まれる。' }
+    ]
+  },
+  {
+    id: 'deck_exercise',
+    title: '💪 運動習慣',
+    desc: 'スクワット10回だけ。続けることが最強の魔法。',
+    tasks: [
+      { text: '🤸 準備運動を2分する', section: 1, memo: 'いきなりやらない。体を温めるだけで怪我が減る。' },
+      { text: '💪 スクワット10回だけ', section: 2, memo: '10回だけ。物足りなければ増やせばいい。まず10回。' },
+      { text: '🧘 ストレッチを3分する', section: 2, memo: '運動後が効果的。体が柔らかくなると王国の動きもなめらかに。' },
+      { text: '💧 水を飲む', section: 1, memo: '運動前後に必ず。体の王国を整える。' },
+      { text: '🏰 今日も体を動かした！', section: 2, memo: '継続が一番難しい。タップするだけで王国に伝わる。' }
+    ]
+  }
+];
+
+function renderDeckShop() {
+  var el = document.getElementById('deckShopList');
+  if (!el) return;
+  el.innerHTML = '';
+  OFFICIAL_DECKS.forEach(function(deck) {
+    var received = localStorage.getItem('deck_received_' + deck.id);
+    var card = document.createElement('div');
+    card.style.cssText = 'border:1px solid ' + (received ? '#e0e0e0' : '#ffe0a0') + ';border-radius:12px;padding:14px 16px;background:' + (received ? '#fafafa' : '#fffdf5') + ';';
+    var info = document.createElement('div');
+    info.innerHTML = '<div style="font-size:1em;font-weight:700;color:' + (received ? '#aaa' : '#333') + ';margin-bottom:4px;">' + deck.title + '</div><div style="font-size:0.8em;color:#999;">' + deck.desc + '</div>';
+    var btn = document.createElement('button');
+    btn.textContent = received ? '✅ 受取済' : '受け取る';
+    btn.disabled = !!received;
+    btn.style.cssText = 'flex-shrink:0;padding:8px 14px;border:none;border-radius:20px;font-size:0.82em;font-weight:700;cursor:' + (received ? 'default' : 'pointer') + ';background:' + (received ? '#e0e0e0' : 'linear-gradient(135deg,#ffd700,#ff8800)') + ';color:' + (received ? '#aaa' : '#7a4800') + ';';
+    btn.addEventListener('click', (function(id){ return function(){ receiveDeck(id); }; })(deck.id));
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;';
+    row.appendChild(info); row.appendChild(btn);
+    card.appendChild(row);
+    el.appendChild(card);
+  });
+}
+
+function receiveDeck(deckId) {
+  var deck = OFFICIAL_DECKS.find(function(d){ return d.id === deckId; });
+  if (!deck) return;
+  if (localStorage.getItem('deck_received_' + deckId)) {
+    alert('このデッキはすでに受け取り済みです！');
+    return;
+  }
+  var today = getLocalDateStr(new Date());
+  deck.tasks.forEach(function(t) {
+    var newTask = createTask(t.text, today, null, t.section, 'daily_only');
+    if (t.memo) updateTask(newTask.id, { memo: t.memo });
+  });
+  localStorage.setItem('deck_received_' + deckId, '1');
+  saveAllTasks();
+  renderAllSections(today);
+  renderDeckShop();
+  if (typeof _toastEl !== 'undefined' && _toastEl) {
+    _toastEl.innerHTML = '🛍️ ' + deck.title + 'を受け取った！';
+    _toastEl.classList.add('show');
+    setTimeout(function(){ _toastEl.classList.remove('show'); }, 3000);
+  }
+}
+</script>
 
   <!-- タスク編集モーダル -->
   <!-- 検索モーダル -->
@@ -11768,91 +11854,6 @@ function applyRepeatSave(taskId, task, repeat, repeatEnd, date) {
   return true;
 }
 
-// ===== デッキショップ =====
-var OFFICIAL_DECKS = [
-  {
-    id: 'deck_walk',
-    title: '🚶 散歩習慣',
-    desc: '外に出るだけでOK。毎日の小さな冒険。',
-    tasks: [
-      { text: '👟 靴を履いて外に出る', section: 1, memo: '出るだけでOK。距離は関係ない。玄関を出た時点で勝ち。' },
-      { text: '🌿 いつもと違う道を1本歩く', section: 2, memo: '新しい発見が脳を活性化。王国の探索イベント。' },
-      { text: '☀️ 空を1回見上げる', section: 2, memo: '深呼吸しながら。スマホをポケットにしまって空を見る。' },
-      { text: '🎵 好きな音楽を聴きながら歩く', section: 2, memo: '散歩が楽しみになる仕掛け。インプットの時間にしてもOK。' },
-      { text: '🏰 今日も王国の外を冒険した！', section: 2, memo: '歩いた分だけ王国が広がる。毎日の散歩が勇者を強くする。' }
-    ]
-  },
-  {
-    id: 'deck_clean',
-    title: '🧹 お掃除',
-    desc: '1箇所だけ。きれいな王国は清潔な毎日から。',
-    tasks: [
-      { text: '🚽 トイレを拭く', section: 1, memo: '1分でOK。毎日やると汚れが溜まらない。王国の清潔度UP！' },
-      { text: '🪟 換気する', section: 2, memo: '窓を5分開けるだけ。空気が変わると気分も変わる。' },
-      { text: '🧺 洗濯を回す', section: 1, memo: '回すだけでOK。まず回すことが大事。' },
-      { text: '🌀 床を1部屋だけ掃除する', section: 2, memo: '全部屋やらなくていい。今日は1部屋だけ。明日また1部屋。' },
-      { text: '✨ 今日のお掃除完了！', section: 2, memo: 'タップして完了。きれいな王国は清潔な毎日から生まれる。' }
-    ]
-  },
-  {
-    id: 'deck_exercise',
-    title: '💪 運動習慣',
-    desc: 'スクワット10回だけ。続けることが最強の魔法。',
-    tasks: [
-      { text: '🤸 準備運動を2分する', section: 1, memo: 'いきなりやらない。体を温めるだけで怪我が減る。' },
-      { text: '💪 スクワット10回だけ', section: 2, memo: '10回だけ。物足りなければ増やせばいい。まず10回。' },
-      { text: '🧘 ストレッチを3分する', section: 2, memo: '運動後が効果的。体が柔らかくなると王国の動きもなめらかに。' },
-      { text: '💧 水を飲む', section: 1, memo: '運動前後に必ず。体の王国を整える。' },
-      { text: '🏰 今日も体を動かした！', section: 2, memo: '継続が一番難しい。タップするだけで王国に伝わる。' }
-    ]
-  }
-];
-
-function renderDeckShop() {
-  var el = document.getElementById('deckShopList');
-  if (!el) return;
-  el.innerHTML = '';
-  OFFICIAL_DECKS.forEach(function(deck) {
-    var received = localStorage.getItem('deck_received_' + deck.id);
-    var card = document.createElement('div');
-    card.style.cssText = 'border:1px solid ' + (received ? '#e0e0e0' : '#ffe0a0') + ';border-radius:12px;padding:14px 16px;background:' + (received ? '#fafafa' : '#fffdf5') + ';';
-    var info = document.createElement('div');
-    info.innerHTML = '<div style="font-size:1em;font-weight:700;color:' + (received ? '#aaa' : '#333') + ';margin-bottom:4px;">' + deck.title + '</div><div style="font-size:0.8em;color:#999;">' + deck.desc + '</div>';
-    var btn = document.createElement('button');
-    btn.textContent = received ? '✅ 受取済' : '受け取る';
-    btn.disabled = !!received;
-    btn.style.cssText = 'flex-shrink:0;padding:8px 14px;border:none;border-radius:20px;font-size:0.82em;font-weight:700;cursor:' + (received ? 'default' : 'pointer') + ';background:' + (received ? '#e0e0e0' : 'linear-gradient(135deg,#ffd700,#ff8800)') + ';color:' + (received ? '#aaa' : '#7a4800') + ';';
-    btn.addEventListener('click', (function(id){ return function(){ receiveDeck(id); }; })(deck.id));
-    var row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;';
-    row.appendChild(info); row.appendChild(btn);
-    card.appendChild(row);
-    el.appendChild(card);
-  });
-}
-
-function receiveDeck(deckId) {
-  var deck = OFFICIAL_DECKS.find(function(d){ return d.id === deckId; });
-  if (!deck) return;
-  if (localStorage.getItem('deck_received_' + deckId)) {
-    alert('このデッキはすでに受け取り済みです！');
-    return;
-  }
-  var today = getLocalDateStr(new Date());
-  deck.tasks.forEach(function(t) {
-    var newTask = createTask(t.text, today, null, t.section, 'daily_only');
-    if (t.memo) updateTask(newTask.id, { memo: t.memo });
-  });
-  localStorage.setItem('deck_received_' + deckId, '1');
-  saveAllTasks();
-  renderAllSections(today);
-  renderDeckShop();
-  if (typeof _toastEl !== 'undefined' && _toastEl) {
-    _toastEl.innerHTML = '🛍️ ' + deck.title + 'を受け取った！<br><span style="font-size:0.82em;color:#ffcc66;">日次にタスクが追加されたよ！</span>';
-    _toastEl.classList.add('show');
-    setTimeout(function(){ _toastEl.classList.remove('show'); }, 3000);
-  }
-}
 
 // URLをリンク化するユーティリティ
 
