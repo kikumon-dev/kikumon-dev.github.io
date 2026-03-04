@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.27.8';
+    const APP_VERSION = 'v0.27.9';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -3373,6 +3373,7 @@
         <h3 style="margin:0 0 14px 0;color:#ffd700;font-size:1em;font-weight:700;display:flex;align-items:center;gap:8px;">👑 管理者メニュー </h3>
         <p style="font-size:0.82em;color:#aaa;margin:0 0 14px 0;">スタートデッキコードを生成してDiscordで配布できます。</p>
         <button onclick="copyStarterDeckCode()" style="width:100%;padding:11px;background:linear-gradient(135deg,#ffd700,#ff8800);border:none;border-radius:10px;color:#7a4800;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(255,150,0,0.3);margin-bottom:8px;">📋 スタートデッキコードをコピー</button>
+        <button onclick="issueGuildLicense()" style="width:100%;padding:11px;background:linear-gradient(135deg,#ffd700,#c8a200);border:none;border-radius:10px;color:#3a2800;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(200,162,0,0.3);margin-bottom:8px;">⚓ 行動貿易ライセンスを発行する</button>
         <button onclick="openDeckBuilder()" style="width:100%;padding:11px;background:linear-gradient(135deg,#a855f7,#6366f1);border:none;border-radius:10px;color:#fff;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(168,85,247,0.3);margin-bottom:8px;">⚔️ 新しいデッキを仕込む</button>
         <button onclick="toggleAdminMode()" style="width:100%;padding:9px;background:transparent;border:1px solid #555;border-radius:8px;color:#888;font-size:0.82em;cursor:pointer;">🔒 管理者モードを解除する</button>
       </div>
@@ -3383,7 +3384,8 @@
         <p style="font-size:0.78em;color:#aaa;margin:0 0 14px 0;">SDK1: で始まるデッキコードを貼り付けて王国に取り込もう。<br><span style="color:#ffd700;font-weight:600;">あ、王国が動いた！</span></p>
         <textarea id="deckImportInput" rows="3" placeholder="SDK1: で始まるコードをここに貼り付け..."
           style="width:100%;padding:10px;border:1.5px solid #4facfe;border-radius:8px;background:#0a1520;color:#fff;font-size:0.82em;box-sizing:border-box;resize:none;margin-bottom:10px;font-family:monospace;"></textarea>
-        <button onclick="importDeckFromSettings()" style="width:100%;padding:11px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:10px;color:#003355;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(79,172,254,0.3);" onclick="importDeckFromSettings()">📦 王国に輸入する</button>
+        <button onclick="importDeckFromSettings()" style="width:100%;padding:11px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:10px;color:#003355;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(79,172,254,0.3);" onclick="importDeckFromSettings()" style="margin-bottom:8px;">📦 王国に輸入する</button>
+        <button id="guildDeckBuilderBtn" onclick="openDeckBuilder()" style="display:none;width:100%;padding:11px;background:linear-gradient(135deg,#a855f7,#6366f1);border:none;border-radius:10px;color:#fff;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(168,85,247,0.3);">⚔️ デッキを仕込む（貿易商人）</button>
       </div>
 
       <!-- プロフィールセクション -->
@@ -7088,15 +7090,23 @@
     // 王姫パターン: 王王姫姫王姫王姫王王
     var _genderSeq = [];
     var _ADMIN_PATTERN = ['king','king','princess','princess','king','princess','king','princess','king','king'];
+    var _GUILD_PATTERN  = ['princess','princess','king','king','princess','princess','king','king','princess','princess'];
     function selectGender(val) {
       localStorage.setItem('profileGender', val);
       updateGenderUI(val);
-      // 管理者パターン検知
+      // シーケンス検知
       _genderSeq.push(val);
-      if (_genderSeq.length > _ADMIN_PATTERN.length) _genderSeq.shift();
+      var maxLen = Math.max(_ADMIN_PATTERN.length, _GUILD_PATTERN.length);
+      if (_genderSeq.length > maxLen) _genderSeq.shift();
+      // 管理者パターン
       if (_genderSeq.length === _ADMIN_PATTERN.length) {
-        var match = _ADMIN_PATTERN.every(function(v,i){ return v === _genderSeq[i]; });
-        if (match) { _genderSeq = []; toggleAdminMode(); }
+        var matchAdmin = _ADMIN_PATTERN.every(function(v,i){ return v === _genderSeq[i]; });
+        if (matchAdmin) { _genderSeq = []; toggleAdminMode(); return; }
+      }
+      // 商人ギルドパターン
+      if (_genderSeq.length === _GUILD_PATTERN.length) {
+        var matchGuild = _GUILD_PATTERN.every(function(v,i){ return v === _genderSeq[i]; });
+        if (matchGuild) { _genderSeq = []; openGuildMode(); }
       }
     }
     function saveGender() {
@@ -12240,6 +12250,104 @@ function showAdminToast(msg) {
   t._t = setTimeout(function(){ t.style.display = 'none'; }, 2000);
 }
 
+// ===== 商人ギルドモード =====
+function openGuildMode() {
+  var modal = document.getElementById('guildModal');
+  if (!modal) return;
+  document.getElementById('guildLicenseInput').value = '';
+  modal.style.display = 'flex';
+  // 既にライセンス保持なら案内を変える
+  if (localStorage.getItem('guildLicense')) {
+    document.getElementById('guildLicenseInput').placeholder = '既に行動貿易ライセンスを持っています。新しいコードで上書きできます。';
+  }
+}
+
+function closeGuildMode() {
+  var modal = document.getElementById('guildModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function applyGuildLicense() {
+  var code = (document.getElementById('guildLicenseInput').value || '').trim();
+  if (!code) { alert('コードを入力してください'); return; }
+  var upper = code.toUpperCase();
+  if (!upper.startsWith('GLD1:')) { alert('GLD1: で始まるコードを入力してください'); return; }
+  var raw;
+  try { raw = decodeURIComponent(escape(atob(code.slice(5)))); }
+  catch(e) { alert('コードが壊れています'); return; }
+  var data;
+  try { data = JSON.parse(raw); }
+  catch(e) { alert('コードの形式が正しくありません'); return; }
+  if (data.type !== 'yarukotolist-guild-license-v1') { alert('コードの形式が正しくありません'); return; }
+  // ライセンス保存
+  localStorage.setItem('guildLicense', JSON.stringify(data));
+  closeGuildMode();
+  // トースト
+  var toast = document.getElementById('settingsSaveToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'settingsSaveToast';
+    toast.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(26,18,0,0.95);color:#ffd700;padding:20px 32px;border-radius:16px;font-size:1.05em;font-weight:bold;z-index:99999;text-align:center;pointer-events:none;border:2px solid rgba(200,162,0,0.7);box-shadow:0 0 40px rgba(200,162,0,0.3);';
+    document.body.appendChild(toast);
+  }
+  var grantedTo = data.grantedTo ? '「' + data.grantedTo + '」' : '';
+  toast.innerHTML = '⚓ あ、王国が動いた！<br><span style="font-size:0.85em;color:#ffdd66;">' + grantedTo + '行動貿易ライセンスを取得した！</span><br><span style="font-size:0.75em;color:#aaa;">貿易港でデッキを仕込めるようになった</span>';
+  toast.style.display = 'block';
+  clearTimeout(toast._t);
+  toast._t = setTimeout(function(){ toast.style.display = 'none'; }, 4000);
+  // 貿易港のデッキ仕込みボタンを表示
+  updateGuildUI();
+}
+
+function buildGuildLicenseCode(grantedTo) {
+  var myName = localStorage.getItem('profileName') || 'admin';
+  var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
+  var payload = JSON.stringify({
+    type: 'yarukotolist-guild-license-v1',
+    grantedTo: grantedTo,
+    issuedBy: myName,
+    issuedAt: today
+  });
+  return 'GLD1:' + btoa(unescape(encodeURIComponent(payload)));
+}
+
+function issueGuildLicense() {
+  var name = prompt('発行先の名前を入力してください（Discord名など）');
+  if (!name || !name.trim()) return;
+  var code = buildGuildLicenseCode(name.trim());
+  var done = function() {
+    var toast = document.getElementById('settingsSaveToast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'settingsSaveToast';
+      toast.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.88);color:#ffd700;padding:18px 32px;border-radius:16px;font-size:1.05em;font-weight:bold;z-index:99999;text-align:center;pointer-events:none;border:1.5px solid rgba(255,215,0,0.5);box-shadow:0 0 24px rgba(255,215,0,0.2);';
+      document.body.appendChild(toast);
+    }
+    toast.innerHTML = '⚓ ' + name.trim() + ' へのライセンスを発行！<br><span style="font-size:0.82em;color:#ffcc66;">GLD1:コードをコピーしました</span>';
+    toast.style.display = 'block';
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function(){ toast.style.display = 'none'; }, 3500);
+  };
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code).then(done).catch(function(){
+      var ta = document.createElement('textarea');
+      ta.value = code; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta); done();
+    });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = code; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta); done();
+  }
+}
+
+function updateGuildUI() {
+  // ライセンス保持者には貿易港にデッキ仕込みボタンを表示
+  var hasLicense = !!localStorage.getItem('guildLicense');
+  var btn = document.getElementById('guildDeckBuilderBtn');
+  if (btn) btn.style.display = hasLicense ? 'block' : 'none';
+}
+
 // ===== デッキビルダー =====
 var _deckBuilderTasks = [];
 
@@ -12440,8 +12548,23 @@ document.addEventListener('DOMContentLoaded', function() {
     var el = document.getElementById('adminMenuSection');
     if (el) el.style.display = 'block';
   }
+  // ギルドライセンスUI更新
+  if (typeof updateGuildUI === 'function') updateGuildUI();
 });
 </script>
+
+<!-- ===== 商人ギルドモーダル ===== -->
+<div id="guildModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:10000;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;">
+  <div style="background:linear-gradient(160deg,#1a1200,#2a1a00);border:2px solid #c8a200;border-radius:18px;padding:30px 24px;max-width:380px;width:100%;color:#fff;box-shadow:0 0 60px rgba(200,162,0,0.4);text-align:center;">
+    <div style="font-size:2.2em;margin-bottom:6px;">⚓</div>
+    <h2 style="color:#ffd700;font-size:1.1em;font-weight:700;margin:0 0 4px 0;">商人ギルドモード</h2>
+    <p style="font-size:0.78em;color:#aaa;margin:0 0 20px 0;">行動貿易ライセンス（GLD1:）を貼り付けて申請しよう</p>
+    <textarea id="guildLicenseInput" rows="3" placeholder="GLD1: で始まるコードを貼り付け..."
+      style="width:100%;padding:10px;border:1.5px solid #c8a200;border-radius:8px;background:#0d0900;color:#ffd700;font-size:0.82em;box-sizing:border-box;resize:none;margin-bottom:12px;font-family:monospace;"></textarea>
+    <button onclick="applyGuildLicense()" style="width:100%;padding:12px;background:linear-gradient(135deg,#ffd700,#c8a200);border:none;border-radius:10px;color:#3a2800;font-size:0.95em;font-weight:700;cursor:pointer;box-shadow:0 2px 12px rgba(200,162,0,0.4);margin-bottom:8px;">⚓ 行動貿易ライセンスを申請する</button>
+    <button onclick="closeGuildMode()" style="width:100%;padding:10px;background:transparent;border:1px solid #555;border-radius:8px;color:#888;font-size:0.85em;cursor:pointer;">閉じる</button>
+  </div>
+</div>
 
 <!-- ===== デッキビルダーモーダル ===== -->
 <div id="deckBuilderModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px;box-sizing:border-box;">
