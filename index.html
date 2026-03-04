@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.26.60';
+    const APP_VERSION = 'v0.26.63';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -138,7 +138,7 @@
       border: 1px solid #d0c8be;
       padding: 15px;
       overflow-y: auto;
-      background-color: #f5f0e8;
+      background-color: #f5f0e8 !important;
     }
     
     /* スクロールバーを薄く */
@@ -321,7 +321,6 @@
     }
 
     .task-item {
-      animation: taskFadeIn 0.22s ease both;
       background-color: #ffffff;
       padding: 7px 9px;
       margin-bottom: 5px;
@@ -1004,19 +1003,18 @@
         text-align: left;
       }
 
-      /* スマホ縦画面：第1象限の右上に日付を固定表示 */
+      /* スマホ縦画面：日付を右寄せで表示 */
       .date-display-mobile {
         display: block !important;
-        position: static;
-        width: 100%;
         text-align: right;
-        margin: -8px 0 4px 0;
         font-size: 0.85em;
+        font-weight: 900;
+        color: #333;
+        margin-bottom: 4px;
       }
 
-      /* スマホ：第1象限のh4を幅いっぱいに */
+      /* スマホ：第1象限のh4 */
       #section1 .header-row h4 {
-        width: 100%;
         font-size: 0.95em;
       }
 
@@ -2868,10 +2866,10 @@
   <div class="container">
     <!-- 左上: 緊急かつ重要 -->
     <div class="section" id="section1">
+      <!-- スマホ縦画面用：日付を第1象限タイトルの上に表示 -->
+      <div class="date-display-mobile" id="dateDisplayMobile"></div>
       <div class="header-row">
         <h4>やることリスト【緊急かつ重要】</h4>
-        <!-- スマホ縦画面用：日付を第1象限に表示 -->
-        <div class="date-display date-display-mobile" id="dateDisplayMobile"></div>
         <div class="purpose-group" id="purposeGroup" style="display: none;">
           <label>目的:</label>
           <input type="text" id="purposeInput" placeholder="本質的な目的を一行で入力...">
@@ -4639,7 +4637,17 @@
       document.getElementById('dateDisplay').textContent = dateStr;
       // スマホ用の第1象限日付も同期
       const mobileDate = document.getElementById('dateDisplayMobile');
-      if (mobileDate) mobileDate.textContent = dateStr;
+      if (mobileDate) {
+        mobileDate.textContent = dateStr;
+        // スマホで確実に表示（mediaクエリに依存せず直接制御）
+        if (window.innerWidth <= 768) {
+          mobileDate.style.display = 'block';
+          mobileDate.style.textAlign = 'right';
+          mobileDate.style.fontWeight = '900';
+          mobileDate.style.fontSize = '0.85em';
+          mobileDate.style.marginBottom = '4px';
+        }
+      }
     }
 
     // 目的の確定
