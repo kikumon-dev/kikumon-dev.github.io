@@ -4171,7 +4171,10 @@
       return new Set(calendars.filter(c => c.visible).map(c => c.id));
     }
     function isCalendarVisible(calendarId) {
-      if (!calendarId || calendarId === 'default') return true; // フォールバック
+      if (!calendarId || calendarId === 'default') return true;
+      // 未知のcalendarId（calendars配列に存在しない）は表示する
+      const exists = calendars.some(c => c.id === calendarId);
+      if (!exists) return true;
       return getActiveCalendarIds().has(calendarId);
     }
 
@@ -4187,7 +4190,7 @@
     let taskIdCounter = 1; // 互換性のため保持（実際はUUIDを使用）
 
     // 初期データ（テストデータ54件 - 大学3年生・マックバイト・彼氏あり）
-    const INITIAL_DATA = [{"id":"t001","text":"薬飲む（朝）","date":"2026-02-27","time":"08:00","section":2,"order":0,"completed":false,"displayScope":"daily_only","calendarId":"private"},{"id":"t002","text":"卒論 最終確認","date":"2026-02-27","time":"10:00","endTime":"12:00","section":1,"order":0,"completed":false,"displayScope":"both","calendarId":"study"},{"id":"t003","text":"麻辣湯 行く（ランチ）","date":"2026-02-27","time":"12:30","section":4,"order":0,"completed":false,"displayScope":"both","calendarId":"private"},{"id":"t004","text":"研究室 ゼミ発表","date":"2026-02-27","time":"14:00","endTime":"16:00","section":1,"order":1,"completed":false,"displayScope":"both","calendarId":"study"},{"id":"t005","text":"おばあちゃん誕生日 電話する","date":"2026-02-27","time":"19:00","section":1,"order":2,"completed":false,"displayScope":"both","calendarId":"private"},{"id":"note-001","kind":"note","title":"卒論メモ","textL":"テーマ: 都市型水害における排水システムの最適化\n\n提出期限: 3/5（木）\nページ数: 残り8ページ\n\n修正点\n→ 境界条件の根拠を追記\n→ 図3のキャプション直す\n→ 参考文献の体裁統一","dateL":"卒論\nメモ","textR":"","dateR":"","createdAt":"2026-02-20T10:00:00.000Z","updatedAt":"2026-02-27T09:00:00.000Z"}];
+    const INITIAL_DATA = [{"id":"t001","text":"薬飲む（朝）","date":"2026-02-27","time":"08:00","section":2,"order":0,"completed":false,"displayScope":"daily_only","calendarId":"private"},{"id":"t002","text":"卒論 最終確認","date":"2026-02-27","time":"10:00","endTime":"12:00","section":1,"order":0,"completed":false,"displayScope":"both","calendarId":"work"},{"id":"t003","text":"麻辣湯 行く（ランチ）","date":"2026-02-27","time":"12:30","section":4,"order":0,"completed":false,"displayScope":"both","calendarId":"private"},{"id":"t004","text":"研究室 ゼミ発表","date":"2026-02-27","time":"14:00","endTime":"16:00","section":1,"order":1,"completed":false,"displayScope":"both","calendarId":"work"},{"id":"t005","text":"おばあちゃん誕生日 電話する","date":"2026-02-27","time":"19:00","section":1,"order":2,"completed":false,"displayScope":"both","calendarId":"private"},{"id":"note-001","kind":"note","title":"卒論メモ","textL":"テーマ: 都市型水害における排水システムの最適化\n\n提出期限: 3/5（木）\nページ数: 残り8ページ\n\n修正点\n→ 境界条件の根拠を追記\n→ 図3のキャプション直す\n→ 参考文献の体裁統一","dateL":"卒論\nメモ","textR":"","dateR":"","createdAt":"2026-02-20T10:00:00.000Z","updatedAt":"2026-02-27T09:00:00.000Z"}];
     const INITIAL_PURPOSE = "熱力学レポート提出する";
     const INITIAL_STOP_CONDITION = "終わるまで寝ない。ただし2時で強制終了。";
 
@@ -4473,7 +4476,7 @@
           if (!sc || sc === 'weekly_only') return false;
           if (!isCalendarVisible(t.calendarId)) return false;
           if (sc === 'daily_only') return true;
-          return (t.date === date); // both: その日だけ
+          return (t.date === date);
         })
         .forEach(t => {
           if (result[t.section]) result[t.section].push(t);
@@ -11351,9 +11354,35 @@ window.initCraftWorld = function initCraftWorld() {
   canvas.addEventListener('mouseleave', onEnd);
   canvas.addEventListener('mousemove',  function(e){onMove(e.clientX);});
   canvas.addEventListener('wheel',      function(e){_craftZoom=Math.max(0.6,Math.min(2.0,_craftZoom-e.deltaY*0.001));e.preventDefault();},{passive:false});
-  canvas.addEventListener('touchstart', function(e){onStart(e.touches[0].clientX);},{passive:true});
-  canvas.addEventListener('touchend',   onEnd);
-  canvas.addEventListener('touchmove',  function(e){e.preventDefault();onMove(e.touches[0].clientX);},{passive:false});
+  // ピンチズーム用変数
+  var _pinchStartDist = null;
+  var _pinchStartZoom = 1.0;
+  canvas.addEventListener('touchstart', function(e){
+    if (e.touches.length === 2) {
+      var dx = e.touches[0].clientX - e.touches[1].clientX;
+      var dy = e.touches[0].clientY - e.touches[1].clientY;
+      _pinchStartDist = Math.sqrt(dx*dx + dy*dy);
+      _pinchStartZoom = _craftZoom;
+      _craftDragActive = false;
+    } else {
+      onStart(e.touches[0].clientX);
+    }
+  },{passive:true});
+  canvas.addEventListener('touchend', function(e){
+    _pinchStartDist = null;
+    if (e.touches.length === 0) onEnd();
+  });
+  canvas.addEventListener('touchmove', function(e){
+    e.preventDefault();
+    if (e.touches.length === 2 && _pinchStartDist !== null) {
+      var dx = e.touches[0].clientX - e.touches[1].clientX;
+      var dy = e.touches[0].clientY - e.touches[1].clientY;
+      var dist = Math.sqrt(dx*dx + dy*dy);
+      _craftZoom = Math.max(0.4, Math.min(3.5, _pinchStartZoom * (dist / _pinchStartDist)));
+    } else if (e.touches.length === 1) {
+      onMove(e.touches[0].clientX);
+    }
+  },{passive:false});
 
   // アニメーションループ
   function loop(){
@@ -11853,17 +11882,15 @@ function receiveStarterDeck() {
   if (localStorage.getItem('starterDeckReceived')) return;
   var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
   var deck = [
-    // 第1象限：本質的・緊急
+    // 第1象限：緊急かつ重要
     { text: '✅ このタスクを完了してみよう（タップで完了！）', section: 1, memo: '完了すると王国の建材が貯まるよ！城タブで確認してみて。' },
-    { text: '👑 王国コードを発行してみよう', section: 1, memo: '設定→王国を訪問する→王国コードを発行する。Lv.5になったら解放！' },
-    // 第2象限：本質的・非緊急
-    { text: '🏰 3Dモードで王国を眺めてみよう', section: 1, memo: '上のナビから城アイコン🏰をタップ！タスクをこなすほど王国が育つ。' },
-    { text: '📅 タスクに日付と時刻を入れてみよう', section: 1, memo: 'タスクを長押し→編集で日時設定。週間ビューに予定が現れるよ！' },
-    { text: '🌸 季節ごとに王国の景色が変わる', section: 1, memo: '春は桜、秋は紅葉…。ゲームのように世界が変わっていく。' },
-    // 第3象限：些細・緊急
-    { text: '⚙️ 設定で名前と性別を設定しよう', section: 1, memo: '王・姫で王国のセリフが変わる！プロフィールから設定できるよ。' },
-    // 第4象限：些末・排除
-    { text: '✨ このタスクを完了して王国に貢献しよう', section: 1, memo: 'タスクをタップすると取り消し線が入って完了！完了もカウントされて王国が育つよ。削除は長押しメニューから。' },
+    // 第2象限：緊急でないが重要
+    { text: '🏰 3Dモードで王国を眺めてみよう', section: 2, memo: '上のナビから城アイコン🏰をタップ！タスクをこなすほど王国が育つ。' },
+    { text: '📅 タスクに日付と時刻を入れてみよう', section: 2, memo: 'タスクを長押し→編集で日時設定。週間ビューに予定が現れるよ！' },
+    // 第3象限：緊急だが重要でない
+    { text: '⚙️ 設定で名前と性別を設定しよう', section: 3, memo: '王・姫で王国のセリフが変わる！プロフィールから設定できるよ。' },
+    // 第4象限：緊急でなく重要でもない
+    { text: '🌸 季節ごとに王国の景色が変わる', section: 4, memo: '春は桜、秋は紅葉…。ゲームのように世界が変わっていく。' },
   ];
   deck.forEach(function(d) {
     var t = (typeof createTask === 'function') ? createTask(d.text, today, null, d.section, 'daily_only') : null;
