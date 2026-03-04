@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.27.7';
+    const APP_VERSION = 'v0.27.8';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -3373,6 +3373,7 @@
         <h3 style="margin:0 0 14px 0;color:#ffd700;font-size:1em;font-weight:700;display:flex;align-items:center;gap:8px;">👑 管理者メニュー </h3>
         <p style="font-size:0.82em;color:#aaa;margin:0 0 14px 0;">スタートデッキコードを生成してDiscordで配布できます。</p>
         <button onclick="copyStarterDeckCode()" style="width:100%;padding:11px;background:linear-gradient(135deg,#ffd700,#ff8800);border:none;border-radius:10px;color:#7a4800;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(255,150,0,0.3);margin-bottom:8px;">📋 スタートデッキコードをコピー</button>
+        <button onclick="openDeckBuilder()" style="width:100%;padding:11px;background:linear-gradient(135deg,#a855f7,#6366f1);border:none;border-radius:10px;color:#fff;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(168,85,247,0.3);margin-bottom:8px;">⚔️ 新しいデッキを仕込む</button>
         <button onclick="toggleAdminMode()" style="width:100%;padding:9px;background:transparent;border:1px solid #555;border-radius:8px;color:#888;font-size:0.82em;cursor:pointer;">🔒 管理者モードを解除する</button>
       </div>
 
@@ -12239,6 +12240,117 @@ function showAdminToast(msg) {
   t._t = setTimeout(function(){ t.style.display = 'none'; }, 2000);
 }
 
+// ===== デッキビルダー =====
+var _deckBuilderTasks = [];
+
+function openDeckBuilder() {
+  _deckBuilderTasks = [];
+  document.getElementById('deckBuilderTitle').value = '';
+  document.getElementById('deckBuilderTaskText').value = '';
+  document.getElementById('deckBuilderTaskMemo').value = '';
+  document.getElementById('deckBuilderTaskSection').value = '1';
+  renderDeckBuilderTasks();
+  var m = document.getElementById('deckBuilderModal');
+  m.style.display = 'flex';
+}
+
+function closeDeckBuilder() {
+  document.getElementById('deckBuilderModal').style.display = 'none';
+}
+
+function deckBuilderAddTask() {
+  var text = (document.getElementById('deckBuilderTaskText').value || '').trim();
+  if (!text) { alert('タスク名を入力してください'); return; }
+  var memo = (document.getElementById('deckBuilderTaskMemo').value || '').trim();
+  var section = parseInt(document.getElementById('deckBuilderTaskSection').value) || 1;
+  _deckBuilderTasks.push({ text: text, memo: memo, section: section });
+  document.getElementById('deckBuilderTaskText').value = '';
+  document.getElementById('deckBuilderTaskMemo').value = '';
+  document.getElementById('deckBuilderTaskSection').value = '1';
+  renderDeckBuilderTasks();
+}
+
+function deckBuilderRemoveTask(idx) {
+  _deckBuilderTasks.splice(idx, 1);
+  renderDeckBuilderTasks();
+}
+
+function deckBuilderMoveTask(idx, dir) {
+  var to = idx + dir;
+  if (to < 0 || to >= _deckBuilderTasks.length) return;
+  var tmp = _deckBuilderTasks[idx];
+  _deckBuilderTasks[idx] = _deckBuilderTasks[to];
+  _deckBuilderTasks[to] = tmp;
+  renderDeckBuilderTasks();
+}
+
+function renderDeckBuilderTasks() {
+  var list = document.getElementById('deckBuilderTaskList');
+  list.innerHTML = '';
+  if (_deckBuilderTasks.length === 0) {
+    list.innerHTML = '<div style="text-align:center;color:#555;font-size:0.82em;padding:16px 0;">タスクがまだありません</div>';
+    return;
+  }
+  var sectionNames = ['','第1象限','第2象限','第3象限','第4象限'];
+  _deckBuilderTasks.forEach(function(t, i) {
+    var div = document.createElement('div');
+    div.style.cssText = 'background:#0d0d1a;border:1px solid #4a3060;border-radius:8px;padding:10px 12px;display:flex;align-items:flex-start;gap:8px;';
+    div.innerHTML =
+      '<div style="flex:1;min-width:0;">' +
+        '<div style="font-size:0.88em;color:#e2e8f0;font-weight:600;word-break:break-all;">' + t.text + '</div>' +
+        (t.memo ? '<div style="font-size:0.75em;color:#888;margin-top:3px;word-break:break-all;">' + t.memo + '</div>' : '') +
+        '<div style="font-size:0.7em;color:#a78bfa;margin-top:3px;">' + (sectionNames[t.section]||'') + '</div>' +
+      '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0;">' +
+        '<button onclick="deckBuilderMoveTask(' + i + ',-1)" style="padding:2px 6px;background:#2a2040;border:1px solid #4a3060;border-radius:4px;color:#aaa;font-size:0.75em;cursor:pointer;">▲</button>' +
+        '<button onclick="deckBuilderMoveTask(' + i + ',1)" style="padding:2px 6px;background:#2a2040;border:1px solid #4a3060;border-radius:4px;color:#aaa;font-size:0.75em;cursor:pointer;">▼</button>' +
+        '<button onclick="deckBuilderRemoveTask(' + i + ')" style="padding:2px 6px;background:#3a1020;border:1px solid #6a2040;border-radius:4px;color:#f87171;font-size:0.75em;cursor:pointer;">✕</button>' +
+      '</div>';
+    list.appendChild(div);
+  });
+}
+
+function deckBuilderPublish() {
+  var title = (document.getElementById('deckBuilderTitle').value || '').trim();
+  if (!title) { alert('デッキ名を入力してください'); return; }
+  if (_deckBuilderTasks.length === 0) { alert('タスクを1枚以上追加してください'); return; }
+  var myName = localStorage.getItem('profileName') || 'admin';
+  var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
+  var payload = JSON.stringify({
+    type: 'yarukotolist-deck-v1',
+    title: title,
+    tasks: _deckBuilderTasks,
+    createdBy: myName,
+    createdAt: today
+  });
+  var code = 'SDK1:' + btoa(unescape(encodeURIComponent(payload)));
+  // コピー
+  var done = function() {
+    var toast = document.getElementById('settingsSaveToast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'settingsSaveToast';
+      toast.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.88);color:#ffd700;padding:18px 32px;border-radius:16px;font-size:1.05em;font-weight:bold;z-index:99999;text-align:center;pointer-events:none;border:1.5px solid rgba(255,215,0,0.5);box-shadow:0 0 24px rgba(255,215,0,0.2);';
+      document.body.appendChild(toast);
+    }
+    toast.innerHTML = '⚔️ デッキを発行した！<br><span style="font-size:0.82em;color:#ffcc66;">コードをコピーして配布しよう</span>';
+    toast.style.display = 'block';
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function(){ toast.style.display = 'none'; }, 3500);
+  };
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code).then(done).catch(function() {
+      var ta = document.createElement('textarea');
+      ta.value = code; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta); done();
+    });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = code; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta); done();
+  }
+}
+
 function importDeckFromSettings() {
   var code = (document.getElementById('deckImportInput').value || '').trim();
   if (!code) { alert('コードを入力してください'); return; }
@@ -12330,6 +12442,49 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 </script>
+
+<!-- ===== デッキビルダーモーダル ===== -->
+<div id="deckBuilderModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px;box-sizing:border-box;">
+  <div style="background:#1a1a2e;border:2px solid #a855f7;border-radius:18px;padding:28px 22px;max-width:420px;width:100%;color:#fff;box-shadow:0 0 40px rgba(168,85,247,0.3);margin:auto;">
+    <div style="font-size:1.8em;text-align:center;margin-bottom:6px;">⚔️</div>
+    <h2 style="text-align:center;color:#c084fc;font-size:1.05em;margin:0 0 4px 0;font-weight:700;">デッキを仕込む</h2>
+    <p style="text-align:center;font-size:0.75em;color:#888;margin:0 0 18px 0;">タスクを並べてデッキを作り、コードで配布しよう</p>
+
+    <!-- デッキタイトル -->
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:0.8em;color:#c084fc;font-weight:600;margin-bottom:6px;">📛 デッキ名</label>
+      <input type="text" id="deckBuilderTitle" placeholder="例：朝活スタートデッキ"
+        style="width:100%;padding:10px;border:1.5px solid #4a3060;border-radius:8px;background:#0d0d1a;color:#fff;font-size:0.9em;box-sizing:border-box;">
+    </div>
+
+    <!-- タスクリスト -->
+    <div style="margin-bottom:12px;">
+      <label style="display:block;font-size:0.8em;color:#c084fc;font-weight:600;margin-bottom:8px;">📋 タスク一覧</label>
+      <div id="deckBuilderTaskList" style="display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto;"></div>
+    </div>
+
+    <!-- タスク追加フォーム -->
+    <div style="background:#0d0d1a;border:1.5px solid #4a3060;border-radius:10px;padding:12px;margin-bottom:14px;">
+      <div style="font-size:0.78em;color:#a78bfa;font-weight:600;margin-bottom:8px;">＋ タスクを追加</div>
+      <input type="text" id="deckBuilderTaskText" placeholder="タスク名"
+        style="width:100%;padding:8px;border:1px solid #4a3060;border-radius:6px;background:#1a1a2e;color:#fff;font-size:0.85em;box-sizing:border-box;margin-bottom:6px;">
+      <textarea id="deckBuilderTaskMemo" rows="2" placeholder="メモ（任意）"
+        style="width:100%;padding:8px;border:1px solid #4a3060;border-radius:6px;background:#1a1a2e;color:#fff;font-size:0.82em;box-sizing:border-box;resize:none;margin-bottom:6px;font-family:inherit;"></textarea>
+      <select id="deckBuilderTaskSection"
+        style="width:100%;padding:8px;border:1px solid #4a3060;border-radius:6px;background:#1a1a2e;color:#fff;font-size:0.82em;box-sizing:border-box;margin-bottom:8px;">
+        <option value="1">第1象限（緊急×重要）</option>
+        <option value="2">第2象限（重要）</option>
+        <option value="3">第3象限（緊急）</option>
+        <option value="4">第4象限（その他）</option>
+      </select>
+      <button onclick="deckBuilderAddTask()" style="width:100%;padding:8px;background:linear-gradient(135deg,#a855f7,#6366f1);border:none;border-radius:6px;color:#fff;font-size:0.85em;font-weight:700;cursor:pointer;">タスクを追加</button>
+    </div>
+
+    <!-- 発行・閉じる -->
+    <button onclick="deckBuilderPublish()" style="width:100%;padding:12px;background:linear-gradient(135deg,#ffd700,#ff8800);border:none;border-radius:10px;color:#7a4800;font-size:0.95em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(255,150,0,0.3);margin-bottom:8px;">📋 デッキコードを発行する</button>
+    <button onclick="closeDeckBuilder()" style="width:100%;padding:10px;background:transparent;border:1px solid #555;border-radius:8px;color:#888;font-size:0.85em;cursor:pointer;">閉じる</button>
+  </div>
+</div>
 
 <!-- ===== 王国コード発行モーダル ===== -->
 <div id="kingdomShareModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
