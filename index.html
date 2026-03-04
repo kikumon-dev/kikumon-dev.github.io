@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.26.41';
+    const APP_VERSION = 'v0.26.60';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -51,16 +51,16 @@
   <style>
     :root {
       --color-primary:   #4facfe;
-      --color-bg:        #f5f5f5;
-      --color-bg-white:  #ffffff;
-      --color-bg-faint:  #fafafa;
-      --color-border:    #e0e0e0;
-      --color-border-lt: #efefef;
-      --color-text:      #262626;
-      --color-text-sub:  #8e8e8e;
-      --color-sat-bg:    #e8f4fd;
-      --color-sun-bg:    #fff3e0;
-      --color-today-bg:  #fffde7;
+      --color-bg:        #f5f0e8;      /* 和紙テイストの下地色 */
+      --color-bg-white:  #ffffff;      /* カード・セル：純白 */
+      --color-bg-faint:  #f5f0e8;      /* 下地と同系・和紙 */
+      --color-border:    #d8d0c5;      /* グレー→ベージュボーダー */
+      --color-border-lt: #e8e2da;      /* 薄グレー→薄ベージュボーダー */
+      --color-text:      #2a2420;      /* ほぼ変わらず・少し暖色 */
+      --color-text-sub:  #8a8078;      /* グレー→ウォームグレー */
+      --color-sat-bg:    #dde8f0;      /* 土曜：少しくすんだ青 */
+      --color-sun-bg:    #f0e8de;      /* 日曜：くすんだ暖色 */
+      --color-today-bg:  #faf0d0;      /* 今日：暖かみのある黄 */
       --nav-height:      50px;
     }
     * {
@@ -78,8 +78,8 @@
     /* ナビゲーションタブ - モダンナビ */
     .nav-tabs {
       display: flex;
-      background-color: #fff;
-      border-bottom: 1px solid #efefef;
+      background-color: #f5f0e8;
+      border-bottom: 1px solid #e0d8ce;
       padding: 0 4px;
       position: sticky;
       top: 0;
@@ -135,10 +135,10 @@
     }
 
     .section {
-      border: 1px solid #000;
+      border: 1px solid #d0c8be;
       padding: 15px;
       overflow-y: auto;
-      background-color: #ffffff;
+      background-color: #f5f0e8;
     }
     
     /* スクロールバーを薄く */
@@ -148,7 +148,7 @@
     }
     
     .section::-webkit-scrollbar-track {
-      background: #f5f5f5;
+      background: #f5f0e8;
     }
     
     .section::-webkit-scrollbar-thumb {
@@ -225,7 +225,7 @@
 
     .edit-btn {
       padding: 4px 12px;
-      background-color: #f0f0f0;
+      background-color: #eae5dc;
       color: #888;
       border: none;
       border-radius: 6px;
@@ -239,7 +239,7 @@
     }
 
     .edit-btn:hover {
-      background-color: #e0e0e0;
+      background-color: #d8d0c5;
       color: #555;
       transform: translateY(-1px);
     }
@@ -321,7 +321,8 @@
     }
 
     .task-item {
-      background-color: white;
+      animation: taskFadeIn 0.22s ease both;
+      background-color: #ffffff;
       padding: 7px 9px;
       margin-bottom: 5px;
       border-radius: 3px;
@@ -424,7 +425,7 @@
 
     .clear-all-btn {
       padding: 4px 12px;
-      background-color: #f0f0f0;
+      background-color: #eae5dc;
       color: #888;
       border: none;
       border-radius: 6px;
@@ -505,7 +506,7 @@
 
     .deep-dive-btn {
       padding: 4px 12px;
-      background-color: #f0f0f0;
+      background-color: #eae5dc;
       color: #888;
       border: none;
       border-radius: 6px;
@@ -520,7 +521,7 @@
     }
 
     .deep-dive-btn:hover {
-      background-color: #e0e0e0;
+      background-color: #d8d0c5;
       color: #555;
       transform: translateY(-1px);
     }
@@ -576,8 +577,8 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background-color: white;
-      border: 3px solid #333;
+      background-color: #faf6ef;
+      border: 3px solid #3a2e2e;
       padding: 30px 50px;
       font-size: 1.5em;
       font-weight: bold;
@@ -596,6 +597,7 @@
       max-width: 320px;
       width: 90%;
       box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
+      animation: modalScaleIn 0.22s cubic-bezier(0.34,1.2,0.64,1) both;
       text-align: center;
       max-height: calc(100dvh - 40px);
       max-height: calc(var(--vh, 1vh) * 100 - 40px);
@@ -676,18 +678,18 @@
 
     /* キャンセル - 控えめで優しい */
     .modal-btn-cancel {
-      background-color: #f5f5f5;
+      background-color: #f5f0e8;
       color: #777;
       border: none;
     }
 
     .modal-btn-cancel:hover {
-      background-color: #eee;
+      background-color: #e0dbd3;
       color: #555;
     }
 
     .modal-btn-cancel:active {
-      background-color: #e5e5e5;
+      background-color: #dcd7cf;
     }
 
     /* 全データクリア確認用 */
@@ -770,11 +772,11 @@
     .modal-content select {
       width: 100%;
       padding: 12px 14px;
-      border: 2px solid #e8e8e8;
+      border: 1.5px solid #e0ddd8;
       border-radius: 10px;
       font-size: 0.95em;
       font-family: inherit;
-      background: #fafafa;
+      background: #ffffff;
       box-sizing: border-box;
       transition: all 0.2s ease;
       outline: none;
@@ -818,8 +820,8 @@
     .time-select {
       appearance: none;
       -webkit-appearance: none;
-      background: #fafafa;
-      border: 2px solid #e8e8e8;
+      background: #ffffff;
+      border: 1.5px solid #e0ddd8;
       border-radius: 10px;
       padding: 12px 32px 12px 16px;
       font-size: 1.2em;
@@ -836,13 +838,13 @@
     }
 
     .time-select:hover {
-      border-color: #ccc;
-      background-color: #fff;
+      border-color: #c8c4be;
+      background-color: #f8f6f3;
     }
 
     .time-select:focus {
       border-color: #0095f6;
-      background-color: #fff;
+      background-color: #ffffff;
       box-shadow: 0 0 0 3px rgba(0, 149, 246, 0.08);
     }
 
@@ -1034,7 +1036,7 @@
       overflow: hidden;          /* ← ビュー自体はスクロールしない */
       padding: 0;
       box-sizing: border-box;
-      background-color: #f5f5f5;
+      background-color: #f5f0e8;
       flex-direction: column;
     }
 
@@ -1042,9 +1044,9 @@
     .weekly-sticky-bar {
       flex-shrink: 0;
       width: 100%;
-      background: #fff;
+      background: #f5f0e8;
       z-index: 25;
-      box-shadow: 0 1px 0 #e0e0e0;
+      box-shadow: 0 1px 0 #e0d8ce;
     }
 
     .weekly-header {
@@ -1055,7 +1057,7 @@
       padding: 8px 10px 8px 6px;
       height: 48px;
       box-sizing: border-box;
-      background-color: #ffffff;
+      background-color: #f5f0e8;
       position: relative;
       border-bottom: 1px solid #e0e0e0;
     }
@@ -1100,7 +1102,7 @@
       position: sticky;
       top: 0;
       z-index: 20;
-      background: #f5f5f5;
+      background: #f5f0e8;
       box-shadow: 0 2px 4px rgba(0,0,0,0.08);
       border-bottom: 2px solid #ddd;
     }
@@ -1122,16 +1124,16 @@
       flex: 0 0 70px;
       width: 70px;
       border-right: 2px solid #ddd;
-      background: #fafafa;
+      background: #f5f0e8;
     }
     .wg-header-cell:not(:first-child) {
       flex: 0 0 auto;
       min-width: 0;
     }
     .wg-header-cell:last-child { border-right: none; }
-    .wg-header-cell.wg-sat { background: #e3f2fd; color: #1976d2; }
-    .wg-header-cell.wg-sun { background: #fff3e0; color: #e65100; }
-    .wg-header-cell.wg-today { background: #fff9c4; color: #f57c00; font-weight: bold; border-bottom: 3px solid #fbc02d; }
+    .wg-header-cell.wg-sat { background: #dde8f0; color: #1a6090; }
+    .wg-header-cell.wg-sun { background: #f0e8de; color: #a04020; }
+    .wg-header-cell.wg-today { background: #faf0d0; color: #b05c00; font-weight: bold; border-bottom: 3px solid #fbc02d; }
 
     /* 本体ラッパー（flex横並び） */
     .wg-body {
@@ -1151,7 +1153,7 @@
       z-index: 3;
       box-sizing: border-box;
       border-right: 2px solid #ddd;
-      background: #fafafa;
+      background: #f5f0e8;
       transform: translateZ(0);
     }
     /* sticky内のabsolute基準となるinner wrapper */
@@ -1168,15 +1170,15 @@
       position: relative;
       overflow: hidden;
       box-sizing: border-box;
-      border-right: 1px solid #ddd;
-      background-color: #fff;
+      border-right: 1px solid #d8cfc6;
+      background-color: #f5f0e8;
       /* 80px間隔の水平区切り線（高さに影響ゼロ） */
       background-image: repeating-linear-gradient(
         to bottom,
         transparent 0px,
         transparent 79px,
-        #eee 79px,
-        #eee 80px
+        #e0d8ce 79px,
+        #e0d8ce 80px
       );
     }
     .wg-day-col:last-child { border-right: none; }
@@ -1214,14 +1216,14 @@
       font-size: 0.8em;
       font-weight: bold;
       color: #555;
-      background: #fafafa;     /* 不透明：自身で背景を持つ */
+      background: #f5f0e8;     /* 不透明：自身で背景を持つ */
       border-bottom: 1px solid #eee; /* 区切り線（box-sizing:border-boxで内側に描画） */
       box-sizing: border-box;
       z-index: 2;
     }
     /* 現在時刻行：上端〜下端まで完全に黄色 */
     .wg-time-label.wg-current-hour {
-      background: #fff9c4;
+      background: #faf0d0;
       color: #e65100;
       font-weight: bold;
       border-bottom-color: #fbc02d;
@@ -1248,13 +1250,13 @@
       z-index: 2;
     }
     .wg-cell-bg:hover { background: rgba(0,200,200,0.06) !important; }
-    .wg-cell-bg.wg-sat    { background: rgba(227,242,253,0.7); }
-    .wg-cell-bg.wg-sun    { background: rgba(255,243,224,0.7); }
+    .wg-cell-bg.wg-sat    { background: rgba(200,220,238,0.6); }
+    .wg-cell-bg.wg-sun    { background: rgba(235,218,205,0.6); }
     .wg-cell-bg.wg-today  {
-      background: rgba(255,249,196,0.85);
+      background: rgba(250,240,208,0.9);
       box-shadow: inset 0 -1px 0 #fbc02d;
     }
-    .wg-cell-bg.wg-holiday{ background: rgba(255,243,224,0.7); }
+    .wg-cell-bg.wg-holiday{ background: rgba(235,218,205,0.6); }
     /* zone線はwg-time-labelと共通のbox-shadowで上に統一 */
     .wg-cell-bg.wg-drag-over { background: #e8f5e9 !important; outline: 2px dashed #4caf50; }
 
@@ -1299,7 +1301,7 @@
       overflow: auto;
       padding: 20px;
       box-sizing: border-box;
-      background-color: #f5f5f5;
+      background-color: #f5f0e8;
     }
 
     .monthly-header {
@@ -1311,7 +1313,7 @@
       position: sticky;
       top: 0;
       z-index: 25;
-      background: #fff;
+      background: #faf6ef;
       padding: 10px 12px 10px 45px;
       border-bottom: 1px solid #e0e0e0;
     }
@@ -1325,7 +1327,7 @@
 
     .monthly-nav-btn {
       padding: 6px 10px;
-      background-color: #f5f5f5;
+      background-color: #f5f0e8;
       color: #666;
       border: none;
       border-radius: 8px;
@@ -1357,7 +1359,7 @@
     }
 
     .monthly-weekday-header {
-      background-color: #f5f5f5;
+      background-color: #f5f0e8;
       padding: 10px;
       text-align: center;
       font-weight: bold;
@@ -1365,17 +1367,17 @@
     }
 
     .monthly-weekday-header.saturday {
-      background-color: #e3f2fd;
+      background-color: #dde8f0;
       color: #1976d2;
     }
 
     .monthly-weekday-header.sunday {
-      background-color: #fff3e0;
+      background-color: #f0e8de;
       color: #e65100;
     }
 
     .monthly-day-cell {
-      background-color: white;
+      background-color: #ffffff;
       min-height: 80px;
       /* max-heightはリサイズハンドルで制御 */
       overflow-y: auto;
@@ -1441,7 +1443,7 @@
     }
 
     .monthly-day-cell:hover {
-      background-color: #fafafa;
+      background-color: #f5f0e8;
     }
 
     .monthly-day-cell.other-month {
@@ -1450,15 +1452,15 @@
     }
 
     .monthly-day-cell.saturday {
-      background-color: #e3f2fd;
+      background-color: #dde8f0;
     }
 
     .monthly-day-cell.sunday {
-      background-color: #fff3e0;
+      background-color: #f0e8de;
     }
 
     .monthly-day-cell.today {
-      background-color: #fff9c4;
+      background-color: #faf0d0;
       box-shadow: inset 0 0 0 2px #fbc02d;
     }
 
@@ -1494,7 +1496,7 @@
     }
 
     .monthly-day-cell.holiday {
-      background-color: #fff3e0;
+      background-color: #f0e8de;
     }
 
     .monthly-day-cell.holiday.saturday {
@@ -1520,7 +1522,7 @@
       overflow: auto;
       padding: 10px;
       box-sizing: border-box;
-      background-color: #f5f5f5;
+      background-color: #f5f0e8;
     }
 
     .yearly-header {
@@ -1558,7 +1560,7 @@
     }
 
     .yearly-day-label {
-      background-color: #f0f0f0;
+      background-color: #eae5dc;
       padding: 4px 2px;
       text-align: center;
       font-weight: bold;
@@ -1583,17 +1585,17 @@
     }
 
     .yearly-cell:hover {
-      background-color: #e3f2fd;
+      background-color: #dde8f0;
     }
 
     .yearly-cell.empty {
-      background-color: #f0f0f0;
+      background-color: #eae5dc;
       color: #ccc;
       cursor: default;
     }
 
     .yearly-cell.empty:hover {
-      background-color: #f0f0f0;
+      background-color: #eae5dc;
     }
 
     .yearly-cell.today {
@@ -1750,6 +1752,25 @@
         animation: pulse 1s infinite;
       }
 
+      /* ===== アニメーション追加 ===== */
+      @keyframes taskFadeIn {
+        0%   { opacity: 0; transform: translateY(-6px); }
+        100% { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes checkBounce {
+        0%   { transform: scale(1); }
+        40%  { transform: scale(1.35); }
+        70%  { transform: scale(0.88); }
+        100% { transform: scale(1); }
+      }
+      @keyframes modalScaleIn {
+        0%   { opacity: 0; transform: scale(0.93) translateY(8px); }
+        100% { opacity: 1; transform: scale(1) translateY(0); }
+      }
+      @keyframes modalScaleOut {
+        0%   { opacity: 1; transform: scale(1); }
+        100% { opacity: 0; transform: scale(0.95); }
+      }
       @keyframes pulse {
         0%, 100% { opacity: 1; }
         50% { opacity: 0.6; }
@@ -1890,14 +1911,15 @@
       height: calc(var(--vh, 1vh) * 100 - 50px);
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
+      background: #f5f0e8;
     }
 
     .settings-container {
-      background: white;
+      background: #f5f0e8;
       border-radius: 12px;
       padding: 32px;
       box-shadow: 0 1px 8px rgba(0,0,0,0.06);
-      border: 1px solid #efefef;
+      border: 1px solid #e8e2da;
     }
 
     .settings-section {
@@ -1919,15 +1941,16 @@
       align-items: center;
       gap: 12px;
       padding: 14px 16px;
-      border: 2px solid #e8e8e8;
+      border: 1.5px solid #e0d8ce;
       border-radius: 10px;
       cursor: pointer;
       transition: all 0.2s;
+      background: #faf6ef;
     }
 
     .settings-radio:hover {
-      border-color: #ccc;
-      background: #fafafa;
+      border-color: #c8c0b8;
+      background: #f0ece4;
     }
 
     .settings-radio input[type="radio"] {
@@ -2142,6 +2165,41 @@
       scrollbar-width: thin;
       scrollbar-color: #c5c0b8 transparent;
     }
+    @media (max-width: 600px) {
+      .nb-shelf {
+        flex-wrap: nowrap;
+        padding: 8px 10px 0;
+        gap: 4px;
+        overflow-x: auto;
+      }
+      .nb-shelf-actions {
+        padding-bottom: 6px;
+        gap: 6px;
+      }
+      .nb-shelf-action-btn {
+        font-size: 0.82em;
+        padding: 6px 12px;
+        min-height: 36px;
+        min-width: 64px;
+        border-radius: 16px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .nb-shelf-action-btn {
+        min-height: 34px;
+        padding: 6px 14px;
+        font-size: 0.82em;
+        border-radius: 17px;
+      }
+      .nb-shelf-action-btn.export {
+        background: #d4b8be;
+        color: #5a3a42;
+      }
+      .nb-shelf-action-btn.import {
+        background: #c4b8d0;
+        color: #3e3050;
+      }
+    }
     .nb-shelf::-webkit-scrollbar { height: 4px; }
     .nb-shelf::-webkit-scrollbar-track { background: transparent; }
     .nb-shelf::-webkit-scrollbar-thumb { background: #c5c0b8; border-radius: 2px; }
@@ -2189,6 +2247,20 @@
     }
     .nb-shelf-tab:hover .nb-shelf-tab-del { opacity: 1; }
     .nb-shelf-tab-del:hover { color: #c00; background: rgba(200,0,0,0.08); }
+    @media (hover: none) {
+      /* タッチデバイス: ✕は常時表示・タップしやすいサイズ */
+      .nb-shelf-tab-del {
+        opacity: 0.6;
+        font-size: 1em;
+        padding: 4px 6px;
+        min-width: 28px;
+        min-height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .nb-shelf-tab.active .nb-shelf-tab-del { opacity: 0.8; }
+    }
     .nb-shelf-add {
       flex-shrink: 0;
       padding: 8px 18px 11px;
@@ -2216,31 +2288,35 @@
     }
     .nb-shelf-action-btn {
       flex-shrink: 0;
-      padding: 5px 10px;
-      border-radius: 6px;
-      border: 1px solid rgba(0,0,0,0.1);
-      background: rgba(255,255,255,0.5);
+      padding: 5px 13px;
+      border-radius: 14px;
+      border: none;
       font-size: 0.78em;
-      color: #7a736a;
       cursor: pointer;
       display: flex;
       align-items: center;
       gap: 4px;
-      transition: background 0.12s, color 0.12s;
+      transition: opacity 0.15s, filter 0.15s;
       white-space: nowrap;
+      font-weight: 600;
+      letter-spacing: 0.02em;
     }
-    .nb-shelf-action-btn:hover { background: rgba(255,255,255,0.85); color: #333; }
-    .nb-shelf-action-btn.export { border-color: rgba(80,160,80,0.25); }
-    .nb-shelf-action-btn.export:hover { background: rgba(220,245,220,0.9); color: #2a7a2a; }
-    .nb-shelf-action-btn.import { border-color: rgba(80,120,200,0.25); }
-    .nb-shelf-action-btn.import:hover { background: rgba(220,230,250,0.9); color: #2a4a9a; }
+    .nb-shelf-action-btn:hover { opacity: 0.82; }
+    .nb-shelf-action-btn.export {
+      background: #d4b8be;
+      color: #5a3a42;
+    }
+    .nb-shelf-action-btn.import {
+      background: #c4b8d0;
+      color: #3e3050;
+    }
 
     /* 自由帳共有モーダル（専用） */
     .nb-share-modal {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.5);
+      background: rgba(30,20,15,0.6);
       z-index: 3000;
       align-items: center;
       justify-content: center;
@@ -2248,31 +2324,33 @@
     }
     .nb-share-modal.show { display: flex; }
     .nb-share-modal-box {
-      background: #fff;
+      background: #faf6ef;
       border-radius: 20px;
       padding: 28px 28px 24px;
       max-width: 500px;
       width: 100%;
       max-height: 88vh;
       overflow-y: auto;
-      box-shadow: 0 24px 64px rgba(0,0,0,0.22);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.12), 0 24px 64px rgba(0,0,0,0.22);
       position: relative;
+      border: 1px solid rgba(200,185,175,0.4);
+      animation: modalScaleIn 0.25s cubic-bezier(0.34,1.2,0.64,1) both;
     }
     .nb-share-modal-title {
       font-size: 1.12em;
       font-weight: 700;
-      color: #1c1c1e;
+      color: #3a2e2e;
       margin-bottom: 5px;
     }
     .nb-share-modal-desc {
       font-size: 0.82em;
-      color: #888;
+      color: #9a8880;
       line-height: 1.65;
       margin-bottom: 16px;
     }
-    .nb-share-modal-desc strong { color: #444; }
+    .nb-share-modal-desc strong { color: #6a5a55; }
     .nb-share-section {
-      background: #f7f7f7;
+      background: #f0ece4;
       border-radius: 12px;
       padding: 14px 16px;
       margin-bottom: 10px;
@@ -2280,7 +2358,7 @@
     .nb-share-section-label {
       font-size: 0.72em;
       font-weight: 600;
-      color: #aaa;
+      color: #b0a090;
       letter-spacing: 0.06em;
       text-transform: uppercase;
       margin-bottom: 8px;
@@ -2290,9 +2368,9 @@
       box-sizing: border-box;
       font-size: 0.78em;
       font-family: 'SF Mono', 'Menlo', monospace;
-      color: #444;
-      background: #fff;
-      border: 1.5px solid #e0e0e0;
+      color: #5a4a45;
+      background: #faf6ef;
+      border: 1.5px solid #d8d0c5;
       border-radius: 8px;
       padding: 10px 12px;
       resize: none;
@@ -2300,7 +2378,7 @@
       line-height: 1.5;
       min-height: 72px;
     }
-    .nb-share-code-area:focus { border-color: #aac4f0; }
+    .nb-share-code-area:focus { border-color: #c9a8b0; }
     .nb-share-btn {
       display: block;
       width: 100%;
@@ -2316,25 +2394,25 @@
     }
     .nb-share-btn:hover { opacity: 0.82; }
     .nb-share-btn:active { transform: scale(0.98); }
-    .nb-share-btn.primary { background: #1c1c1e; color: #fff; }
-    .nb-share-btn.green   { background: #30d158; color: #fff; }
-    .nb-share-btn.blue    { background: #0a84ff; color: #fff; }
-    .nb-share-btn.cancel  { background: #f2f2f7; color: #555; }
+    .nb-share-btn.primary { background: #d4b8be; color: #3a1a22; }
+    .nb-share-btn.green   { background: #b8ccb8; color: #2a4a2a; }
+    .nb-share-btn.blue    { background: #c4b8d0; color: #3e3050; }
+    .nb-share-btn.cancel  { background: #e8e4de; color: #5a504a; }
     .nb-share-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
     .nb-share-warn {
       font-size: 0.76em;
-      color: #d44;
-      background: #fff5f2;
+      color: #9a4040;
+      background: #f8eded;
       border-radius: 8px;
       padding: 9px 13px;
       margin-top: 10px;
       line-height: 1.55;
-      border: 1px solid #ffd0c8;
+      border: 1px solid #e8c8c8;
     }
     .nb-back-btn {
       background: none;
       border: none;
-      color: #aaa;
+      color: #b0a090;
       font-size: 0.8em;
       cursor: pointer;
       padding: 0;
@@ -2344,7 +2422,7 @@
       gap: 3px;
       transition: color 0.12s;
     }
-    .nb-back-btn:hover { color: #555; }
+    .nb-back-btn:hover { color: #6a5a55; }
 
     /* STEP0：ページ選択リスト */
     .nb-page-select-list {
@@ -2362,26 +2440,26 @@
       gap: 12px;
       padding: 10px 14px;
       border-radius: 10px;
-      border: 1.5px solid #ebebeb;
-      background: #fafafa;
+      border: 1.5px solid #ddd8d0;
+      background: #f5f0e8;
       cursor: pointer;
       transition: border-color 0.12s, background 0.12s;
       user-select: none;
     }
-    .nb-page-select-item:hover { background: #f0f6ff; border-color: #c0d8f8; }
-    .nb-page-select-item.selected { background: #eef5ff; border-color: #4da3f8; }
+    .nb-page-select-item:hover { background: #f0e8e8; border-color: #c9a8b0; }
+    .nb-page-select-item.selected { background: #f0e8ee; border-color: #c9a8b0; }
     .nb-page-select-check {
       width: 20px; height: 20px;
       border-radius: 6px;
-      border: 2px solid #ccc;
+      border: 2px solid #c8b8b0;
       flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
       font-size: 0.8em;
       transition: border-color 0.12s, background 0.12s;
     }
     .nb-page-select-item.selected .nb-page-select-check {
-      background: #0a84ff;
-      border-color: #0a84ff;
+      background: #c9a8b0;
+      border-color: #c9a8b0;
       color: white;
     }
     .nb-page-select-title {
@@ -2408,13 +2486,14 @@
       background: none;
       border: none;
       font-size: 0.78em;
-      color: #0a84ff;
+      color: #a89080;
       cursor: pointer;
       padding: 0;
+      font-weight: 500;
     }
     .nb-select-count {
       font-size: 0.78em;
-      color: #888;
+      color: #9a8880;
     }
 
     /* STEP1：感情報酬画面 */
@@ -2705,8 +2784,14 @@
       .nb-cornell { min-height: 70vh; }
     }
     @media (max-width: 600px) {
-      .nb-shelf { padding: 10px 12px 0; }
-      .nb-shelf-tab { font-size: 0.76em; padding: 7px 10px 9px; max-width: 110px; }
+      .nb-shelf-tab {
+        font-size: 0.82em;
+        padding: 8px 12px 10px;
+        max-width: 120px;
+        min-height: 40px;
+        gap: 4px;
+      }
+      .nb-shelf-tab.active { padding-bottom: 12px; }
       .nb-date-col { width: 52px; }
       .nb-text-textarea { font-size: 0.88em; }
     }
@@ -2732,7 +2817,7 @@
   <script>
     // 色の切り替えをCSSに反映
     if (typeof USE_COLORS !== 'undefined' && USE_COLORS) {
-      document.write('<style>.section:nth-child(1){background-color:#ffe6e6 !important;}.section:nth-child(2){background-color:#e8f5e9 !important;}.section:nth-child(3){background-color:#fffef5 !important;}.section:nth-child(4){background-color:#f0f0f0 !important;}</style>');
+      document.write('<style>.section:nth-child(1){background-color:#ffe6e6 !important;}.section:nth-child(2){background-color:#e8f5e9 !important;}.section:nth-child(3){background-color:#fffef5 !important;}.section:nth-child(4){background-color:#eae5dc !important;}</style>');
     }
   </script>
 </head>
@@ -3247,7 +3332,7 @@
         </div>
       </div>
       <!-- カレンダークイックフィルター -->
-      <div id="weeklyCalendarFilter" style="display:flex;gap:6px;padding:4px 12px 6px;flex-wrap:wrap;border-bottom:1px solid #f0f0f0;background:#fff;"></div>
+      <div id="weeklyCalendarFilter" style="display:flex;gap:6px;padding:4px 12px 6px;flex-wrap:wrap;border-bottom:1px solid #e0d8ce;background:#f5f0e8;"></div>
     </div>
     <div class="weekly-scroll-area" id="weeklyScrollArea">
       <div class="weekly-container" id="weeklyContainer">
@@ -3275,13 +3360,13 @@
       </div>
     </div>
     <!-- カレンダークイックフィルター -->
-    <div id="monthlyCalendarFilter" style="display:flex;gap:6px;padding:4px 12px 6px;flex-wrap:wrap;border-bottom:1px solid #f0f0f0;background:#fff;position:sticky;top:48px;z-index:24;"></div>
+    <div id="monthlyCalendarFilter" style="display:flex;gap:6px;padding:4px 12px 6px;flex-wrap:wrap;border-bottom:1px solid #e0d8ce;background:#f5f0e8;position:sticky;top:48px;z-index:24;"></div>
     <div id="monthlyCalendar" class="monthly-calendar">
       <!-- JavaScriptで動的に生成 -->
     </div>
 
     <!-- シンプルモード：スタンプバー（折り返し対応） -->
-    <div id="stampBar" style="display: none; position: sticky; bottom: 0; left: 0; right: 0; background: #fff; border-top: 2px solid #eee; padding: 6px 8px 4px; z-index: 30; box-shadow: 0 -2px 8px rgba(0,0,0,0.08);">
+    <div id="stampBar" style="display: none; position: sticky; bottom: 0; left: 0; right: 0; background: #f5f0e8; border-top: 1px solid #e0d8ce; padding: 6px 8px 4px; z-index: 30; box-shadow: 0 -2px 8px rgba(0,0,0,0.08);">
       <!-- スタンプ＋ツール（flex-wrap で自動折り返し） -->
       <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 5px; justify-content: center; padding-bottom: 2px;">
         <div id="stampButtons" style="display: contents;"></div>
@@ -3289,7 +3374,7 @@
           <button onclick="selectEraserMode()" id="stampEraserBtn"
             style="padding: 4px 10px; border-radius: 14px; border: 1.5px solid #ef5350; background: #fff; font-size: 0.75em; cursor: pointer; white-space: nowrap; transition: all 0.2s; color: #ef5350;">🗑</button>
           <button onclick="clearStampSelection()" id="stampClearBtn"
-            style="padding: 4px 10px; border-radius: 14px; border: 1.5px solid #e0e0e0; background: #f5f5f5; font-size: 0.75em; cursor: pointer; white-space: nowrap;">✕</button>
+            style="padding: 4px 10px; border-radius: 14px; border: 1.5px solid #e0e0e0; background: #f5f0e8; font-size: 0.75em; cursor: pointer; white-space: nowrap;">✕</button>
         </div>
       </div>
       <div id="stampSelectionInfo" style="text-align: center; font-size: 0.7em; color: #999; margin-top: 2px;">スタンプを選んで、カレンダーの日付をタップ</div>
@@ -3359,7 +3444,7 @@
 
       <!-- プロフィールセクション -->
       <div class="settings-section">
-        <h3 style="margin: 0 0 20px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">プロフィール</h3>
+        <h3 style="margin: 0 0 20px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #e8e2da; padding-bottom: 12px;">プロフィール</h3>
         <div class="settings-item">
           <div class="profile-edit-area">
             <div class="profile-avatar-edit" onclick="document.getElementById('avatarInput').click()">
@@ -3392,7 +3477,7 @@
 
       <!-- カレンダー管理セクション -->
       <div class="settings-section">
-        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">🏰 クラフトモード</h3>
+        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #e8e2da; padding-bottom: 12px;">🏰 クラフトモード</h3>
         <div class="settings-item" style="margin-bottom: 16px;">
           <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
             <input type="checkbox" id="craftModeEnabled" style="width:18px;height:18px;accent-color:#4facfe;cursor:pointer;">
@@ -3414,7 +3499,7 @@
       </div>
 
       <div class="settings-section">
-        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">🏰 王国を訪問する</h3>
+        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #e8e2da; padding-bottom: 12px;">🏰 王国を訪問する</h3>
         <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #8e8e8e;">仲間の王国コードを入力して訪問できます。Lv.5以上で自分の王国コードを発行できます。</p>
         <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #e07048;">⚠️ 名前や性別を変更した場合は、王国コードを再発行してください。</p>
         <div id="kingdomShareArea">
@@ -3429,7 +3514,7 @@
         </div>
       </div>
 <div class="settings-section">
-        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">初期表示</h3>
+        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #e8e2da; padding-bottom: 12px;">初期表示</h3>
         <div class="settings-item">
           <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #262626; font-size: 0.9em;">アプリ起動時のビュー</label>
           <p style="margin: 0 0 12px 0; font-size: 0.85em; color: #8e8e8e;">アプリを開いたときに最初に表示するビューを選択します</p>
@@ -3459,8 +3544,8 @@
       </div>
 
       <!-- 日次ビュー表示モード -->
-      <div style="margin-top: 24px; border-top: 1px solid #efefef; padding-top: 18px;">
-        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">日次ビュー</h3>
+      <div style="margin-top: 24px; border-top: 1px solid #e8e2da; padding-top: 18px;">
+        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #e8e2da; padding-bottom: 12px;">日次ビュー</h3>
         <div>
           <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #262626; font-size: 0.9em;">表示形式</label>
           <p style="font-size: 0.8em; color: #8e8e8e; margin: 0 0 10px 0;">マトリクス（4象限）またはタイムラインを選択</p>
@@ -3477,11 +3562,28 @@
             </label>
           </div>
         </div>
+
+        <!-- 日次タイムライン：スクロール初期位置（タイムライン選択時のみ表示） -->
+        <div id="dailyScrollInitSetting" style="margin-top:16px; display:none;">
+          <label style="display:block;margin-bottom:8px;font-weight:600;color:#262626;font-size:0.9em;">タイムライン：開いたときのスクロール位置</label>
+          <div class="settings-radio-group" id="dailyScrollInitGroup">
+            <label class="settings-radio-label">
+              <input type="radio" name="dailyScrollInit" value="current_time">
+              <span>🕐 現在時刻にジャンプ</span>
+            </label>
+            <label class="settings-radio-label">
+              <input type="radio" name="dailyScrollInit" value="last_position">
+              <span>📍 前回の位置に戻る</span>
+            </label>
+          </div>
+        </div>
       </div>
 
-      <!-- 月間表示モード -->
-      <div style="margin-top: 24px; border-top: 1px solid #efefef; padding-top: 18px;">
-        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">週間ビュー</h3>
+      </div>
+
+      <!-- 週間ビュー -->
+      <div style="margin-top: 24px; border-top: 1px solid #e8e2da; padding-top: 18px;">
+        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #e8e2da; padding-bottom: 12px;">週間ビュー</h3>
         <div>
           <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #262626; font-size: 0.9em;">表示日数</label>
           <p style="font-size: 0.8em; color: #8e8e8e; margin: 0 0 10px 0;">週間ビューに表示する列数を選択します</p>
@@ -3517,11 +3619,26 @@
             </label>
           </div>
         </div>
+
+        <!-- 週間スクロール初期位置 -->
+        <div style="margin-top:16px;">
+          <label style="display:block;margin-bottom:8px;font-weight:600;color:#262626;font-size:0.9em;">開いたときのスクロール位置</label>
+          <div class="settings-radio-group" id="weeklyScrollInitGroup">
+            <label class="settings-radio-label">
+              <input type="radio" name="weeklyScrollInit" value="current_time">
+              <span>🕐 現在時刻にジャンプ</span>
+            </label>
+            <label class="settings-radio-label">
+              <input type="radio" name="weeklyScrollInit" value="last_position">
+              <span>📍 前回の位置に戻る</span>
+            </label>
+          </div>
+        </div>
       </div>
 
       <!-- 月間表示モード -->
-      <div style="margin-top: 24px; border-top: 1px solid #efefef; padding-top: 18px;">
-        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">月間ビュー</h3>
+      <div style="margin-top: 24px; border-top: 1px solid #e8e2da; padding-top: 18px;">
+        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #e8e2da; padding-bottom: 12px;">月間ビュー</h3>
         <div>
           <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #262626; font-size: 0.9em;">表示モード</label>
           <p style="font-size: 0.8em; color: #8e8e8e; margin: 0 0 10px 0;">セルの高さの挙動を選択します</p>
@@ -3541,8 +3658,8 @@
       </div>
 
       <!-- シンプルモード -->
-      <div style="margin-top: 24px; border-top: 1px solid #efefef; padding-top: 18px;">
-        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">🩺 シンプルモード</h3>
+      <div style="margin-top: 24px; border-top: 1px solid #e8e2da; padding-top: 18px;">
+        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #e8e2da; padding-bottom: 12px;">🩺 シンプルモード</h3>
         <p style="font-size: 0.8em; color: #8e8e8e; margin: 0 0 12px 0;">シフト管理に特化したシンプル画面。スタンプをタップ→日付をタップで入力。</p>
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
           <label style="font-weight: 600; color: #262626; font-size: 0.9em;">シンプルモード</label>
@@ -3566,7 +3683,7 @@
       </div>
       
       <div class="settings-section">
-        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">📅 カレンダー</h3>
+        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #e8e2da; padding-bottom: 12px;">📅 カレンダー</h3>
         <!-- メインカレンダー設定 -->
         <div style="margin-bottom:16px;padding:12px;background:#f8f9ff;border-radius:10px;border:1.5px solid #e8eaf6;">
           <label style="display:block;font-weight:600;font-size:0.88em;color:#3949ab;margin-bottom:6px;">⭐ メインカレンダー</label>
@@ -3588,7 +3705,7 @@
         <div id="calendarSettingsList"></div>
       </div>
 <div class="settings-section">
-        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">👨‍👩‍👧 家族と共有</h3>
+        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #e8e2da; padding-bottom: 12px;">👨‍👩‍👧 家族と共有</h3>
         <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #8e8e8e;">バックエンドなし・コードをLINEで送るだけで家族とタスクを共有できます。</p>
         <button onclick="openFamilyShareModal()"
           style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff;font-size:0.88em;font-weight:700;cursor:pointer;width:100%;">
@@ -3596,7 +3713,7 @@
         </button>
       </div>
 <div class="settings-section">
-          <h3 style="margin:0 0 15px 0;color:#262626;font-size:1.05em;font-weight:600;border-bottom:1px solid #efefef;padding-bottom:12px;">🗄️ データ管理</h3>
+          <h3 style="margin:0 0 15px 0;color:#262626;font-size:1.05em;font-weight:600;border-bottom:1px solid #e8e2da;padding-bottom:12px;">🗄️ データ管理</h3>
           <div style="display:flex;flex-direction:column;gap:10px;">
             <button onclick="exportData()"
               style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:1.5px solid #4facfe;border-radius:10px;background:#f0f9ff;color:#1976d2;font-size:0.88em;font-weight:600;cursor:pointer;width:100%;">
@@ -3633,7 +3750,7 @@
           📤 送る
         </button>
         <button id="familyShareTab_recv" onclick="familyShareSwitchTab('recv')"
-          style="flex:1;padding:8px;border:none;border-bottom:2px solid #eee;background:#fafafa;color:#888;cursor:pointer;font-size:0.9em;">
+          style="flex:1;padding:8px;border:none;border-bottom:2px solid #eee;background:#f5f0e8;color:#888;cursor:pointer;font-size:0.9em;">
           📥 受け取る
         </button>
       </div>
@@ -3808,7 +3925,7 @@
      *    - 象限1（緊急かつ重要）: 赤 (#ffe6e6)
      *    - 象限2（緊急だが重要でない）: 緑 (#e8f5e9)
      *    - 象限3（重要だが緊急でない）: 黄 (#fffef5)
-     *    - 象限4（緊急でも重要でもない）: グレー (#f0f0f0)
+     *    - 象限4（緊急でも重要でもない）: グレー (#eae5dc)
      * 
      * 6. 拡張性
      *    - 新しいビュー追加: フラグ追加 + フィルター関数追加
@@ -4257,7 +4374,7 @@
         container.appendChild(sec);
         noteHits.forEach(p => {
           const row = document.createElement('div');
-          row.style.cssText = 'display:flex;align-items:flex-start;gap:10px;padding:10px 8px;border-bottom:1px solid #f5f5f5;cursor:pointer;border-radius:8px;transition:background 0.1s;';
+          row.style.cssText = 'display:flex;align-items:flex-start;gap:10px;padding:10px 8px;border-bottom:1px solid #f5f0e8;cursor:pointer;border-radius:8px;transition:background 0.1s;';
           row.onmouseover = () => row.style.background = '#f9f9f9';
           row.onmouseout = () => row.style.background = '';
           row.onclick = () => { closeSearchModal(); switchView('notebook'); setTimeout(() => { nbCurrentId = p.id; nbRender(); }, 50); };
@@ -4268,7 +4385,7 @@
           info.style.cssText = 'flex:1;min-width:0;';
           const titleEl = document.createElement('div');
           titleEl.style.cssText = 'font-size:0.9em;font-weight:500;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
-          titleEl.innerHTML = (p.title||'（無題）').replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'), '<mark style="background:#fff9c4;border-radius:2px;">$1</mark>');
+          titleEl.innerHTML = (p.title||'（無題）').replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'), '<mark style="background:#faf0d0;border-radius:2px;">$1</mark>');
           const preview = document.createElement('div');
           preview.style.cssText = 'font-size:0.78em;color:#888;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
           const previewText = (p.textL || p.textR || '').slice(0, 60);
@@ -4289,7 +4406,7 @@
         taskHits.forEach(t => {
           const cal = getCalendar(t.calendarId);
           const row = document.createElement('div');
-          row.style.cssText = 'display:flex;align-items:flex-start;gap:10px;padding:10px 8px;border-bottom:1px solid #f5f5f5;cursor:pointer;border-radius:8px;transition:background 0.1s;';
+          row.style.cssText = 'display:flex;align-items:flex-start;gap:10px;padding:10px 8px;border-bottom:1px solid #f5f0e8;cursor:pointer;border-radius:8px;transition:background 0.1s;';
           row.onmouseover = () => row.style.background = '#f9f9f9';
           row.onmouseout = () => row.style.background = '';
           row.onclick = () => { closeSearchModal(); openTaskEditModal(t.id); };
@@ -4299,7 +4416,7 @@
           info.style.cssText = 'flex:1;min-width:0;';
           const textEl = document.createElement('div');
           textEl.style.cssText = `font-size:0.9em;font-weight:500;color:${t.completed?'#bbb':'#333'};text-decoration:${t.completed?'line-through':''};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;`;
-          textEl.innerHTML = (t.text||'').replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'), '<mark style="background:#fff9c4;border-radius:2px;">$1</mark>');
+          textEl.innerHTML = (t.text||'').replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'), '<mark style="background:#faf0d0;border-radius:2px;">$1</mark>');
           const meta = document.createElement('div');
           meta.style.cssText = 'font-size:0.75em;color:#aaa;margin-top:2px;';
           meta.textContent = (t.date||'') + (t.time?' '+t.time:'') + '　' + (cal?.name||'');
@@ -4759,7 +4876,7 @@
         1:{ bg:'#ffe6e6', bd:'#ff4444' },
         2:{ bg:'#e8f5e9', bd:'#4caf50' },
         3:{ bg:'#fffef5', bd:'#ffc107' },
-        4:{ bg:'#f0f0f0', bd:'#999999' },
+        4:{ bg:'#eae5dc', bd:'#999999' },
       };
 
       const weeklyDaySetting = parseInt(localStorage.getItem('weeklyDays') || '7');
@@ -5148,7 +5265,7 @@
 
           var changeBtn = document.createElement('button');
           changeBtn.textContent = '変更 ▼';
-          changeBtn.style.cssText = 'padding:5px 10px;border-radius:14px;border:1.5px solid #ddd;background:#f5f5f5;color:#888;font-size:0.78em;cursor:pointer;';
+          changeBtn.style.cssText = 'padding:5px 10px;border-radius:14px;border:1.5px solid #ddd;background:#f5f0e8;color:#888;font-size:0.78em;cursor:pointer;';
           changeBtn.onclick = function() {
             localStorage.setItem('autoMainCalendar', 'false');
             renderCalendarSelector(containerId, selectedCalId, onSelect);
@@ -5497,7 +5614,7 @@
             1: { bg: '#ffe6e6', border: '#ff4444' },
             2: { bg: '#e8f5e9', border: '#4caf50' },
             3: { bg: '#fffef5', border: '#ffc107' },
-            4: { bg: '#f0f0f0', border: '#999999' }
+            4: { bg: '#eae5dc', border: '#999999' }
           };
           const color = colors[task.section] || colors[4];
           taskDiv.style.backgroundColor = color.bg;
@@ -5838,7 +5955,7 @@
         var isCurrent = isToday && h === nowHour;
         cell.style.cssText = 'position:absolute;left:0;right:0;height:' + TL_ROW_H + 'px;top:' + (h * TL_ROW_H) + 'px;' +
           'box-sizing:border-box;border-bottom:1px solid #eee;' +
-          (isCurrent ? 'background:linear-gradient(90deg,#fff9c4 0%,#fffde7 100%);' : (h % 2 === 0 ? 'background:#fafafa;' : 'background:#fff;'));
+          (isCurrent ? 'background:linear-gradient(90deg,#faf0d0 0%,#faf0d0 100%);' : (h % 2 === 0 ? 'background:#f5f0e8;' : 'background:#fff;'));
 
         // 時間ラベル
         var label = document.createElement('div');
@@ -5907,7 +6024,7 @@
         1:{ bg:'#ffe6e6', bd:'#ff4444' },
         2:{ bg:'#e8f5e9', bd:'#4caf50' },
         3:{ bg:'#fffef5', bd:'#ffc107' },
-        4:{ bg:'#f0f0f0', bd:'#999999' },
+        4:{ bg:'#eae5dc', bd:'#999999' },
       };
       var myName = localStorage.getItem('profileName') || null;
 
@@ -6063,7 +6180,7 @@
       // 時刻なしタスクセクション（下部に固定）
       if (noTimeTasks.length > 0) {
         var noTimeSection = document.createElement('div');
-        noTimeSection.style.cssText = 'padding:8px 12px;background:#fafafa;border-top:2px solid #e0e0e0;margin-top:4px;border-radius:0 0 8px 8px;';
+        noTimeSection.style.cssText = 'padding:8px 12px;background:#f5f0e8;border-top:2px solid #e0e0e0;margin-top:4px;border-radius:0 0 8px 8px;';
         var noTimeLabel = document.createElement('div');
         noTimeLabel.style.cssText = 'font-size:0.75em;color:#999;margin-bottom:6px;font-weight:600;';
         noTimeLabel.textContent = '⏱ 時間未設定';
@@ -6130,17 +6247,21 @@
         body.appendChild(noTimeSection);
       }
 
-      // 現在時刻へスクロール
-      if (isToday) {
-        setTimeout(function() {
+      // スクロール位置（設定に従う）
+      setTimeout(function() {
+        var tlView = document.getElementById('timelineView');
+        var bodyEl = document.getElementById('timelineBody');
+        var tlScrollMode = localStorage.getItem('dailyScrollInit') || 'current_time';
+        if (tlScrollMode === 'last_position') {
+          var lastY = parseInt(localStorage.getItem('dailyScrollY') || '0');
+          if (tlView) tlView.scrollTop = lastY;
+          if (bodyEl) bodyEl.scrollTop = lastY;
+        } else if (isToday) {
           var scrollTop = Math.max(0, (nowHour - 1) * TL_ROW_H);
-          var bodyEl = document.getElementById('timelineBody');
           if (bodyEl) bodyEl.scrollTop = scrollTop;
-          // timelineViewへのスクロール
-          var tlView = document.getElementById('timelineView');
           if (tlView) tlView.scrollTop = scrollTop;
-        }, 50);
-      }
+        }
+      }, 50);
     }
 
     function changeMonth(delta) {
@@ -6854,6 +6975,16 @@
           onTaskCompleted(task);
         }
         
+        // 完了時バウンスアニメ
+        if (!wasCompleted && task.completed) {
+          const el = document.querySelector('[data-task-id="' + taskId + '"]');
+          if (el) {
+            el.style.animation = 'none';
+            el.offsetHeight; // reflow
+            el.style.animation = 'checkBounce 0.35s cubic-bezier(0.34,1.56,0.64,1)';
+          }
+        }
+        
         // 日次ビュー：全象限を再描画
         renderAllSections();
         
@@ -7013,23 +7144,37 @@
         return;
       }
       
-      
-      const index = allTasks.findIndex(t => t.id === taskId);
-      if (index !== -1) {
-        allTasks.splice(index, 1);
-        saveAllTasks();
+      // 削除スライドアウトアニメ
+      const _delEl = document.querySelector('[data-task-id="' + taskId + '"]');
+      if (_delEl) {
+        _delEl.style.transition = 'opacity 0.18s, transform 0.18s';
+        _delEl.style.opacity = '0';
+        _delEl.style.transform = 'translateX(24px)';
       }
       
-      // 日次ビュー：全象限を再描画
-      renderAllSections();
+      const _doDelete = () => {
+        const index = allTasks.findIndex(t => t.id === taskId);
+        if (index !== -1) {
+          allTasks.splice(index, 1);
+          saveAllTasks();
+        }
+        // 日次ビュー：全象限を再描画
+        renderAllSections();
       
-      // 週間ビューが表示されていたら更新
-      if (isWeeklyViewVisible()) {
-        renderWeeklyView();
-      }
-      // タイムラインが表示されていたら更新
-      if (document.getElementById('timelineView').style.display !== 'none') {
-        renderTimelineView();
+        // 週間ビューが表示されていたら更新
+        if (isWeeklyViewVisible()) {
+          renderWeeklyView();
+        }
+        // タイムラインが表示されていたら更新
+        if (document.getElementById('timelineView').style.display !== 'none') {
+          renderTimelineView();
+        }
+      };
+      // アニメ後に削除実行
+      if (_delEl) {
+        setTimeout(_doDelete, 180);
+      } else {
+        _doDelete();
       }
     }
 
@@ -7518,7 +7663,7 @@
     }
 
     // 逃げログの表示切り替え
-    const SECTION_COLORS = ['#ffe6e6', '#e8f5e9', '#fffef5', '#f5f5f5'];
+    const SECTION_COLORS = ['#ffe6e6', '#e8f5e9', '#fffef5', '#f5f0e8'];
 
     function applyColors() {
       for (let i = 1; i <= 4; i++) {
@@ -7634,12 +7779,18 @@
         currentWeekDate = new Date();
         renderWeeklyView();
         setTimeout(() => {
-          const now = new Date();
-          const currentHourEl = document.getElementById(`weekly-time-${now.getHours()}`);
-          if (currentHourEl) {
-            const weeklyViewEl = document.getElementById('weeklyView');
-            const elTop = currentHourEl.offsetTop;
-            weeklyViewEl.scrollTop = Math.max(0, elTop - 120);
+          const weeklyViewEl = document.getElementById('weeklyView');
+          const scrollMode = localStorage.getItem('weeklyScrollInit') || 'current_time';
+          if (scrollMode === 'last_position') {
+            const lastY = parseInt(localStorage.getItem('weeklyScrollY') || '0');
+            weeklyViewEl.scrollTop = lastY;
+          } else {
+            const now = new Date();
+            const currentHourEl = document.getElementById(`weekly-time-${now.getHours()}`);
+            if (currentHourEl) {
+              const elTop = currentHourEl.offsetTop;
+              weeklyViewEl.scrollTop = Math.max(0, elTop - 120);
+            }
           }
         }, 50);
       } else if (view === 'monthly') {
@@ -7659,6 +7810,16 @@
       } else if (view === 'notebook') {
         notebookView.style.display = 'block';
         document.getElementById('navNotebook').classList.add('active');
+        // 最後に開いていたページを復元。なければ1枚目を開く。
+        if (!nbCurrentId) {
+          var _lastId = localStorage.getItem('nbLastPageId');
+          var _pages = nbPages();
+          if (_lastId && _pages.find(function(p){ return p.id === _lastId; })) {
+            nbCurrentId = _lastId;
+          } else if (_pages.length > 0) {
+            nbCurrentId = _pages[0].id;
+          }
+        }
         // 初回のみObserver起動（以降は自動追従）
         if (!nbSpreadMode) { nbInitSpreadObserver(); } else { nbRender(); }
       } else if (view === 'craft') {
@@ -7770,6 +7931,12 @@
         delBtn.textContent = '✕';
         delBtn.addEventListener('click', function(e) {
           e.stopPropagation();
+          e.preventDefault();
+          nbDeletePage(p.id);
+        });
+        delBtn.addEventListener('touchend', function(e) {
+          e.stopPropagation();
+          e.preventDefault();
           nbDeletePage(p.id);
         });
 
@@ -7817,12 +7984,14 @@
       var isSingle = nbSpreadMode !== 'spread';
 
       if (pages.length === 0 || !nbCurrentId) {
-        // ページがあれば1枚目を自動選択
-        if (pages.length > 0) {
-          nbCurrentId = pages[0].id;
-        } else {
+        if (pages.length === 0) {
+          // ページなし → 空状態を表示
           spread.innerHTML = '<div class="nb-empty-state"><span class="nb-empty-state-icon">📒</span><p>まだページがありません<br>メモ、アイデア、対策ノート、なんでも</p><button class="nb-empty-state-btn" onclick="nbNewPage()">＋ 最初のページを作る</button></div>';
           return;
+        } else {
+          // ページはあるがまだ選択されていない → 1枚目を自動表示
+          nbCurrentId = pages[0].id;
+          nbRenderShelf();
         }
       }
       var page = nbPage(nbCurrentId);
@@ -7946,6 +8115,7 @@
     function nbOpen(id) {
       nbFlush();
       nbCurrentId = id;
+      localStorage.setItem('nbLastPageId', id);
       nbRender();
       var right = document.getElementById('nbPageRight');
       if (right) right.scrollTop = 0;
@@ -8231,7 +8401,7 @@
         const active = t === tab;
         btn.style.cssText = active
           ? 'flex:1;padding:8px;border:none;border-bottom:2px solid #4facfe;background:#fff;font-weight:700;color:#1565c0;cursor:pointer;font-size:0.9em;'
-          : 'flex:1;padding:8px;border:none;border-bottom:2px solid #eee;background:#fafafa;color:#888;cursor:pointer;font-size:0.9em;';
+          : 'flex:1;padding:8px;border:none;border-bottom:2px solid #eee;background:#f5f0e8;color:#888;cursor:pointer;font-size:0.9em;';
         pane.style.display = active ? 'block' : 'none';
       });
       // 送信タブを開いたらコードをリセット
@@ -8391,7 +8561,7 @@
           ' style="flex:1;padding:10px 14px;border:1.5px solid #e5e5e5;border-radius:10px;font-size:0.86em;outline:none;box-sizing:border-box;"'+
           ' onfocus="this.style.borderColor=\'#4da3f8\'" onblur="this.style.borderColor=\'#e5e5e5\'">'+
         '<button onclick="var i=document.getElementById(\''+id+'\');var t=i.type===\'text\';i.type=t?\'password\':\'text\';this.textContent=t?\'表示\':\'隠す\';"'+
-          ' style="padding:0 14px;border:1.5px solid #e5e5e5;border-radius:10px;background:#fafafa;font-size:0.82em;color:#888;cursor:pointer;white-space:nowrap;flex-shrink:0;">表示</button>'+
+          ' style="padding:0 14px;border:1.5px solid #e5e5e5;border-radius:10px;background:#f5f0e8;font-size:0.82em;color:#888;cursor:pointer;white-space:nowrap;flex-shrink:0;">表示</button>'+
       '</div>';
     }
 
@@ -8749,17 +8919,30 @@
     };
 
     function nbInitDnd(tab, idx) {
-      // マウス
+      // マウス（PC）: そのまま
       tab.addEventListener('mousedown', function(e) {
         if (e.target.classList.contains('nb-shelf-tab-del')) return;
         nbDndStart(tab, idx, e.clientX, e.clientY);
       });
-      // タッチ
+      // タッチ（スマホ）: 長押し200ms以上でD&D開始、短タップはclickに任せる
+      var _touchTimer = null;
+      var _touchStartX = 0, _touchStartY = 0;
       tab.addEventListener('touchstart', function(e) {
         if (e.target.classList.contains('nb-shelf-tab-del')) return;
         var t = e.touches[0];
-        nbDndStart(tab, idx, t.clientX, t.clientY);
+        _touchStartX = t.clientX;
+        _touchStartY = t.clientY;
+        _touchTimer = setTimeout(function() {
+          _touchTimer = null;
+          nbDndStart(tab, idx, _touchStartX, _touchStartY);
+        }, 200);
       }, { passive: true });
+      tab.addEventListener('touchend', function(e) {
+        if (_touchTimer) { clearTimeout(_touchTimer); _touchTimer = null; }
+      });
+      tab.addEventListener('touchmove', function(e) {
+        if (_touchTimer) { clearTimeout(_touchTimer); _touchTimer = null; }
+      });
     }
 
     function nbDndStart(tab, idx, x, y) {
@@ -8865,6 +9048,37 @@
     
     // 設定をUIに反映
     function loadSettingsUI() {
+      // 日次タイムラインスクロール初期位置
+      var _dsi = localStorage.getItem('dailyScrollInit') || 'current_time';
+      var _dsiGroup = document.getElementById('dailyScrollInitGroup');
+      if (_dsiGroup) {
+        _dsiGroup.querySelectorAll('input[name="dailyScrollInit"]').forEach(function(r){
+          r.checked = (r.value === _dsi);
+          r.onchange = function(){ localStorage.setItem('dailyScrollInit', this.value); };
+        });
+      }
+      // dailyViewMode連動：タイムライン時のみ表示
+      var _dsiSetting = document.getElementById('dailyScrollInitSetting');
+      var _dailyMode = localStorage.getItem('dailyViewMode') || 'matrix';
+      if (_dsiSetting) _dsiSetting.style.display = (_dailyMode === 'timeline') ? '' : 'none';
+      // dailyViewMode切替時にも連動
+      var _dvGroup = document.getElementById('dailyViewModeGroup');
+      if (_dvGroup) {
+        _dvGroup.querySelectorAll('input[name="dailyViewMode"]').forEach(function(r){
+          r.addEventListener('change', function(){
+            if (_dsiSetting) _dsiSetting.style.display = (this.value === 'timeline') ? '' : 'none';
+          });
+        });
+      }
+      // 週間スクロール初期位置
+      var _wsi = localStorage.getItem('weeklyScrollInit') || 'current_time';
+      var _wsiGroup = document.getElementById('weeklyScrollInitGroup');
+      if (_wsiGroup) {
+        _wsiGroup.querySelectorAll('input[name="weeklyScrollInit"]').forEach(function(r){
+          r.checked = (r.value === _wsi);
+          r.onchange = function(){ localStorage.setItem('weeklyScrollInit', this.value); };
+        });
+      }
       // クラフトモード
       const craftCheck = document.getElementById('craftModeEnabled');
       if (craftCheck) {
@@ -9113,7 +9327,7 @@
         const row = document.createElement('div');
         row.dataset.idx = idx;
         row.draggable = true;
-        row.style.cssText = 'display:flex;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid #f5f5f5;cursor:default;transition:opacity 0.15s;min-width:0;';
+        row.style.cssText = 'display:flex;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid #f5f0e8;cursor:default;transition:opacity 0.15s;min-width:0;';
 
         // D&Dイベント
         row.addEventListener('dragstart', function(e) {
@@ -9309,7 +9523,7 @@
         btn.style.cssText = `
           padding:5px 12px;border-radius:14px;font-size:0.75em;font-weight:600;cursor:pointer;
           border:2px solid ${isOn ? textColor : '#ddd'};
-          background:${isOn ? bgColor : '#f5f5f5'};
+          background:${isOn ? bgColor : '#f5f0e8'};
           color:${isOn ? textColor : '#bbb'};
           transition:all 0.15s;
         `;
@@ -9597,7 +9811,7 @@
       { id: 's3', name: '入り', color: '#e1bee7', textColor: '#6a1b9a', startTime: '16:30', endTime: '01:00' },
       { id: 's4', name: '明け', color: '#c5cae9', textColor: '#283593', startTime: '00:00', endTime: '09:00' },
       { id: 's5', name: '休み', color: '#b2dfdb', textColor: '#00695c', startTime: '', endTime: '' },
-      { id: 's6', name: '有給', color: '#fff9c4', textColor: '#f57f17', startTime: '', endTime: '' }
+      { id: 's6', name: '有給', color: '#faf0d0', textColor: '#f57f17', startTime: '', endTime: '' }
     ];
 
     function getStamps() {
@@ -9757,7 +9971,7 @@
           <textarea id="dayInfoPrivateMemo" rows="2" style="width: 100%; border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 8px; font-size: 0.9em; resize: vertical; box-sizing: border-box; margin-top: 4px;">${dayInfo.privateMemo || ''}</textarea>
         </div>
         <div style="display: flex; gap: 8px; justify-content: flex-end;">
-          <button onclick="document.getElementById('dayInfoModal').remove()" style="padding: 8px 16px; border-radius: 10px; border: 1.5px solid #e0e0e0; background: #f5f5f5; cursor: pointer; font-size: 0.85em;">閉じる</button>
+          <button onclick="document.getElementById('dayInfoModal').remove()" style="padding: 8px 16px; border-radius: 10px; border: 1.5px solid #e0e0e0; background: #f5f0e8; cursor: pointer; font-size: 0.85em;">閉じる</button>
           <button id="dayInfoSaveBtn" style="padding: 8px 16px; border-radius: 10px; border: none; background: #4facfe; color: #fff; cursor: pointer; font-size: 0.85em; font-weight: 600;">保存</button>
         </div>
       `;
@@ -11882,6 +12096,20 @@ document.addEventListener('DOMContentLoaded', function() {
   if (localStorage.getItem('adminMode')) {
     var el = document.getElementById('adminMenuSection');
     if (el) el.style.display = 'block';
+  }
+  // 週間ビューのスクロール位置を記録
+  var _weeklyView = document.getElementById('weeklyView');
+  if (_weeklyView) {
+    _weeklyView.addEventListener('scroll', function() {
+      localStorage.setItem('weeklyScrollY', Math.round(this.scrollTop));
+    }, { passive: true });
+  }
+  // タイムラインのスクロール位置を記録
+  var _tlView = document.getElementById('timelineView');
+  if (_tlView) {
+    _tlView.addEventListener('scroll', function() {
+      localStorage.setItem('dailyScrollY', Math.round(this.scrollTop));
+    }, { passive: true });
   }
 });
 </script>
