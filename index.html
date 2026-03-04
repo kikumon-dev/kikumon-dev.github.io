@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.26.43';
+    const APP_VERSION = 'v0.26.44';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -8872,7 +8872,48 @@
     // ===== 設定関連 =====
     
     // 設定をUIに反映
-    function loadSettingsUI() {
+    // ===== デッキショップ =====
+var OFFICIAL_DECKS = [
+  {
+    id: 'deck_walk',
+    title: '🚶 散歩習慣',
+    desc: '外に出るだけでOK。毎日の小さな冒険。',
+    tasks: [
+      { text: '👟 靴を履いて外に出る', section: 1, memo: '出るだけでOK。距離は関係ない。玄関を出た時点で勝ち。' },
+      { text: '🌿 いつもと違う道を1本歩く', section: 2, memo: '新しい発見が脳を活性化。王国の探索イベント。' },
+      { text: '☀️ 空を1回見上げる', section: 2, memo: '深呼吸しながら。スマホをポケットにしまって空を見る。' },
+      { text: '🎵 好きな音楽を聴きながら歩く', section: 2, memo: '散歩が楽しみになる仕掛け。インプットの時間にしてもOK。' },
+      { text: '🏰 今日も王国の外を冒険した！', section: 2, memo: '歩いた分だけ王国が広がる。毎日の散歩が勇者を強くする。' }
+    ]
+  },
+  {
+    id: 'deck_clean',
+    title: '🧹 お掃除',
+    desc: '1箇所だけ。きれいな王国は清潔な毎日から。',
+    tasks: [
+      { text: '🚽 トイレを拭く', section: 1, memo: '1分でOK。毎日やると汚れが溜まらない。王国の清潔度UP！' },
+      { text: '🪟 換気する', section: 2, memo: '窓を5分開けるだけ。空気が変わると気分も変わる。' },
+      { text: '🧺 洗濯を回す', section: 1, memo: '回すだけでOK。まず回すことが大事。' },
+      { text: '🌀 床を1部屋だけ掃除する', section: 2, memo: '全部屋やらなくていい。今日は1部屋だけ。' },
+      { text: '✨ 今日のお掃除完了！', section: 2, memo: 'タップして完了。きれいな王国は清潔な毎日から生まれる。' }
+    ]
+  },
+  {
+    id: 'deck_exercise',
+    title: '💪 運動習慣',
+    desc: 'スクワット10回だけ。続けることが最強の魔法。',
+    tasks: [
+      { text: '🤸 準備運動を2分する', section: 1, memo: 'いきなりやらない。体を温めるだけで怪我が減る。' },
+      { text: '💪 スクワット10回だけ', section: 2, memo: '10回だけ。物足りなければ増やせばいい。まず10回。' },
+      { text: '🧘 ストレッチを3分する', section: 2, memo: '運動後が効果的。体が柔らかくなると王国の動きもなめらかに。' },
+      { text: '💧 水を飲む', section: 1, memo: '運動前後に必ず。体の王国を整える。' },
+      { text: '🏰 今日も体を動かした！', section: 2, memo: '継続が一番難しい。タップするだけで王国に伝わる。' }
+    ]
+  }
+];
+
+
+function loadSettingsUI() {
       // クラフトモード
       const craftCheck = document.getElementById('craftModeEnabled');
       if (craftCheck) {
@@ -8983,6 +9024,7 @@
         document.getElementById('avatarRemoveBtn').style.display = 'none';
       }
     }
+    if (typeof renderDeckShop === 'function') renderDeckShop();
     
     // アバター画像変更
     function handleAvatarChange(event) {
@@ -10102,49 +10144,11 @@
     // 起動時にシンプルモード適用
     applySimpleMode();
   
-// ===== デッキショップ =====
-var OFFICIAL_DECKS = [
-  {
-    id: 'deck_walk',
-    title: '🚶 散歩習慣',
-    desc: '外に出るだけでOK。毎日の小さな冒険。',
-    tasks: [
-      { text: '👟 靴を履いて外に出る', section: 1, memo: '出るだけでOK。距離は関係ない。玄関を出た時点で勝ち。' },
-      { text: '🌿 いつもと違う道を1本歩く', section: 2, memo: '新しい発見が脳を活性化。王国の探索イベント。' },
-      { text: '☀️ 空を1回見上げる', section: 2, memo: '深呼吸しながら。スマホをポケットにしまって空を見る。' },
-      { text: '🎵 好きな音楽を聴きながら歩く', section: 2, memo: '散歩が楽しみになる仕掛け。インプットの時間にしてもOK。' },
-      { text: '🏰 今日も王国の外を冒険した！', section: 2, memo: '歩いた分だけ王国が広がる。毎日の散歩が勇者を強くする。' }
-    ]
-  },
-  {
-    id: 'deck_clean',
-    title: '🧹 お掃除',
-    desc: '1箇所だけ。きれいな王国は清潔な毎日から。',
-    tasks: [
-      { text: '🚽 トイレを拭く', section: 1, memo: '1分でOK。毎日やると汚れが溜まらない。王国の清潔度UP！' },
-      { text: '🪟 換気する', section: 2, memo: '窓を5分開けるだけ。空気が変わると気分も変わる。' },
-      { text: '🧺 洗濯を回す', section: 1, memo: '回すだけでOK。まず回すことが大事。' },
-      { text: '🌀 床を1部屋だけ掃除する', section: 2, memo: '全部屋やらなくていい。今日は1部屋だけ。' },
-      { text: '✨ 今日のお掃除完了！', section: 2, memo: 'タップして完了。きれいな王国は清潔な毎日から生まれる。' }
-    ]
-  },
-  {
-    id: 'deck_exercise',
-    title: '💪 運動習慣',
-    desc: 'スクワット10回だけ。続けることが最強の魔法。',
-    tasks: [
-      { text: '🤸 準備運動を2分する', section: 1, memo: 'いきなりやらない。体を温めるだけで怪我が減る。' },
-      { text: '💪 スクワット10回だけ', section: 2, memo: '10回だけ。物足りなければ増やせばいい。まず10回。' },
-      { text: '🧘 ストレッチを3分する', section: 2, memo: '運動後が効果的。体が柔らかくなると王国の動きもなめらかに。' },
-      { text: '💧 水を飲む', section: 1, memo: '運動前後に必ず。体の王国を整える。' },
-      { text: '🏰 今日も体を動かした！', section: 2, memo: '継続が一番難しい。タップするだけで王国に伝わる。' }
-    ]
-  }
-];
 
 function renderDeckShop() {
   var el = document.getElementById('deckShopList');
   if (!el) return;
+  if (typeof OFFICIAL_DECKS === 'undefined') return;
   el.innerHTML = '';
   OFFICIAL_DECKS.forEach(function(deck) {
     var received = localStorage.getItem('deck_received_' + deck.id);
