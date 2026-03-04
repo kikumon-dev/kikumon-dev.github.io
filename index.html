@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.26.44';
+    const APP_VERSION = 'v0.27.4';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -2770,6 +2770,12 @@
   <rect x="21" y="16" width="2" height="3"/>
   <rect x="25" y="16" width="2" height="3"/>
 </svg></button>
+    <button class="nav-tab" id="navShop" onclick="switchView('shop')" title="デッキショップ"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;">
+  <!-- 取っ手（灰色半円） -->
+  <path d="M7 12 A5 6 0 0 1 17 12" stroke="#999" stroke-width="2.5"/>
+  <!-- カバン本体（灰色塗り） -->
+  <rect x="3" y="12" width="18" height="10" rx="2" fill="#999" stroke="#999"/>
+</svg></button>
     <button class="nav-tab" id="navSearch" onclick="openSearchModal()" title="タスクを検索"
       style="font-size:1.1em;padding:14px 12px;">🔍</button>
     <button class="nav-tab nav-tab-settings" id="navSettings" onclick="switchView('settings')">
@@ -2878,9 +2884,14 @@
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding: 0 2px;">
       <button class="monthly-nav-btn" style="padding: 5px 8px; font-size: 0.72em; white-space: nowrap; flex-shrink: 0;" onclick="changeTimelineDate(-1)">◀ 前日</button>
       <h2 id="timelineTitle" style="margin: 0; font-size: 0.88em; text-align: center; white-space: nowrap; font-weight: 700;"></h2>
-      <div style="display: flex; gap: 4px; flex-shrink: 0;">
+      <div style="display: flex; gap: 4px; flex-shrink: 0; align-items: center;">
         <button class="monthly-nav-btn" style="padding: 5px 8px; font-size: 0.72em; white-space: nowrap;" onclick="changeTimelineDate(1)">翌日 ▶</button>
         <button onclick="goTimelineToday()" style="font-size: 0.68em; padding: 5px 6px; border-radius: 5px; border: 1.5px solid #4facfe; background: #fff; color: #4facfe; cursor: pointer; white-space: nowrap; font-weight: 600;">今日</button>
+        <span style="font-size:0.65em;color:#bbb;">↕</span>
+        <input type="range" id="tlHeightSlider" min="80" max="300" value="80"
+          style="width:50px;accent-color:#4facfe;cursor:pointer;writing-mode:horizontal-tb;"
+          oninput="adjustTlRowHeight(this.value)">
+        <button onclick="resetTlRowHeight()" style="font-size:0.6em;color:#aaa;background:none;border:1px solid #ddd;border-radius:3px;padding:1px 4px;cursor:pointer;">↺</button>
       </div>
     </div>
     <div id="timelineBody" style="width:100%; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; box-sizing: border-box;"></div>
@@ -3342,6 +3353,14 @@
   <div id="craftMessage" style="position:absolute;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:#ffd700;padding:10px 20px;border-radius:20px;font-family:monospace;font-size:0.9em;border:1px solid rgba(255,215,0,0.4);opacity:0;transition:opacity 0.5s;white-space:nowrap;pointer-events:none;"></div>
   <div style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.3);font-size:0.7em;font-family:monospace;pointer-events:none;">ドラッグで視点回転 / スクロールでズーム</div>
 </div>
+<div id="shopView" class="settings-view" style="display:none;">
+  <div class="settings-container">
+    <h2 style="margin:0 0 24px 0;color:#262626;font-size:1.4em;font-weight:700;">🛍️ デッキショップ</h2>
+    <p style="margin:0 0 20px 0;font-size:0.88em;color:#8e8e8e;">公式デッキを受け取ろう。受け取ったタスクは今日の日次に追加されます。</p>
+    <div id="deckShopList" style="display:flex;flex-direction:column;gap:14px;"></div>
+  </div>
+</div>
+
 <div id="settingsView"  class="settings-view" style="display: none;">
     <div class="settings-container">
       <h2 style="margin: 0 0 30px 0; color: #262626; font-size: 1.4em; font-weight: 700; letter-spacing: -0.01em;">設定</h2>
@@ -3413,13 +3432,6 @@
         </div>
       </div>
 
-      <!-- ===== デッキショップ ===== -->
-      <div class="settings-section">
-        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">🛍️ デッキショップ</h3>
-        <p style="margin: 0 0 14px 0; font-size: 0.83em; color: #8e8e8e;">公式デッキをタップして受け取ろう。受け取ったデッキは今日の日次に追加されます。</p>
-        <div id="deckShopList" style="display:flex;flex-direction:column;gap:12px;"></div>
-      </div>
-
       <div class="settings-section">
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">🏰 王国を訪問する</h3>
         <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #8e8e8e;">仲間の王国コードを入力して訪問できます。Lv.5以上で自分の王国コードを発行できます。</p>
@@ -3484,6 +3496,22 @@
             </label>
           </div>
         </div>
+        <div style="margin-top:16px;">
+          <label style="display:block;margin-bottom:8px;font-weight:600;color:#262626;font-size:0.9em;">🕐 タイムライン開始位置</label>
+          <p style="font-size:0.8em;color:#8e8e8e;margin:0 0 10px 0;">タイムラインを開いたときのスクロール位置</p>
+          <div class="settings-radio-group" id="tlScrollModeGroup">
+            <label class="settings-radio-label">
+              <input type="radio" name="tlScrollMode" value="now" checked>
+              <span>🕑 現在時刻から始まる</span>
+              <span style="font-size:0.75em;color:#8e8e8e;margin-left:8px;">今日は現在時刻、他の日は9時</span>
+            </label>
+            <label class="settings-radio-label">
+              <input type="radio" name="tlScrollMode" value="last">
+              <span>🔖 以前の操作から始まる</span>
+              <span style="font-size:0.75em;color:#8e8e8e;margin-left:8px;">最後にスクロールした位置を復元</span>
+            </label>
+          </div>
+        </div>
       </div>
 
       <!-- 月間表示モード -->
@@ -3507,6 +3535,22 @@
               <input type="radio" name="weeklyDays" value="7" checked>
               <span>📅 7日間</span>
               <span style="font-size: 0.75em; color: #8e8e8e; margin-left: 8px;">週全体（デフォルト）</span>
+            </label>
+          </div>
+        </div>
+        <div style="margin-top:16px;">
+          <label style="display:block;margin-bottom:8px;font-weight:600;color:#262626;font-size:0.9em;">🕐 週間ビュー開始位置</label>
+          <p style="font-size:0.8em;color:#8e8e8e;margin:0 0 10px 0;">週間ビューを開いたときのスクロール位置</p>
+          <div class="settings-radio-group" id="wgScrollModeGroup">
+            <label class="settings-radio-label">
+              <input type="radio" name="wgScrollMode" value="now" checked>
+              <span>🕑 現在時刻から始まる</span>
+              <span style="font-size:0.75em;color:#8e8e8e;margin-left:8px;">今日は現在時刻、他は9時</span>
+            </label>
+            <label class="settings-radio-label">
+              <input type="radio" name="wgScrollMode" value="last">
+              <span>🔖 以前の操作から始まる</span>
+              <span style="font-size:0.75em;color:#8e8e8e;margin-left:8px;">最後にスクロールした位置を復元</span>
             </label>
           </div>
         </div>
@@ -5059,6 +5103,28 @@
 
       container.appendChild(body);
 
+      // 週間ビュースクロール位置
+      setTimeout(function() {
+        var _wgMode = localStorage.getItem('wgScrollMode') || 'now';
+        var scrollArea = document.getElementById('weeklyScrollArea');
+        if (!scrollArea) return;
+        if (_wgMode === 'last') {
+          var lastTop = parseInt(localStorage.getItem('wgLastScrollTop') || '0');
+          scrollArea.scrollTop = lastTop;
+        } else {
+          var now2 = new Date();
+          var h2 = now2.getHours(), m2 = now2.getMinutes();
+          var scrollTop = Math.max(0, h2 * ROW_H + Math.round(m2 / 60 * ROW_H) - ROW_H);
+          scrollArea.scrollTop = scrollTop;
+        }
+        // スクロール位置を随時保存
+        if (!scrollArea._wgScrollSaving) {
+          scrollArea._wgScrollSaving = true;
+          scrollArea.addEventListener('scroll', function() {
+            localStorage.setItem('wgLastScrollTop', scrollArea.scrollTop);
+          });
+        }
+      }, 50);
 
     }
 
@@ -5797,6 +5863,17 @@
       renderTimelineView();
     }
 
+    function adjustTlRowHeight(val) {
+      var h = parseInt(val);
+      localStorage.setItem('tlRowHeights', JSON.stringify(Array(24).fill(h)));
+      renderTimelineView();
+    }
+    function resetTlRowHeight() {
+      localStorage.removeItem('tlRowHeights');
+      document.getElementById('tlHeightSlider').value = 80;
+      renderTimelineView();
+    }
+
     function renderTimelineView() {
       if (!currentTimelineDate) currentTimelineDate = new Date();
       const dateStr = getLocalDateStr(currentTimelineDate);
@@ -5807,9 +5884,50 @@
 
       const body = document.getElementById('timelineBody');
       body.innerHTML = '';
+      // スライダー値を現在の行高（全行が同じ場合のみ）に同期
+      var _slider = document.getElementById('tlHeightSlider');
+      if (_slider) {
+        var _allSame = tlRowHeights && tlRowHeights.every(function(h){ return h === tlRowHeights[0]; });
+        if (_allSame && tlRowHeights) _slider.value = tlRowHeights[0];
+      }
 
-      // 週間ビューと同じROW_H・スタイル
-      const TL_ROW_H = 80;
+      // 可変行高（各時間帯ごとに独立した高さ）
+      const TL_ROW_H = 80; // デフォルト行高
+      const TL_MIN_H = 24; // 最小行高
+      // localStorage から行高を復元（なければデフォルト）
+      var _tlHStr = localStorage.getItem('tlRowHeights');
+      var tlRowHeights = _tlHStr ? JSON.parse(_tlHStr) : null;
+      if (!tlRowHeights || tlRowHeights.length !== 24) {
+        tlRowHeights = [];
+        for (var _i = 0; _i < 24; _i++) tlRowHeights.push(TL_ROW_H);
+      }
+      // 累積topPxを返すヘルパー
+      function tlTopPx(hour) {
+        var px = 0;
+        for (var _h = 0; _h < hour; _h++) px += tlRowHeights[_h];
+        return px;
+      }
+      // 分→topPxに変換（行高考慮）
+      function tlMinutesToPx(h, m) {
+        return tlTopPx(h) + Math.round(m / 60 * tlRowHeights[h]);
+      }
+      // 総高さ
+      function tlTotalHeight() {
+        return tlRowHeights.reduce(function(a,b){ return a+b; }, 0);
+      }
+      // px→分に逆変換（可変行高対応）
+      function tlPxToMinutes(px) {
+        var accum = 0;
+        for (var _h = 0; _h < 24; _h++) {
+          var rowH = tlRowHeights[_h];
+          if (px <= accum + rowH) {
+            var frac = (px - accum) / rowH;
+            return Math.round((_h * 60 + frac * 60) / 5) * 5;
+          }
+          accum += rowH;
+        }
+        return 23 * 60 + 55;
+      }
       const now = new Date();
       const isToday = dateStr === getLocalDateStr(now);
       const nowHour = now.getHours();
@@ -5836,31 +5954,159 @@
       // コンテナ（週間ビューのwg-day-colと同構造）
       var container = document.createElement('div');
       container.style.cssText = 'position:relative; width:100%; overflow:hidden;';
-      var totalH = 24 * TL_ROW_H;
-      container.style.height = totalH + 'px';
+      // container高さは可変（tlRebuildBgで更新）
 
-      // 時間グリッド背景
+      // 時間グリッド背景（可変行高対応）
+      var tlDraggingLine = null;
+      var tlDraggingHour = -1;
+      var tlDragStartY = 0;
+      var tlDragStartH = 0;
+      var tlBgCells = [];
+      var tlLineEls = [];
+
+      container.style.height = tlTotalHeight() + 'px';
+
       for (var h = 0; h < 24; h++) {
         var cell = document.createElement('div');
         var isCurrent = isToday && h === nowHour;
-        cell.style.cssText = 'position:absolute;left:0;right:0;height:' + TL_ROW_H + 'px;top:' + (h * TL_ROW_H) + 'px;' +
-          'box-sizing:border-box;border-bottom:1px solid #eee;' +
+        cell.style.cssText = 'position:absolute;left:0;right:0;height:' + tlRowHeights[h] + 'px;top:' + tlTopPx(h) + 'px;' +
+          'box-sizing:border-box;' +
           (isCurrent ? 'background:linear-gradient(90deg,#fff9c4 0%,#fffde7 100%);' : (h % 2 === 0 ? 'background:#fafafa;' : 'background:#fff;'));
-
-        // 時間ラベル
-        var label = document.createElement('div');
-        label.style.cssText = 'position:absolute;left:0;top:4px;width:44px;text-align:right;font-size:0.72em;font-weight:600;color:' +
-          (isCurrent ? '#e65100' : '#bbb') + ';padding-right:6px;';
-        label.textContent = String(h).padStart(2,'0') + ':00';
-        cell.appendChild(label);
-
-        // 区切り線（太め：6時・12時・18時）
-        if (h === 6 || h === 12 || h === 18) {
-          cell.style.borderTop = '2px solid #e0e0e0';
-        }
-
+        tlBgCells.push(cell);
         container.appendChild(cell);
       }
+
+      function tlRebuildBg() {
+        container.style.height = tlTotalHeight() + 'px';
+        for (var i = 0; i < 24; i++) {
+          tlBgCells[i].style.top = tlTopPx(i) + 'px';
+          tlBgCells[i].style.height = tlRowHeights[i] + 'px';
+          var isCur = isToday && i === nowHour;
+          if (tlRowHeights[i] > TL_ROW_H * 1.5) {
+            tlBgCells[i].style.background = isCur ? 'linear-gradient(90deg,#fff9c4,#fffde7)' : (i % 2 === 0 ? '#f0f8ff' : '#f8fcff');
+          } else {
+            tlBgCells[i].style.background = isCur ? 'linear-gradient(90deg,#fff9c4,#fffde7)' : (i % 2 === 0 ? '#fafafa' : '#fff');
+          }
+          if (tlLineEls[i]) {
+            var lbl = tlLineEls[i].querySelector('div:last-child');
+            var ratio = tlRowHeights[i] / TL_ROW_H;
+            var fs = Math.min(1.4, Math.max(0.65, 0.72 * ratio));
+            if (lbl) lbl.style.fontSize = fs + 'em';
+          }
+        }
+        localStorage.setItem('tlRowHeights', JSON.stringify(tlRowHeights));
+      }
+      // 時間グリッド線（独立div・ドラッグ可能）
+      for (var h = 0; h < 24; h++) {
+        (function(hour) {
+          var isMajor = (hour === 6 || hour === 12 || hour === 18);
+          var isCurrent = isToday && hour === nowHour;
+          var topPxInit = tlTopPx(hour);
+
+          // 線本体
+          var line = document.createElement('div');
+          line.dataset.tlHour = hour;
+          line.style.cssText = 'position:absolute;left:0;right:0;height:' + (isMajor ? '10px' : '8px') + ';top:' + topPxInit + 'px;z-index:20;cursor:ns-resize;display:flex;align-items:center;';
+
+          // 実際の線（細め）
+          var lineBar = document.createElement('div');
+          lineBar.style.cssText = 'position:absolute;left:0;right:0;height:' + (isMajor ? '2px' : '1px') + ';top:50%;transform:translateY(-50%);' +
+            'background:' + (isMajor ? '#d0d0d0' : '#eee') + ';transition:background 0.15s,height 0.15s;';
+
+          // グリップ（中央）
+          var grip = document.createElement('div');
+          grip.style.cssText = 'position:absolute;left:50%;transform:translateX(-50%);top:50%;transform:translate(-50%,-50%);' +
+            'width:28px;height:8px;display:flex;flex-direction:column;justify-content:space-between;align-items:center;opacity:0;transition:opacity 0.15s;pointer-events:none;';
+          grip.innerHTML =
+            '<div style="width:20px;height:1.5px;background:#4facfe;border-radius:1px;"></div>' +
+            '<div style="width:20px;height:1.5px;background:#4facfe;border-radius:1px;"></div>' +
+            '<div style="width:20px;height:1.5px;background:#4facfe;border-radius:1px;"></div>';
+
+          // 時刻ラベル（左端・常時）
+          var label = document.createElement('div');
+          label.style.cssText = 'position:absolute;left:2px;top:50%;transform:translateY(-50%);font-size:0.72em;font-weight:600;padding-right:6px;width:44px;text-align:right;' +
+            'color:' + (isCurrent ? '#e65100' : '#bbb') + ';pointer-events:none;transition:font-size 0.15s,color 0.15s;';
+          label.textContent = String(hour).padStart(2,'0') + ':00';
+
+          line.appendChild(lineBar);
+          line.appendChild(grip);
+          line.appendChild(label);
+          tlLineEls[hour] = line;
+          container.appendChild(line);
+
+          // ホバー
+          line.addEventListener('mouseenter', function() {
+            lineBar.style.background = '#4facfe';
+            lineBar.style.height = '2px';
+            grip.style.opacity = '1';
+            label.style.color = '#4facfe';
+            label.style.fontSize = '0.85em';
+          });
+          line.addEventListener('mouseleave', function() {
+            if (tlDraggingLine !== line) {
+              lineBar.style.background = isMajor ? '#d0d0d0' : '#eee';
+              lineBar.style.height = isMajor ? '2px' : '1px';
+              grip.style.opacity = '0';
+              label.style.color = isCurrent ? '#e65100' : '#bbb';
+              label.style.fontSize = '0.72em';
+            }
+          });
+
+          // ドラッグ開始（行高変更方式）
+          function startDrag(clientY) {
+            tlDraggingLine = line;
+            tlDraggingHour = hour;
+            tlDragStartY = clientY;
+            tlDragStartH = tlRowHeights[hour > 0 ? hour - 1 : 0];
+            lineBar.style.background = '#4facfe';
+            lineBar.style.height = '3px';
+            grip.style.opacity = '1';
+            label.style.color = '#4facfe';
+            label.style.fontWeight = '800';
+          }
+          line.addEventListener('mousedown', function(e) {
+            e.preventDefault(); e.stopPropagation();
+            startDrag(e.clientY);
+          });
+          line.addEventListener('touchstart', function(e) {
+            e.stopPropagation();
+            startDrag(e.touches[0].clientY);
+          }, {passive:true});
+        })(h);
+      }
+
+      // ドラッグ移動・終了（行高変更方式）
+      function _tlApplyRowDrag(clientY) {
+        if (!tlDraggingLine || tlDraggingHour < 1) return;
+        var targetHour = tlDraggingHour - 1; // 線の上の行を変更
+        var delta = clientY - tlDragStartY;
+        var newH = Math.max(TL_MIN_H, tlDragStartH + delta);
+        tlRowHeights[targetHour] = Math.round(newH);
+        // 線の位置を更新
+        for (var i = 0; i < 24; i++) {
+          if (tlLineEls[i]) tlLineEls[i].style.top = tlTopPx(i) + 'px';
+        }
+        tlRebuildBg();
+        // タスクブロックの位置も更新
+        var taskEls = container.querySelectorAll('[data-is-tl-task]');
+        Array.prototype.forEach.call(taskEls, function(el) {
+          var tid = el.dataset.taskId;
+          var task = allTasks.find(function(t){ return t.id === tid; });
+          if (!task || !task.time) return;
+          var tp = task.time.split(':').map(Number);
+          el.style.top = tlMinutesToPx(tp[0], tp[1]) + 'px';
+        });
+      }
+      document.addEventListener('mousemove', function(e) {
+        if (!tlDraggingLine) return;
+        _tlApplyRowDrag(e.clientY);
+      });
+      document.addEventListener('touchmove', function(e) {
+        if (!tlDraggingLine) return;
+        _tlApplyRowDrag(e.touches[0].clientY);
+      }, {passive:true});
+      document.addEventListener('mouseup', function() { tlDraggingLine = null; tlDraggingHour = -1; });
+      document.addEventListener('touchend', function() { tlDraggingLine = null; tlDraggingHour = -1; });
 
       // D&D: containerへのdrop（時刻変更）
       container.addEventListener('dragover', function(e) {
@@ -5876,14 +6122,15 @@
           var task = allTasks.find(function(t) { return t.id === data.taskId; });
           if (!task) return;
           var rect = container.getBoundingClientRect();
-          var y = e.clientY - rect.top;
-          var totalMinutes = Math.round(y / tlRowH * 60);
-          totalMinutes = Math.max(0, Math.min(totalMinutes, 23 * 60 + 59));
+          var _tlBodyEl = document.getElementById('timelineBody');
+          var y = e.clientY - rect.top + (_tlBodyEl ? _tlBodyEl.scrollTop : 0);
+          var totalMinutes = tlPxToMinutes(y);
+          totalMinutes = Math.max(0, Math.min(totalMinutes, 23 * 60 + 55));
           var h = Math.floor(totalMinutes / 60);
-          var m = Math.round((totalMinutes % 60) / 5) * 5;
+          var m = totalMinutes % 60;
           if (m >= 60) { h++; m = 0; }
           var newTime = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
-          updateTask(task.id, { date: tlDateStr, time: newTime });
+          updateTask(task.id, { date: tlDateStr, time: newTime, displayScope: 'both' });
           renderTimelineView();
           renderWeeklyView();
         };
@@ -5891,18 +6138,24 @@
 
       // container全体のクリック → タスクでない場所なら新規作成
       // (タスクはe.stopPropagationしないが data-taskid で判定)
+      var _tlDidDrag = false;
+      container.addEventListener('mousedown', function() { _tlDidDrag = false; });
+      container.addEventListener('mousemove', function() { _tlDidDrag = true; });
       container.addEventListener('click', (function(tlDateStr, tlRowH) {
         return function(e) {
-          // taskDivかその子要素がターゲットなら無視
+          // 線のドラッグ後はクリック無効
+          if (_tlDidDrag) { _tlDidDrag = false; return; }
+          // 線自体のクリックは無効
           var el = e.target;
           while (el && el !== container) {
-            if (el.dataset && el.dataset.isTlTask) return;
+            if (el.dataset && (el.dataset.tlHour !== undefined || el.dataset.isTlTask)) return;
             el = el.parentElement;
           }
           // クリック位置から時刻を計算
           var rect = container.getBoundingClientRect();
           var y = e.clientY - rect.top + container.scrollTop;
-          var hour = Math.floor(y / tlRowH);
+          var totalMin = tlPxToMinutes(y);
+          var hour = Math.floor(totalMin / 60);
           if (hour < 0) hour = 0;
           if (hour > 23) hour = 23;
           openWeeklyTaskCreateModal(tlDateStr, hour);
@@ -5922,17 +6175,22 @@
       var timedTasks = dayTasks.filter(function(t) { return !!t.time; }).map(function(t) {
         var parts = t.time.split(':').map(Number);
         var sh = parts[0], sm = parts[1];
-        var topPx = sh * TL_ROW_H + Math.round(sm / 60 * TL_ROW_H);
-        var blockH = 36;
+        var topPx = tlMinutesToPx(sh, sm);
+        var blockH = Math.round(TL_MIN_H * 1.5);
         if (t.endTime) {
           var ep = t.endTime.split(':').map(Number);
           var dur = (ep[0]*60+ep[1]) - (sh*60+sm);
-          if (dur > 0) blockH = Math.round(dur / 60 * TL_ROW_H);
+          if (dur > 0) {
+            // endTimeまでの各行高を積算
+            var endPx = tlMinutesToPx(ep[0], ep[1]);
+            blockH = Math.max(Math.round(TL_MIN_H * 1.5), endPx - topPx);
+          }
         }
         return { task: t, topPx: topPx, blockH: blockH, col: 0, totalCols: 1 };
       });
 
-      // 列を割り当て
+      // 列を割り当て（昇順ソート必須）
+      timedTasks.sort(function(a, b) { return a.topPx - b.topPx; });
       var colEnds = [];
       timedTasks.forEach(function(item) {
         var placed = false;
@@ -5950,13 +6208,14 @@
         }
       });
 
-      // 重なるタスク同士のtotalColsを揃える
+      // 重なるタスク同士のtotalColsを揃える（自分自身は除外・1px超の重なりのみ）
       timedTasks.forEach(function(item) {
         var maxCol = item.col;
         timedTasks.forEach(function(other) {
+          if (other === item) return;
           var os = Math.max(item.topPx, other.topPx);
           var oe = Math.min(item.topPx + item.blockH, other.topPx + other.blockH);
-          if (oe > os) maxCol = Math.max(maxCol, other.col);
+          if (oe - os > 1) maxCol = Math.max(maxCol, other.col);
         });
         item.totalCols = maxCol + 1;
       });
@@ -6058,7 +6317,7 @@
       if (isToday) {
         var nowLine = document.createElement('div');
         nowLine.style.cssText = 'position:absolute;left:0;right:0;height:0;border-top:1.5px solid rgba(244,67,54,0.45);z-index:25;pointer-events:none;top:' +
-          (nowHour * TL_ROW_H + Math.round(nowMin / 60 * TL_ROW_H)) + 'px;';
+          tlMinutesToPx(nowHour, nowMin) + 'px;';
         var dot = document.createElement('div');
         dot.style.cssText = 'position:absolute;left:41px;top:-3px;width:6px;height:6px;border-radius:50%;background:rgba(244,67,54,0.55);';
         nowLine.appendChild(dot);
@@ -6080,7 +6339,16 @@
           var calColor = cal ? { bg: cal.color + '22', bd: cal.color } : null;
           var colors = calColor || SEC_COLOR_TL[t.section] || SEC_COLOR_TL[2];
           var item = document.createElement('div');
-          item.style.cssText = 'padding:5px 8px;border-radius:5px;font-size:0.85em;margin-bottom:4px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:6px;' +
+          item.draggable = true;
+          item.addEventListener('dragstart', (function(task){
+            return function(e) {
+              e.dataTransfer.setData('text/plain', JSON.stringify({ taskId: task.id }));
+              e.dataTransfer.effectAllowed = 'move';
+              item.style.opacity = '0.4';
+            };
+          })(t));
+          item.addEventListener('dragend', function() { item.style.opacity = '1'; });
+          item.style.cssText = 'padding:5px 8px;border-radius:5px;font-size:0.85em;margin-bottom:4px;cursor:grab;display:flex;align-items:center;justify-content:space-between;gap:6px;' +
             'background:' + colors.bg + ';border-left:3px solid ' + colors.bd + ';' +
             (t.completed ? 'text-decoration:line-through;opacity:0.6;' : '');
           // テキスト部分
@@ -6137,17 +6405,33 @@
         body.appendChild(noTimeSection);
       }
 
-      // 現在時刻へスクロール
-      if (isToday) {
-        setTimeout(function() {
-          var scrollTop = Math.max(0, (nowHour - 1) * TL_ROW_H);
-          var bodyEl = document.getElementById('timelineBody');
+      // スクロール位置の復元
+      setTimeout(function() {
+        var _tlScrollMode = localStorage.getItem('tlScrollMode') || 'now';
+        var bodyEl = document.getElementById('timelineBody');
+        var tlView = document.getElementById('timelineView');
+        if (_tlScrollMode === 'last') {
+          // 前回位置を復元
+          var lastTop = parseInt(localStorage.getItem('tlLastScrollTop') || '0');
+          if (bodyEl) bodyEl.scrollTop = lastTop;
+          if (tlView) tlView.scrollTop = lastTop;
+        } else {
+          // 現在時刻モード：今日は現在時刻、他の日は9時
+          var scrollTop = isToday
+            ? Math.max(0, tlMinutesToPx(nowHour, nowMin) - tlRowHeights[nowHour])
+            : tlTopPx(9);
           if (bodyEl) bodyEl.scrollTop = scrollTop;
-          // timelineViewへのスクロール
-          var tlView = document.getElementById('timelineView');
           if (tlView) tlView.scrollTop = scrollTop;
-        }, 50);
-      }
+        }
+        // スクロール位置を随時保存（lastモード用）
+        var _saveEl = bodyEl || tlView;
+        if (_saveEl && !_saveEl._tlScrollSaving) {
+          _saveEl._tlScrollSaving = true;
+          _saveEl.addEventListener('scroll', function() {
+            localStorage.setItem('tlLastScrollTop', _saveEl.scrollTop);
+          });
+        }
+      }, 50);
     }
 
     function changeMonth(delta) {
@@ -7615,6 +7899,7 @@
       monthlyView.style.display = 'none';
       yearlyView.style.display = 'none';
       settingsView.style.display = 'none';
+      document.getElementById('shopView').style.display = 'none';
       notebookView.style.display = 'none';
       if (craftView) craftView.style.display = 'none';
       document.getElementById('timelineView').style.display = 'none';
@@ -7659,6 +7944,10 @@
         yearlyView.style.display = 'block';
         document.getElementById('navYearly').classList.add('active');
         renderYearlyView();
+      } else if (view === 'shop') {
+        document.getElementById('shopView').style.display = 'block';
+        document.getElementById('navShop').classList.add('active');
+        if (typeof renderDeckShop === 'function') renderDeckShop();
       } else if (view === 'settings') {
         settingsView.style.display = 'block';
         document.getElementById('navSettings').classList.add('active');
@@ -8876,7 +9165,7 @@
 var OFFICIAL_DECKS = [
   {
     id: 'deck_walk',
-    title: '🚶 散歩習慣',
+    title: '🚶 お散歩習慣',
     desc: '外に出るだけでOK。毎日の小さな冒険。',
     tasks: [
       { text: '👟 靴を履いて外に出る', section: 1, memo: '出るだけでOK。距離は関係ない。玄関を出た時点で勝ち。' },
@@ -8888,7 +9177,7 @@ var OFFICIAL_DECKS = [
   },
   {
     id: 'deck_clean',
-    title: '🧹 お掃除',
+    title: '🧹 お掃除習慣',
     desc: '1箇所だけ。きれいな王国は清潔な毎日から。',
     tasks: [
       { text: '🚽 トイレを拭く', section: 1, memo: '1分でOK。毎日やると汚れが溜まらない。王国の清潔度UP！' },
@@ -8977,6 +9266,16 @@ function loadSettingsUI() {
         radio.checked = (radio.value === monthlyMode);
       });
 
+      // 週間ビュースクロールモード
+      const wgScrollMode = localStorage.getItem('wgScrollMode') || 'now';
+      const wgScrollRadios = document.querySelectorAll('input[name="wgScrollMode"]');
+      wgScrollRadios.forEach(radio => { radio.checked = (radio.value === wgScrollMode); });
+
+      // タイムラインスクロールモード
+      const tlScrollMode = localStorage.getItem('tlScrollMode') || 'now';
+      const tlScrollRadios = document.querySelectorAll('input[name="tlScrollMode"]');
+      tlScrollRadios.forEach(radio => { radio.checked = (radio.value === tlScrollMode); });
+
       // 週間表示日数
       const weeklyDays = localStorage.getItem('weeklyDays') || '7';
       document.querySelectorAll('input[name="weeklyDays"]').forEach(radio => {
@@ -9024,7 +9323,6 @@ function loadSettingsUI() {
         document.getElementById('avatarRemoveBtn').style.display = 'none';
       }
     }
-    if (typeof renderDeckShop === 'function') renderDeckShop();
     
     // アバター画像変更
     function handleAvatarChange(event) {
@@ -9426,6 +9724,10 @@ function loadSettingsUI() {
         // 各ラジオボタン（null安全）
         var _sv = document.querySelector('input[name="initialView"]:checked');
         if (_sv) localStorage.setItem('initialView', _sv.value);
+        var _tlSm = document.querySelector('input[name="tlScrollMode"]:checked');
+        if (_tlSm) localStorage.setItem('tlScrollMode', _tlSm.value);
+        var _wgSm = document.querySelector('input[name="wgScrollMode"]:checked');
+        if (_wgSm) localStorage.setItem('wgScrollMode', _wgSm.value);
         var _mm = document.querySelector('input[name="monthlyMode"]:checked');
         if (_mm) localStorage.setItem('monthlyMode', _mm.value);
         var _wd = document.querySelector('input[name="weeklyDays"]:checked');
@@ -10178,7 +10480,7 @@ function receiveDeck(deckId) {
   }
   var today = getLocalDateStr(new Date());
   deck.tasks.forEach(function(t) {
-    var newTask = createTask(t.text, today, null, t.section, 'daily_only');
+    var newTask = createTask(t.text, today, null, t.section, 'both');
     if (t.memo) updateTask(newTask.id, { memo: t.memo });
   });
   localStorage.setItem('deck_received_' + deckId, '1');
