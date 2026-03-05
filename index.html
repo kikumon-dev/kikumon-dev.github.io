@@ -3401,6 +3401,12 @@
     </div>
   </div>
   <div id="craftMessage" style="position:absolute;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:#ffd700;padding:10px 20px;border-radius:20px;font-family:monospace;font-size:0.9em;border:1px solid rgba(255,215,0,0.4);opacity:0;transition:opacity 0.5s;white-space:nowrap;pointer-events:none;"></div>
+  <!-- 王国GDP バッジ（左下） -->
+  <div id="craftGDPBadge" style="position:absolute;bottom:16px;left:16px;background:rgba(0,0,0,0.75);border:1px solid rgba(76,175,80,0.5);border-radius:12px;padding:8px 14px;color:#fff;font-family:monospace;pointer-events:none;backdrop-filter:blur(6px);text-align:center;min-width:72px;">
+    <div style="font-size:0.62em;color:#aaa;margin-bottom:2px;">🏅 王国GDP</div>
+    <div id="craftGDPValue" style="font-size:1.3em;font-weight:900;color:#ffd700;line-height:1.1;">0</div>
+    <div style="font-size:0.58em;color:#666;">完了累計</div>
+  </div>
   <div style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.3);font-size:0.7em;font-family:monospace;pointer-events:none;">ドラッグで視点回転 / スクロールでズーム</div>
 </div>
 <div id="shopView" class="settings-view" style="display:none;">
@@ -3436,6 +3442,8 @@
           style="width:100%;padding:10px;border:1.5px solid #4facfe;border-radius:8px;background:#0a1520;color:#fff;font-size:0.82em;box-sizing:border-box;resize:none;margin-bottom:10px;font-family:monospace;"></textarea>
         <button onclick="importDeckFromSettings()" style="width:100%;padding:11px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:10px;color:#003355;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(79,172,254,0.3);" onclick="importDeckFromSettings()" style="margin-bottom:8px;">📦 王国に輸入する</button>
         <button id="guildDeckBuilderBtn" onclick="openDeckBuilder()" style="display:none;width:100%;padding:11px;background:linear-gradient(135deg,#a855f7,#6366f1);border:none;border-radius:10px;color:#fff;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(168,85,247,0.3);">⚔️ デッキを仕込む（貿易商人）</button>
+        <!-- 王国GDP -->
+        <div id="deckHistorySection" style="margin-top:16px;"></div>
       </div>
 
       <!-- プロフィールセクション -->
@@ -4521,6 +4529,46 @@
       localStorage.setItem('allTasks', JSON.stringify(allTasks));
       localStorage.setItem('taskIdCounter', taskIdCounter.toString());
       window.allTasks = allTasks; // クラフトモードと同期
+    }
+
+    // ===== deckHistory管理 =====
+    function getDeckHistory() {
+      try {
+        return JSON.parse(localStorage.getItem('deckHistory') || '[]');
+      } catch(e) { return []; }
+    }
+    function saveDeckHistory(history) {
+      localStorage.setItem('deckHistory', JSON.stringify(history));
+    }
+    function addDeckHistory(deck) {
+      var history = getDeckHistory();
+      var existing = history.find(function(h){ return h.deckId === deck.deckId; });
+      if (existing) return; // 重複はスキップ
+      history.push({
+        deckId: deck.deckId || ('manual_' + Date.now()),
+        kind: 'deckHistory',
+        title: deck.title || '名称不明のデッキ',
+        status: deck.status || 'active',
+        createdBy: deck.createdBy || '不明',
+        receivedAt: getLocalDateStr(new Date()),
+        taskCount: (deck.tasks || []).length,
+        stats: { completed: 0 }
+      });
+      saveDeckHistory(history);
+    }
+    function incrementDeckHistoryStat(deckId) {
+      if (!deckId) return;
+      var history = getDeckHistory();
+      var entry = history.find(function(h){ return h.deckId === deckId; });
+      if (entry) {
+        entry.stats.completed = (entry.stats.completed || 0) + 1;
+        saveDeckHistory(history);
+      }
+    }
+    function getDeckGDP() {
+      return getDeckHistory().reduce(function(sum, h){
+        return sum + (h.stats ? h.stats.completed || 0 : 0);
+      }, 0);
     }
 
     // マスターデータ読み込み
@@ -6383,7 +6431,12 @@
             const _wasDone = t.completed;
             t.completed = !t.completed;
             saveAllTasks();
-            if (!_wasDone && t.completed) onTaskCompleted(t);
+            if (!_wasDone && t.completed) {
+              onTaskCompleted(t);
+              if (t.deckId && typeof incrementDeckHistoryStat === 'function') {
+                incrementDeckHistoryStat(t.deckId);
+              }
+            }
             ts.style.textDecoration = t.completed ? 'line-through' : '';
             ts.style.opacity = t.completed ? '0.6' : '1';
             tdiv.style.opacity = t.completed ? '0.65' : '1';
@@ -7230,6 +7283,10 @@
         // クラフトモード：完了時にリアルタイム更新
         if (!wasCompleted && task.completed) {
           onTaskCompleted(task);
+          // deckHistory：完了カウントを加算
+          if (task.deckId && typeof incrementDeckHistoryStat === 'function') {
+            incrementDeckHistoryStat(task.deckId);
+          }
         }
         
         // 日次ビュー：全象限を再描画
@@ -8035,12 +8092,14 @@
         document.getElementById('shopView').style.display = 'block';
         document.getElementById('navShop').classList.add('active');
         if (typeof renderDeckShop === 'function') renderDeckShop();
+        if (typeof renderDeckHistory === 'function') renderDeckHistory();
       } else if (view === 'settings') {
         settingsView.style.display = 'block';
         if (typeof updateGuildUI === 'function') updateGuildUI();
         document.getElementById('navSettings').classList.add('active');
         loadSettingsUI();
         if (typeof renderDeckShop === 'function') renderDeckShop();
+        if (typeof renderDeckHistory === 'function') renderDeckHistory();
       } else if (view === 'notebook') {
         notebookView.style.display = 'block';
         document.getElementById('navNotebook').classList.add('active');
@@ -10536,6 +10595,34 @@ function loadSettingsUI() {
     applySimpleMode();
   
 
+function renderDeckHistory() {
+  var el = document.getElementById('deckHistorySection');
+  if (!el) return;
+  var history = getDeckHistory();
+  var gdp = getDeckGDP();
+  if (history.length === 0) {
+    el.innerHTML = '<div style="font-size:0.78em;color:#555;text-align:center;padding:8px 0;">まだデッキを受け取っていません</div>';
+    return;
+  }
+  var html = '<div style="border-top:1px solid #2a3a4a;padding-top:14px;">';
+  html += '<div style="font-size:0.82em;font-weight:700;color:#4facfe;margin-bottom:10px;">📊 行動貿易履歴</div>';
+  history.slice().reverse().forEach(function(h) {
+    var statusIcon = h.status === 'starter' ? '⭐' : '⚔️';
+    html += '<div style="background:#0a1520;border:1px solid #2a3a4a;border-radius:10px;padding:10px 12px;margin-bottom:8px;">';
+    html += '<div style="font-size:0.88em;font-weight:700;color:#fff;margin-bottom:2px;">' + statusIcon + ' ' + h.title + '</div>';
+    html += '<div style="font-size:0.72em;color:#aaa;">by ' + h.createdBy + '｜' + h.receivedAt + '受け取り｜' + h.taskCount + '枚</div>';
+    html += '<div style="font-size:0.78em;color:#ffd700;margin-top:4px;">完了：' + (h.stats ? h.stats.completed : 0) + '回</div>';
+    html += '</div>';
+  });
+  html += '<div style="background:linear-gradient(135deg,#1a2a0a,#2a3a1a);border:1.5px solid #4caf50;border-radius:10px;padding:12px;margin-top:4px;text-align:center;">';
+  html += '<div style="font-size:0.78em;color:#aaa;margin-bottom:2px;">🏅 王国GDP（行動総生産）</div>';
+  html += '<div style="font-size:1.4em;font-weight:900;color:#ffd700;">' + gdp + '</div>';
+  html += '<div style="font-size:0.7em;color:#888;">完了累計</div>';
+  html += '</div>';
+  html += '</div>';
+  el.innerHTML = html;
+}
+
 function renderDeckShop() {
   var el = document.getElementById('deckShopList');
   if (!el) return;
@@ -10571,7 +10658,11 @@ function receiveDeck(deckId) {
   deck.tasks.forEach(function(t) {
     var newTask = createTask(t.text, today, null, t.section, 'both');
     if (t.memo) updateTask(newTask.id, { memo: t.memo });
+    // deckIdをタスクに付与
+    updateTask(newTask.id, { deckId: deck.id });
   });
+  // deckHistoryに記録
+  addDeckHistory({ deckId: deck.id, title: deck.title, status: 'active', createdBy: 'やることクラフト公式', tasks: deck.tasks });
   localStorage.setItem('deck_received_' + deckId, '1');
   saveAllTasks();
   renderAllSections(today);
@@ -11271,6 +11362,11 @@ function updateCraftHUD() {
     nextMsg = ' ／ あと'+(CRAFT_CYCLE - s.cycleTotal)+'タスクで'+(s.ng+2)+'周目へ';
   }
   if(cfg) set('craftNextInfo', (cfg.label||'') + nextMsg);
+  // 王国GDPバッジ更新
+  var gdpEl = document.getElementById('craftGDPValue');
+  if (gdpEl && typeof getDeckGDP === 'function') {
+    gdpEl.textContent = getDeckGDP();
+  }
 }
 
 function showCraftMessage(msg) {
@@ -12582,10 +12678,17 @@ function importDeckFromSettings() {
   if (deck.kind !== 'deck') { alert('コードの形式が正しくありません'); return; }
   if (!confirm((deck.title||'デッキ') + '（' + deck.tasks.length + '枚）を王国に取り込みますか？')) return;
   var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
+  var _deckId = deck.deckId || ('manual_' + Date.now());
   deck.tasks.forEach(function(d) {
     var t = (typeof createTask === 'function') ? createTask(d.text, today, null, d.section||1, 'both') : null;
-    if (t && d.memo && typeof updateTask === 'function') updateTask(t.id, { memo: d.memo });
+    if (t) {
+      if (d.memo && typeof updateTask === 'function') updateTask(t.id, { memo: d.memo });
+      // deckIdをタスクに付与
+      if (typeof updateTask === 'function') updateTask(t.id, { deckId: _deckId });
+    }
   });
+  // deckHistoryに記録
+  if (typeof addDeckHistory === 'function') addDeckHistory(deck);
   if (typeof saveAllTasks === 'function') saveAllTasks();
   if (typeof renderAllSections === 'function') renderAllSections(today);
   // 入力欄をクリア
