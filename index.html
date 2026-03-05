@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.27.13';
+    const APP_VERSION = 'v0.27.19';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -1812,7 +1812,7 @@
     }
 
     @page {
-      size: A4 portrait;
+      size: A4 landscape;
       margin: 0;
     }
     @media print {
@@ -1828,12 +1828,12 @@
       .container {
         grid-template-columns: 1fr 1fr;
         grid-template-rows: 1fr 1fr;
-        height: 297mm;
-        width: 210mm;
+        height: 210mm;
+        width: 297mm;
         gap: 0;
       }
       .section {
-        height: calc(297mm / 2);
+        height: calc(210mm / 2);
         min-height: unset;
         overflow: hidden;
         page-break-inside: avoid;
