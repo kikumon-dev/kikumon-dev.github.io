@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>やることリスト</title>  <!-- バージョンはJSで動的設定 -->
+  <title>やることクラフト</title>  <!-- バージョンはJSで動的設定 -->
   
   
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
@@ -64,7 +64,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-      document.title = 'やることリスト - ' + APP_VERSION;
+      document.title = 'やることクラフト - ' + APP_VERSION;
     });
   </script>
   
@@ -1811,9 +1811,13 @@
 
     }
 
+    @page {
+      size: A4 portrait;
+      margin: 0;
+    }
     @media print {
       body, html {
-        width: 297mm;
+        width: 100%;
         margin: 0;
         padding: 0;
       }
@@ -1824,11 +1828,14 @@
       .container {
         grid-template-columns: 1fr 1fr;
         grid-template-rows: 1fr 1fr;
-        height: 100vh !important; /* A4に収まるように */
-        min-height: 210mm;
+        height: 297mm;
+        width: 210mm;
+        gap: 0;
       }
       .section {
-        min-height: 100mm; /* 最低限の高さを確保 */
+        height: calc(297mm / 2);
+        min-height: unset;
+        overflow: hidden;
         page-break-inside: avoid;
       }
       .task-input {
@@ -2832,7 +2839,7 @@
     <!-- 左上: 緊急かつ重要 -->
     <div class="section" id="section1">
       <div class="header-row">
-        <h4>やることリスト【緊急かつ重要】</h4>
+        <h4>やることクラフト【緊急かつ重要】</h4>
         <!-- スマホ縦画面用：日付を第1象限に表示 -->
         <div class="date-display date-display-mobile" id="dateDisplayMobile"></div>
         <div class="purpose-group" id="purposeGroup" style="display: none;">
@@ -3882,7 +3889,7 @@
   <script>
     /**
      * ============================================================
-     * やることリスト - GTDアプリケーション
+     * やることクラフト - GTDアプリケーション
      * ============================================================
      * 
      * アーキテクチャ概要：
