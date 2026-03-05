@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.27.9';
+    const APP_VERSION = 'v0.27.13';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -25,6 +25,26 @@
 
     // 起動時クラフトタブ表示制御
     document.addEventListener('DOMContentLoaded', function() {
+  // ===== データマイグレーション =====
+  (function migrateData() {
+    var version = parseInt(localStorage.getItem('dataVersion') || '0');
+    // v0→v1: guildLicenseのtype→kind変換
+    if (version < 1) {
+      try {
+        var gl = localStorage.getItem('guildLicense');
+        if (gl) {
+          var data = JSON.parse(gl);
+          if (data.type && !data.kind) {
+            data.kind = 'guildLicense';
+            delete data.type;
+            localStorage.setItem('guildLicense', JSON.stringify(data));
+            console.log('[migrate] guildLicense type→kind OK');
+          }
+        }
+      } catch(e) { console.warn('[migrate] guildLicense失敗', e); }
+      localStorage.setItem('dataVersion', '1');
+    }
+  })();
       if (localStorage.getItem('craftModeEnabled') === 'true') {
         const btn = document.getElementById('navCraft');
         if (btn) btn.style.display = '';
@@ -3381,8 +3401,8 @@
       <!-- 🚢 貿易港（β）セクション -->
       <div style="margin-bottom:24px;background:linear-gradient(135deg,#0d1b2a,#1a2a3a);border:2px solid #4facfe;border-radius:14px;padding:20px;box-shadow:0 0 20px rgba(79,172,254,0.15);">
         <h3 style="margin:0 0 6px 0;color:#4facfe;font-size:1em;font-weight:700;display:flex;align-items:center;gap:8px;">🚢 貿易港（β）</h3>
-        <p style="font-size:0.78em;color:#aaa;margin:0 0 14px 0;">SDK1: で始まるデッキコードを貼り付けて王国に取り込もう。<br><span style="color:#ffd700;font-weight:600;">あ、王国が動いた！</span></p>
-        <textarea id="deckImportInput" rows="3" placeholder="SDK1: で始まるコードをここに貼り付け..."
+        <p style="font-size:0.78em;color:#aaa;margin:0 0 14px 0;">DCK1: で始まるデッキコードを貼り付けて王国に取り込もう。<br><span style="color:#ffd700;font-weight:600;">あ、王国が動いた！</span></p>
+        <textarea id="deckImportInput" rows="3" placeholder="DCK1: で始まるコードをここに貼り付け..."
           style="width:100%;padding:10px;border:1.5px solid #4facfe;border-radius:8px;background:#0a1520;color:#fff;font-size:0.82em;box-sizing:border-box;resize:none;margin-bottom:10px;font-family:monospace;"></textarea>
         <button onclick="importDeckFromSettings()" style="width:100%;padding:11px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:10px;color:#003355;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(79,172,254,0.3);" onclick="importDeckFromSettings()" style="margin-bottom:8px;">📦 王国に輸入する</button>
         <button id="guildDeckBuilderBtn" onclick="openDeckBuilder()" style="display:none;width:100%;padding:11px;background:linear-gradient(135deg,#a855f7,#6366f1);border:none;border-radius:10px;color:#fff;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(168,85,247,0.3);">⚔️ デッキを仕込む（貿易商人）</button>
@@ -3448,12 +3468,12 @@
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">🏰 王国を訪問する</h3>
         <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #8e8e8e;">仲間の王国コードを入力して訪問できます。Lv.5以上で自分の王国コードを発行できます。</p>
         <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #e07048;">⚠️ 名前や性別を変更した場合は、王国コードを再発行してください。</p>
-        <div id="kingdomShareArea">
-          <button onclick="openKingdomShareModal()" id="kingdomShareBtn"
+        <div id="craftShareArea">
+          <button onclick="openCraftShareModal()" id="craftShareBtn"
             style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#ffd700,#ff8800);color:#7a4800;font-size:0.88em;font-weight:700;cursor:pointer;width:100%;margin-bottom:10px;text-shadow:none;">
             👑 王国コードを発行する
           </button>
-          <button onclick="openKingdomVisitModal()"
+          <button onclick="openCraftVisitModal()"
             style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#ffc8dc,#ffa0bc);color:#9c3060;font-size:0.88em;font-weight:700;cursor:pointer;width:100%;box-shadow:0 4px 12px rgba(255,160,188,0.35);letter-spacing:0.03em;text-shadow:none;">
             🗺️ 仲間の王国を訪問する
           </button>
@@ -7969,6 +7989,7 @@
         if (typeof renderDeckShop === 'function') renderDeckShop();
       } else if (view === 'settings') {
         settingsView.style.display = 'block';
+        if (typeof updateGuildUI === 'function') updateGuildUI();
         document.getElementById('navSettings').classList.add('active');
         loadSettingsUI();
         if (typeof renderDeckShop === 'function') renderDeckShop();
@@ -10741,17 +10762,17 @@ function getCraftStats() {
 }
 
 // ===== 王国訪問機能 =====
-var _kingdomCode = null;
+var _craftCode = null;
 
 // 王国データをエンコード（タスクの中身は含まない）
-function buildKingdomCode() {
+function buildCraftCode() {
   var stats = getCraftStats();
   var myName = localStorage.getItem('profileName') || '';
   var _gender2 = localStorage.getItem('profileGender') || 'king';
   if (!myName) myName = _gender2 === 'princess' ? '旅人' : '旅人';
   var gender = localStorage.getItem('profileGender') || 'king';
   var payload = JSON.stringify({
-    type: 'yarukotolist-kingdom-v1',
+    kind: 'craft',
     name: myName,
     gender: gender,
     level: stats.level,
@@ -10760,69 +10781,69 @@ function buildKingdomCode() {
     kingdomName: (document.getElementById('craftKingdomName') ? document.getElementById('craftKingdomName').textContent : 'アリアハン王国'),
     exportedAt: new Date().toISOString()
   });
-  return 'KDM1:' + btoa(unescape(encodeURIComponent(payload)));
+  return 'CRF1:' + btoa(unescape(encodeURIComponent(payload)));
 }
 
 // 王国コード発行モーダルを開く
-function openKingdomShareModal() {
-  var code = buildKingdomCode();
-  _kingdomCode = code;
-  var el = document.getElementById('kingdomCodeDisplay');
+function openCraftShareModal() {
+  var code = buildCraftCode();
+  _craftCode = code;
+  var el = document.getElementById('craftCodeDisplay');
   if (el) el.textContent = code;
-  var modal = document.getElementById('kingdomShareModal');
+  var modal = document.getElementById('craftShareModal');
   if (modal) modal.style.display = 'flex';
 }
 
-function closeKingdomShareModal() {
-  var modal = document.getElementById('kingdomShareModal');
+function closeCraftShareModal() {
+  var modal = document.getElementById('craftShareModal');
   if (modal) modal.style.display = 'none';
 }
 
-function copyKingdomCode() {
-  if (!_kingdomCode) return;
-  navigator.clipboard.writeText(_kingdomCode).then(function() {
+function copyCraftCode() {
+  if (!_craftCode) return;
+  navigator.clipboard.writeText(_craftCode).then(function() {
     showCraftMessage('👑 王国コードをコピーしました！');
-    closeKingdomShareModal();
+    closeCraftShareModal();
   }).catch(function() {
     // フォールバック
     var ta = document.createElement('textarea');
-    ta.value = _kingdomCode;
+    ta.value = _craftCode;
     document.body.appendChild(ta);
     ta.select();
     document.execCommand('copy');
     document.body.removeChild(ta);
     showCraftMessage('👑 王国コードをコピーしました！');
-    closeKingdomShareModal();
+    closeCraftShareModal();
   });
 }
 
 // 王国訪問モーダルを開く
-function openKingdomVisitModal() {
-  var modal = document.getElementById('kingdomVisitModal');
+function openCraftVisitModal() {
+  var modal = document.getElementById('craftVisitModal');
   if (modal) modal.style.display = 'flex';
 }
 
-function closeKingdomVisitModal() {
-  var modal = document.getElementById('kingdomVisitModal');
+function closeCraftVisitModal() {
+  var modal = document.getElementById('craftVisitModal');
   if (modal) modal.style.display = 'none';
-  var inp = document.getElementById('kingdomVisitInput');
+  var inp = document.getElementById('craftVisitInput');
   if (inp) inp.value = '';
 }
 
 // 王国を訪問する
-function visitKingdom() {
-  var code = (document.getElementById('kingdomVisitInput').value || '').trim();
+function visitCraft() {
+  var code = (document.getElementById('craftVisitInput').value || '').trim();
   var upper = code.toUpperCase();
 
-  // SDK1: デッキコード判定
-  if (upper.startsWith('SDK1:')) {
+  // DCK1: デッキコード判定
+  if (upper.startsWith('DCK1:')) {
     var raw2;
     try { raw2 = decodeURIComponent(escape(atob(code.slice(5)))); }
     catch(e) { alert('コードが壊れています'); return; }
     var deck;
     try { deck = JSON.parse(raw2); }
     catch(e) { alert('コードの形式が正しくありません'); return; }
-    if (deck.type !== 'yarukotolist-deck-v1') { alert('コードの形式が正しくありません'); return; }
+    if (deck.kind !== 'deck') { alert('コードの形式が正しくありません'); return; }
     if (!confirm((deck.title||'デッキ') + ' ' + deck.tasks.length + '枚を受け取りますか？')) return;
     var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
     deck.tasks.forEach(function(d) {
@@ -10831,7 +10852,7 @@ function visitKingdom() {
     });
     if (typeof saveAllTasks === 'function') saveAllTasks();
     if (typeof renderAllSections === 'function') renderAllSections(today);
-    closeKingdomVisitModal();
+    closeCraftVisitModal();
     var _toastEl = document.getElementById('settingsSaveToast');
     if (!_toastEl) {
       _toastEl = document.createElement('div');
@@ -10839,16 +10860,17 @@ function visitKingdom() {
       _toastEl.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.85);color:#ffd700;padding:16px 28px;border-radius:14px;font-size:1em;font-weight:bold;z-index:99999;text-align:center;pointer-events:none;border:1px solid rgba(255,215,0,0.4);';
       document.body.appendChild(_toastEl);
     }
-    _toastEl.innerHTML = '✨ あ、王国が動いた！<br><span style="font-size:0.82em;color:#ffcc66;">' + (deck.title||'デッキ') + 'を取り込んだ！</span>';
+    var _vAuthor = deck.createdBy ? '<br><span style="font-size:0.72em;color:#aaa;">by ' + deck.createdBy + '</span>' : '';
+    _toastEl.innerHTML = '✨ あ、王国が動いた！<br><span style="font-size:0.82em;color:#ffcc66;">' + (deck.title||'デッキ') + 'を取り込んだ！</span>' + _vAuthor;
     _toastEl.style.display = 'block';
     clearTimeout(_toastEl._t);
     _toastEl._t = setTimeout(function(){ _toastEl.style.display = 'none'; }, 3000);
     return;
   }
 
-  // KDM1: 王国コード
-  if (!upper.startsWith('KDM1:')) {
-    alert('KDM1: または SDK1: で始まるコードを入力してください');
+  // CRF1: クラフトコード
+  if (!upper.startsWith('CRF1:')) {
+    alert('CRF1: または DCK1: で始まるコードを入力してください');
     return;
   }
   var raw;
@@ -10857,14 +10879,14 @@ function visitKingdom() {
   var data;
   try { data = JSON.parse(raw); }
   catch(e) { alert('コードの形式が正しくありません'); return; }
-  if (data.type !== 'yarukotolist-kingdom-v1') { alert('コードの形式が正しくありません'); return; }
-  closeKingdomVisitModal();
-  renderVisitKingdom(data);
+  if (data.kind !== 'craft') { alert('コードの形式が正しくありません'); return; }
+  closeCraftVisitModal();
+  renderVisitCraft(data);
 }
 
 // 訪問した王国を描画
-function renderVisitKingdom(data) {
-  var view = document.getElementById('kingdomVisitView');
+function renderVisitCraft(data) {
+  var view = document.getElementById('craftVisitView');
   if (!view) return;
   view.style.display = 'flex';
 
@@ -10872,7 +10894,7 @@ function renderVisitKingdom(data) {
   var gender = data.gender || 'king';
   var _ownerName = (data.name && data.name.trim()) ? data.name.trim() : '旅人';
   var ngLabel = data.ng > 0 ? '👑' + data.ng + '周目 ' : '';
-  var kingdomFullName = ngLabel + (data.kingdomName || 'アリアハン王国');
+  var craftFullName = ngLabel + (data.kingdomName || 'アリアハン王国');
 
   // 表示名ロジック
   // 王：「きくモンの王国」
@@ -10889,13 +10911,13 @@ function renderVisitKingdom(data) {
   window._visitTotalVal = data.total || 0;
 
   // オーナー名を上部overlayに表示
-  var titleEl = document.getElementById('visitKingdomTitle');
+  var titleEl = document.getElementById('visitCraftTitle');
   if (titleEl) titleEl.textContent = '👑 ' + ownerLabel;
 
   // 下バナー → 王国名・レベル・タスク数
-  var info = document.getElementById('visitKingdomInfo');
+  var info = document.getElementById('visitCraftInfo');
   if (info) {
-    info.innerHTML = '🏰 ' + kingdomFullName + '&nbsp;|&nbsp;Lv.' + data.level + '&nbsp;|&nbsp;累計' + data.total + 'タスク';
+    info.innerHTML = '🏰 ' + craftFullName + '&nbsp;|&nbsp;Lv.' + data.level + '&nbsp;|&nbsp;累計' + data.total + 'タスク';
   }
 
   // 訪問通知メッセージ（姫対応）
@@ -10950,8 +10972,8 @@ function renderVisitKingdom(data) {
   });
 }
 
-function closeKingdomVisitView() {
-  var view = document.getElementById('kingdomVisitView');
+function closeCraftVisitView() {
+  var view = document.getElementById('craftVisitView');
   if (view) view.style.display = 'none';
 }
 
@@ -11060,8 +11082,8 @@ function renderVisitCanvas3D(visitLevel) {
   })();
 
   // 戻るボタンで停止
-  var origClose = window.closeKingdomVisitView;
-  window.closeKingdomVisitView = function(){
+  var origClose = window.closeCraftVisitView;
+  window.closeCraftVisitView = function(){
     if(_vFrame) cancelAnimationFrame(_vFrame);
     if(renderer) renderer.dispose();
     origClose();
@@ -12278,7 +12300,7 @@ function applyGuildLicense() {
   var data;
   try { data = JSON.parse(raw); }
   catch(e) { alert('コードの形式が正しくありません'); return; }
-  if (data.type !== 'yarukotolist-guild-license-v1') { alert('コードの形式が正しくありません'); return; }
+  if (data.kind !== 'guildLicense') { alert('コードの形式が正しくありません'); return; }
   // ライセンス保存
   localStorage.setItem('guildLicense', JSON.stringify(data));
   closeGuildMode();
@@ -12290,8 +12312,7 @@ function applyGuildLicense() {
     toast.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(26,18,0,0.95);color:#ffd700;padding:20px 32px;border-radius:16px;font-size:1.05em;font-weight:bold;z-index:99999;text-align:center;pointer-events:none;border:2px solid rgba(200,162,0,0.7);box-shadow:0 0 40px rgba(200,162,0,0.3);';
     document.body.appendChild(toast);
   }
-  var grantedTo = data.grantedTo ? '「' + data.grantedTo + '」' : '';
-  toast.innerHTML = '⚓ あ、王国が動いた！<br><span style="font-size:0.85em;color:#ffdd66;">' + grantedTo + '行動貿易ライセンスを取得した！</span><br><span style="font-size:0.75em;color:#aaa;">貿易港でデッキを仕込めるようになった</span>';
+  toast.innerHTML = '⚓ あ、王国が動いた！<br><span style="font-size:0.85em;color:#ffdd66;">行動貿易ライセンスを取得した！</span><br><span style="font-size:0.75em;color:#aaa;">貿易港でデッキを仕込めるようになった</span>';
   toast.style.display = 'block';
   clearTimeout(toast._t);
   toast._t = setTimeout(function(){ toast.style.display = 'none'; }, 4000);
@@ -12299,12 +12320,11 @@ function applyGuildLicense() {
   updateGuildUI();
 }
 
-function buildGuildLicenseCode(grantedTo) {
+function buildGuildLicenseCode() {
   var myName = localStorage.getItem('profileName') || 'admin';
   var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
   var payload = JSON.stringify({
-    type: 'yarukotolist-guild-license-v1',
-    grantedTo: grantedTo,
+    kind: 'guildLicense',
     issuedBy: myName,
     issuedAt: today
   });
@@ -12312,9 +12332,7 @@ function buildGuildLicenseCode(grantedTo) {
 }
 
 function issueGuildLicense() {
-  var name = prompt('発行先の名前を入力してください（Discord名など）');
-  if (!name || !name.trim()) return;
-  var code = buildGuildLicenseCode(name.trim());
+  var code = buildGuildLicenseCode();
   var done = function() {
     var toast = document.getElementById('settingsSaveToast');
     if (!toast) {
@@ -12323,7 +12341,7 @@ function issueGuildLicense() {
       toast.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.88);color:#ffd700;padding:18px 32px;border-radius:16px;font-size:1.05em;font-weight:bold;z-index:99999;text-align:center;pointer-events:none;border:1.5px solid rgba(255,215,0,0.5);box-shadow:0 0 24px rgba(255,215,0,0.2);';
       document.body.appendChild(toast);
     }
-    toast.innerHTML = '⚓ ' + name.trim() + ' へのライセンスを発行！<br><span style="font-size:0.82em;color:#ffcc66;">GLD1:コードをコピーしました</span>';
+    toast.innerHTML = '⚓ 行動貿易ライセンスを発行！<br><span style="font-size:0.82em;color:#ffcc66;">GLD1:コードをコピーしました</span>';
     toast.style.display = 'block';
     clearTimeout(toast._t);
     toast._t = setTimeout(function(){ toast.style.display = 'none'; }, 3500);
@@ -12353,10 +12371,15 @@ var _deckBuilderTasks = [];
 
 function openDeckBuilder() {
   _deckBuilderTasks = [];
+  _deckBuilderEditingIdx = -1;
   document.getElementById('deckBuilderTitle').value = '';
   document.getElementById('deckBuilderTaskText').value = '';
   document.getElementById('deckBuilderTaskMemo').value = '';
   document.getElementById('deckBuilderTaskSection').value = '1';
+  var addBtn = document.getElementById('deckBuilderAddBtn');
+  if (addBtn) { addBtn.textContent = 'タスクを追加'; addBtn.style.background = 'linear-gradient(135deg,#a855f7,#6366f1)'; }
+  var cancelBtn = document.getElementById('deckBuilderCancelEdit');
+  if (cancelBtn) cancelBtn.style.display = 'none';
   renderDeckBuilderTasks();
   var m = document.getElementById('deckBuilderModal');
   m.style.display = 'flex';
@@ -12366,16 +12389,49 @@ function closeDeckBuilder() {
   document.getElementById('deckBuilderModal').style.display = 'none';
 }
 
+var _deckBuilderEditingIdx = -1;
+
 function deckBuilderAddTask() {
   var text = (document.getElementById('deckBuilderTaskText').value || '').trim();
   if (!text) { alert('タスク名を入力してください'); return; }
   var memo = (document.getElementById('deckBuilderTaskMemo').value || '').trim();
   var section = parseInt(document.getElementById('deckBuilderTaskSection').value) || 1;
-  _deckBuilderTasks.push({ text: text, memo: memo, section: section });
+  if (_deckBuilderEditingIdx >= 0) {
+    // 編集モード：既存タスクを更新
+    _deckBuilderTasks[_deckBuilderEditingIdx] = { text: text, memo: memo, section: section };
+    _deckBuilderEditingIdx = -1;
+    document.getElementById('deckBuilderAddBtn').textContent = 'タスクを追加';
+    document.getElementById('deckBuilderAddBtn').style.background = 'linear-gradient(135deg,#a855f7,#6366f1)';
+    document.getElementById('deckBuilderCancelEdit').style.display = 'none';
+  } else {
+    _deckBuilderTasks.push({ text: text, memo: memo, section: section });
+  }
   document.getElementById('deckBuilderTaskText').value = '';
   document.getElementById('deckBuilderTaskMemo').value = '';
   document.getElementById('deckBuilderTaskSection').value = '1';
   renderDeckBuilderTasks();
+}
+
+function deckBuilderEditTask(idx) {
+  var t = _deckBuilderTasks[idx];
+  _deckBuilderEditingIdx = idx;
+  document.getElementById('deckBuilderTaskText').value = t.text;
+  document.getElementById('deckBuilderTaskMemo').value = t.memo || '';
+  document.getElementById('deckBuilderTaskSection').value = String(t.section || 1);
+  document.getElementById('deckBuilderAddBtn').textContent = '✏️ 更新する';
+  document.getElementById('deckBuilderAddBtn').style.background = 'linear-gradient(135deg,#0ea5e9,#0284c7)';
+  document.getElementById('deckBuilderCancelEdit').style.display = 'block';
+  document.getElementById('deckBuilderTaskText').focus();
+}
+
+function deckBuilderCancelEdit() {
+  _deckBuilderEditingIdx = -1;
+  document.getElementById('deckBuilderTaskText').value = '';
+  document.getElementById('deckBuilderTaskMemo').value = '';
+  document.getElementById('deckBuilderTaskSection').value = '1';
+  document.getElementById('deckBuilderAddBtn').textContent = 'タスクを追加';
+  document.getElementById('deckBuilderAddBtn').style.background = 'linear-gradient(135deg,#a855f7,#6366f1)';
+  document.getElementById('deckBuilderCancelEdit').style.display = 'none';
 }
 
 function deckBuilderRemoveTask(idx) {
@@ -12406,12 +12462,13 @@ function renderDeckBuilderTasks() {
     div.innerHTML =
       '<div style="flex:1;min-width:0;">' +
         '<div style="font-size:0.88em;color:#e2e8f0;font-weight:600;word-break:break-all;">' + t.text + '</div>' +
-        (t.memo ? '<div style="font-size:0.75em;color:#888;margin-top:3px;word-break:break-all;">' + t.memo + '</div>' : '') +
+        (t.memo ? '<div style="font-size:0.75em;color:#888;margin-top:3px;word-break:break-all;">' + t.memo + '</div>' : '<div style="font-size:0.72em;color:#555;margin-top:3px;">メモなし</div>') +
         '<div style="font-size:0.7em;color:#a78bfa;margin-top:3px;">' + (sectionNames[t.section]||'') + '</div>' +
       '</div>' +
       '<div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0;">' +
         '<button onclick="deckBuilderMoveTask(' + i + ',-1)" style="padding:2px 6px;background:#2a2040;border:1px solid #4a3060;border-radius:4px;color:#aaa;font-size:0.75em;cursor:pointer;">▲</button>' +
         '<button onclick="deckBuilderMoveTask(' + i + ',1)" style="padding:2px 6px;background:#2a2040;border:1px solid #4a3060;border-radius:4px;color:#aaa;font-size:0.75em;cursor:pointer;">▼</button>' +
+        '<button onclick="deckBuilderEditTask(' + i + ')" style="padding:2px 6px;background:#1a2040;border:1px solid #4060a0;border-radius:4px;color:#7aacff;font-size:0.75em;cursor:pointer;">✏️</button>' +
         '<button onclick="deckBuilderRemoveTask(' + i + ')" style="padding:2px 6px;background:#3a1020;border:1px solid #6a2040;border-radius:4px;color:#f87171;font-size:0.75em;cursor:pointer;">✕</button>' +
       '</div>';
     list.appendChild(div);
@@ -12424,14 +12481,17 @@ function deckBuilderPublish() {
   if (_deckBuilderTasks.length === 0) { alert('タスクを1枚以上追加してください'); return; }
   var myName = localStorage.getItem('profileName') || 'admin';
   var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
+  var deckId = (typeof generateTaskId === 'function') ? generateTaskId() : crypto.randomUUID();
   var payload = JSON.stringify({
-    type: 'yarukotolist-deck-v1',
+    kind: 'deck',
+    status: 'active',
+    deckId: deckId,
     title: title,
     tasks: _deckBuilderTasks,
     createdBy: myName,
     createdAt: today
   });
-  var code = 'SDK1:' + btoa(unescape(encodeURIComponent(payload)));
+  var code = 'DCK1:' + btoa(unescape(encodeURIComponent(payload)));
   // コピー
   var done = function() {
     var toast = document.getElementById('settingsSaveToast');
@@ -12463,14 +12523,14 @@ function importDeckFromSettings() {
   var code = (document.getElementById('deckImportInput').value || '').trim();
   if (!code) { alert('コードを入力してください'); return; }
   var upper = code.toUpperCase();
-  if (!upper.startsWith('SDK1:')) { alert('SDK1: で始まるコードを入力してください'); return; }
+  if (!upper.startsWith('DCK1:')) { alert('DCK1: で始まるコードを入力してください'); return; }
   var raw;
   try { raw = decodeURIComponent(escape(atob(code.slice(5)))); }
   catch(e) { alert('コードが壊れています'); return; }
   var deck;
   try { deck = JSON.parse(raw); }
   catch(e) { alert('コードの形式が正しくありません'); return; }
-  if (deck.type !== 'yarukotolist-deck-v1') { alert('コードの形式が正しくありません'); return; }
+  if (deck.kind !== 'deck') { alert('コードの形式が正しくありません'); return; }
   if (!confirm((deck.title||'デッキ') + '（' + deck.tasks.length + '枚）を王国に取り込みますか？')) return;
   var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
   deck.tasks.forEach(function(d) {
@@ -12489,7 +12549,8 @@ function importDeckFromSettings() {
     toast.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.88);color:#ffd700;padding:18px 32px;border-radius:16px;font-size:1.05em;font-weight:bold;z-index:99999;text-align:center;pointer-events:none;border:1.5px solid rgba(255,215,0,0.5);box-shadow:0 0 24px rgba(255,215,0,0.2);';
     document.body.appendChild(toast);
   }
-  toast.innerHTML = '✨ あ、王国が動いた！<br><span style="font-size:0.82em;color:#ffcc66;">' + (deck.title||'デッキ') + 'を取り込んだ！</span>';
+  var _author = deck.createdBy ? '<br><span style="font-size:0.72em;color:#aaa;">by ' + deck.createdBy + '</span>' : '';
+  toast.innerHTML = '✨ あ、王国が動いた！<br><span style="font-size:0.82em;color:#ffcc66;">' + (deck.title||'デッキ') + 'を取り込んだ！</span>' + _author;
   toast.style.display = 'block';
   clearTimeout(toast._t);
   toast._t = setTimeout(function(){ toast.style.display = 'none'; }, 3500);
@@ -12505,14 +12566,17 @@ function buildStarterDeckCode() {
     { text: '\u2699\uFE0F \u8A2D\u5B9A\u3067\u540D\u524D\u3068\u738B\u30FB\u59EB\u3092\u8A2D\u5B9A\u3057\u3088\u3046', section: 1, memo: '\u8A2D\u5B9A\uFF08\u6B6F\u8ECA\u30A2\u30A4\u30B3\u30F3\uFF09\u2192\u30D7\u30ED\u30D5\u30A3\u30FC\u30EB\u3002\u738B\u30FB\u59EB\u3067\u738B\u56FD\u306E\u30BB\u30EA\u30D5\u304C\u5909\u308F\u308B\uFF01Lv.5\u3067\u738B\u56FD\u30B3\u30FC\u30C9\u3082\u767A\u884C\u3067\u304D\u308B\u3088\u3002' },
     { text: '\u{1F451} \u4ECA\u65E5\u306E\u300C\u3084\u308B\u3053\u3068\u300D\u3092\u3053\u3053\u306B\u66F8\u3053\u3046', section: 1, memo: '\u6700\u4E0A\u306E\u5165\u529B\u6B04\u306B\u30BF\u30B9\u30AF\u3092\u5165\u529B\u3057\u3066Enter\u3002\u7B2C1\u8C61\u9650\uFF08\u7D1A\u6025\u304B\u3064\u91CD\u8981\uFF09\u306B\u306F\u4ECA\u65E5\u5FC5\u305A\u3084\u308B\u3053\u3068\u3092\u3002\u5B8C\u4E86\u3057\u305F\u3089\u738B\u56FD\u304C\u80B2\u3064\uFF01' },
   ];
+  var deckId = (typeof generateTaskId === 'function') ? generateTaskId() : crypto.randomUUID();
   var payload = JSON.stringify({
-    type: 'yarukotolist-deck-v1',
+    kind: 'deck',
+    status: 'starter',
+    deckId: deckId,
     title: '\u738B\u56FD\u30B9\u30BF\u30FC\u30C8\u30C7\u30C3\u30AD',
     tasks: deck,
     createdBy: myName,
     createdAt: today
   });
-  return 'SDK1:' + btoa(unescape(encodeURIComponent(payload)));
+  return 'DCK1:' + btoa(unescape(encodeURIComponent(payload)));
 }
 
 function copyStarterDeckCode() {
@@ -12558,7 +12622,7 @@ document.addEventListener('DOMContentLoaded', function() {
   <div style="background:linear-gradient(160deg,#1a1200,#2a1a00);border:2px solid #c8a200;border-radius:18px;padding:30px 24px;max-width:380px;width:100%;color:#fff;box-shadow:0 0 60px rgba(200,162,0,0.4);text-align:center;">
     <div style="font-size:2.2em;margin-bottom:6px;">⚓</div>
     <h2 style="color:#ffd700;font-size:1.1em;font-weight:700;margin:0 0 4px 0;">商人ギルドモード</h2>
-    <p style="font-size:0.78em;color:#aaa;margin:0 0 20px 0;">行動貿易ライセンス（GLD1:）を貼り付けて申請しよう</p>
+    <p style="font-size:0.78em;color:#aaa;margin:0 0 20px 0;">GLD1:コードを貼り付けて取得しよう。<br><span style="color:#ffd700;">一度取得すれば永続有効。</span>ブラウザを閉じても消えない。</p>
     <textarea id="guildLicenseInput" rows="3" placeholder="GLD1: で始まるコードを貼り付け..."
       style="width:100%;padding:10px;border:1.5px solid #c8a200;border-radius:8px;background:#0d0900;color:#ffd700;font-size:0.82em;box-sizing:border-box;resize:none;margin-bottom:12px;font-family:monospace;"></textarea>
     <button onclick="applyGuildLicense()" style="width:100%;padding:12px;background:linear-gradient(135deg,#ffd700,#c8a200);border:none;border-radius:10px;color:#3a2800;font-size:0.95em;font-weight:700;cursor:pointer;box-shadow:0 2px 12px rgba(200,162,0,0.4);margin-bottom:8px;">⚓ 行動貿易ライセンスを申請する</button>
@@ -12600,7 +12664,8 @@ document.addEventListener('DOMContentLoaded', function() {
         <option value="3">第3象限（緊急）</option>
         <option value="4">第4象限（その他）</option>
       </select>
-      <button onclick="deckBuilderAddTask()" style="width:100%;padding:8px;background:linear-gradient(135deg,#a855f7,#6366f1);border:none;border-radius:6px;color:#fff;font-size:0.85em;font-weight:700;cursor:pointer;">タスクを追加</button>
+      <button id="deckBuilderAddBtn" onclick="deckBuilderAddTask()" style="width:100%;padding:8px;background:linear-gradient(135deg,#a855f7,#6366f1);border:none;border-radius:6px;color:#fff;font-size:0.85em;font-weight:700;cursor:pointer;margin-bottom:4px;">タスクを追加</button>
+      <button id="deckBuilderCancelEdit" onclick="deckBuilderCancelEdit()" style="display:none;width:100%;padding:6px;background:transparent;border:1px solid #555;border-radius:6px;color:#888;font-size:0.8em;cursor:pointer;">キャンセル</button>
     </div>
 
     <!-- 発行・閉じる -->
@@ -12610,41 +12675,41 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
 <!-- ===== 王国コード発行モーダル ===== -->
-<div id="kingdomShareModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
+<div id="craftShareModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
   <div style="background:#1a1a2e;border:1px solid #ffd700;border-radius:16px;padding:32px 28px;max-width:360px;width:90%;color:#fff;position:relative;box-shadow:0 0 40px rgba(255,215,0,0.3);">
     <div style="font-size:2em;text-align:center;margin-bottom:8px;">👑</div>
     <h2 style="text-align:center;color:#ffd700;font-size:1.1em;margin:0 0 20px 0;">王国コードを発行する</h2>
     <p style="font-size:0.83em;color:#aaa;margin:0 0 16px 0;text-align:center;">このコードを仲間に渡すと、あなたの王国を見てもらえます</p>
-    <div id="kingdomCodeDisplay" style="background:#0d1b2a;border:1px solid #ffd700;border-radius:8px;padding:12px;font-family:monospace;font-size:0.8em;color:#ffd700;word-break:break-all;margin-bottom:16px;min-height:48px;display:flex;align-items:center;justify-content:center;"></div>
-    <button onclick="copyKingdomCode()" style="width:100%;padding:11px;background:linear-gradient(135deg,#ffd700,#ff8800);border:none;border-radius:8px;color:#fff;font-size:0.95em;font-weight:bold;cursor:pointer;margin-bottom:8px;">📋 コードをコピー</button>
-    <button onclick="closeKingdomShareModal()" style="width:100%;padding:11px;background:transparent;border:1px solid #555;border-radius:8px;color:#aaa;font-size:0.9em;cursor:pointer;">閉じる</button>
+    <div id="craftCodeDisplay" style="background:#0d1b2a;border:1px solid #ffd700;border-radius:8px;padding:12px;font-family:monospace;font-size:0.8em;color:#ffd700;word-break:break-all;margin-bottom:16px;min-height:48px;display:flex;align-items:center;justify-content:center;"></div>
+    <button onclick="copyCraftCode()" style="width:100%;padding:11px;background:linear-gradient(135deg,#ffd700,#ff8800);border:none;border-radius:8px;color:#fff;font-size:0.95em;font-weight:bold;cursor:pointer;margin-bottom:8px;">📋 コードをコピー</button>
+    <button onclick="closeCraftShareModal()" style="width:100%;padding:11px;background:transparent;border:1px solid #555;border-radius:8px;color:#aaa;font-size:0.9em;cursor:pointer;">閉じる</button>
   </div>
 </div>
 
 <!-- ===== 王国訪問モーダル ===== -->
-<div id="kingdomVisitModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
+<div id="craftVisitModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
   <div style="background:#1a1a2e;border:1px solid #ffc8dc;border-radius:16px;padding:32px 28px;max-width:400px;width:90%;color:#fff;position:relative;box-shadow:0 0 40px rgba(255,160,188,0.35);">
     <div style="font-size:2em;text-align:center;margin-bottom:8px;">🗺️</div>
     <h2 style="text-align:center;color:#ffb7d5;font-size:1.1em;margin:0 0 20px 0;">仲間の王国を訪問する</h2>
-    <textarea id="kingdomVisitInput" rows="3" placeholder="KDM1: または SDK1: で始まるコードを貼り付け"
+    <textarea id="craftVisitInput" rows="3" placeholder="CRF1: または DCK1: で始まるコードを貼り付け"
       style="width:100%;padding:10px;border:1.5px solid #ffc8dc;border-radius:8px;background:#0d1b2a;color:#fff;font-size:0.85em;box-sizing:border-box;resize:none;margin-bottom:12px;"></textarea>
-    <button onclick="visitKingdom()" style="width:100%;padding:11px;background:linear-gradient(135deg,#ffc8dc,#ffa0bc);border:none;border-radius:8px;color:#9c3060;font-size:0.95em;font-weight:bold;cursor:pointer;margin-bottom:8px;box-shadow:0 4px 12px rgba(255,160,188,0.3);">🏰 訪問する</button>
-    <button onclick="closeKingdomVisitModal()" style="width:100%;padding:11px;background:transparent;border:1px solid #555;border-radius:8px;color:#aaa;font-size:0.9em;cursor:pointer;">閉じる</button>
+    <button onclick="visitCraft()" style="width:100%;padding:11px;background:linear-gradient(135deg,#ffc8dc,#ffa0bc);border:none;border-radius:8px;color:#9c3060;font-size:0.95em;font-weight:bold;cursor:pointer;margin-bottom:8px;box-shadow:0 4px 12px rgba(255,160,188,0.3);">🏰 訪問する</button>
+    <button onclick="closeCraftVisitModal()" style="width:100%;padding:11px;background:transparent;border:1px solid #555;border-radius:8px;color:#aaa;font-size:0.9em;cursor:pointer;">閉じる</button>
   </div>
 </div>
 
 <!-- ===== 王国訪問ビュー ===== -->
-<div id="kingdomVisitView" style="display:none;position:fixed;inset:0;background:#0d1b2a;z-index:9998;">
+<div id="craftVisitView" style="display:none;position:fixed;inset:0;background:#0d1b2a;z-index:9998;">
   <!-- canvas全画面 -->
   <canvas id="visitCraftCanvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
   <!-- 戻るボタン（左上） -->
-  <button onclick="closeKingdomVisitView()" style="position:absolute;top:16px;left:16px;z-index:10;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.3);color:#fff;font-size:0.95em;cursor:pointer;padding:8px 14px;border-radius:20px;backdrop-filter:blur(4px);">← 戻る</button>
+  <button onclick="closeCraftVisitView()" style="position:absolute;top:16px;left:16px;z-index:10;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.3);color:#fff;font-size:0.95em;cursor:pointer;padding:8px 14px;border-radius:20px;backdrop-filter:blur(4px);">← 戻る</button>
   <!-- オーナー名（上中央・SafariUI下に配置） -->
-  <div id="visitKingdomTitle" style="position:absolute;top:72px;left:0;right:0;z-index:10;text-align:center;color:#ffd700;font-size:1.15em;font-weight:bold;text-shadow:0 2px 10px rgba(0,0,0,0.9),0 0 20px rgba(255,215,0,0.4);pointer-events:none;padding:8px 20px;"></div>
+  <div id="visitCraftTitle" style="position:absolute;top:72px;left:0;right:0;z-index:10;text-align:center;color:#ffd700;font-size:1.15em;font-weight:bold;text-shadow:0 2px 10px rgba(0,0,0,0.9),0 0 20px rgba(255,215,0,0.4);pointer-events:none;padding:8px 20px;"></div>
   <!-- 王国情報（下） -->
-  <div id="visitKingdomInfo" style="position:absolute;bottom:24px;left:50%;transform:translateX(-50%);z-index:10;background:rgba(0,0,0,0.75);color:#fff;padding:10px 20px;border-radius:20px;text-align:center;font-size:0.85em;border:1px solid rgba(255,215,0,0.3);white-space:nowrap;backdrop-filter:blur(4px);"></div>
+  <div id="visitCraftInfo" style="position:absolute;bottom:24px;left:50%;transform:translateX(-50%);z-index:10;background:rgba(0,0,0,0.75);color:#fff;padding:10px 20px;border-radius:20px;text-align:center;font-size:0.85em;border:1px solid rgba(255,215,0,0.3);white-space:nowrap;backdrop-filter:blur(4px);"></div>
   <!-- 不要になったので非表示 -->
-  <div id="visitKingdomNameOverlay" style="display:none;"></div>
+  <div id="visitCraftNameOverlay" style="display:none;"></div>
 </div>
 </body>
 </html>
