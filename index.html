@@ -926,16 +926,38 @@
       transform: translateY(0) scale(0.96);
     }
 
+    /* スマホのみ：日付と時間を縦積み */
+    @media screen and (max-width: 480px) {
+      .task-edit-datetime {
+        flex-direction: column !important;
+        gap: 8px !important;
+      }
+      .task-edit-datetime > div {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 1 1 auto !important;
+      }
+      .task-edit-datetime .custom-time-picker {
+        justify-content: flex-start;
+        gap: 4px;
+      }
+      .task-edit-datetime .time-select {
+        min-width: 60px !important;
+        padding: 8px 22px 8px 10px !important;
+        font-size: 1em !important;
+      }
+      .task-edit-datetime .time-clear-btn {
+        padding: 7px 9px !important;
+        font-size: 0.85em !important;
+        margin-left: 2px !important;
+      }
+    }
+
     @media screen and (max-width: 768px) {
       .custom-modal.show {
         padding-top: 8vh;
       }
 
-      /* スマホ：日付と時間を縦積み */
-      .task-edit-datetime {
-        flex-direction: column !important;
-        gap: 8px !important;
-      }
 
       /* スマホ：モーダル内のボタンサイズ調整 */
       .modal-btn {
@@ -3194,6 +3216,7 @@
           </div>
           <button type="button" class="time-clear-btn" onclick="clearTimeSelect('create')" title="時間をクリア">✕</button>
         </div>
+      </div>
       <div style="margin: 15px 0;">
         <label style="display: block; margin-bottom: 8px; font-weight: bold;">終了時刻（任意）</label>
         <div class="custom-time-picker" id="createEndTimePicker">
@@ -4592,6 +4615,24 @@
         } catch (e) {
           console.error('逃げログの読み込みに失敗しました', e);
         }
+      }
+
+      // 目的・止める仕組みをlocalStorageから復元
+      const savedPurpose = localStorage.getItem('purpose');
+      if (savedPurpose) {
+        purpose = savedPurpose;
+        purposeConfirmed = true;
+      }
+      const savedStopCondition = localStorage.getItem('stopCondition');
+      if (savedStopCondition) {
+        stopCondition = savedStopCondition;
+        stopConditionSaved = true;
+      }
+
+      // 前回の日次ビュー日付を復元
+      const savedDailyDate = localStorage.getItem('selectedDailyDate');
+      if (savedDailyDate) {
+        currentDailyDate = savedDailyDate;
       }
     }
 
@@ -8399,7 +8440,7 @@
       const myName = localStorage.getItem('profileName') || null;
       const myDeviceId = getOrCreateDeviceId();
       const payload = JSON.stringify({
-        type: 'yarukotolist-family-v1',
+        kind: 'family',
         sender: myName,
         senderId: myDeviceId,
         exportedAt: new Date().toISOString(),
@@ -8713,7 +8754,7 @@
       var all = nbPages();
       var sel = pageIds ? all.filter(function(p){ return pageIds.indexOf(p.id)>=0; }) : all;
       return JSON.stringify({
-        version:'1.0', type:'yarukotolist-notebook',
+        version:'1.0', kind:'notebook',
         exportedAt:new Date().toISOString(), pageCount:sel.length,
         pages:sel.map(function(p){
           return {id:p.id,title:p.title||'',dateL:p.dateL||'',textL:p.textL||'',
@@ -8866,7 +8907,7 @@
           var json=nbBuildExportJson(nbShareSelected);
           var content,filename;
           if(pw){
-            content=JSON.stringify({type:'yarukotolist-notebook-enc',code:await nbEncrypt(json,pw)});
+            content=JSON.stringify({kind:'notebook-enc',code:await nbEncrypt(json,pw)});
             filename='yarukotolist-notebook-enc-'+new Date().toISOString().slice(0,10)+'.json';
           } else {
             content=json; filename='yarukotolist-notebook-'+new Date().toISOString().slice(0,10)+'.json';
@@ -8957,7 +8998,7 @@
           '</div>'+
           '<input type="file" id="nbImportFile" accept=".json" style="display:none">'+
           '<button class="nb-share-btn primary" id="nbImportFileBtn">📂 ファイルを選択する</button>'+
-          '<div class="nb-share-warn" id="nbImportWarn" style="display:none;"></div>'+
+          '<div class="nb-share-warn" id="nbImportWarnFile" style="display:none;"></div>'+
           '<button class="nb-share-btn cancel" onclick="nbShareClose()">キャンセル</button>';
 
         var _penc=null;
@@ -8968,7 +9009,7 @@
           r.onload=async function(ev){
             try {
               var p=JSON.parse(ev.target.result);
-              if(p.type==='yarukotolist-notebook-enc'&&p.code){
+              if(p.kind==='notebook-enc'&&p.code){
                 _penc=p.code;
                 document.getElementById('nbImportFileEncWrap').style.display='block';
                 document.getElementById('nbImportFileBtn').textContent='📂 別のファイルを選択';
@@ -9038,12 +9079,13 @@
     }
 
     function nbShowImportWarn(msg) {
-      var w=document.getElementById('nbImportWarn');
+      // ファイル用・コード用どちらのIDでも対応
+      var w = document.getElementById('nbImportWarnFile') || document.getElementById('nbImportWarn');
       if(w){ w.textContent='⚠️ '+msg; w.style.display='block'; }
     }
 
     function nbDoImport(data) {
-      if(!data||data.type!=='yarukotolist-notebook'||!Array.isArray(data.pages)){
+      if(!data||data.kind!=='notebook'||!Array.isArray(data.pages)){
         nbShowImportWarn('このファイルは自由帳のデータではないようです。エクスポートし直してください。');
         return;
       }
@@ -10567,11 +10609,11 @@ function receiveDeck(deckId) {
         <div id="taskEditMemoPreview" style="display:none; margin-top:6px; padding:8px; background:#f8f8f8; border-radius:4px; font-size:0.9em; color:#333; word-break:break-all;"></div>
       </div>
       <div class="task-edit-datetime" style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; align-items: flex-start;">
-        <div style="flex: 1; min-width: 0;">
+        <div style="flex: 1 1 120px; min-width: 0;">
           <label>日付</label>
           <input type="date" id="taskEditDate">
         </div>
-        <div style="flex: 0 0 auto; width: 180px;">
+        <div style="flex: 1 1 160px; min-width: 0; max-width: 200px;">
           <label>開始時間（任意）</label>
           <input type="hidden" id="taskEditTime">
           <div class="custom-time-picker" id="taskEditTimePicker">
@@ -10600,7 +10642,7 @@ function receiveDeck(deckId) {
             <button type="button" class="time-clear-btn" onclick="clearTimeSelect('taskEdit')" title="時間をクリア">✕</button>
           </div>
         </div>
-        <div style="flex: 0 0 auto; width: 180px;">
+        <div style="flex: 1 1 160px; min-width: 0; max-width: 200px;">
           <label>終了時間（任意）</label>
           <div class="custom-time-picker" id="taskEditEndTimePicker">
             <div class="time-select-wrapper">
