@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.27.40';
+    const APP_VERSION = 'v0.28.1';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -1207,7 +1207,7 @@
       flex: 0 0 auto;
       min-width: 0;
       position: relative;
-      overflow: clip;
+      overflow: hidden;
       box-sizing: border-box;
       border-right: 1px solid #ddd;
       background-color: #fff;
@@ -1286,6 +1286,7 @@
       right: 0;
       transition: background 0.1s;
       /* wg-day-colのbackground-imageで区切り線を表示するためtransparentのまま */
+      z-index: 2;
     }
     .wg-cell-bg:hover { background: rgba(0,200,200,0.06) !important; }
     .wg-cell-bg.wg-sat    { background: rgba(227,242,253,0.7); }
@@ -2787,6 +2788,24 @@
 </head>
 <body>
 <div id="modal-root"></div>
+  <!-- ===== v0.28 初回セットアップ ===== -->
+  <div id="setupOverlay" style="display:none;position:fixed;inset:0;z-index:999999;background:linear-gradient(135deg,#e8f5e9,#e3f2fd);align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:16px;padding:32px 28px;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.12);">
+      <div style="text-align:center;margin-bottom:24px;">
+        <div style="font-size:2.5em;margin-bottom:8px;">🏰</div>
+        <h2 style="margin:0 0 8px;font-size:1.3em;color:#333;">やることクラフトへようこそ！</h2>
+        <p style="margin:0;font-size:0.85em;color:#777;">使うカレンダーを選んでください</p>
+      </div>
+      <div id="setupCheckboxes" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;"></div>
+      <button onclick="
+        const checked = Array.from(document.querySelectorAll('.setup-cb:checked')).map(cb => cb.value);
+        completeSetup(checked);
+      " style="width:100%;padding:14px;border:none;border-radius:10px;background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff;font-size:1em;font-weight:700;cursor:pointer;">
+        🚀 はじめる
+      </button>
+    </div>
+  </div>
+
   <!-- ナビゲーションタブ -->
   <div class="nav-tabs">
     <button class="nav-tab" id="navDaily" onclick="switchView('daily')">日次</button>
@@ -4056,17 +4075,7 @@
     window.allTasks = allTasks; // クラフトモードから参照できるよう公開
 
     // ===== カレンダー定義 SSOT =====
-    const DEFAULT_CALENDARS = [
-      { id: 'work',     name: '仕事',         color: '#80cbc4', visible: true,  shareable: true  },
-      { id: 'school',   name: '学校',         color: '#90caf9', visible: true,  shareable: true  },
-      { id: 'private',  name: 'プライベート', color: '#a5d6a7', visible: true,  shareable: true  },
-      { id: 'partner',  name: 'パートナー',   color: '#f48fb1', visible: true,  shareable: false },
-      { id: 'child1',   name: '長男',         color: '#ffcc80', visible: true,  shareable: false },
-      { id: 'child2',   name: '長女',         color: '#ce93d8', visible: true,  shareable: false },
-      { id: 'project1', name: 'プロジェクト1', color: '#ffab91', visible: true,  shareable: true  },
-      { id: 'project2', name: 'プロジェクト2', color: '#80cbc4', visible: false, shareable: true  },
-      { id: 'memo',     name: 'メモ',          color: '#b0bec5', visible: false, shareable: false },
-    ];
+    const DEFAULT_CALENDARS = []; // v0.28: 初回セットアップで生成
     let calendars = [];
 
     function saveCalendars() {
@@ -4076,7 +4085,43 @@
     function loadCalendars() {
       const saved = localStorage.getItem('calendars');
       if (saved) {
-        try { calendars = JSON.parse(saved); } catch(e) { calendars = [...DEFAULT_CALENDARS]; }
+        try {
+          calendars = JSON.parse(saved);
+          // マイグレーション：旧固定IDをUUIDに変換（カレンダーIDごとに1度だけ生成）
+          const legacyIds = ['work','school','private','partner','child1','child2',
+                             'project1','project2','memo',
+                             'cal-default-work','cal-default-school','cal-default-private',
+                             'cal-default-partner','cal-default-child1','cal-default-child2',
+                             'cal-default-project1','cal-default-project2','cal-default-memo'];
+          // 旧IDを持つカレンダーだけUUIDを発行（毎回同じにならないよう変換マップをLocalStorageに保存）
+          let savedMigMap = {};
+          try { savedMigMap = JSON.parse(localStorage.getItem('_calIdMigMap') || '{}'); } catch(e) {}
+          const ID_MIGRATION = {};
+          calendars.forEach(function(c) {
+            if (legacyIds.indexOf(c.id) >= 0) {
+              if (!savedMigMap[c.id]) {
+                savedMigMap[c.id] = (typeof generateTaskId === 'function')
+                  ? generateTaskId() : crypto.randomUUID();
+              }
+              ID_MIGRATION[c.id] = savedMigMap[c.id];
+            }
+          });
+          let calMigrated = false;
+          if (Object.keys(ID_MIGRATION).length > 0) {
+            localStorage.setItem('_calIdMigMap', JSON.stringify(savedMigMap));
+            calMigrated = true;
+            calendars = calendars.map(function(c) {
+              return ID_MIGRATION[c.id] ? Object.assign({}, c, {id: ID_MIGRATION[c.id]}) : c;
+            });
+            // タスクのcalendarIdも変換
+            const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+            const updatedTasks = tasks.map(function(t) {
+              return ID_MIGRATION[t.calendarId] ? Object.assign({}, t, {calendarId: ID_MIGRATION[t.calendarId]}) : t;
+            });
+            localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+            localStorage.setItem('calendars', JSON.stringify(calendars));
+          }
+        } catch(e) { calendars = [...DEFAULT_CALENDARS]; }
         // 旧ビビッドカラーをパステルに自動移行
         const legacyMap = {
           '#4facfe': '#90caf9', '#1e88e5': '#80cbc4',
@@ -4084,15 +4129,38 @@
           '#e91e63': '#f48fb1', '#ff5722': '#ffcc80',
           '#009688': '#80cbc4', '#607d8b': '#b0bec5', '#795548': '#bcaaa4',
         };
-        let migrated = false;
+        let colorMigrated = false;
         calendars.forEach(function(cal) {
-          if (legacyMap[cal.color]) { cal.color = legacyMap[cal.color]; migrated = true; }
+          if (legacyMap[cal.color]) { cal.color = legacyMap[cal.color]; colorMigrated = true; }
         });
-        if (migrated) saveCalendars();
+        if (colorMigrated) saveCalendars();
       } else {
-        calendars = [...DEFAULT_CALENDARS];
-        saveCalendars();
+        // 初回起動：セットアップ画面を表示
+        calendars = [];
+        // DOMロード後にセットアップ表示
+        document.addEventListener('DOMContentLoaded', function() {
+          showSetupOverlay();
+        });
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+          setTimeout(showSetupOverlay, 100);
+        }
       }
+    }
+
+    function showSetupOverlay() {
+      const overlay = document.getElementById('setupOverlay');
+      if (!overlay) return;
+      // チェックボックス生成
+      const container = document.getElementById('setupCheckboxes');
+      container.innerHTML = CALENDAR_TEMPLATES.map(t => `
+        <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:2px solid #eee;border-radius:10px;cursor:pointer;font-size:0.9em;">
+          <input type="checkbox" class="setup-cb" value="${t.name}" checked
+            style="width:16px;height:16px;accent-color:${t.color};">
+          <span style="width:12px;height:12px;border-radius:50%;background:${t.color};display:inline-block;"></span>
+          ${t.name}
+        </label>
+      `).join('');
+      overlay.style.display = 'flex';
     }
 
     function getCalendar(id) {
@@ -4115,7 +4183,7 @@
     function getOrCreateDeviceId() {
       let did = localStorage.getItem('deviceId');
       if (!did) {
-        did = 'd-' + Math.random().toString(36).slice(2, 10);
+        did = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'd-' + Math.random().toString(36).slice(2,10) + Math.random().toString(36).slice(2,10);
         localStorage.setItem('deviceId', did);
       }
       return did;
@@ -4160,6 +4228,47 @@
         });
       }
     }
+
+    // ===== v0.28 初回セットアップ用カレンダーテンプレート =====
+    const CALENDAR_TEMPLATES = [
+      { name: '仕事',         color: '#80cbc4', shareable: true  },
+      { name: '学校',         color: '#90caf9', shareable: true  },
+      { name: 'プライベート', color: '#a5d6a7', shareable: true  },
+      { name: '家族',         color: '#f48fb1', shareable: true  },
+      { name: '趣味',         color: '#ffcc80', shareable: true  },
+      { name: 'メモ',         color: '#b0bec5', shareable: false },
+    ];
+
+    function needsSetup() {
+      return !localStorage.getItem('calendars') || 
+             JSON.parse(localStorage.getItem('calendars') || '[]').length === 0;
+    }
+
+    function createCalendarFromTemplate(tmpl) {
+      return {
+        id: (typeof generateTaskId === 'function') ? generateTaskId() : crypto.randomUUID(),
+        name: tmpl.name,
+        color: tmpl.color,
+        visible: true,
+        shareable: tmpl.shareable
+      };
+    }
+
+    function completeSetup(selectedNames) {
+      if (selectedNames.length === 0) {
+        // 最低1つ必須
+        selectedNames = ['プライベート'];
+      }
+      calendars = selectedNames.map(name => {
+        const tmpl = CALENDAR_TEMPLATES.find(t => t.name === name) 
+          || { name, color: '#b0bec5', shareable: true };
+        return createCalendarFromTemplate(tmpl);
+      });
+      saveCalendars();
+      document.getElementById('setupOverlay').style.display = 'none';
+      loadCalendarSettingsUI();
+    }
+
 
     // タスク作成
     /**
@@ -7939,13 +8048,12 @@ function getDeckGDP() {
       // タイマー表示を更新
       updateTimerDisplay();
       
-      // カレンダーをデフォルトにリセット
+      // カレンダーをリセット → セットアップ画面へ
       localStorage.removeItem('calendars');
       localStorage.removeItem('mainCalendarId');
       localStorage.removeItem('autoMainCalendar');
-      calendars = [...DEFAULT_CALENDARS];
-      saveCalendars();
-      loadCalendarSettingsUI();
+      calendars = [];
+      showSetupOverlay();
       
       // デッキショップ受取済みをクリア
       Object.keys(localStorage).forEach(function(key) {
@@ -7976,6 +8084,7 @@ function getDeckGDP() {
       const exportObj = {
         version: APP_VERSION,
         exportedAt: new Date().toISOString(),
+        calendars: calendars,
         tasks: allTasks
       };
       
@@ -7985,7 +8094,7 @@ function getDeckGDP() {
       
       const today = new Date();
       const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-      const filename = `yarukotolist_${dateStr}.json`;
+      const filename = `yarukotocraft_${dateStr}.json`;
       
       const a = document.createElement('a');
       a.href = url;
@@ -8022,7 +8131,19 @@ function getDeckGDP() {
           saveAllTasks();
           if (data.purpose) localStorage.setItem('purpose', data.purpose);
           if (data.stopCondition) localStorage.setItem('stopCondition', data.stopCondition);
-          if (data.calendars) { localStorage.setItem('calendars', JSON.stringify(data.calendars)); }
+          if (data.calendars && Array.isArray(data.calendars)) {
+            // マージ方式：IDが同じなら更新、新しければ追加、自分固有のものは残す
+            let myCals = JSON.parse(localStorage.getItem('calendars') || '[]');
+            data.calendars.forEach(function(incoming) {
+              const idx = myCals.findIndex(function(c) { return c.id === incoming.id; });
+              if (idx >= 0) {
+                myCals[idx] = Object.assign(myCals[idx], incoming); // 上書き更新
+              } else {
+                myCals.push(incoming); // 新規追加
+              }
+            });
+            localStorage.setItem('calendars', JSON.stringify(myCals));
+          }
           alert(`インポート完了！\n${newTasks.length}件を追加しました。`);
           location.reload();
         } catch (err) {
@@ -9064,9 +9185,9 @@ function getDeckGDP() {
           var content,filename;
           if(pw){
             content=JSON.stringify({kind:'notebook-enc',code:await nbEncrypt(json,pw)});
-            filename='yarukotolist-notebook-enc-'+new Date().toISOString().slice(0,10)+'.json';
+            filename='yarukotocraft-notebook-enc-'+new Date().toISOString().slice(0,10)+'.json';
           } else {
-            content=json; filename='yarukotolist-notebook-'+new Date().toISOString().slice(0,10)+'.json';
+            content=json; filename='yarukotocraft-notebook-'+new Date().toISOString().slice(0,10)+'.json';
           }
           var a=Object.assign(document.createElement('a'),{
             href:URL.createObjectURL(new Blob([content],{type:'application/json'})),download:filename
@@ -9146,7 +9267,7 @@ function getDeckGDP() {
         box.innerHTML =
           '<button class="nb-back-btn" onclick="nbShareImportStep1()">‹ 戻る</button>'+
           '<div class="nb-share-modal-title">📁 ファイルから受け取る</div>'+
-          '<div class="nb-share-modal-desc">yarukotolistで出力したJSONファイルを選んでください。</div>'+
+          '<div class="nb-share-modal-desc">やることくらふとで出力したJSONファイルを選んでください。</div>'+
           '<div id="nbImportFileEncWrap" style="display:none;" class="nb-share-section">'+
             '<div class="nb-share-section-label">🔑 パスワード（暗号化ファイルの場合）</div>'+
             nbPwWidget('nbImportPwFile','送った相手に確認してください')+
@@ -9170,7 +9291,7 @@ function getDeckGDP() {
                 document.getElementById('nbImportFileEncWrap').style.display='block';
                 document.getElementById('nbImportFileBtn').textContent='📂 別のファイルを選択';
               } else { nbDoImport(p); }
-            } catch(err){ nbShowImportWarn('ファイルの読み込みに失敗しました。yarukotolistで出力したファイルか確認してください。'); }
+            } catch(err){ nbShowImportWarn('ファイルの読み込みに失敗しました。やることくらふとで出力したファイルか確認してください。'); }
           };
           r.readAsText(file);
         });
@@ -9904,7 +10025,7 @@ function loadSettingsUI() {
       if (calendars.length >= 15) { alert('カレンダーは最大15個です'); return; }
       const colors = ['#f48fb1','#ffcc80','#fff176','#80deea','#b39ddb','#ef9a9a','#c5e1a5','#80cbc4'];
       calendars.push({
-        id: 'cal-' + Date.now(),
+        id: (typeof generateTaskId === 'function') ? generateTaskId() : crypto.randomUUID(),
         name: 'カレンダー' + (calendars.length + 1),
         color: colors[calendars.length % colors.length],
         visible: true,
