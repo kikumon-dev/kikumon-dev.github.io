@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.28.86';
+    const APP_VERSION = 'v0.28.89';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -5421,7 +5421,20 @@ function getDeckGDP() {
 
           taskDiv.addEventListener('click', e => {
             if (e.target === editBtn) return;
-            setTimeout(() => editWeeklyTaskById(task.id), 10);
+            // 完了トグル
+            const _wasDone = task.completed;
+            task.completed = !task.completed;
+            task.updatedAt = new Date().toISOString();
+            saveAllTasks();
+            if (!_wasDone && task.completed) {
+              onTaskCompleted(task);
+              if (task.deckId && typeof incrementDeckHistoryStat === 'function') {
+                incrementDeckHistoryStat(task.deckId);
+              }
+            }
+            titleSpan.style.textDecoration = task.completed ? 'line-through' : '';
+            titleSpan.style.opacity = task.completed ? '0.6' : '1';
+            taskDiv.style.opacity = task.completed ? '0.65' : '1';
           });
 
           col.appendChild(taskDiv);
