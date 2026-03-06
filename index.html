@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.28.6';
+    const APP_VERSION = 'v0.28.7';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -4266,8 +4266,8 @@
 
     function completeSetup(selectedNames) {
       if (selectedNames.length === 0) {
-        // 最低1つ必須
-        selectedNames = ['プライベート'];
+        alert('⚠️ 最低1つカレンダーを選んでください。');
+        return;
       }
       calendars = selectedNames.map(name => {
         const tmpl = CALENDAR_TEMPLATES.find(t => t.name === name) 
