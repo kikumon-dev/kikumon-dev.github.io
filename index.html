@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.28.5';
+    const APP_VERSION = 'v0.28.6';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -8189,7 +8189,18 @@ function getDeckGDP() {
             if (currentCals.find(function(c) { return c.id === t.calendarId; })) {
               return t;
             }
-            // ④ どれにも該当しない→先頭カレンダーに割り当て＆警告フラグ
+            // ④ どれにも該当しない→エクスポートのcalendarsから自動追加
+            if (senderIdToName[t.calendarId]) {
+              // 送り主のカレンダー情報がある → 自動追加
+              const calToAdd = data.calendars.find(function(c) { return c.id === t.calendarId; });
+              if (calToAdd && !currentCals.find(function(c) { return c.id === calToAdd.id; })) {
+                currentCals.push({ id: calToAdd.id, name: calToAdd.name, color: calToAdd.color, visible: true, shareable: true });
+                localStorage.setItem('calendars', JSON.stringify(currentCals));
+                nameToId[calToAdd.name] = calToAdd.id;
+              }
+              return t; // calendarIdそのまま使える
+            }
+            // 完全に不明なID → 先頭カレンダーに割り当て＆警告
             _importUnmatchedCount = (_importUnmatchedCount || 0) + 1;
             return Object.assign({}, t, { calendarId: currentCals[0] ? currentCals[0].id : t.calendarId });
           });
