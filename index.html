@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.27.32';
+    const APP_VERSION = 'v0.27.33';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -571,22 +571,31 @@
       display: none;
       position: fixed;
       z-index: 99999;
-      left: 0;
-      top: 0;
-      width: 100vw;
+      left: 0 !important;
+      top: 0 !important;
+      width: 100vw !important;
       height: 100vh;
       height: 100dvh;
       background-color: rgba(0, 0, 0, 0.5);
+      flex-shrink: 0;
+      margin: 0 !important;
+      padding: 0;
+      transform: none !important;
     }
 
     .custom-modal.show {
-      display: flex;
+      display: flex !important;
       justify-content: center;
       align-items: center;
       padding: 20px;
       overflow-y: auto;
-      /* iOSキーボード表示時もモーダルが画面内に収まるように */
       -webkit-overflow-scrolling: touch;
+      width: 100vw !important;
+      height: 100vh !important;
+      height: 100dvh !important;
+      position: fixed !important;
+      left: 0 !important;
+      top: 0 !important;
     }
 
     /* 逃げ出したメッセージ */
@@ -13222,7 +13231,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
   <!-- 週間タスク作成モーダル -->
-  <div id="weeklyTaskCreateModal" class="custom-modal" onclick="if(event.target.id==='weeklyTaskCreateModal') closeCreateModal();">
+  <div id="weeklyTaskCreateModal" class="custom-modal" style="position:fixed!important;top:0!important;left:0!important;width:100vw!important;height:100dvh!important;z-index:99999!important;" onclick="if(event.target.id==='weeklyTaskCreateModal') closeCreateModal();">
     <div class="modal-content" style="max-width: 400px;">
       <h3>タスク作成</h3>
       <div id="weeklyModalDate" style="text-align: center; color: #666; margin-bottom: 15px; font-size: 0.9em;"></div>
