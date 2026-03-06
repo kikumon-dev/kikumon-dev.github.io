@@ -582,7 +582,7 @@
     .custom-modal.show {
       display: flex;
       justify-content: center;
-      align-items: flex-start;
+      align-items: center;
       padding: 20px;
       overflow-y: auto;
       /* iOSキーボード表示時もモーダルが画面内に収まるように */
@@ -620,7 +620,7 @@
       max-height: calc(100dvh - 40px);
       max-height: calc(var(--vh, 1vh) * 100 - 40px);
       overflow-y: auto;
-      margin: auto 0;
+      margin: auto;
       /* スクロールバーで角丸が崩れるのを防止 */
       scrollbar-width: thin;
       scrollbar-color: rgba(0,0,0,0.08) transparent;
@@ -6965,11 +6965,12 @@ function getDeckGDP() {
         clearTimeSelect('create');
       }
       
-      // モーダルを表示
+      // モーダルを表示（wg-headerのstickyがz-indexを上書きするため一時隠す）
+      var _wgHeader = document.querySelector('.wg-header');
+      if (_wgHeader) _wgHeader.style.visibility = 'hidden';
       var _modal = document.getElementById('weeklyTaskCreateModal');
       _modal.classList.add('show');
       _modal.scrollTop = 0;
-      // modal-contentもリセット
       var _mc = _modal.querySelector('.modal-content');
       if (_mc) _mc.scrollTop = 0;
       
@@ -6985,6 +6986,9 @@ function getDeckGDP() {
       document.getElementById('createTaskMemo').value = '';
       clearTimeSelect('create');
       creatingTask = null;
+      // wg-headerを元に戻す
+      var _wgHeader = document.querySelector('.wg-header');
+      if (_wgHeader) _wgHeader.style.visibility = '';
     }
     
     // タスクを作成
