@@ -570,7 +570,7 @@
     .custom-modal {
       display: none;
       position: fixed;
-      z-index: 9999;
+      z-index: 99999;
       left: 0;
       top: 0;
       width: 100%;
@@ -1085,7 +1085,7 @@
       flex-shrink: 0;
       width: 100%;
       background: #fff;
-      z-index: 25;
+      z-index: 10;
       box-shadow: 0 1px 0 #e0e0e0;
     }
 
@@ -7070,7 +7070,12 @@ function getDeckGDP() {
       }
       
       // モーダルを表示
-      document.getElementById('weeklyTaskCreateModal').classList.add('show');
+      var _modal = document.getElementById('weeklyTaskCreateModal');
+      _modal.classList.add('show');
+      _modal.scrollTop = 0;
+      // modal-contentもリセット
+      var _mc = _modal.querySelector('.modal-content');
+      if (_mc) _mc.scrollTop = 0;
       
       // フォーカス
       setTimeout(() => {
