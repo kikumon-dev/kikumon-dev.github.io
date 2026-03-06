@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.27.39';
+    const APP_VERSION = 'v0.27.40';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -1207,7 +1207,7 @@
       flex: 0 0 auto;
       min-width: 0;
       position: relative;
-      overflow: hidden;
+      overflow: clip;
       box-sizing: border-box;
       border-right: 1px solid #ddd;
       background-color: #fff;
@@ -1286,7 +1286,6 @@
       right: 0;
       transition: background 0.1s;
       /* wg-day-colのbackground-imageで区切り線を表示するためtransparentのまま */
-      z-index: 2;
     }
     .wg-cell-bg:hover { background: rgba(0,200,200,0.06) !important; }
     .wg-cell-bg.wg-sat    { background: rgba(227,242,253,0.7); }
@@ -13289,7 +13288,6 @@ document.addEventListener('DOMContentLoaded', function() {
         <label style="display: block; margin-bottom: 8px; font-weight: bold;">カレンダー（色分け）</label>
         <div id="createCalendarBtns" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
         <div style="font-size: 0.75em; color: #888; margin-top: 4px;">※時間を設定すると週間ビューにも表示されます</div>
-      </div>
       </div>
       <div style="margin: 15px 0;">
         <label style="display: block; margin-bottom: 8px; font-weight: bold;">象限</label>
