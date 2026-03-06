@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.28.18';
+    const APP_VERSION = 'v0.28.36';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -2777,6 +2777,9 @@
       50%  { transform: scale(1.3); color: #ffd700; }
       100% { transform: scale(1);   color: inherit; }
     }
+
+    #adminBadgeExtra { display: none !important; }
+    #adminBadgeExtra.admin-visible { display: block !important; }
 </style>
   
   <script>
@@ -3330,11 +3333,20 @@
     </div>
   </div>
   <div id="craftMessage" style="position:absolute;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:#ffd700;padding:10px 20px;border-radius:20px;font-family:monospace;font-size:0.9em;border:1px solid rgba(255,215,0,0.4);opacity:0;transition:opacity 0.5s;white-space:nowrap;pointer-events:none;"></div>
-  <!-- 王国GDP バッジ（左下） -->
-  <div id="craftGDPBadge" style="position:absolute;bottom:16px;left:16px;background:rgba(0,0,0,0.75);border:1px solid rgba(76,175,80,0.5);border-radius:12px;padding:8px 14px;color:#fff;font-family:monospace;pointer-events:none;backdrop-filter:blur(6px);text-align:center;min-width:72px;">
-    <div style="font-size:0.62em;color:#aaa;margin-bottom:2px;">🏅 王国GDP</div>
-    <div id="craftGDPValue" style="font-size:1.3em;font-weight:900;color:#ffd700;line-height:1.1;">0</div>
-    <div style="font-size:0.58em;color:#666;">完了累計</div>
+  <!-- 王国GDP＋徳（＋管理者：業・徳分） バッジ（左下） -->
+  <div id="craftGDPBadge" style="position:absolute;bottom:16px;left:16px;background:rgba(0,0,0,0.75);border:1px solid rgba(76,175,80,0.5);border-radius:12px;padding:8px 14px;color:#fff;font-family:monospace;backdrop-filter:blur(6px);text-align:left;min-width:90px;cursor:pointer;" onclick="adminBadgeTap()">
+    <div style="font-size:0.6em;color:#aaa;margin-bottom:1px;">💰 GDP</div>
+    <div id="craftGDPValue" style="font-size:1.3em;font-weight:900;color:#ffd700;line-height:1.2;">0</div>
+    <div style="font-size:0.6em;color:#aaa;margin-top:5px;margin-bottom:1px;">🌸 徳</div>
+    <div id="craftTokuValue" style="font-size:1.3em;font-weight:900;color:#f8bbd0;line-height:1.2;">0</div>
+    <!-- 管理者モードのみ表示 -->
+    <div id="adminBadgeExtra" style="display:none !important;">
+      <div style="font-size:0.6em;color:#aaa;margin-top:5px;margin-bottom:1px;">🔥 業</div>
+      <div id="craftGouValue" style="font-size:1.3em;font-weight:900;color:#ff8a65;line-height:1.2;">0</div>
+      <div style="border-top:1px solid rgba(255,255,255,0.2);margin:6px 0 4px;"></div>
+      <div style="font-size:0.6em;color:#aaa;margin-bottom:1px;">⚖️ 徳分</div>
+      <div id="craftTokubunValue" style="font-size:1.3em;font-weight:900;line-height:1.2;">0</div>
+    </div>
   </div>
   <div style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.3);font-size:0.7em;font-family:monospace;pointer-events:none;">ドラッグで視点回転 / スクロールでズーム</div>
 </div>
@@ -3682,6 +3694,15 @@
           </div>
         </div>
 
+        <!-- 管理者モード（隠し） -->
+        <div id="adminPwSection" style="display:none;margin-bottom:16px;background:rgba(0,0,0,0.04);border:1px dashed #ccc;border-radius:10px;padding:14px;">
+          <div style="font-size:0.78em;color:#888;margin-bottom:8px;">🔐 管理者コード</div>
+          <div style="display:flex;gap:8px;">
+            <input type="password" id="adminPwInput" placeholder="管理者コードを入力" style="flex:1;padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:0.9em;">
+            <button onclick="checkAdminPw()" style="padding:8px 16px;background:#333;color:#fff;border:none;border-radius:8px;font-size:0.85em;cursor:pointer;">解錠</button>
+          </div>
+          <div id="adminPwMsg" style="font-size:0.75em;margin-top:6px;"></div>
+        </div>
         <div style="text-align:center;margin-top:8px;"><button class="modal-btn modal-btn-primary" style="padding:14px 40px;font-size:1em;border-radius:12px;" onclick="saveSettings()">設定を保存</button></div>
       </div>
     </div>
@@ -4603,6 +4624,7 @@
         stats: { completed: 0 }
       });
       saveDeckHistory(history);
+      // 🔥 業判定はソース呼び出し元で行う（ここでは行わない）
     }
     function incrementDeckHistoryStat(deckId) {
       if (!deckId) return;
@@ -8023,6 +8045,10 @@ function getDeckGDP() {
       localStorage.removeItem('catMigrationDone_v170');
       localStorage.removeItem('deletedTaskIds');
       localStorage.removeItem('_calIdMigMap');
+      localStorage.removeItem('tokuPoints');
+      localStorage.removeItem('gouPoints');
+      localStorage.removeItem('tokuLog');
+      localStorage.removeItem('adminMode');
       
       // 目的・止める仕組み
       localStorage.removeItem('purpose');
@@ -11372,6 +11398,7 @@ function buildCraftCode() {
 function openCraftShareModal() {
   var code = buildCraftCode();
   _craftCode = code;
+  if (typeof addToku === 'function') addToku(100, '王国コード発行');
   var el = document.getElementById('craftCodeDisplay');
   if (el) el.textContent = code;
   var modal = document.getElementById('craftShareModal');
@@ -11430,6 +11457,8 @@ function visitCraft() {
     if (deck.kind !== 'deck') { alert('コードの形式が正しくありません'); return; }
     if (!confirm((deck.title||'デッキ') + ' ' + deck.tasks.length + '枚を受け取りますか？')) return;
     var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
+    // 🔥 DCK1（外部コード入力）→ 業+1
+    if (typeof addGou === 'function') addGou(1, 'DCK1外部デッキ受取');
     deck.tasks.forEach(function(d) {
       var t = (typeof createTask === 'function') ? createTask(d.text, today, null, d.section||1, 'daily_only') : null;
       if (t && d.memo && typeof updateTask === 'function') updateTask(t.id, { memo: d.memo });
@@ -11810,6 +11839,70 @@ function updateCraftHUD() {
   var gdpEl = document.getElementById('craftGDPValue');
   if (gdpEl && typeof getDeckGDP === 'function') {
     gdpEl.textContent = getDeckGDP();
+  }
+  // 🌸 徳バッジ更新
+  var tokuEl = document.getElementById('craftTokuValue');
+  if (tokuEl) tokuEl.textContent = getToku();
+  // 🔥業・⚖️徳分は管理者モードのみ
+  var isAdmin = _adminModeActive;
+  var extra = document.getElementById('adminBadgeExtra');
+  if (extra) { extra.setAttribute('style', isAdmin ? 'display:block !important' : 'display:none !important'); }
+  if (isAdmin) {
+    var gouEl = document.getElementById('craftGouValue');
+    if (gouEl) gouEl.textContent = getGou();
+    var tokubunEl = document.getElementById('craftTokubunValue');
+    if (tokubunEl) {
+      var tb = getTokubun();
+      tokubunEl.textContent = tb;
+      tokubunEl.style.color = tb >= 0 ? '#f8bbd0' : '#ff5252';
+    }
+    applyTokubunEffect();
+  }
+}
+
+function getToku() {
+  return parseInt(localStorage.getItem('tokuPoints') || '0');
+}
+function getGou() {
+  return parseInt(localStorage.getItem('gouPoints') || '0');
+}
+function getTokubun() {
+  return getToku() - getGou();
+}
+function addToku(amount, reason) {
+  const current = getToku();
+  localStorage.setItem('tokuPoints', String(current + amount));
+  const log = JSON.parse(localStorage.getItem('tokuLog') || '[]');
+  log.push({ type: 'toku', amount: amount, reason: reason, date: new Date().toISOString() });
+  localStorage.setItem('tokuLog', JSON.stringify(log));
+  updateCraftGDPBadge();
+}
+function addGou(amount, reason) {
+  const current = getGou();
+  localStorage.setItem('gouPoints', String(current + amount));
+  const log = JSON.parse(localStorage.getItem('tokuLog') || '[]');
+  log.push({ type: 'gou', amount: amount, reason: reason, date: new Date().toISOString() });
+  localStorage.setItem('tokuLog', JSON.stringify(log));
+  updateCraftGDPBadge();
+  applyTokubunEffect();
+}
+function applyTokubunEffect() {
+  var tokubun = getTokubun();
+  var castle = document.getElementById('craftCanvas') || document.querySelector('#craftView canvas');
+  var badge = document.getElementById('craftGDPBadge');
+  // 徳分による演出
+  if (tokubun >= 100) {
+    if (badge) badge.style.borderColor = 'rgba(248,187,208,0.8)';
+  } else if (tokubun >= 50) {
+    if (badge) badge.style.borderColor = 'rgba(248,187,208,0.5)';
+  } else if (tokubun >= 0) {
+    if (badge) badge.style.borderColor = 'rgba(76,175,80,0.5)';
+  } else if (tokubun >= -10) {
+    if (badge) badge.style.borderColor = 'rgba(255,152,0,0.7)';
+  } else if (tokubun >= -30) {
+    if (badge) badge.style.borderColor = 'rgba(244,67,54,0.7)';
+  } else {
+    if (badge) badge.style.borderColor = 'rgba(183,28,28,0.9)';
   }
 }
 
@@ -12627,35 +12720,79 @@ function onTaskCompleted(task) {
 
 <!-- ===== チュートリアルモーダル ===== -->
 <div id="tutorialOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
-  <div style="background:#1a1a2e;border:1px solid #4facfe;border-radius:16px;padding:36px 32px;max-width:360px;width:90%;color:#fff;position:relative;box-shadow:0 0 40px rgba(79,172,254,0.3);">
-    <div style="font-size:2em;text-align:center;margin-bottom:8px;">🏰</div>
-    <h2 style="text-align:center;color:#ffd700;font-size:1.2em;margin:0 0 28px 0;letter-spacing:0.05em;">はじめての方へ</h2>
+  <div style="background:#1a1a2e;border:1px solid #4facfe;border-radius:16px;padding:28px 24px;max-width:380px;width:92%;color:#fff;position:relative;box-shadow:0 0 40px rgba(79,172,254,0.3);max-height:90vh;overflow-y:auto;">
+    <div style="font-size:2em;text-align:center;margin-bottom:4px;">🏰</div>
+    <h2 style="text-align:center;color:#ffd700;font-size:1.1em;margin:0 0 20px 0;letter-spacing:0.05em;">はじめての方へ</h2>
 
-    <div style="margin-bottom:20px;">
-      <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;">
+    <div style="margin-bottom:16px;">
+      <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;">
         <div style="background:#4facfe;color:#fff;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.85em;flex-shrink:0;">1</div>
         <div>
-          <div style="font-weight:bold;color:#4facfe;margin-bottom:4px;">やることを入れよう</div>
-          <div style="font-size:0.88em;color:#ccc;">タスクは全部、王国の素材になるよ！</div>
+          <div style="font-weight:bold;color:#4facfe;margin-bottom:2px;">やることを入れよう</div>
+          <div style="font-size:0.85em;color:#ccc;">タスクは全部、王国の素材になるよ！</div>
         </div>
       </div>
-      <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;">
+      <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;">
         <div style="background:#ffd700;color:#1a1a2e;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.85em;flex-shrink:0;">2</div>
         <div>
-          <div style="font-weight:bold;color:#ffd700;margin-bottom:4px;">タスクをこなすたびに、王国が育っていく</div>
-          <div style="font-size:0.88em;color:#ccc;">完了したら、クリックで線が引けるよ！</div>
+          <div style="font-weight:bold;color:#ffd700;margin-bottom:2px;">タスクをこなすたびに、王国が育っていく</div>
+          <div style="font-size:0.85em;color:#ccc;">完了したら、クリックで線が引けるよ！</div>
         </div>
       </div>
       <div style="display:flex;gap:12px;align-items:flex-start;">
         <div style="background:#a78bfa;color:#fff;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.85em;flex-shrink:0;">3</div>
         <div>
-          <div style="font-weight:bold;color:#a78bfa;margin-bottom:4px;">いつの間にか、王国ができている</div>
-          <div style="font-size:0.88em;color:#ccc;">ちゃんとやれば、どんな仕事も王国の礎になる</div>
+          <div style="font-weight:bold;color:#a78bfa;margin-bottom:2px;">いつの間にか、王国ができている</div>
+          <div style="font-size:0.85em;color:#ccc;">ちゃんとやれば、どんな仕事も王国の礎になる</div>
         </div>
       </div>
     </div>
 
-    <button id="tutorialClose" style="width:100%;padding:12px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:8px;color:#fff;font-size:1em;font-weight:bold;cursor:pointer;margin-top:8px;">さあ、冒険へ旅立とう！ ✨</button>
+    <!-- アバウト：アコーディオン -->
+    <div style="border-top:1px solid rgba(255,255,255,0.15);margin:16px 0 12px;"></div>
+    <div style="font-size:0.78em;color:#aaa;margin-bottom:10px;text-align:center;">📖 やることくらふとについて</div>
+
+    <div id="aboutAccordion">
+      <!-- GDP -->
+      <div style="margin-bottom:6px;">
+        <button onclick="toggleAbout('aboutGDP')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#ffd700;font-size:0.85em;font-weight:bold;cursor:pointer;">💰 GDPとは？</button>
+        <div id="aboutGDP" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:10px 12px;font-size:0.82em;color:#ccc;line-height:1.6;">
+          論語とそろばん。動いた分だけ王国は豊かになります。タスクを完了するたびにGDPが積み上がります。
+        </div>
+      </div>
+      <!-- 徳 -->
+      <div style="margin-bottom:6px;">
+        <button onclick="toggleAbout('aboutToku')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#f8bbd0;font-size:0.85em;font-weight:bold;cursor:pointer;">🌸 徳とは？</button>
+        <div id="aboutToku" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:10px 12px;font-size:0.82em;color:#ccc;line-height:1.6;">
+          与えることで積まれます。デッキを配布したり、タスクを家族と共有すると徳が積まれます。一度積まれた徳は消えません。<br><br>
+          徳と業の分かれ目は「人に喜んでもらえるかどうか」。喜んでもらえるように工夫した行動が、徳を積みます。
+        </div>
+      </div>
+      <!-- 業 -->
+      <div style="margin-bottom:6px;">
+        <button onclick="toggleAbout('aboutGou')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#ffb74d;font-size:0.85em;font-weight:bold;cursor:pointer;">🌙 業とは？</button>
+        <div id="aboutGou" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:10px 12px;font-size:0.82em;color:#ccc;line-height:1.6;">
+          王国には、与える力と受け取る力のバランスがあります。受け取るだけでは、少しずつ王国に影が差してくることも。<br><br>
+          公式デッキ（ショップ内のデッキ）はそのまま受け取って大丈夫です。安心して使ってください。
+        </div>
+      </div>
+      <!-- 徳分 -->
+      <div style="margin-bottom:6px;">
+        <button onclick="toggleAbout('aboutTokubun')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#e0e0e0;font-size:0.85em;font-weight:bold;cursor:pointer;">⚖️ 徳分とは？</button>
+        <div id="aboutTokubun" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:10px 12px;font-size:0.82em;color:#ccc;line-height:1.6;">
+          徳と業のバランスを示す値です。与えることを大切にしている王国ほど、徳分が高くなります。気にしすぎなくて大丈夫。与えることを楽しんでいれば、自然とプラスになっていきます。
+        </div>
+      </div>
+      <!-- 王国 -->
+      <div style="margin-bottom:6px;">
+        <button onclick="toggleAbout('aboutKingdom')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#a78bfa;font-size:0.85em;font-weight:bold;cursor:pointer;">🏰 王国について</button>
+        <div id="aboutKingdom" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:10px 12px;font-size:0.82em;color:#ccc;line-height:1.6;">
+          あなたのやることが王国を動かします。与え、動き、継続する。それが栄える王国の姿です。
+        </div>
+      </div>
+    </div>
+
+    <button id="tutorialClose" style="width:100%;padding:12px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:8px;color:#fff;font-size:1em;font-weight:bold;cursor:pointer;margin-top:12px;">さあ、冒険へ旅立とう！ ✨</button>
   </div>
 </div>
 
@@ -12694,17 +12831,101 @@ function showTutorial() {
   var el = document.getElementById('tutorialOverlay');
   if (el) { el.style.display = 'flex'; }
 }
+function toggleAbout(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+// ===== 管理者モード =====
+var _adminTapCount = 0;
+var _adminTapTimer = null;
+var ADMIN_PW = 'yorokonndeitadakemasuyouni';
+var _adminModeActive = false; // グローバル変数で管理（LocalStorage非依存）
+
+function adminBadgeTap() {
+  _adminTapCount++;
+  clearTimeout(_adminTapTimer);
+  _adminTapTimer = setTimeout(function() { _adminTapCount = 0; }, 2000);
+  if (_adminTapCount >= 12) {
+    _adminTapCount = 0;
+    if (_adminModeActive) {
+      // すでに管理者モード → ヒントのみ
+      showAdminToast('👑 管理者モード：有効');
+      return;
+    }
+    // 設定画面の管理者欄を出現させる
+    var section = document.getElementById('adminPwSection');
+    if (section) section.style.display = 'block';
+    showCraftMessage('🔐 設定画面を確認せよ');
+    // 設定画面を開く
+    setTimeout(function() {
+      if (typeof showView === 'function') showView('settingsView');
+      setTimeout(function() {
+        var sec = document.getElementById('adminPwSection');
+        if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
+    }, 800);
+  }
+}
+
+function checkAdminPw() {
+  var input = document.getElementById('adminPwInput');
+  if (!input) return;
+  if (input.value === ADMIN_PW) {
+    localStorage.setItem('adminMode', '1');
+    _adminModeActive = true;
+    var extra = document.getElementById('adminBadgeExtra');
+    if (extra) extra.setAttribute('style', 'display:block !important');
+    var sec = document.getElementById('adminPwSection');
+    if (sec) sec.style.display = 'none';
+    input.value = '';
+    if (typeof updateCraftGDPBadge === 'function') updateCraftGDPBadge();
+    // 上部トースト
+    showAdminToast('👁️ 真実の目が開いた');
+  } else {
+    showAdminToast('❌ コードが違います');
+    input.value = '';
+  }
+}
+
+function showAdminToast(msg) {
+  var toast = document.getElementById('adminToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'adminToast';
+    toast.style.cssText = 'position:fixed;top:18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.88);color:#ffd700;padding:12px 28px;border-radius:20px;font-size:1em;font-weight:bold;z-index:99999;text-align:center;pointer-events:none;border:1.5px solid rgba(255,215,0,0.5);box-shadow:0 0 20px rgba(255,215,0,0.2);transition:opacity 0.4s;';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  clearTimeout(toast._t);
+  toast._t = setTimeout(function() { toast.style.opacity = '0'; }, 2800);
+}
+
+function initAdminMode() {
+  // 常にfalseから始める（LocalStorage復元なし）
+  // 管理者モードは毎回12回タップ+PW入力で解除する仕様
+  _adminModeActive = false;
+  var extra = document.getElementById('adminBadgeExtra');
+  if (extra) extra.setAttribute('style', 'display:none !important');
+}
 function hideTutorial() {
   var el = document.getElementById('tutorialOverlay');
   if (el) { el.style.display = 'none'; }
   localStorage.setItem('tutorialSeen', '1');
 }
 document.addEventListener('DOMContentLoaded', function() {
+  // 最優先で業・徳分を強制非表示
+  _adminModeActive = false;
+  var extra = document.getElementById('adminBadgeExtra');
+  if (extra) extra.setAttribute('style', 'display:none !important');
+  initAdminMode();
+
   var btn = document.getElementById('tutorialClose');
   if (btn) btn.addEventListener('click', hideTutorial);
   var overlay = document.getElementById('tutorialOverlay');
   if (overlay) overlay.addEventListener('click', function(e){ if(e.target===overlay) hideTutorial(); });
-  // 初回のみ自動表示
   if (!localStorage.getItem('tutorialSeen')) {
     setTimeout(showTutorial, 800);
   }
@@ -12842,6 +13063,7 @@ function toggleAdminMode() {
     showAdminToast('\u{1F512} \u89E3\u9664\u3057\u307E\u3057\u305F');
   } else {
     localStorage.setItem('adminMode', '1');
+    _adminModeActive = true;
     if (el) el.style.display = 'block';
     showAdminToast('\u{1F451} \u30E2\u30FC\u30C9\uFF1AON');
   }
@@ -13136,6 +13358,7 @@ function deckBuilderPublish() {
       document.body.appendChild(toast);
     }
     toast.innerHTML = '⚔️ デッキを発行した！<br><span style="font-size:0.82em;color:#ffcc66;">コードをコピーして配布しよう</span>';
+    if (typeof addToku === 'function') addToku(100, 'デッキ配布コード発行');
     toast.style.display = 'block';
     clearTimeout(toast._t);
     toast._t = setTimeout(function(){ toast.style.display = 'none'; }, 3500);
