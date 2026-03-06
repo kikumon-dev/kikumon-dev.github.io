@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.27.29';
+    const APP_VERSION = 'v0.27.30';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -3183,110 +3183,6 @@
         <button class="modal-btn modal-btn-cancel" onclick="closeWeeklyEditModal()">キャンセル</button>
         <button class="modal-btn modal-btn-delete" onclick="confirmDeleteFromEdit()">削除</button>
         <button class="modal-btn modal-btn-save" onclick="saveWeeklyEdit()">保存</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 週間タスク作成モーダル -->
-  <div id="weeklyTaskCreateModal" class="custom-modal" onclick="if(event.target.id==='weeklyTaskCreateModal') closeCreateModal();">
-    <div class="modal-content" style="max-width: 400px;">
-      <h3>タスク作成</h3>
-      <div id="weeklyModalDate" style="text-align: center; color: #666; margin-bottom: 15px; font-size: 0.9em;"></div>
-      <div style="margin: 15px 0;">
-        <input type="text" id="createTaskText" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 1em; box-sizing: border-box;" placeholder="タスクを入力...">
-      </div>
-      <div style="margin: 15px 0;">
-        <label style="display: block; margin-bottom: 8px; font-weight: bold;">メモ（任意）</label>
-        <textarea id="createTaskMemo" rows="2" placeholder="詳細や持ち物など..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.95em; box-sizing: border-box; resize: vertical; font-family: inherit;"></textarea>
-      </div>
-      <div style="margin: 15px 0;">
-        <label style="display: block; margin-bottom: 8px; font-weight: bold;">時間（任意）</label>
-        <div class="custom-time-picker" id="createTimePicker">
-          <div class="time-select-wrapper">
-            <select class="time-select" id="createHourSelect">
-              <option value="">--</option>
-              <option value="0">00</option><option value="1">01</option><option value="2">02</option><option value="3">03</option>
-              <option value="4">04</option><option value="5">05</option><option value="6">06</option><option value="7">07</option>
-              <option value="8">08</option><option value="9">09</option><option value="10">10</option><option value="11">11</option>
-              <option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option>
-              <option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option>
-              <option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option>
-            </select>
-            <div class="time-label">時</div>
-          </div>
-          <span class="time-separator">:</span>
-          <div class="time-select-wrapper">
-            <select class="time-select" id="createMinuteSelect">
-              <option value="">--</option>
-              <option value="0">00</option><option value="5">05</option><option value="10">10</option><option value="15">15</option>
-              <option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option>
-              <option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option>
-            </select>
-            <div class="time-label">分</div>
-          </div>
-          <button type="button" class="time-clear-btn" onclick="clearTimeSelect('create')" title="時間をクリア">✕</button>
-        </div>
-      </div>
-      <div style="margin: 15px 0;">
-        <label style="display: block; margin-bottom: 8px; font-weight: bold;">終了時刻（任意）</label>
-        <div class="custom-time-picker" id="createEndTimePicker">
-          <div class="time-select-wrapper">
-            <select class="time-select" id="createEndHourSelect">
-              <option value="">--</option>
-              <option value="0">00</option><option value="1">01</option><option value="2">02</option><option value="3">03</option>
-              <option value="4">04</option><option value="5">05</option><option value="6">06</option><option value="7">07</option>
-              <option value="8">08</option><option value="9">09</option><option value="10">10</option><option value="11">11</option>
-              <option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option>
-              <option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option>
-              <option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option>
-            </select>
-            <div class="time-label">時</div>
-          </div>
-          <span class="time-separator">:</span>
-          <div class="time-select-wrapper">
-            <select class="time-select" id="createEndMinuteSelect">
-              <option value="">--</option>
-              <option value="0">00</option><option value="5">05</option><option value="10">10</option><option value="15">15</option>
-              <option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option>
-              <option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option>
-            </select>
-            <div class="time-label">分</div>
-          </div>
-          <button type="button" class="time-clear-btn" onclick="clearTimeSelect('createEnd')" title="終了時刻をクリア">✕</button>
-        </div>
-      </div>
-      <div style="margin: 15px 0;">
-        <label style="display: block; margin-bottom: 8px; font-weight: bold;">カレンダー（色分け）</label>
-        <div id="createCalendarBtns" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
-        <div style="font-size: 0.75em; color: #888; margin-top: 4px;">※時間を設定すると週間ビューにも表示されます</div>
-      </div>
-      </div>
-      <div style="margin: 15px 0;">
-        <label style="display: block; margin-bottom: 8px; font-weight: bold;">象限</label>
-        <select id="createTaskSection" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 1em;">
-          <option value="1">緊急かつ重要</option>
-          <option value="2" selected>緊急でないが重要</option>
-          <option value="3">緊急だが重要ではない</option>
-          <option value="4">緊急でも重要でもない</option>
-        </select>
-      </div>
-      <div style="margin: 15px 0;">
-        <label style="display: block; margin-bottom: 8px; font-weight: bold;">🔁 繰り返し</label>
-        <select id="createRepeat" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:4px;font-size:0.9em;background:#fff;" onchange="document.getElementById('createRepeatEndWrap').style.display=this.value!=='none'?'block':'none'">
-          <option value="none">なし</option>
-          <option value="daily">毎日</option>
-          <option value="weekday">平日のみ（月〜金）</option>
-          <option value="weekly">毎週（同じ曜日）</option>
-          <option value="monthly">毎月（同じ日付）</option>
-        </select>
-        <div id="createRepeatEndWrap" style="display:none;margin-top:8px;">
-          <label style="font-size:0.82em;color:#888;">繰り返し終了日（任意）</label>
-          <input type="date" id="createRepeatEnd" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:4px;font-size:0.9em;">
-        </div>
-      </div>
-      <div class="modal-buttons" style="margin-top: 20px;">
-        <button class="modal-btn modal-btn-cancel" onclick="closeCreateModal()">キャンセル</button>
-        <button class="modal-btn modal-btn-save" onclick="saveCreateTask()">作成</button>
       </div>
     </div>
   </div>
@@ -13320,5 +13216,110 @@ document.addEventListener('DOMContentLoaded', function() {
   <!-- 不要になったので非表示 -->
   <div id="visitCraftNameOverlay" style="display:none;"></div>
 </div>
+
+  <!-- 週間タスク作成モーダル -->
+  <div id="weeklyTaskCreateModal" class="custom-modal" onclick="if(event.target.id==='weeklyTaskCreateModal') closeCreateModal();">
+    <div class="modal-content" style="max-width: 400px;">
+      <h3>タスク作成</h3>
+      <div id="weeklyModalDate" style="text-align: center; color: #666; margin-bottom: 15px; font-size: 0.9em;"></div>
+      <div style="margin: 15px 0;">
+        <input type="text" id="createTaskText" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 1em; box-sizing: border-box;" placeholder="タスクを入力...">
+      </div>
+      <div style="margin: 15px 0;">
+        <label style="display: block; margin-bottom: 8px; font-weight: bold;">メモ（任意）</label>
+        <textarea id="createTaskMemo" rows="2" placeholder="詳細や持ち物など..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.95em; box-sizing: border-box; resize: vertical; font-family: inherit;"></textarea>
+      </div>
+      <div style="margin: 15px 0;">
+        <label style="display: block; margin-bottom: 8px; font-weight: bold;">時間（任意）</label>
+        <div class="custom-time-picker" id="createTimePicker">
+          <div class="time-select-wrapper">
+            <select class="time-select" id="createHourSelect">
+              <option value="">--</option>
+              <option value="0">00</option><option value="1">01</option><option value="2">02</option><option value="3">03</option>
+              <option value="4">04</option><option value="5">05</option><option value="6">06</option><option value="7">07</option>
+              <option value="8">08</option><option value="9">09</option><option value="10">10</option><option value="11">11</option>
+              <option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option>
+              <option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option>
+              <option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option>
+            </select>
+            <div class="time-label">時</div>
+          </div>
+          <span class="time-separator">:</span>
+          <div class="time-select-wrapper">
+            <select class="time-select" id="createMinuteSelect">
+              <option value="">--</option>
+              <option value="0">00</option><option value="5">05</option><option value="10">10</option><option value="15">15</option>
+              <option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option>
+              <option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option>
+            </select>
+            <div class="time-label">分</div>
+          </div>
+          <button type="button" class="time-clear-btn" onclick="clearTimeSelect('create')" title="時間をクリア">✕</button>
+        </div>
+      </div>
+      <div style="margin: 15px 0;">
+        <label style="display: block; margin-bottom: 8px; font-weight: bold;">終了時刻（任意）</label>
+        <div class="custom-time-picker" id="createEndTimePicker">
+          <div class="time-select-wrapper">
+            <select class="time-select" id="createEndHourSelect">
+              <option value="">--</option>
+              <option value="0">00</option><option value="1">01</option><option value="2">02</option><option value="3">03</option>
+              <option value="4">04</option><option value="5">05</option><option value="6">06</option><option value="7">07</option>
+              <option value="8">08</option><option value="9">09</option><option value="10">10</option><option value="11">11</option>
+              <option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option>
+              <option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option>
+              <option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option>
+            </select>
+            <div class="time-label">時</div>
+          </div>
+          <span class="time-separator">:</span>
+          <div class="time-select-wrapper">
+            <select class="time-select" id="createEndMinuteSelect">
+              <option value="">--</option>
+              <option value="0">00</option><option value="5">05</option><option value="10">10</option><option value="15">15</option>
+              <option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option>
+              <option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option>
+            </select>
+            <div class="time-label">分</div>
+          </div>
+          <button type="button" class="time-clear-btn" onclick="clearTimeSelect('createEnd')" title="終了時刻をクリア">✕</button>
+        </div>
+      </div>
+      <div style="margin: 15px 0;">
+        <label style="display: block; margin-bottom: 8px; font-weight: bold;">カレンダー（色分け）</label>
+        <div id="createCalendarBtns" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+        <div style="font-size: 0.75em; color: #888; margin-top: 4px;">※時間を設定すると週間ビューにも表示されます</div>
+      </div>
+      </div>
+      <div style="margin: 15px 0;">
+        <label style="display: block; margin-bottom: 8px; font-weight: bold;">象限</label>
+        <select id="createTaskSection" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 1em;">
+          <option value="1">緊急かつ重要</option>
+          <option value="2" selected>緊急でないが重要</option>
+          <option value="3">緊急だが重要ではない</option>
+          <option value="4">緊急でも重要でもない</option>
+        </select>
+      </div>
+      <div style="margin: 15px 0;">
+        <label style="display: block; margin-bottom: 8px; font-weight: bold;">🔁 繰り返し</label>
+        <select id="createRepeat" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:4px;font-size:0.9em;background:#fff;" onchange="document.getElementById('createRepeatEndWrap').style.display=this.value!=='none'?'block':'none'">
+          <option value="none">なし</option>
+          <option value="daily">毎日</option>
+          <option value="weekday">平日のみ（月〜金）</option>
+          <option value="weekly">毎週（同じ曜日）</option>
+          <option value="monthly">毎月（同じ日付）</option>
+        </select>
+        <div id="createRepeatEndWrap" style="display:none;margin-top:8px;">
+          <label style="font-size:0.82em;color:#888;">繰り返し終了日（任意）</label>
+          <input type="date" id="createRepeatEnd" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:4px;font-size:0.9em;">
+        </div>
+      </div>
+      <div class="modal-buttons" style="margin-top: 20px;">
+        <button class="modal-btn modal-btn-cancel" onclick="closeCreateModal()">キャンセル</button>
+        <button class="modal-btn modal-btn-save" onclick="saveCreateTask()">作成</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
