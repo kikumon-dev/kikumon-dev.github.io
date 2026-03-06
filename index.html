@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.27.37';
+    const APP_VERSION = 'v0.27.38';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -6150,7 +6150,7 @@ function getDeckGDP() {
 
       // コンテナ（週間ビューのwg-day-colと同構造）
       var container = document.createElement('div');
-      container.style.cssText = 'position:relative; width:100%; overflow:hidden;';
+      container.style.cssText = 'position:relative; width:100%; overflow:clip;';
       // container高さは可変（tlRebuildBgで更新）
 
       // 時間グリッド背景（可変行高対応）
