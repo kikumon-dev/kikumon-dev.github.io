@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.28.81';
+    const APP_VERSION = 'v0.28.85';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -9853,6 +9853,9 @@ function loadSettingsUI() {
       // クラフトモード
       const craftCheck = document.getElementById('craftModeEnabled');
       if (craftCheck) {
+        if (localStorage.getItem('craftModeEnabled') === null) {
+          localStorage.setItem('craftModeEnabled', 'true');
+        }
         const enabled = localStorage.getItem('craftModeEnabled') === 'true';
         craftCheck.checked = enabled;
         craftCheck.onchange = function(){ toggleCraftMode(this.checked); };
@@ -12736,7 +12739,94 @@ function addSkyDome(scene, skyCol) {
   scene.add(sky);
 }
 
+function _getHotokuMessage(task) {
+  var hour = new Date().getHours();
+  var total = parseInt(localStorage.getItem('taskCompletedTotal') || '0') + 1;
+  localStorage.setItem('taskCompletedTotal', total);
+
+  // 連続完了カウント
+  var streak = parseInt(localStorage.getItem('taskCompletedStreak') || '0') + 1;
+  localStorage.setItem('taskCompletedStreak', streak);
+  clearTimeout(window._streakResetTimer);
+  window._streakResetTimer = setTimeout(function(){ localStorage.setItem('taskCompletedStreak','0'); }, 10000);
+
+  // 特別メッセージ：連続
+  if (streak === 3)  return '🔥 止まらないね。';
+  if (streak === 5)  return '⚡ 今日、本気だ。';
+  if (streak === 10) return '👑 王国が震えてる。';
+
+  // 特別メッセージ：累計節目
+  if (total === 1)   return '🌱 はじめての一歩。';
+  if (total === 10)  return '✨ 10個。本物だ。';
+  if (total === 50)  return '🌟 50個。王国が育ってる。';
+  if (total === 100) return '💎 100個。伝説だ。';
+
+  // 時間帯メッセージ（優先）
+  var timeMsg = null;
+  if (hour >= 0  && hour <= 4)  timeMsg = 'こんな時間まで、お疲れ様。';
+  if (hour >= 5  && hour <= 8)  timeMsg = '朝から動けた、最高だ。';
+  if (hour >= 12 && hour <= 13) timeMsg = 'お昼もちゃんと動いてる。';
+  if (hour >= 21 && hour <= 23) timeMsg = '今日もよく動いた。';
+  if (timeMsg && Math.random() < 0.4) return '🌙 ' + timeMsg;
+
+  // 通常メッセージプール
+  var pool = [
+    // 勤労系
+    '🌾 一歩、動いた。',
+    '🌾 小さくても、本物だ。',
+    '🌾 積み重なっていく。',
+    '🌾 動き続けてる、えらい。',
+    // 分度系
+    '🪣 今日の分、やり切った。',
+    '🪣 ちゃんと自分を守れてる。',
+    '🪣 無理しなかった、それでいい。',
+    // 推譲系
+    '🎁 誰かの役に立つかもしれない。',
+    '🎁 王国が、少し豊かになった。',
+    '🎁 与えた分、返ってくる。',
+    // 至誠系
+    '🕯️ まごころ、届いてるよ。',
+    '🕯️ 見ていなくても、ちゃんとわかる。',
+    '🕯️ 本物の一歩だ。',
+  ];
+
+  // 直前と同じものを除外
+  var lastIdx = parseInt(localStorage.getItem('lastHotokuIdx') || '-1');
+  var candidates = pool.map(function(m,i){return i;}).filter(function(i){return i !== lastIdx;});
+  var idx = candidates[Math.floor(Math.random() * candidates.length)];
+  localStorage.setItem('lastHotokuIdx', idx);
+  return pool[idx];
+}
+
 function onTaskCompleted(task) {
+  // 報徳トーストはクラフトモードON時のみ
+  var _craftOn = (typeof localStorage!=='undefined' ? localStorage.getItem('craftModeEnabled') : null) === 'true';
+  var _hmsg = _craftOn ? _getHotokuMessage(task) : null;
+  if (_hmsg) {
+    var _ht = document.getElementById('hotokuToast');
+    if (!_ht) {
+      _ht = document.createElement('div');
+      _ht.id = 'hotokuToast';
+      _ht.style.cssText = 'position:fixed;top:64px;left:50%;transform:translateX(-50%) translateY(-10px);background:rgba(0,0,0,0.88);color:#ffd700;padding:12px 28px;border-radius:20px;font-size:0.95em;font-weight:bold;z-index:99998;text-align:center;pointer-events:none;border:1.5px solid rgba(255,215,0,0.4);box-shadow:0 0 20px rgba(255,215,0,0.15);opacity:0;transition:opacity 0.35s,transform 0.35s;white-space:nowrap;';
+      document.body.appendChild(_ht);
+    }
+    clearTimeout(window._hotokuToastTimer);
+    _ht.textContent = _hmsg;
+    _ht.style.opacity = '0';
+    _ht.style.transform = 'translateX(-50%) translateY(-10px)';
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        _ht.style.opacity = '1';
+        _ht.style.transform = 'translateX(-50%) translateY(0)';
+      });
+    });
+    window._hotokuToastTimer = setTimeout(function(){
+      _ht.style.opacity = '0';
+      _ht.style.transform = 'translateX(-50%) translateY(-10px)';
+    }, 3000);
+  }
+
+  // クラフトモード専用処理
   if ((typeof localStorage!=='undefined' ? localStorage.getItem('craftModeEnabled') : null) !== 'true') return;
   // ① 旗を一時的に激しくはためかせる
   window._flagBurst = Date.now() + 2000; // 2秒間バースト
