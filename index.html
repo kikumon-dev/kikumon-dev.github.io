@@ -12984,7 +12984,9 @@ function generateDeckEntry() {
     id: 'deck_' + shortId,
     title: deck.title || '無題',
     desc: deck.desc || '',
-    tasks: (deck.tasks || []).map(function(t){ return { text: t.text, section: t.section||1, memo: t.memo||'' }; })
+    createdBy: deck.createdBy || '',
+    createdAt: deck.createdAt || '',
+    tasks: (deck.tasks || []).map(function(t){ return { text: t.text, section: t.section||1, memo: t.memo||'', time: t.time||'', endTime: t.endTime||'' }; })
   };
   var nl = String.fromCharCode(10);
   var js = '  ' + JSON.stringify(entry, null, 2).split(nl).join(nl + '  ') + ',';
