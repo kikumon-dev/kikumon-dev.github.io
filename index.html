@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.27.25';
+    const APP_VERSION = 'v0.27.26';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -10809,8 +10809,9 @@ function receiveDeck(deckId) {
   }
   var today = getLocalDateStr(new Date());
   deck.tasks.forEach(function(t) {
-    var newTask = createTask(t.text, today, null, t.section, 'both');
+    var newTask = createTask(t.text, today, t.time || null, t.section, 'daily_only');
     if (t.memo) updateTask(newTask.id, { memo: t.memo });
+    if (t.endTime) updateTask(newTask.id, { endTime: t.endTime });
     // deckIdをタスクに付与
     updateTask(newTask.id, { deckId: deck.id });
   });
@@ -12729,19 +12730,23 @@ function deckBuilderAddTask() {
   if (!text) { alert('タスク名を入力してください'); return; }
   var memo = (document.getElementById('deckBuilderTaskMemo').value || '').trim();
   var section = parseInt(document.getElementById('deckBuilderTaskSection').value) || 1;
+  var time = (document.getElementById('deckBuilderTaskTime') ? document.getElementById('deckBuilderTaskTime').value : '') || '';
+  var endTime = (document.getElementById('deckBuilderTaskEndTime') ? document.getElementById('deckBuilderTaskEndTime').value : '') || '';
   if (_deckBuilderEditingIdx >= 0) {
     // 編集モード：既存タスクを更新
-    _deckBuilderTasks[_deckBuilderEditingIdx] = { text: text, memo: memo, section: section };
+    _deckBuilderTasks[_deckBuilderEditingIdx] = { text: text, memo: memo, section: section, time: time, endTime: endTime };
     _deckBuilderEditingIdx = -1;
     document.getElementById('deckBuilderAddBtn').textContent = 'タスクを追加';
     document.getElementById('deckBuilderAddBtn').style.background = 'linear-gradient(135deg,#a855f7,#6366f1)';
     document.getElementById('deckBuilderCancelEdit').style.display = 'none';
   } else {
-    _deckBuilderTasks.push({ text: text, memo: memo, section: section });
+    _deckBuilderTasks.push({ text: text, memo: memo, section: section, time: time, endTime: endTime });
   }
   document.getElementById('deckBuilderTaskText').value = '';
   document.getElementById('deckBuilderTaskMemo').value = '';
   document.getElementById('deckBuilderTaskSection').value = '1';
+  if (document.getElementById('deckBuilderTaskTime')) document.getElementById('deckBuilderTaskTime').value = '';
+  if (document.getElementById('deckBuilderTaskEndTime')) document.getElementById('deckBuilderTaskEndTime').value = '';
   renderDeckBuilderTasks();
 }
 
@@ -12751,6 +12756,8 @@ function deckBuilderEditTask(idx) {
   document.getElementById('deckBuilderTaskText').value = t.text;
   document.getElementById('deckBuilderTaskMemo').value = t.memo || '';
   document.getElementById('deckBuilderTaskSection').value = String(t.section || 1);
+  if (document.getElementById('deckBuilderTaskTime')) document.getElementById('deckBuilderTaskTime').value = t.time || '';
+  if (document.getElementById('deckBuilderTaskEndTime')) document.getElementById('deckBuilderTaskEndTime').value = t.endTime || '';
   document.getElementById('deckBuilderAddBtn').textContent = '✏️ 更新する';
   document.getElementById('deckBuilderAddBtn').style.background = 'linear-gradient(135deg,#0ea5e9,#0284c7)';
   document.getElementById('deckBuilderCancelEdit').style.display = 'block';
@@ -12765,6 +12772,8 @@ function deckBuilderCancelEdit() {
   document.getElementById('deckBuilderAddBtn').textContent = 'タスクを追加';
   document.getElementById('deckBuilderAddBtn').style.background = 'linear-gradient(135deg,#a855f7,#6366f1)';
   document.getElementById('deckBuilderCancelEdit').style.display = 'none';
+  if (document.getElementById('deckBuilderTaskTime')) document.getElementById('deckBuilderTaskTime').value = '';
+  if (document.getElementById('deckBuilderTaskEndTime')) document.getElementById('deckBuilderTaskEndTime').value = '';
 }
 
 function deckBuilderRemoveTask(idx) {
@@ -13108,6 +13117,18 @@ document.addEventListener('DOMContentLoaded', function() {
         <option value="3">第3象限（緊急）</option>
         <option value="4">第4象限（その他）</option>
       </select>
+      <div style="display:flex;gap:6px;margin-bottom:8px;">
+        <div style="flex:1;">
+          <div style="font-size:0.72em;color:#a78bfa;margin-bottom:3px;">🕐 開始時間（任意）</div>
+          <input type="time" id="deckBuilderTaskTime"
+            style="width:100%;padding:7px;border:1px solid #4a3060;border-radius:6px;background:#1a1a2e;color:#fff;font-size:0.82em;box-sizing:border-box;">
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:0.72em;color:#a78bfa;margin-bottom:3px;">🕑 終了時間（任意）</div>
+          <input type="time" id="deckBuilderTaskEndTime"
+            style="width:100%;padding:7px;border:1px solid #4a3060;border-radius:6px;background:#1a1a2e;color:#fff;font-size:0.82em;box-sizing:border-box;">
+        </div>
+      </div>
       <button id="deckBuilderAddBtn" onclick="deckBuilderAddTask()" style="width:100%;padding:8px;background:linear-gradient(135deg,#a855f7,#6366f1);border:none;border-radius:6px;color:#fff;font-size:0.85em;font-weight:700;cursor:pointer;margin-bottom:4px;">タスクを追加</button>
       <button id="deckBuilderCancelEdit" onclick="deckBuilderCancelEdit()" style="display:none;width:100%;padding:6px;background:transparent;border:1px solid #555;border-radius:6px;color:#888;font-size:0.8em;cursor:pointer;">キャンセル</button>
     </div>
