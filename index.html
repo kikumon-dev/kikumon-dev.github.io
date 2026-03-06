@@ -3310,7 +3310,7 @@
           <button onclick="resetWeeklyWidth()" style="font-size: 0.6em; color: #aaa; background: none; border: 1px solid #ddd; border-radius: 3px; padding: 1px 4px; cursor: pointer;">↺</button>
           <!-- PC：スライダー表示 -->
           <span class="wg-rowh-pc" style="font-size: 0.65em; color: #bbb;">↕</span>
-          <input type="range" id="weeklyRowHSlider" min="40" max="160" value="80"
+          <input type="range" id="weeklyRowHSlider" min="80" max="240" value="80"
             class="wg-rowh-pc"
             style="width: 50px; accent-color: #a78bfa; cursor: pointer;"
             oninput="adjustWeeklyRowH(this.value)"
@@ -3319,7 +3319,7 @@
           <!-- スマホ：＋／－ボタン -->
           <button class="wg-rowh-sp" onclick="adjustWeeklyRowH(Math.min(160,parseInt(localStorage.getItem('weeklyRowH')||'80')+20))"
             style="font-size:0.75em;background:none;border:1px solid #ddd;border-radius:3px;padding:1px 5px;cursor:pointer;color:#666;">↕＋</button>
-          <button class="wg-rowh-sp" onclick="adjustWeeklyRowH(Math.max(40,parseInt(localStorage.getItem('weeklyRowH')||'80')-20))"
+          <button class="wg-rowh-sp" onclick="adjustWeeklyRowH(Math.max(80,parseInt(localStorage.getItem('weeklyRowH')||'80')-20))"
             style="font-size:0.75em;background:none;border:1px solid #ddd;border-radius:3px;padding:1px 5px;cursor:pointer;color:#666;">↕－</button>
         </div>
       </div>
