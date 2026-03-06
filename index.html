@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.28.7';
+    const APP_VERSION = 'v0.28.18';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -8021,6 +8021,8 @@ function getDeckGDP() {
       localStorage.removeItem('taskIdCounter');
       localStorage.removeItem('escapeLog');
       localStorage.removeItem('catMigrationDone_v170');
+      localStorage.removeItem('deletedTaskIds');
+      localStorage.removeItem('_calIdMigMap');
       
       // 目的・止める仕組み
       localStorage.removeItem('purpose');
@@ -8116,7 +8118,15 @@ function getDeckGDP() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       
-      alert(`エクスポート完了！\n${allTasks.length}件のタスクを保存しました。\n\nファイル: ${filename}`);
+      const _taskCount = allTasks.filter(t => t.kind === 'task' || !t.kind).length;
+      const _noteCount = allTasks.filter(t => t.kind === 'note').length;
+      const _otherCount = allTasks.length - _taskCount - _noteCount;
+      let exportMsg = `エクスポート完了！\n\n`;
+      exportMsg += `✅ タスク：${_taskCount}件\n`;
+      if (_noteCount > 0) exportMsg += `📝 自由帳ノート：${_noteCount}件\n`;
+      if (_otherCount > 0) exportMsg += `📦 その他：${_otherCount}件\n`;
+      exportMsg += `\n合計：${allTasks.length}件\nファイル: ${filename}`;
+      alert(exportMsg);
     }
     
     // インポート：JSONファイルを読み込み
@@ -8138,12 +8148,13 @@ function getDeckGDP() {
           if (!tasksData || !Array.isArray(tasksData)) throw new Error('タスクデータが見つかりません');
           // ③ 完了タスクを含めるか確認
           const includeCompleted = confirm('完了済みタスクも復元しますか？\n（キャンセルで未完了タスクのみ）');
+          let _invalidCount = 0;
           const validTasks = tasksData.filter(task => {
-            if (!task.id || typeof task.id !== 'string') return false;
+            if (!task.id || typeof task.id !== 'string') { _invalidCount++; return false; }
             if (task.kind === 'task') {
-              if (!task.text || typeof task.text !== 'string') return false;
-              if (!task.section || ![1,2,3,4].includes(task.section)) return false;
-              if (!task.date || !/^\d{4}-\d{2}-\d{2}$/.test(task.date)) return false;
+              if (!task.text || typeof task.text !== 'string') { _invalidCount++; return false; }
+              if (!task.section || ![1,2,3,4].includes(task.section)) { _invalidCount++; return false; }
+              if (!task.date || !/^\d{4}-\d{2}-\d{2}$/.test(task.date)) { _invalidCount++; return false; }
               if (!includeCompleted && task.completed) return false;
             }
             return true;
@@ -8171,6 +8182,7 @@ function getDeckGDP() {
           }
           // タスクのcalendarIdを自分のIDに変換
           let _importUnmatchedCount = 0;
+          let _importFallbackCalName = '';
           const fixedTasks = validTasks.map(function(t) {
             if (!t.calendarId) return t;
             // ① 旧固定IDの場合
@@ -8202,6 +8214,7 @@ function getDeckGDP() {
             }
             // 完全に不明なID → 先頭カレンダーに割り当て＆警告
             _importUnmatchedCount = (_importUnmatchedCount || 0) + 1;
+            if (!_importFallbackCalName && currentCals[0]) _importFallbackCalName = currentCals[0].name;
             return Object.assign({}, t, { calendarId: currentCals[0] ? currentCals[0].id : t.calendarId });
           });
           // ⑤ 削除済みIDをスキップ
@@ -8242,10 +8255,16 @@ function getDeckGDP() {
             });
             localStorage.setItem('calendars', JSON.stringify(myCals));
           }
-          let importMsg = `インポート完了！\n${newTasks.length}件を追加しました。`;
+          const _matched = newTasks.length - _importUnmatchedCount;
+          let importMsg = `インポート完了！\n\n`;
+          importMsg += `✅ 成功：${_matched}件\n`;
           if (_importUnmatchedCount > 0) {
-            importMsg += `\n\n⚠️ ${_importUnmatchedCount}件のタスクのカレンダーが見つからず、先頭カレンダーに割り当てました。設定で確認してください。`;
+            importMsg += `⚠️ 先頭の「${_importFallbackCalName}」カレンダーに追加：${_importUnmatchedCount}件\n`;
           }
+          if (_invalidCount > 0) {
+            importMsg += `❌ データ破損により失敗：${_invalidCount}件\n`;
+          }
+          importMsg += `\n合計：${tasksData.length}件中 ${newTasks.length}件を追加`;
           alert(importMsg);
           location.reload();
         } catch (err) {
@@ -8913,7 +8932,10 @@ function getDeckGDP() {
         saveCalendars();
       }
 
+      let failed = 0;
       data.tasks.forEach(incoming => {
+        // 基本バリデーション
+        if (!incoming.id || typeof incoming.id !== 'string') { failed++; return; }
         incoming.owner   = sender;
         incoming.ownerId = senderId;
         // 相手タスクのcalendarIdをこちらのカレンダーにマッピング
@@ -8937,7 +8959,7 @@ function getDeckGDP() {
       // 取り込んだタスクの最古日付
       const dates = data.tasks.map(t => t.date).filter(Boolean).sort();
       const earliestDate = dates[0] || null;
-      return { ok: true, sender, added, updated, earliestDate };
+      return { ok: true, sender, added, updated, failed, earliestDate };
     }
 
     // 家族共有モーダルを開く
@@ -9086,7 +9108,9 @@ function getDeckGDP() {
       const result = await importFamilyCode(code, pw);
       if (result.ok) {
         msg.style.color = '#2e7d32';
-        msg.textContent = result.sender + 'さんのデータを取り込みました（新規:' + result.added + '件 更新:' + result.updated + '件）';
+        let familyMsg = result.sender + 'さんのデータを取り込みました\n✅ 新規：' + result.added + '件　更新：' + result.updated + '件';
+        if (result.failed > 0) familyMsg += '\n❌ データ破損により失敗：' + result.failed + '件';
+        msg.textContent = familyMsg;
         // 取り込んだタスクの最古日付の月にジャンプ
         if (result.earliestDate) {
           const d = new Date(result.earliestDate);
