@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.28.1';
+    const APP_VERSION = 'v0.28.2';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -8125,8 +8125,33 @@ function getDeckGDP() {
             return true;
           });
           if (validTasks.length === 0) throw new Error('有効なタスクがありません');
+          // 旧固定ID（work, private等）を現在のカレンダー名でマッピング
+          const LEGACY_NAME_MAP = {
+            'work': '仕事', 'school': '学校', 'private': 'プライベート',
+            'partner': 'パートナー', 'child1': '長男', 'child2': '長女',
+            'project1': 'プロジェクト1', 'project2': 'プロジェクト2', 'memo': 'メモ',
+            'cal-default-work': '仕事', 'cal-default-school': '学校',
+            'cal-default-private': 'プライベート', 'cal-default-partner': 'パートナー',
+            'cal-default-child1': '長男', 'cal-default-child2': '長女',
+            'cal-default-project1': 'プロジェクト1', 'cal-default-project2': 'プロジェクト2',
+            'cal-default-memo': 'メモ'
+          };
+          // 現在のカレンダー名→IDのマップを構築
+          const currentCals = JSON.parse(localStorage.getItem('calendars') || '[]');
+          const nameToId = {};
+          currentCals.forEach(function(c) { nameToId[c.name] = c.id; });
+          // タスクのcalendarIdを現在のIDに変換
+          const fixedTasks = validTasks.map(function(t) {
+            if (!t.calendarId) return t;
+            // 既に正しいUUIDなら変換不要
+            const legacyName = LEGACY_NAME_MAP[t.calendarId];
+            if (legacyName && nameToId[legacyName]) {
+              return Object.assign({}, t, { calendarId: nameToId[legacyName] });
+            }
+            return t;
+          });
           const existingIds = new Set(allTasks.map(t => t.id));
-          const newTasks = validTasks.filter(t => !existingIds.has(t.id));
+          const newTasks = fixedTasks.filter(t => !existingIds.has(t.id));
           allTasks = [...allTasks, ...newTasks];
           saveAllTasks();
           if (data.purpose) localStorage.setItem('purpose', data.purpose);
