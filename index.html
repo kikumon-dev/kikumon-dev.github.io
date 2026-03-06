@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.28.89';
+    const APP_VERSION = 'v0.28.91';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -3469,7 +3469,7 @@
 
       <div class="settings-section">
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">🏰 王国を訪問する</h3>
-        <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #8e8e8e;">仲間の王国コードを入力して訪問できます。Lv.5以上で自分の王国コードを発行できます。</p>
+        <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #8e8e8e;">仲間の王国コードを入力して訪問できます。今すぐ自分の王国コードを発行できます！</p>
         <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #e07048;">⚠️ 名前や性別を変更した場合は、王国コードを再発行してください。</p>
         <div id="craftShareArea">
           <button onclick="openCraftShareModal()" id="craftShareBtn"
@@ -11468,7 +11468,7 @@ function buildCraftCode() {
 function openCraftShareModal() {
   var code = buildCraftCode();
   _craftCode = code;
-  if (typeof addToku === 'function') addToku(100, '王国コード発行');
+  // 徳はコピー時に加算（渡した瞬間が推譲）
   var el = document.getElementById('craftCodeDisplay');
   if (el) el.textContent = code;
   var modal = document.getElementById('craftShareModal');
@@ -11482,19 +11482,23 @@ function closeCraftShareModal() {
 
 function copyCraftCode() {
   if (!_craftCode) return;
-  navigator.clipboard.writeText(_craftCode).then(function() {
+  var _tokuAdded = false;
+  function _doCopyDone() {
+    if (!_tokuAdded) {
+      _tokuAdded = true;
+      if (typeof addToku === 'function') addToku(100, '王国コード配布');
+    }
     showCraftMessage('👑 王国コードをコピーしました！');
     closeCraftShareModal();
-  }).catch(function() {
-    // フォールバック
+  }
+  navigator.clipboard.writeText(_craftCode).then(_doCopyDone).catch(function() {
     var ta = document.createElement('textarea');
     ta.value = _craftCode;
     document.body.appendChild(ta);
     ta.select();
     document.execCommand('copy');
     document.body.removeChild(ta);
-    showCraftMessage('👑 王国コードをコピーしました！');
-    closeCraftShareModal();
+    _doCopyDone();
   });
 }
 
@@ -12993,7 +12997,7 @@ function receiveStarterDeck() {
   var deck = [
     // 第1象限：本質的・緊急
     { text: '✅ このタスクを完了してみよう（タップで完了！）', section: 1, memo: '完了すると王国の建材が貯まるよ！城タブで確認してみて。' },
-    { text: '👑 王国コードを発行してみよう', section: 1, memo: '設定→王国を訪問する→王国コードを発行する。Lv.5になったら解放！' },
+    { text: '👑 王国コードを発行してみよう', section: 1, memo: '設定→王国を訪問する→王国コードを発行する。コードを渡すと徳が積まれるよ！' },
     // 第2象限：本質的・非緊急
     { text: '🏰 3Dモードで王国を眺めてみよう', section: 1, memo: '上のナビから城アイコン🏰をタップ！タスクをこなすほど王国が育つ。' },
     { text: '📅 タスクに日付と時刻を入れてみよう', section: 1, memo: 'タスクを長押し→編集で日時設定。週間ビューに予定が現れるよ！' },
