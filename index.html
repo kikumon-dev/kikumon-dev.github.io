@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.28.48';
+    const APP_VERSION = 'v0.28.66';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -100,20 +100,24 @@
       display: flex;
       background-color: #fff;
       border-bottom: 1px solid #efefef;
-      padding: 0 4px;
+      padding: 0 2px;
       position: sticky;
       top: 0;
       z-index: 100;
-      overflow: hidden;
+      overflow-x: auto;
+      overflow-y: hidden;
       white-space: nowrap;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
     }
+    .nav-tabs::-webkit-scrollbar { display: none; }
 
     .nav-tab {
-      padding: 12px 10px;
+      padding: 12px 7px;
       border: none;
       background: none;
       cursor: pointer;
-      font-size: 0.78em;
+      font-size: 0.75em;
       font-weight: 500;
       color: #8e8e8e;
       border-bottom: 1.5px solid transparent;
@@ -1089,6 +1093,9 @@
     }
 
     .wg-rowh-sp { display: none; }
+    .wg-rowh-pc { display: inline-flex; }
+    .wg-width-pc { display: inline-flex; }
+    .wg-rowh-sp-bar { display: none; }
     .weekly-header {
       display: flex;
       justify-content: flex-start;
@@ -1173,7 +1180,7 @@
     .wg-header-cell:last-child { border-right: none; }
     .wg-header-cell.wg-sat { background: #e3f2fd; color: #1976d2; }
     .wg-header-cell.wg-sun { background: #fff3e0; color: #e65100; }
-    .wg-header-cell.wg-today { background: #fff9c4; color: #f57c00; font-weight: bold; border-bottom: 3px solid #fbc02d; }
+    .wg-header-cell.wg-today { background: #fff9c4; color: #f57c00; font-weight: bold; border-bottom: 1px solid #fbc02d; }
 
     /* 本体ラッパー（flex横並び） */
     .wg-body {
@@ -1211,14 +1218,7 @@
       box-sizing: border-box;
       border-right: 1px solid #ddd;
       background-color: #fff;
-      /* 80px間隔の水平区切り線（高さに影響ゼロ） */
-      background-image: repeating-linear-gradient(
-        to bottom,
-        transparent 0px,
-        transparent 79px,
-        #eee 79px,
-        #eee 80px
-      );
+      /* 横線はJSで動的にROW_Hに合わせて設定 */
     }
     .wg-day-col:last-child { border-right: none; }
 
@@ -1285,7 +1285,7 @@
       left: 0;
       right: 0;
       transition: background 0.1s;
-      /* wg-day-colのbackground-imageで区切り線を表示するためtransparentのまま */
+      border-bottom: 1px solid #eee;
       z-index: 2;
     }
     .wg-cell-bg:hover { background: rgba(0,200,200,0.06) !important; }
@@ -1293,7 +1293,6 @@
     .wg-cell-bg.wg-sun    { background: rgba(255,243,224,0.7); }
     .wg-cell-bg.wg-today  {
       background: rgba(255,249,196,0.85);
-      box-shadow: inset 0 -1px 0 #fbc02d;
     }
     .wg-cell-bg.wg-holiday{ background: rgba(255,243,224,0.7); }
     /* zone線はwg-time-labelと共通のbox-shadowで上に統一 */
@@ -1705,18 +1704,23 @@
     /* 週間グリッド デスクトップ共通 */
     .wg-body, .wg-header { font-size: 0.9em; }
     .wg-header-cell, .wg-cell-bg { min-width: 0; }
+      .wg-header-cell { font-size: 0.72em; padding: 6px 2px; }
 
     /* スマホ版：週間ビューはスクロール */
     @media screen and (max-width: 768px) {
+      .wg-rowh-sp { display: none !important; }
       .wg-rowh-pc { display: none !important; }
-      .wg-rowh-sp { display: inline-flex !important; }
+      .wg-rowh-sp-bar { display: flex !important; }
+      .wg-reset-btn { display: none !important; }
 
       .weekly-header {
         gap: 4px;
-        padding: 8px 0;
-        height: 40px;
+        padding: 4px 4px 0;
+        height: auto;
+        min-height: 40px;
         font-size: 0.9em;
         padding-right: 0;
+        flex-wrap: wrap;
       }
 
       .weekly-header h2 {
@@ -2849,7 +2853,7 @@
   <rect x="3" y="12" width="18" height="10" rx="2" fill="#999" stroke="#999"/>
 </svg></button>
     <button class="nav-tab" id="navSearch" onclick="openSearchModal()" title="タスクを検索"
-      style="font-size:1.1em;padding:14px 12px;">🔍</button>
+      style="font-size:1em;padding:12px 8px;">🔍</button>
     <button class="nav-tab nav-tab-settings" id="navSettings" onclick="switchView('settings')">
       <div class="nav-avatar-wrapper" id="navAvatarWrapper" style="display: none;">
         <img id="navAvatar" src="" alt="" class="nav-avatar">
@@ -3215,28 +3219,33 @@
         <button class="monthly-nav-btn" onclick="changeWeek(-1)">◀ 先週</button>
         <h2 id="weeklyTitle"></h2>
         <button class="monthly-nav-btn" onclick="changeWeek(1)">来週 ▶</button>
-        <div id="weeklyWidthSliderWrap" style="display: flex; align-items: center; gap: 4px; margin-left: auto; flex-shrink: 0;">
+        <!-- 1行目右：👨‍👩‍👧 ↔スライダー（PC）or ↔スライダー（スマホ） -->
+        <div style="display:flex;align-items:center;gap:2px;margin-left:4px;flex-shrink:0;">
           <button onclick="openFamilyShareModal()" title="家族と共有"
             style="font-size:0.72em;background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff;border:none;border-radius:6px;padding:3px 8px;cursor:pointer;font-weight:700;">👨‍👩‍👧</button>
-          <span style="font-size: 0.65em; color: #bbb;">↔</span>
+          <span style="font-size:0.65em;color:#bbb;">↔</span>
           <input type="range" id="weeklyWidthSlider" min="100" max="300" value="100"
-            style="width: 50px; accent-color: #4facfe; cursor: pointer;"
-            oninput="adjustWeeklyWidth(this.value)"
-            ondblclick="resetWeeklyWidth()">
-          <button onclick="resetWeeklyWidth()" style="font-size: 0.6em; color: #aaa; background: none; border: 1px solid #ddd; border-radius: 3px; padding: 1px 4px; cursor: pointer;">↺</button>
-          <!-- PC：スライダー表示 -->
-          <span class="wg-rowh-pc" style="font-size: 0.65em; color: #bbb;">↕</span>
+            style="width:40px;accent-color:#4facfe;cursor:pointer;"
+            oninput="window.adjustWeeklyWidth(this.value)"
+            ondblclick="window.resetWeeklyWidth()">
+          <button onclick="resetWeeklyWidth()" class="wg-reset-btn" style="font-size:0.6em;color:#aaa;background:none;border:1px solid #ddd;border-radius:3px;padding:1px 4px;cursor:pointer;">↺</button>
+          <!-- PC専用：縦スライダーも1行目に -->
+          <span class="wg-rowh-pc" style="font-size:0.65em;color:#bbb;">↕</span>
           <input type="range" id="weeklyRowHSlider" min="80" max="240" value="80"
             class="wg-rowh-pc"
-            style="width: 50px; accent-color: #a78bfa; cursor: pointer;"
-            oninput="adjustWeeklyRowH(this.value)"
-            ondblclick="resetWeeklyRowH()">
-          <button onclick="resetWeeklyRowH()" class="wg-rowh-pc" style="font-size: 0.6em; color: #aaa; background: none; border: 1px solid #ddd; border-radius: 3px; padding: 1px 4px; cursor: pointer;">↺</button>
-          <!-- スマホ：＋／－ボタン -->
-          <button class="wg-rowh-sp" onclick="adjustWeeklyRowH(Math.min(160,parseInt(localStorage.getItem('weeklyRowH')||'80')+20))"
-            style="font-size:0.75em;background:none;border:1px solid #ddd;border-radius:3px;padding:1px 5px;cursor:pointer;color:#666;">↕＋</button>
-          <button class="wg-rowh-sp" onclick="adjustWeeklyRowH(Math.max(80,parseInt(localStorage.getItem('weeklyRowH')||'80')-20))"
-            style="font-size:0.75em;background:none;border:1px solid #ddd;border-radius:3px;padding:1px 5px;cursor:pointer;color:#666;">↕－</button>
+            style="width:40px;accent-color:#a78bfa;cursor:pointer;"
+            oninput="window.adjustWeeklyRowH(this.value)"
+            ondblclick="window.resetWeeklyRowH()">
+          <button onclick="resetWeeklyRowH()" class="wg-rowh-pc wg-reset-btn" style="font-size:0.6em;color:#aaa;background:none;border:1px solid #ddd;border-radius:3px;padding:1px 4px;cursor:pointer;">↺</button>
+        </div>
+      <!-- スマホ専用2行目：↕縦スライダー -->
+        <div class="wg-rowh-sp-bar" style="width:100%;display:flex;align-items:center;gap:4px;padding:2px 8px;box-sizing:border-box;">
+          <span style="font-size:0.65em;color:#bbb;">↕</span>
+          <input type="range" id="weeklyRowHSliderSp" min="80" max="240" value="80"
+            style="flex:1;accent-color:#a78bfa;cursor:pointer;"
+            oninput="window.adjustWeeklyRowH(this.value)"
+            ondblclick="window.resetWeeklyRowH()">
+          <button onclick="resetWeeklyRowH()" style="font-size:0.6em;color:#aaa;background:none;border:1px solid #ddd;border-radius:3px;padding:1px 4px;cursor:pointer;">↺</button>
         </div>
       </div>
       <!-- カレンダークイックフィルター -->
@@ -5158,6 +5167,8 @@ function getDeckGDP() {
       // 行高スライダーの初期値を復元
       const _rowHSlider = document.getElementById('weeklyRowHSlider');
       if (_rowHSlider) _rowHSlider.value = localStorage.getItem('weeklyRowH') || '80';
+      var _rowHSliderSp = document.getElementById('weeklyRowHSliderSp');
+      if (_rowHSliderSp) _rowHSliderSp.value = localStorage.getItem('weeklyRowH') || '80';
       const baseCellW = isMobileView
         ? Math.max(80, Math.floor((window.innerWidth - TIME_W) / effectiveDays))
         : Math.max(120, Math.floor((window.innerWidth - TIME_W - 20) / effectiveDays));
@@ -6169,21 +6180,33 @@ function getDeckGDP() {
       renderWeeklyView();
     }
     function adjustWeeklyRowH(v) {
+      v = parseInt(v);
       localStorage.setItem('weeklyRowH', v);
+      ['weeklyRowHSlider','weeklyRowHSliderSp'].forEach(function(id){
+        var sl = document.getElementById(id);
+        if (sl) sl.value = v;
+      });
       renderWeeklyView();
     }
     function resetWeeklyRowH() {
-      const sl = document.getElementById('weeklyRowHSlider');
-      if (sl) sl.value = 80;
+      ['weeklyRowHSlider','weeklyRowHSliderSp'].forEach(function(id){
+        var sl = document.getElementById(id);
+        if (sl) sl.value = 80;
+      });
       localStorage.removeItem('weeklyRowH');
       renderWeeklyView();
     }
+    window.adjustWeeklyRowH = adjustWeeklyRowH;
+    window.adjustWeeklyWidth = adjustWeeklyWidth;
+    window.resetWeeklyRowH = resetWeeklyRowH;
+    window.renderWeeklyView = renderWeeklyView;
     function resetWeeklyWidth() {
       const sl = document.getElementById('weeklyWidthSlider');
       if (sl) { sl.value = 100; sl.style.setProperty('--val', '0%'); }
       localStorage.removeItem('weeklyCellScale');
       renderWeeklyView();
     }
+    window.resetWeeklyWidth = resetWeeklyWidth;
 
     // ===== 日次タイムラインビュー =====
     let currentTimelineDate = null;
