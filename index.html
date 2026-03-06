@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.27.35';
+    const APP_VERSION = 'v0.27.36';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -569,12 +569,8 @@
     /* カスタム確認モーダル */
     .custom-modal {
       display: none;
-      position: fixed;
-      z-index: 99999;
+      position: absolute;
       inset: 0;
-      width: 100vw;
-      height: 100vh;
-      height: 100dvh;
       background-color: rgba(0, 0, 0, 0.5);
     }
 
