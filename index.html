@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.27.27';
+    const APP_VERSION = 'v0.27.28';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -4637,6 +4637,12 @@ function renderMyDecks() {
     btnRow.appendChild(btnDelete);
     el.appendChild(title);
     el.appendChild(meta);
+    if (deck.createdBy) {
+      var byEl = document.createElement('div');
+      byEl.style.cssText = 'font-size:0.68em;color:#c8a200;margin-bottom:6px;';
+      byEl.textContent = '⚓ ' + deck.createdBy;
+      el.appendChild(byEl);
+    }
     el.appendChild(btnRow);
     list.appendChild(el);
   });
@@ -9468,6 +9474,7 @@ var OFFICIAL_DECKS = [
     id: 'deck_walk',
     title: '🚶 お散歩習慣',
     desc: '外に出るだけでOK。毎日の小さな冒険。',
+    createdBy: 'やることクラフト公式',
     tasks: [
       { text: '👟 靴を履いて外に出る', section: 1, memo: '出るだけでOK。距離は関係ない。玄関を出た時点で勝ち。' },
       { text: '🌿 いつもと違う道を1本歩く', section: 2, memo: '新しい発見が脳を活性化。王国の探索イベント。' },
@@ -9480,6 +9487,7 @@ var OFFICIAL_DECKS = [
     id: 'deck_clean',
     title: '🧹 お掃除習慣',
     desc: '1箇所だけ。きれいな王国は清潔な毎日から。',
+    createdBy: 'やることクラフト公式',
     tasks: [
       { text: '🚽 トイレを拭く', section: 1, memo: '1分でOK。毎日やると汚れが溜まらない。王国の清潔度UP！' },
       { text: '🪟 換気する', section: 2, memo: '窓を5分開けるだけ。空気が変わると気分も変わる。' },
@@ -9492,6 +9500,7 @@ var OFFICIAL_DECKS = [
     id: 'deck_exercise',
     title: '💪 運動習慣',
     desc: 'スクワット10回だけ。続けることが最強の魔法。',
+    createdBy: 'やることクラフト公式',
     tasks: [
       { text: '🤸 準備運動を2分する', section: 1, memo: 'いきなりやらない。体を温めるだけで怪我が減る。' },
       { text: '💪 スクワット10回だけ', section: 2, memo: '10回だけ。物足りなければ増やせばいい。まず10回。' },
@@ -9505,6 +9514,7 @@ var OFFICIAL_DECKS = [
     id: 'deck_morning',
     title: '🌅 朝活習慣',
     desc: '1日の最初の1時間が王国を変える。朝をデザインしよう。',
+    createdBy: 'やることクラフト公式',
     tasks: [
       { text: '⏰ 決めた時間に起きる', section: 1, memo: '二度寝しない。起きた瞬間が勝負。布団の中で考えない。' },
       { text: '💧 水を1杯飲む', section: 1, memo: '睡眠中に失った水分を補給。脳が動き始める合図。' },
@@ -9517,6 +9527,7 @@ var OFFICIAL_DECKS = [
     id: 'deck_sleep',
     title: '😴 睡眠習慣',
     desc: '眠れる王国は強い。夜のルーティンが明日を作る。',
+    createdBy: 'やることクラフト公式',
     tasks: [
       { text: '📱 寝る1時間前にスマホを置く', section: 1, memo: 'ブルーライトが睡眠を妨げる。画面の外に世界がある。' },
       { text: '🛁 ぬるめのお風呂に入る', section: 2, memo: '38〜40度が理想。体温が下がるときに眠気が来る。' },
@@ -9529,6 +9540,7 @@ var OFFICIAL_DECKS = [
     id: 'deck_cook',
     title: '🍳 自炊習慣',
     desc: '作れるものが1つ増えるたびに王国の食卓が豊かになる。',
+    createdBy: 'やることクラフト公式',
     tasks: [
       { text: '🛒 冷蔵庫の中身を確認する', section: 1, memo: '何があるかを把握するだけで自炊は半分終わっている。' },
       { text: '🍳 今日作るものを1品決める', section: 1, memo: '1品だけでいい。品数より継続。' },
@@ -9541,6 +9553,7 @@ var OFFICIAL_DECKS = [
     id: 'deck_money',
     title: '💰 家計管理習慣',
     desc: 'お金の流れを把握するだけで王国の財政は安定する。',
+    createdBy: 'やることクラフト公式',
     tasks: [
       { text: '📊 今日の支出をメモする', section: 1, memo: '金額より「何に使ったか」が大事。把握することが第一歩。' },
       { text: '💳 固定費を1つ確認する', section: 2, memo: 'サブスク・保険・通信費。使っていないものが眠っていないか。' },
@@ -9553,6 +9566,7 @@ var OFFICIAL_DECKS = [
     id: 'deck_read',
     title: '📚 読書習慣',
     desc: '1日10ページ。それだけで年間3600ページ、本10冊分の知恵が王国に積み上がる。',
+    createdBy: 'やることクラフト公式',
     tasks: [
       { text: '📖 本を手の届く場所に置く', section: 1, memo: '読もうとしない。置くだけでいい。目に入るだけで読書は始まっている。' },
       { text: '⏱️ タイマーを10分セットして読む', section: 1, memo: '10分だけ。終わったら止めていい。でもたいてい続けたくなる。' },
@@ -9565,6 +9579,7 @@ var OFFICIAL_DECKS = [
     id: 'deck_diary',
     title: '✍️ 日記習慣',
     desc: '書くことは考えること。1日3行から王国の記録が始まる。',
+    createdBy: 'やることクラフト公式',
     tasks: [
       { text: '🖊️ 今日あったことを1行書く', section: 1, memo: '1行でいい。うまく書こうとしない。とにかく1行。' },
       { text: '😊 今日の感情を一言で表す', section: 2, memo: '「楽しかった」「疲れた」それだけで十分。感情を言語化すると心が整う。' },
@@ -9577,6 +9592,7 @@ var OFFICIAL_DECKS = [
     id: 'deck_meditate',
     title: '🧘 瞑想習慣',
     desc: '何もしない5分が、王国に静寂をもたらす。',
+    createdBy: 'やることクラフト公式',
     tasks: [
       { text: '🪑 静かな場所に座る', section: 1, memo: '完全な静寂でなくていい。座るだけで瞑想は始まっている。' },
       { text: '👃 深呼吸を3回する', section: 1, memo: '吸って4秒、止めて4秒、吐いて8秒。これだけで副交感神経が優位になる。' },
@@ -10871,7 +10887,10 @@ function renderDeckShop() {
     var card = document.createElement('div');
     card.style.cssText = 'border:1px solid ' + (received ? '#e0e0e0' : '#ffe0a0') + ';border-radius:12px;padding:14px 16px;background:' + (received ? '#fafafa' : '#fffdf5') + ';';
     var info = document.createElement('div');
-    info.innerHTML = '<div style="font-size:1em;font-weight:700;color:' + (received ? '#aaa' : '#333') + ';margin-bottom:4px;">' + deck.title + '</div><div style="font-size:0.8em;color:#999;">' + deck.desc + '</div>';
+    var author = deck.createdBy ? '<span style="color:#c8a200;">⚓ ' + deck.createdBy + '</span>' : '';
+    info.innerHTML = '<div style="font-size:1em;font-weight:700;color:' + (received ? '#aaa' : '#333') + ';margin-bottom:4px;">' + deck.title + '</div>'
+      + (deck.desc ? '<div style="font-size:0.8em;color:#999;margin-bottom:3px;">' + deck.desc + '</div>' : '')
+      + (author ? '<div style="font-size:0.72em;margin-top:2px;">' + author + '</div>' : '');
     var btn = document.createElement('button');
     btn.textContent = received ? '✅ 受取済' : '受け取る';
     btn.disabled = !!received;
