@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.28.66';
+    const APP_VERSION = 'v0.28.81';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -12844,6 +12844,35 @@ function onTaskCompleted(task) {
           あなたのやることが王国を動かします。与え、動き、継続する。それが栄える王国の姿です。
         </div>
       </div>
+
+      <!-- やることクラフトが大切にしていること -->
+      <div style="margin-bottom:6px;">
+        <button onclick="toggleAbout('aboutPhilosophy')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#81c784;font-size:0.85em;font-weight:bold;cursor:pointer;">🌿 やることクラフトが大切にしていること</button>
+        <div id="aboutPhilosophy" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:14px 12px;font-size:0.82em;color:#ccc;line-height:1.7;">
+          <div style="color:#ffd700;font-weight:bold;margin-bottom:10px;font-size:0.9em;">🏰 王国の心得</div>
+
+          <div style="margin-bottom:12px;">
+            <div style="color:#4facfe;font-weight:bold;margin-bottom:3px;">🌾 動いていると、楽しくなっていく</div>
+            <div>小さな一歩。まずは楽しく。<br>動き出せば、次が見えてくる。</div>
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <div style="color:#a78bfa;font-weight:bold;margin-bottom:3px;">🪣 自分の分を、決めて守る</div>
+            <div>詰め込みすぎない。全部やろうとしない。<br>今日の自分にできることだけを、丁寧に。<br>それが長く続く王国の秘訣です。</div>
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <div style="color:#f8bbd0;font-weight:bold;margin-bottom:3px;">🎁 余ったら、誰かに渡す</div>
+            <div>うまくいったやり方、続けられたルーティン。<br>デッキにして誰かに贈ってみてください。<br>渡したとき、あなたの王国はもっと豊かになります。</div>
+          </div>
+
+          <div style="margin-bottom:4px;">
+            <div style="color:#ffd700;font-weight:bold;margin-bottom:3px;">🕯️ 在るも、接するも、まごころで</div>
+            <div>単なる「正直」ではなく、まごころ。<br>頭で考えるだけでなく、行動で示す誠実さ。<br>影日向なく、見ていなくても出来ることをやろう。<br>自分自身への誠実さも含まれるよ！<br>まずは楽しく、まごころで！</div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <button id="tutorialClose" style="width:100%;padding:12px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:8px;color:#fff;font-size:1em;font-weight:bold;cursor:pointer;margin-top:12px;">さあ、冒険へ旅立とう！ ✨</button>
