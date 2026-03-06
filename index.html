@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.27.34';
+    const APP_VERSION = 'v0.27.35';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -2787,6 +2787,7 @@
   </script>
 </head>
 <body>
+<div id="modal-root" style="position:fixed;inset:0;z-index:99999;pointer-events:none;"></div>
   <!-- ナビゲーションタブ -->
   <div class="nav-tabs">
     <button class="nav-tab" id="navDaily" onclick="switchView('daily')">日次</button>
@@ -6963,8 +6964,11 @@ function getDeckGDP() {
         clearTimeSelect('create');
       }
       
-      // モーダルを表示
+      // モーダルをmodal-rootに移動して表示（position:fixed封じ込め回避）
       var _modal = document.getElementById('weeklyTaskCreateModal');
+      var _root = document.getElementById('modal-root');
+      if (_root && _modal.parentNode !== _root) _root.appendChild(_modal);
+      if (_root) _root.style.pointerEvents = 'auto';
       _modal.classList.add('show');
       _modal.scrollTop = 0;
       var _mc = _modal.querySelector('.modal-content');
@@ -6979,6 +6983,8 @@ function getDeckGDP() {
     // 作成モーダルを閉じる
     function closeCreateModal() {
       document.getElementById('weeklyTaskCreateModal').classList.remove('show');
+      var _root = document.getElementById('modal-root');
+      if (_root) _root.style.pointerEvents = 'none';
       document.getElementById('createTaskMemo').value = '';
       clearTimeSelect('create');
       creatingTask = null;
