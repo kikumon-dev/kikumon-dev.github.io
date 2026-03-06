@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.28.85';
+    const APP_VERSION = 'v0.28.86';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -11101,7 +11101,7 @@ function renderDeckHistory() {
   var el = document.getElementById('deckHistorySection');
   if (!el) return;
   var history = getDeckHistory();
-  var gdp = getDeckGDP();
+  var gdp = getCraftStats().total;
   if (history.length === 0) {
     el.innerHTML = '<div style="font-size:0.78em;color:#555;text-align:center;padding:8px 0;">まだデッキを受け取っていません</div>';
     return;
@@ -11894,8 +11894,8 @@ function updateCraftHUD() {
   if(cfg) set('craftNextInfo', (cfg.label||'') + nextMsg);
   // 王国GDPバッジ更新
   var gdpEl = document.getElementById('craftGDPValue');
-  if (gdpEl && typeof getDeckGDP === 'function') {
-    gdpEl.textContent = getDeckGDP();
+  if (gdpEl) {
+    gdpEl.textContent = getCraftStats().total;
   }
   // 🌸 徳バッジ更新
   var tokuEl = document.getElementById('craftTokuValue');
