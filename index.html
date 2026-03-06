@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.27.28';
+    const APP_VERSION = 'v0.27.29';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -1089,6 +1089,7 @@
       box-shadow: 0 1px 0 #e0e0e0;
     }
 
+    .wg-rowh-sp { display: none; }
     .weekly-header {
       display: flex;
       justify-content: flex-start;
@@ -1249,7 +1250,7 @@
       position: absolute;
       left: 0;
       right: 0;
-      height: 80px;            /* ROW_Hと必ず同じ */
+      height: var(--wg-row-h, 80px); /* ROW_Hと必ず同じ */
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1709,6 +1710,8 @@
 
     /* スマホ版：週間ビューはスクロール */
     @media screen and (max-width: 768px) {
+      .wg-rowh-pc { display: none !important; }
+      .wg-rowh-sp { display: inline-flex !important; }
 
       .weekly-header {
         gap: 4px;
@@ -1728,7 +1731,7 @@
       .wg-body { font-size: 0.78em; }
       /* wg-time-col幅はJS(TIME_W)で制御 */
       .wg-time-label { height: 50px; font-size: 0.75em; }
-      .wg-cell-bg    { height: 50px; }
+      .wg-cell-bg    { height: var(--wg-row-h, 80px); }
       /* 非表示曜日列（JSでクラス付与） */
       .wg-col-hidden { display: none !important; }
 
@@ -3305,6 +3308,19 @@
             oninput="adjustWeeklyWidth(this.value)"
             ondblclick="resetWeeklyWidth()">
           <button onclick="resetWeeklyWidth()" style="font-size: 0.6em; color: #aaa; background: none; border: 1px solid #ddd; border-radius: 3px; padding: 1px 4px; cursor: pointer;">↺</button>
+          <!-- PC：スライダー表示 -->
+          <span class="wg-rowh-pc" style="font-size: 0.65em; color: #bbb;">↕</span>
+          <input type="range" id="weeklyRowHSlider" min="40" max="160" value="80"
+            class="wg-rowh-pc"
+            style="width: 50px; accent-color: #a78bfa; cursor: pointer;"
+            oninput="adjustWeeklyRowH(this.value)"
+            ondblclick="resetWeeklyRowH()">
+          <button onclick="resetWeeklyRowH()" class="wg-rowh-pc" style="font-size: 0.6em; color: #aaa; background: none; border: 1px solid #ddd; border-radius: 3px; padding: 1px 4px; cursor: pointer;">↺</button>
+          <!-- スマホ：＋／－ボタン -->
+          <button class="wg-rowh-sp" onclick="adjustWeeklyRowH(Math.min(160,parseInt(localStorage.getItem('weeklyRowH')||'80')+20))"
+            style="font-size:0.75em;background:none;border:1px solid #ddd;border-radius:3px;padding:1px 5px;cursor:pointer;color:#666;">↕＋</button>
+          <button class="wg-rowh-sp" onclick="adjustWeeklyRowH(Math.max(40,parseInt(localStorage.getItem('weeklyRowH')||'80')-20))"
+            style="font-size:0.75em;background:none;border:1px solid #ddd;border-radius:3px;padding:1px 5px;cursor:pointer;color:#666;">↕－</button>
         </div>
       </div>
       <!-- カレンダークイックフィルター -->
@@ -5048,8 +5064,10 @@ function getDeckGDP() {
       const now      = new Date();
       const nowHour  = now.getHours();
       const nowMin   = now.getMinutes();
-      const ROW_H    = 80;
+      const ROW_H    = parseInt(localStorage.getItem('weeklyRowH') || '80');
       const TOTAL_H  = ROW_H * 24;
+      // CSS変数でROW_Hを動的に設定
+      document.documentElement.style.setProperty('--wg-row-h', ROW_H + 'px');
 
       // ── owner（家族メンバー）カラーパレット ──────────────────
       // 最大8人分。自分のprofileNameと照合して色を決定
@@ -5102,6 +5120,9 @@ function getDeckGDP() {
       // スマホ: 画面幅をできる限り使って列幅計算（最小80px）
       // スライダー倍率（100〜300%）を反映
       const cellScale = parseFloat(localStorage.getItem('weeklyCellScale') || '100') / 100;
+      // 行高スライダーの初期値を復元
+      const _rowHSlider = document.getElementById('weeklyRowHSlider');
+      if (_rowHSlider) _rowHSlider.value = localStorage.getItem('weeklyRowH') || '80';
       const baseCellW = isMobileView
         ? Math.max(80, Math.floor((window.innerWidth - TIME_W) / effectiveDays))
         : Math.max(120, Math.floor((window.innerWidth - TIME_W - 20) / effectiveDays));
@@ -6110,6 +6131,16 @@ function getDeckGDP() {
       const pct = ((p - 100) / (300 - 100) * 100).toFixed(1);
       const sl = document.getElementById('weeklyWidthSlider');
       if (sl) sl.style.setProperty('--val', pct + '%');
+      renderWeeklyView();
+    }
+    function adjustWeeklyRowH(v) {
+      localStorage.setItem('weeklyRowH', v);
+      renderWeeklyView();
+    }
+    function resetWeeklyRowH() {
+      const sl = document.getElementById('weeklyRowHSlider');
+      if (sl) sl.value = 80;
+      localStorage.removeItem('weeklyRowH');
       renderWeeklyView();
     }
     function resetWeeklyWidth() {
