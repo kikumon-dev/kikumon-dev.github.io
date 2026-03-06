@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.28.36';
+    const APP_VERSION = 'v0.28.48';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -9813,6 +9813,16 @@ var OFFICIAL_DECKS = [
       { text: '🏰 静かな王国に戻ってきた', section: 2, memo: '5分の静寂が1日の騒音を和らげる。毎日続けると王国が変わる。' }
     ]
   }
+,
+  {
+    id: 'deck_74ffa9f6',
+    title: '🌙 ぐっすり寝るデッキ',
+    desc: 'ふぉれモンおやすみ王プロデュース。寝られない夜に、王国から光を届けます。',
+    createdBy: 'ふぉれモンおやすみ王',
+    tasks: [
+      { text: '朝5時から夜20時まで寝る', section: 4, memo: '' }
+    ]
+  }
 ];
 
 
@@ -11103,11 +11113,28 @@ function renderDeckShop() {
     info.innerHTML = '<div style="font-size:1em;font-weight:700;color:' + (received ? '#aaa' : '#333') + ';margin-bottom:4px;">' + deck.title + '</div>'
       + (deck.desc ? '<div style="font-size:0.8em;color:#999;margin-bottom:3px;">' + deck.desc + '</div>' : '')
       + (author ? '<div style="font-size:0.72em;margin-top:2px;">' + author + '</div>' : '');
+    var btnWrap = document.createElement('div');
+    btnWrap.style.cssText = 'display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;';
     var btn = document.createElement('button');
-    btn.textContent = received ? '✅ 受取済' : '受け取る';
-    btn.disabled = !!received;
-    btn.style.cssText = 'flex-shrink:0;padding:8px 14px;border:none;border-radius:20px;font-size:0.82em;font-weight:700;cursor:' + (received ? 'default' : 'pointer') + ';background:' + (received ? '#e0e0e0' : 'linear-gradient(135deg,#ffd700,#ff8800)') + ';color:' + (received ? '#aaa' : '#7a4800') + ';';
-    btn.addEventListener('click', (function(id){ return function(){ receiveDeck(id); }; })(deck.id));
+    if (received) {
+      // 受取済み：グレーボタン＋「もう一度受け取る」テキストリンク
+      btn.textContent = '✅ 受取済';
+      btn.disabled = true;
+      btn.style.cssText = 'flex-shrink:0;padding:8px 14px;border:none;border-radius:20px;font-size:0.82em;font-weight:700;cursor:default;background:#e0e0e0;color:#aaa;';
+      var btn2 = document.createElement('button');
+      btn2.textContent = 'もう一度受け取る';
+      btn2.style.cssText = 'background:none;border:none;color:#c8a200;font-size:0.75em;cursor:pointer;padding:0;text-decoration:underline;text-align:right;';
+      btn2.addEventListener('click', (function(id){ return function(){ receiveDeckAgain(id); }; })(deck.id));
+      btnWrap.appendChild(btn);
+      btnWrap.appendChild(btn2);
+    } else {
+      btn.textContent = '受け取る';
+      btn.disabled = false;
+      btn.style.cssText = 'flex-shrink:0;padding:8px 14px;border:none;border-radius:20px;font-size:0.82em;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#ffd700,#ff8800);color:#7a4800;';
+      btn.addEventListener('click', (function(id){ return function(){ receiveDeck(id); }; })(deck.id));
+      btnWrap.appendChild(btn);
+    }
+    btn = btnWrap;
     var row = document.createElement('div');
     row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;';
     row.appendChild(info); row.appendChild(btn);
@@ -11116,13 +11143,21 @@ function renderDeckShop() {
   });
 }
 
-function receiveDeck(deckId) {
+function receiveDeckAgain(deckId) {
+  if (typeof window._receiveDeckAgain === 'function') {
+    window._receiveDeckAgain(deckId);
+  }
+}
+
+window._receiveDeckAgain = function(deckId) {
+  localStorage.removeItem('deck_received_' + deckId);
+  receiveDeck(deckId);
+}
+
+  function receiveDeck(deckId) {
   var deck = OFFICIAL_DECKS.find(function(d){ return d.id === deckId; });
   if (!deck) return;
-  if (localStorage.getItem('deck_received_' + deckId)) {
-    alert('このデッキはすでに受け取り済みです！');
-    return;
-  }
+  // 受取済みでも通常受け取り可能（再度受け取るはrecieveDeckAgain）
   var today = getLocalDateStr(new Date());
   deck.tasks.forEach(function(t) {
     var newTask = createTask(t.text, today, t.time || null, t.section, 'daily_only');
@@ -11137,11 +11172,7 @@ function receiveDeck(deckId) {
   saveAllTasks();
   renderAllSections(today);
   renderDeckShop();
-  if (typeof _toastEl !== 'undefined' && _toastEl) {
-    _toastEl.innerHTML = '🛍️ ' + deck.title + 'を受け取った！';
-    _toastEl.classList.add('show');
-    setTimeout(function(){ _toastEl.classList.remove('show'); }, 3000);
-  }
+  showAdminToast('🛍️ ' + deck.title + 'を受け取った！');
 }
 </script>
 
@@ -13189,6 +13220,8 @@ function deckBuilderSave() {
   if (_deckBuilderTasks.length === 0) { alert('タスクを1枚以上追加してください'); return; }
   var desc = (document.getElementById('deckBuilderDesc') ? document.getElementById('deckBuilderDesc').value : '') || '';
   var myName = localStorage.getItem('profileName') || '名無し';
+  var customCreatedBy = (document.getElementById('deckBuilderCreatedBy') ? document.getElementById('deckBuilderCreatedBy').value.trim() : '');
+  if (customCreatedBy && _adminModeActive) myName = customCreatedBy;
   var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
   var deckId = (typeof generateTaskId === 'function') ? generateTaskId() : crypto.randomUUID();
   var deck = { deckId: deckId, title: title, desc: desc, tasks: _deckBuilderTasks.slice(), createdBy: myName, createdAt: today, savedAt: today };
@@ -13218,6 +13251,11 @@ function openDeckBuilder() {
   _deckBuilderTasks = [];
   _deckBuilderEditingIdx = -1;
   document.getElementById('deckBuilderTitle').value = '';
+  // 管理者モードのみ作成者名欄を表示
+  var createdByWrap = document.getElementById('deckBuilderCreatedByWrap');
+  if (createdByWrap) createdByWrap.style.display = _adminModeActive ? 'block' : 'none';
+  var createdByInput = document.getElementById('deckBuilderCreatedBy');
+  if (createdByInput) createdByInput.value = '';
   var _descEl = document.getElementById('deckBuilderDesc'); if (_descEl) _descEl.value = '';
   document.getElementById('deckBuilderTaskText').value = '';
   document.getElementById('deckBuilderTaskMemo').value = '';
@@ -13425,6 +13463,8 @@ function deckBuilderApply() {
   if (!title) { alert('デッキ名を入力してください'); return; }
   if (_deckBuilderTasks.length === 0) { alert('タスクを1枚以上追加してください'); return; }
   var myName = localStorage.getItem('profileName') || '名無し';
+  var customCreatedBy = (document.getElementById('deckBuilderCreatedBy') ? document.getElementById('deckBuilderCreatedBy').value.trim() : '');
+  if (customCreatedBy && _adminModeActive) myName = customCreatedBy;
   var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
   var deckId = (typeof generateTaskId === 'function') ? generateTaskId() : crypto.randomUUID();
   var descVal2 = (document.getElementById('deckBuilderDesc') ? document.getElementById('deckBuilderDesc').value : '') || '';
@@ -13603,6 +13643,14 @@ document.addEventListener('DOMContentLoaded', function() {
       <label style="display:block;font-size:0.8em;color:#c084fc;font-weight:600;margin-bottom:6px;">📛 デッキ名</label>
       <input type="text" id="deckBuilderTitle" placeholder="例：朝活スタートデッキ"
         style="width:100%;padding:10px;border:1.5px solid #4a3060;border-radius:8px;background:#0d0d1a;color:#fff;font-size:0.9em;box-sizing:border-box;">
+    </div>
+
+    <!-- 作成者名（管理者モードのみ表示） -->
+    <div id="deckBuilderCreatedByWrap" style="display:none;margin-bottom:14px;">
+      <label style="display:block;font-size:0.8em;color:#ffd700;font-weight:600;margin-bottom:6px;">👑 作成者名（管理者専用）</label>
+      <input type="text" id="deckBuilderCreatedBy" placeholder="例：ふぉれモンおやすみ王"
+        style="width:100%;padding:10px;border:1.5px solid #ffd700;border-radius:8px;background:#0d0d1a;color:#ffd700;font-size:0.9em;box-sizing:border-box;">
+      <div style="font-size:0.72em;color:#888;margin-top:4px;">空欄の場合はプロフィール名が使われます</div>
     </div>
 
     <!-- デッキ説明文 -->
