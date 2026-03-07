@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.28.98';
+    const APP_VERSION = 'v0.29.02';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -2869,6 +2869,7 @@
     }
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
 </head>
 <body>
 <div id="modal-root"></div>
@@ -3477,7 +3478,10 @@
         <p style="font-size:0.78em;color:#aaa;margin:0 0 14px 0;">DCK1: で始まるデッキコードを貼り付けて王国に取り込もう。<br><span style="color:#ffd700;font-weight:600;">あ、王国が動いた！</span></p>
         <textarea id="deckImportInput" rows="3" placeholder="DCK1: で始まるコードをここに貼り付け..."
           style="width:100%;padding:10px;border:1.5px solid #4facfe;border-radius:8px;background:#0a1520;color:#fff;font-size:0.82em;box-sizing:border-box;resize:none;margin-bottom:10px;font-family:monospace;"></textarea>
-        <button onclick="importDeckFromSettings()" style="width:100%;padding:11px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:10px;color:#003355;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(79,172,254,0.3);" onclick="importDeckFromSettings()" style="margin-bottom:8px;">📦 王国に輸入する</button>
+        <div style="display:flex;gap:8px;margin-bottom:0;">
+          <button onclick="importDeckFromSettings()" style="flex:1;padding:11px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:10px;color:#003355;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(79,172,254,0.3);">📦 コードで受け取る</button>
+          <button onclick="openQRImportModal()" style="padding:11px 14px;background:rgba(79,172,254,0.12);border:1px solid #4facfe;border-radius:10px;color:#4facfe;font-size:0.92em;font-weight:700;cursor:pointer;">📷 QR</button>
+        </div>
         <button id="guildDeckBuilderBtn" onclick="openDeckBuilder()" style="display:none;width:100%;padding:11px;background:linear-gradient(135deg,#a855f7,#6366f1);border:none;border-radius:10px;color:#fff;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(168,85,247,0.3);">⚔️ デッキを仕込む（貿易商人）</button>
         <!-- 王国GDP -->
         <div id="deckHistorySection" style="margin-top:16px;"></div>
@@ -4769,6 +4773,12 @@ function renderMyDecks() {
     btnDelete.textContent = '削除';
     btnDelete.addEventListener('click', (function(i){ return function(){ myDeckDelete(i); }; })(idx));
 
+    var btnEdit = document.createElement('button');
+    btnEdit.style.cssText = 'flex:1;padding:6px;background:rgba(168,85,247,0.15);border:1px solid #a855f7;border-radius:6px;color:#a855f7;font-size:0.75em;font-weight:700;cursor:pointer;';
+    btnEdit.textContent = '✏️ 編集';
+    btnEdit.addEventListener('click', (function(i){ return function(){ myDeckEdit(i); }; })(idx));
+
+    btnRow.appendChild(btnEdit);
     btnRow.appendChild(btnApply);
     btnRow.appendChild(btnPublish);
     btnRow.appendChild(btnDelete);
@@ -12967,9 +12977,146 @@ function onTaskCompleted(task) {
 }
 
 
+
+function openQRImportModal() {
+  var overlay = document.getElementById('qrImportOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'qrImportOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;';
+    overlay.addEventListener('click', function(e){ if(e.target===overlay) closeQRImportModal(); });
+    document.body.appendChild(overlay);
+  }
+  overlay.innerHTML = '';
+  var card = document.createElement('div');
+  card.style.cssText = 'background:linear-gradient(160deg,#0a1520,#0d2240);border:1.5px solid rgba(79,172,254,0.4);border-radius:24px;padding:24px 20px 20px;text-align:center;max-width:360px;width:92vw;box-shadow:0 0 40px rgba(79,172,254,0.2);';
+  card.innerHTML = [
+    '<div style="color:#4facfe;font-size:1.05em;font-weight:bold;margin-bottom:4px;">📷 QRで受け取る</div>',
+    '<div style="color:#aaa;font-size:0.76em;margin-bottom:12px;">デッキQRにカメラを向けてください</div>',
+    '<div style="position:relative;display:inline-block;margin-bottom:12px;">',
+    '  <video id="qrVideo" style="width:240px;height:240px;border-radius:12px;background:#000;object-fit:cover;display:block;" playsinline autoplay muted></video>',
+    '  <div style="position:absolute;inset:0;border:2px solid rgba(79,172,254,0.6);border-radius:12px;pointer-events:none;"></div>',
+    '  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:160px;height:160px;border:2px solid #4facfe;border-radius:8px;pointer-events:none;box-shadow:0 0 0 2000px rgba(0,0,0,0.3);"></div>',
+    '</div>',
+    '<canvas id="qrCanvas" style="display:none;"></canvas>',
+    '<div id="qrImportMsg" style="font-size:0.82em;color:#4facfe;margin-bottom:14px;min-height:22px;">読み取り中...</div>',
+    '<button onclick="closeQRImportModal()" style="width:100%;padding:9px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#777;font-size:0.84em;cursor:pointer;">閉じる</button>'
+  ].join('');
+  overlay.appendChild(card);
+  overlay.style.display = 'flex';
+
+  window._qrScanActive = true;
+
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    .then(function(stream) {
+      window._qrStream = stream;
+      var video = document.getElementById('qrVideo');
+      if (!video) return;
+      video.srcObject = stream;
+      video.play();
+      video.addEventListener('loadedmetadata', function() {
+        _startQRScan(video);
+      });
+    })
+    .catch(function() {
+      var msg = document.getElementById('qrImportMsg');
+      if (msg) msg.innerHTML = '<span style="color:#ef5350;">カメラを起動できませんでした</span><br><span style="font-size:0.85em;color:#aaa;">iPhoneの標準カメラでQRを読んでください</span>';
+    });
+}
+
+function _startQRScan(video) {
+  var canvas = document.getElementById('qrCanvas');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+
+  function tick() {
+    if (!window._qrScanActive) return;
+    if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+      requestAnimationFrame(tick); return;
+    }
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    if (typeof jsQR !== 'undefined') {
+      var code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+      if (code && code.data) {
+        _handleQRResult(code.data);
+        return;
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+function _handleQRResult(data) {
+  window._qrScanActive = false;
+  var msg = document.getElementById('qrImportMsg');
+
+  // URLパラメータ形式 → デコードしてDCK1:を取り出す
+  var deckCode = data;
+  try {
+    var url = new URL(data);
+    var p = url.searchParams.get('deck');
+    if (p) deckCode = decodeURIComponent(p);
+  } catch(e) {}
+
+  var upper = deckCode.toUpperCase();
+  if (!upper.startsWith('DCK1:')) {
+    if (msg) msg.innerHTML = '<span style="color:#ef5350;">デッキQRではありません</span>';
+    setTimeout(function(){ window._qrScanActive = true; _startQRScan(document.getElementById('qrVideo')); }, 2000);
+    return;
+  }
+
+  // デコード
+  var raw;
+  try { raw = decodeURIComponent(escape(atob(deckCode.slice(5)))); } catch(e) {
+    if (msg) msg.innerHTML = '<span style="color:#ef5350;">QRの読み取りに失敗しました</span>';
+    return;
+  }
+  var deck;
+  try { deck = JSON.parse(raw); } catch(e) {
+    if (msg) msg.innerHTML = '<span style="color:#ef5350;">データが壊れています</span>';
+    return;
+  }
+  if (deck.kind !== 'deck') {
+    if (msg) msg.innerHTML = '<span style="color:#ef5350;">デッキQRではありません</span>';
+    return;
+  }
+
+  // デッキ追加
+  var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
+  var _deckId = deck.deckId || ('qr_' + Date.now());
+  deck.tasks.forEach(function(d) {
+    var t = (typeof createTask === 'function') ? createTask(d.text, today, null, d.section||1, 'both') : null;
+    if (t) {
+      if (d.memo && typeof updateTask === 'function') updateTask(t.id, { memo: d.memo });
+      if (typeof updateTask === 'function') updateTask(t.id, { deckId: _deckId });
+    }
+  });
+  if (typeof addDeckHistory === 'function') addDeckHistory(deck);
+  if (typeof saveAllTasks === 'function') saveAllTasks();
+  if (typeof renderAllSections === 'function') renderAllSections(today);
+  if (typeof addGou === 'function') addGou(1, 'QRデッキ受取');
+
+  // 成功UI
+  if (msg) msg.innerHTML = '<span style="color:#64dcb4;font-size:1.1em;">✅ 受け取った！</span><br><span style="font-size:0.82em;color:#aaa;">' + (deck.title||'デッキ') + '</span>';
+  setTimeout(function(){ closeQRImportModal(); showAdminToast('✨ ' + (deck.title||'デッキ') + 'を受け取った！'); }, 1500);
+}
+function closeQRImportModal() {
+  if (window._qrStream) {
+    window._qrStream.getTracks().forEach(function(t){ t.stop(); });
+    window._qrStream = null;
+  }
+  var o = document.getElementById('qrImportOverlay');
+  if (o) o.style.display = 'none';
+}
 function closeApplyQR() { var o=document.getElementById('applyQROverlay'); if(o) o.style.display='none'; }
 function showApplyQR(code, deckTitle) {
-  var url = 'https://kikumon-dev.github.io?deck=' + encodeURIComponent(code);
+  // APL1コードはURLパラメータ非対応のため、コードそのままをQR化
+  // （管理者がスキャンしてコードを受け取る用途）
+  var url = code;
   var overlay = document.getElementById('applyQROverlay');
   if (!overlay) {
     overlay = document.createElement('div');
@@ -13642,6 +13789,23 @@ function deckBuilderSave() {
   var customCreatedBy = (document.getElementById('deckBuilderCreatedBy') ? document.getElementById('deckBuilderCreatedBy').value.trim() : '');
   if (customCreatedBy && _adminModeActive) myName = customCreatedBy;
   var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
+  // 編集モードなら既存デッキを上書き
+  if (typeof window._editingMyDeckIdx === 'number' && window._editingMyDeckIdx >= 0) {
+    var decks = getMyDecks();
+    var orig = decks[window._editingMyDeckIdx];
+    if (orig) {
+      orig.title = title; orig.desc = desc;
+      orig.tasks = _deckBuilderTasks.slice();
+      orig.createdBy = myName; orig.savedAt = today;
+      saveMyDecks(decks);
+      window._editingMyDeckIdx = -1;
+      renderMyDecks();
+      closeDeckBuilder();
+      showAdminToast('✏️ デッキを更新しました！');
+      return;
+    }
+  }
+  window._editingMyDeckIdx = -1;
   var deckId = (typeof generateTaskId === 'function') ? generateTaskId() : crypto.randomUUID();
   var deck = { deckId: deckId, title: title, desc: desc, tasks: _deckBuilderTasks.slice(), createdBy: myName, createdAt: today, savedAt: today };
   var decks = getMyDecks();
@@ -13688,8 +13852,40 @@ function openDeckBuilder() {
   m.style.display = 'flex';
 }
 
+
+function myDeckEdit(idx) {
+  var deck = getMyDecks()[idx]; if (!deck) return;
+  // デッキビルダーを編集モードで開く
+  _deckBuilderTasks = (deck.tasks || []).slice();
+  _deckBuilderEditingIdx = -1;
+  document.getElementById('deckBuilderTitle').value = deck.title || '';
+  var _descEl = document.getElementById('deckBuilderDesc'); if (_descEl) _descEl.value = deck.desc || '';
+  var createdByWrap = document.getElementById('deckBuilderCreatedByWrap');
+  if (createdByWrap) createdByWrap.style.display = _adminModeActive ? 'block' : 'none';
+  var createdByInput = document.getElementById('deckBuilderCreatedBy');
+  if (createdByInput) createdByInput.value = deck.createdBy || '';
+  document.getElementById('deckBuilderTaskText').value = '';
+  document.getElementById('deckBuilderTaskMemo').value = '';
+  document.getElementById('deckBuilderTaskSection').value = '1';
+  var addBtn = document.getElementById('deckBuilderAddBtn');
+  if (addBtn) { addBtn.textContent = 'タスクを追加'; addBtn.style.background = 'linear-gradient(135deg,#a855f7,#6366f1)'; }
+  var cancelBtn = document.getElementById('deckBuilderCancelEdit');
+  if (cancelBtn) cancelBtn.style.display = 'none';
+  renderDeckBuilderTasks();
+  // モーダルタイトルを「編集」に変更
+  var modalTitle = document.querySelector('#deckBuilderModal h2');
+  if (modalTitle) modalTitle.textContent = '✏️ デッキを編集する';
+  var m = document.getElementById('deckBuilderModal');
+  m.style.display = 'flex';
+  // 保存ボタンを「更新」動作に差し替え
+  window._editingMyDeckIdx = idx;
+}
 function closeDeckBuilder() {
   document.getElementById('deckBuilderModal').style.display = 'none';
+  window._editingMyDeckIdx = -1;
+  // モーダルタイトルを戻す
+  var mt = document.querySelector('#deckBuilderModal h2');
+  if (mt) mt.textContent = '⚔️ デッキを仕込む';
 }
 
 var _deckBuilderEditingIdx = -1;
@@ -13806,15 +14002,13 @@ function deckBuilderPublish() {
   });
   var code = 'DCK1:' + btoa(unescape(encodeURIComponent(payload)));
   // コピー
+  var _builderTokuDone = false;
   var done = function() {
-    var toast = document.getElementById('settingsSaveToast');
-    if (!toast) {
-      toast = document.createElement('div');
-      toast.id = 'settingsSaveToast';
-      toast.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.88);color:#ffd700;padding:18px 32px;border-radius:16px;font-size:1.05em;font-weight:bold;z-index:99999;text-align:center;pointer-events:none;border:1.5px solid rgba(255,215,0,0.5);box-shadow:0 0 24px rgba(255,215,0,0.2);';
-      document.body.appendChild(toast);
+    // 徳加算（1回のみ）
+    if (!_builderTokuDone) {
+      _builderTokuDone = true;
+      if (typeof addToku === 'function') addToku(100, 'デッキ配布コード発行');
     }
-    if (typeof addToku === 'function') addToku(100, 'デッキ配布コード発行');
     // 配布モーダル表示（コピー+QR）
     if (typeof showDeckQR === 'function') showDeckQR(code, title);
   };
