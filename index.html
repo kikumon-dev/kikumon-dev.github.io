@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.29.05';
+    const APP_VERSION = 'v0.29.06';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -13045,30 +13045,32 @@ function openQRImportModal() {
 }
 
 function _startQRScan(video) {
-  // ZXing-jsを使用
+  // ZXing-jsを使用（@zxing/library@0.19.1）
   try {
-    var ZXing = window.ZXing || (window.ZXingLibrary);
-    if (!ZXing) { console.warn('ZXing未ロード'); return; }
-    var hints = new Map();
-    var formats = [ZXing.BarcodeFormat.QR_CODE];
-    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, formats);
-    var reader = new ZXing.BrowserQRCodeReader(hints);
+    if (typeof ZXing === 'undefined') {
+      console.warn('ZXing未ロード');
+      _startQRScanFallback(video);
+      return;
+    }
+    var reader = new ZXing.BrowserQRCodeReader();
     window._zxingReader = reader;
-    reader.decodeFromVideoElement(video).then(function(result) {
-      if (result && window._qrScanActive) {
+    // decodeFromContinuouslyで連続スキャン
+    reader.decodeFromVideoDevice(undefined, video, function(result, err) {
+      if (!window._qrScanActive) return;
+      if (result) {
         _handleQRResult(result.getText());
       }
-    }).catch(function(err) {
-      // 継続的スキャン中の「見つからない」エラーは無視
-      if (err && err.name !== 'NotFoundException') {
-        console.warn('ZXing error:', err);
-      }
+      // errはNotFoundException等が毎フレーム来るが無視
     });
     return;
   } catch(e) {
-    console.warn('ZXing初期化失敗、フォールバック:', e);
+    console.warn('ZXing初期化失敗、フォールバックへ:', e);
+    _startQRScanFallback(video);
   }
-  // フォールバック（ZXing失敗時）
+}
+
+function _startQRScanFallback(video) {
+  // jsQRフォールバック
   var canvas = document.getElementById('qrCanvas');
   if (!canvas) return;
   var ctx = canvas.getContext('2d');
@@ -13081,6 +13083,11 @@ function _startQRScan(video) {
     canvas.width = Math.min(video.videoWidth, 640);
     canvas.height = Math.min(video.videoHeight, 480);
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    if (typeof jsQR !== 'undefined') {
+      var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      var code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
+      if (code && code.data) { _handleQRResult(code.data); return; }
+    }
     requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
@@ -13144,6 +13151,7 @@ function closeQRImportModal() {
   window._qrScanActive = false;
   if (window._zxingReader) {
     try { window._zxingReader.reset(); } catch(e) {}
+    try { window._zxingReader.stopContinuousDecode(); } catch(e) {}
     window._zxingReader = null;
   }
   if (window._qrStream) {
