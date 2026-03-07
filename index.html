@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.29.06';
+    const APP_VERSION = 'v0.29.07';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -13027,16 +13027,18 @@ function openQRImportModal() {
       var started = false;
       function tryStart() {
         if (started) return;
-        if (video.videoWidth > 0) {
+        if (video.readyState >= 2 || video.videoWidth > 0) {
           started = true;
-          _startQRScan(video);
+          // 少し待ってから開始（Safari安定化）
+          setTimeout(function(){ _startQRScan(video); }, 300);
         } else {
           setTimeout(tryStart, 200);
         }
       }
       video.addEventListener('loadedmetadata', tryStart);
       video.addEventListener('canplay', tryStart);
-      setTimeout(tryStart, 500); // 強制フォールバック
+      video.addEventListener('playing', tryStart);
+      setTimeout(tryStart, 800); // 強制フォールバック
     })
     .catch(function() {
       var msg = document.getElementById('qrImportMsg');
@@ -13048,20 +13050,28 @@ function _startQRScan(video) {
   // ZXing-jsを使用（@zxing/library@0.19.1）
   try {
     if (typeof ZXing === 'undefined') {
-      console.warn('ZXing未ロード');
+      console.warn('ZXing未ロード、フォールバックへ');
       _startQRScanFallback(video);
       return;
     }
     var reader = new ZXing.BrowserQRCodeReader();
     window._zxingReader = reader;
-    // decodeFromContinuouslyで連続スキャン
-    reader.decodeFromVideoDevice(undefined, video, function(result, err) {
+    // decodeOnceAsyncを繰り返す方式（既存のvideoストリームを使う）
+    function scanLoop() {
       if (!window._qrScanActive) return;
-      if (result) {
-        _handleQRResult(result.getText());
-      }
-      // errはNotFoundException等が毎フレーム来るが無視
-    });
+      reader.decodeFromVideoElement(video)
+        .then(function(result) {
+          if (result && window._qrScanActive) {
+            _handleQRResult(result.getText());
+          }
+        })
+        .catch(function(err) {
+          if (!window._qrScanActive) return;
+          // NotFoundException = QR未検出、継続
+          setTimeout(scanLoop, 300);
+        });
+    }
+    scanLoop();
     return;
   } catch(e) {
     console.warn('ZXing初期化失敗、フォールバックへ:', e);
