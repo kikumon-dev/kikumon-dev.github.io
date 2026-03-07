@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.29.01';
+    const APP_VERSION = 'v0.29.13';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -2868,7 +2868,9 @@
       document.write('<style>.section:nth-child(1){background-color:#ffe6e6 !important;}.section:nth-child(2){background-color:#e8f5e9 !important;}.section:nth-child(3){background-color:#fffef5 !important;}.section:nth-child(4){background-color:#f0f0f0 !important;}</style>');
     }
   </script>
-  <!-- jsQR: QRコードスキャン用ライブラリ（生成はCanvas手書きで外部依存ゼロ） -->
+  <!-- qrcode-generator: QRコード生成（Canvas・外部API不要・オフライン動作） -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+  <!-- jsQR: QRコードスキャン用ライブラリ -->
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 </head>
 <body>
@@ -13144,21 +13146,41 @@ function switchDeckTab(tab) {
 // Google Chart API を使用（最もシンプルで確実）
 // ============================================================
 function renderQRToImg(el, text) {
-  // Google Chart API: サーバー側でQR生成→imgタグで表示
-  // iPhoneカメラ・LINEどちらでも確実に読める
-  var encoded = encodeURIComponent(text);
-  var img = document.createElement('img');
-  img.src = 'https://chart.googleapis.com/chart?cht=qr&chs=220x220&chl=' + encoded + '&choe=UTF-8&chld=M|2';
-  img.width = 220;
-  img.height = 220;
-  img.style.cssText = 'display:block;border-radius:10px;';
-  img.alt = 'QRコード';
-  // ロード失敗時フォールバック（オフライン等）
-  img.onerror = function() {
-    el.innerHTML = '<div style="color:#aaa;font-size:0.75em;padding:20px;">QR生成にはネット接続が必要です</div>';
-  };
   el.innerHTML = '';
-  el.appendChild(img);
+  try {
+    // qrcode-generator でQRデータ生成
+    var qr = qrcode(0, 'M');
+    qr.addData(text);
+    qr.make();
+    var size = 220;
+    var canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    var ctx = canvas.getContext('2d');
+    var count = qr.getModuleCount();
+    var cellSize = size / count;
+    // 白背景
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, size, size);
+    // 黒セル
+    ctx.fillStyle = '#000000';
+    for (var row = 0; row < count; row++) {
+      for (var col = 0; col < count; col++) {
+        if (qr.isDark(row, col)) {
+          ctx.fillRect(
+            Math.floor(col * cellSize),
+            Math.floor(row * cellSize),
+            Math.ceil(cellSize),
+            Math.ceil(cellSize)
+          );
+        }
+      }
+    }
+    canvas.style.cssText = 'display:block;border-radius:10px;';
+    el.appendChild(canvas);
+  } catch(e) {
+    el.innerHTML = '<div style="color:#aaa;font-size:0.75em;padding:20px;">QR生成に失敗しました</div>';
+  }
 }
 
 // ============================================================
