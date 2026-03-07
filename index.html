@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.29.11';
+    const APP_VERSION = 'v0.29.01';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -2868,8 +2868,8 @@
       document.write('<style>.section:nth-child(1){background-color:#ffe6e6 !important;}.section:nth-child(2){background-color:#e8f5e9 !important;}.section:nth-child(3){background-color:#fffef5 !important;}.section:nth-child(4){background-color:#f0f0f0 !important;}</style>');
     }
   </script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+  <!-- jsQR: QRコードスキャン用ライブラリ（生成はCanvas手書きで外部依存ゼロ） -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 </head>
 <body>
 <div id="modal-root"></div>
@@ -3475,13 +3475,19 @@
       <!-- 🚢 貿易港（β）セクション -->
       <div style="margin-bottom:24px;background:linear-gradient(135deg,#0d1b2a,#1a2a3a);border:2px solid #4facfe;border-radius:14px;padding:20px;box-shadow:0 0 20px rgba(79,172,254,0.15);">
         <h3 style="margin:0 0 6px 0;color:#4facfe;font-size:1em;font-weight:700;display:flex;align-items:center;gap:8px;">🚢 貿易港（β）</h3>
-        <p style="font-size:0.78em;color:#aaa;margin:0 0 14px 0;">DCK1: で始まるデッキコードを貼り付けて王国に取り込もう。<br><span style="color:#ffd700;font-weight:600;">あ、王国が動いた！</span></p>
+        <p style="font-size:0.78em;color:#aaa;margin:0 0 14px 0;">DCK1: で始まるデッキコードを貼り付けるか、QRコードを読み取ろう。<br><span style="color:#ffd700;font-weight:600;">あ、王国が動いた！</span></p>
+        <!-- QRスキャンボタン -->
+        <button onclick="openDeckQRScanner()" style="width:100%;padding:12px;background:linear-gradient(135deg,#064e3b,#065f46);border:2px solid #34d399;border-radius:10px;color:#34d399;font-size:0.92em;font-weight:700;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;">
+          <span style="font-size:1.2em;">📷</span> QRコードを読み取る
+        </button>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <div style="flex:1;height:1px;background:rgba(79,172,254,0.2);"></div>
+          <div style="color:#555;font-size:0.72em;">またはコードを直接入力</div>
+          <div style="flex:1;height:1px;background:rgba(79,172,254,0.2);"></div>
+        </div>
         <textarea id="deckImportInput" rows="3" placeholder="DCK1: で始まるコードをここに貼り付け..."
           style="width:100%;padding:10px;border:1.5px solid #4facfe;border-radius:8px;background:#0a1520;color:#fff;font-size:0.82em;box-sizing:border-box;resize:none;margin-bottom:10px;font-family:monospace;"></textarea>
-        <div style="display:flex;gap:8px;margin-bottom:0;">
-          <button onclick="importDeckFromSettings()" style="flex:1;padding:11px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:10px;color:#003355;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(79,172,254,0.3);">📦 コードで受け取る</button>
-          <button onclick="openQRImportModal()" style="padding:11px 14px;background:rgba(79,172,254,0.12);border:1px solid #4facfe;border-radius:10px;color:#4facfe;font-size:0.92em;font-weight:700;cursor:pointer;">📷 QR</button>
-        </div>
+        <button onclick="importDeckFromSettings()" style="width:100%;padding:11px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:10px;color:#003355;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(79,172,254,0.3);margin-bottom:8px;">📦 王国に輸入する</button>
         <button id="guildDeckBuilderBtn" onclick="openDeckBuilder()" style="display:none;width:100%;padding:11px;background:linear-gradient(135deg,#a855f7,#6366f1);border:none;border-radius:10px;color:#fff;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(168,85,247,0.3);">⚔️ デッキを仕込む（貿易商人）</button>
         <!-- 王国GDP -->
         <div id="deckHistorySection" style="margin-top:16px;"></div>
@@ -4755,39 +4761,33 @@ function renderMyDecks() {
     meta.style.cssText = 'font-size:0.72em;color:#666;margin-bottom:8px;';
     meta.textContent = (deck.tasks||[]).length + '枚 / ' + (deck.createdAt||'');
 
-    // 1行目：編集・削除
     var btnRow = document.createElement('div');
-    btnRow.style.cssText = 'display:flex;gap:6px;margin-bottom:6px;';
-
-    var btnEdit = document.createElement('button');
-    btnEdit.style.cssText = 'flex:1;padding:7px 6px;background:rgba(168,85,247,0.15);border:1px solid #a855f7;border-radius:6px;color:#a855f7;font-size:0.75em;font-weight:700;cursor:pointer;';
-    btnEdit.textContent = '✏️ 編集';
-    btnEdit.addEventListener('click', (function(i){ return function(){ myDeckEdit(i); }; })(idx));
-
-    var btnDelete = document.createElement('button');
-    btnDelete.style.cssText = 'flex:1;padding:7px 6px;background:rgba(239,83,80,0.15);border:1px solid #ef5350;border-radius:6px;color:#ef5350;font-size:0.75em;font-weight:700;cursor:pointer;';
-    btnDelete.textContent = '🗑 削除';
-    btnDelete.addEventListener('click', (function(i){ return function(){ myDeckDelete(i); }; })(idx));
-
-    btnRow.appendChild(btnEdit);
-    btnRow.appendChild(btnDelete);
-
-    // 2行目：公式申請・楽市楽座
-    var btnRow2 = document.createElement('div');
-    btnRow2.style.cssText = 'display:flex;gap:6px;';
+    btnRow.style.cssText = 'display:flex;gap:6px;';
 
     var btnApply = document.createElement('button');
-    btnApply.style.cssText = 'flex:1;padding:7px 6px;background:rgba(79,172,254,0.15);border:1px solid #4facfe;border-radius:6px;color:#4facfe;font-size:0.75em;font-weight:700;cursor:pointer;';
+    btnApply.style.cssText = 'flex:1;padding:6px;background:rgba(79,172,254,0.15);border:1px solid #4facfe;border-radius:6px;color:#4facfe;font-size:0.75em;font-weight:700;cursor:pointer;';
     btnApply.textContent = '🏪 公式申請';
     btnApply.addEventListener('click', (function(i){ return function(){ myDeckApply(i); }; })(idx));
 
     var btnPublish = document.createElement('button');
-    btnPublish.style.cssText = 'flex:1;padding:7px 6px;background:rgba(255,150,0,0.15);border:1px solid #ff8800;border-radius:6px;color:#ff8800;font-size:0.75em;font-weight:700;cursor:pointer;';
-    btnPublish.textContent = '📋 楽市楽座';
+    btnPublish.style.cssText = 'flex:1;padding:6px;background:rgba(255,150,0,0.15);border:1px solid #ff8800;border-radius:6px;color:#ff8800;font-size:0.75em;font-weight:700;cursor:pointer;';
+    btnPublish.textContent = '📋 楽市楽座で配布';
     btnPublish.addEventListener('click', (function(i){ return function(){ myDeckPublish(i); }; })(idx));
 
-    btnRow2.appendChild(btnApply);
-    btnRow2.appendChild(btnPublish);
+    var btnDelete = document.createElement('button');
+    btnDelete.style.cssText = 'padding:6px 10px;background:rgba(239,83,80,0.15);border:1px solid #ef5350;border-radius:6px;color:#ef5350;font-size:0.75em;cursor:pointer;';
+    btnDelete.textContent = '削除';
+    btnDelete.addEventListener('click', (function(i){ return function(){ myDeckDelete(i); }; })(idx));
+
+    var btnEdit = document.createElement('button');
+    btnEdit.style.cssText = 'flex:1;padding:6px;background:rgba(168,85,247,0.15);border:1px solid #a855f7;border-radius:6px;color:#a855f7;font-size:0.75em;font-weight:700;cursor:pointer;';
+    btnEdit.textContent = '✏️ 編集';
+    btnEdit.addEventListener('click', (function(i){ return function(){ myDeckEdit(i); }; })(idx));
+
+    btnRow.appendChild(btnEdit);
+    btnRow.appendChild(btnApply);
+    btnRow.appendChild(btnPublish);
+    btnRow.appendChild(btnDelete);
     el.appendChild(title);
     el.appendChild(meta);
     if (deck.createdBy) {
@@ -4797,7 +4797,6 @@ function renderMyDecks() {
       el.appendChild(byEl);
     }
     el.appendChild(btnRow);
-    el.appendChild(btnRow2);
     list.appendChild(el);
   });
 }
@@ -12984,342 +12983,6 @@ function onTaskCompleted(task) {
 }
 
 
-
-function openQRImportModal() {
-  var hasBarcodeDetector = ('BarcodeDetector' in window);
-  var hasGetUserMedia = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
-  var isIOS = /iP(hone|od|ad)/.test(navigator.userAgent);
-  var canTryScan = hasBarcodeDetector || (hasGetUserMedia && typeof jsQR !== 'undefined');
-  var overlay = document.getElementById('qrImportOverlay');
-  if (!overlay) {
-    overlay = document.createElement('div');
-    overlay.id = 'qrImportOverlay';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;';
-    overlay.addEventListener('click', function(e){ if(e.target===overlay) closeQRImportModal(); });
-    document.body.appendChild(overlay);
-  }
-  overlay.innerHTML = '';
-  var card = document.createElement('div');
-  card.style.cssText = 'background:linear-gradient(160deg,#0a1520,#0d2240);border:1.5px solid rgba(79,172,254,0.4);border-radius:24px;padding:24px 20px 20px;text-align:center;max-width:340px;width:92vw;box-shadow:0 0 40px rgba(79,172,254,0.2);';
-
-  var scanPanelHtml;
-  if (hasBarcodeDetector || (hasGetUserMedia && typeof jsQR !== 'undefined')) {
-    // Android Chrome または iPhone Chrome → カメラスキャン
-    scanPanelHtml = [
-      '<div style="background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.3);border-radius:14px;padding:12px;margin-bottom:14px;">',
-      '  <div style="color:#34d399;font-size:0.85em;font-weight:700;margin-bottom:6px;">📷 カメラでスキャン</div>',
-      '  <video id="qrVideo" style="width:100%;border-radius:8px;background:#000;margin-bottom:8px;max-height:200px;object-fit:cover;" playsinline autoplay muted></video>',
-      '  <canvas id="qrCanvas" style="display:none;"></canvas>',
-      '  <div id="qrScanMsg" style="color:#aaa;font-size:0.75em;text-align:center;">起動中...</div>',
-      '</div>',
-    ].join('');
-  } else {
-    // iPhone Safari → 標準カメラ誘導
-    scanPanelHtml = [
-      '<div style="background:rgba(79,172,254,0.08);border:1px solid rgba(79,172,254,0.3);border-radius:14px;padding:14px 12px;margin-bottom:14px;text-align:left;">',
-      '  <div style="color:#4facfe;font-size:0.85em;font-weight:700;margin-bottom:8px;">📱 iPhoneカメラで読む</div>',
-      '  <div style="color:#ccc;font-size:0.78em;line-height:1.7;">',
-      '    ① 標準カメラアプリでQRを読む<br>',
-      '    ② 通知タップ → アプリが開く<br>',
-      '    ③ デッキが自動で追加される ✅<br>',
-      '    <span style="color:#aaa;font-size:0.9em;">※ Chrome使用でカメラスキャン可能</span>',
-      '  </div>',
-      '</div>',
-    ].join('');
-  }
-  var androidHtml = scanPanelHtml;
-
-  card.innerHTML = [
-    '<div style="color:#4facfe;font-size:1.05em;font-weight:bold;margin-bottom:12px;">📷 QRで受け取る</div>',
-    androidHtml,
-    '<div style="color:#aaa;font-size:0.75em;margin-bottom:8px;">またはコードを直接貼り付け</div>',
-    '<textarea id="qrDirectInput" rows="3" placeholder="DCK1: で始まるコードを貼り付け..." style="width:100%;padding:10px;border:1px solid rgba(79,172,254,0.3);border-radius:10px;background:rgba(0,0,0,0.3);color:#fff;font-size:0.78em;box-sizing:border-box;resize:none;margin-bottom:10px;font-family:monospace;"></textarea>',
-    '<button onclick="importFromQRDirectInput()" style="width:100%;padding:10px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:10px;color:#003355;font-size:0.88em;font-weight:700;cursor:pointer;margin-bottom:8px;">📦 このコードで受け取る</button>',
-    '<button onclick="closeQRImportModal()" style="width:100%;padding:9px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#777;font-size:0.84em;cursor:pointer;">閉じる</button>'
-  ].join('');
-  overlay.appendChild(card);
-  overlay.style.display = 'flex';
-
-  // カメラスキャン開始
-  if (hasBarcodeDetector) {
-    _startBarcodeDetectorScan();
-  } else if (hasGetUserMedia && typeof jsQR !== 'undefined') {
-    _startJsQRScan();
-  }
-}
-
-
-function _startJsQRScan() {
-  window._qrScanActive = true;
-  var msg = document.getElementById('qrScanMsg');
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-    .then(function(stream) {
-      window._qrStream = stream;
-      var video = document.getElementById('qrVideo');
-      if (!video) return;
-      video.srcObject = stream;
-      video.setAttribute('playsinline', true);
-      video.play();
-      if (msg) msg.textContent = 'QRにカメラを向けてください';
-      function tick() {
-        if (!window._qrScanActive) return;
-        var canvas = document.getElementById('qrCanvas');
-        if (!canvas || !video || video.readyState < 2 || video.videoWidth === 0) {
-          requestAnimationFrame(tick); return;
-        }
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        var ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        try {
-          var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          var code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
-          if (code && code.data) {
-            _handleQRResult(code.data);
-            return;
-          }
-        } catch(e) {
-          // Safari RangeError等を無視して継続
-        }
-        requestAnimationFrame(tick);
-      }
-      requestAnimationFrame(tick);
-    })
-    .catch(function() {
-      var m = document.getElementById('qrScanMsg');
-      if (m) m.innerHTML = '<span style="color:#ef5350;">カメラを起動できませんでした</span>';
-    });
-}
-function _startBarcodeDetectorScan() {
-  window._qrScanActive = true;
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-    .then(function(stream) {
-      window._qrStream = stream;
-      var video = document.getElementById('qrVideo');
-      if (!video) return;
-      video.srcObject = stream;
-      video.play();
-      var detector = new BarcodeDetector({ formats: ['qr_code'] });
-      function tick() {
-        if (!window._qrScanActive) return;
-        if (video.readyState < 2) { setTimeout(tick, 200); return; }
-        detector.detect(video).then(function(barcodes) {
-          if (!window._qrScanActive) return;
-          if (barcodes && barcodes.length > 0) {
-            _handleQRResult(barcodes[0].rawValue);
-          } else {
-            requestAnimationFrame(tick);
-          }
-        }).catch(function() {
-          requestAnimationFrame(tick);
-        });
-      }
-      requestAnimationFrame(tick);
-    })
-    .catch(function() {
-      var msg = document.getElementById('qrScanMsg');
-      if (msg) msg.innerHTML = '<span style="color:#ef5350;">カメラを起動できませんでした</span>';
-    });
-}
-
-function importFromQRDirectInput() {
-  var code = (document.getElementById('qrDirectInput').value || '').trim();
-  if (!code) return;
-  _handleQRResult(code);
-}
-
-function _startQRScan(video) {
-  // ZXing-jsを使用（@zxing/library@0.19.1）
-  try {
-    if (typeof ZXing === 'undefined') {
-      console.warn('ZXing未ロード、フォールバックへ');
-      _startQRScanFallback(video);
-      return;
-    }
-    var reader = new ZXing.BrowserQRCodeReader();
-    window._zxingReader = reader;
-    // decodeOnceAsyncを繰り返す方式（既存のvideoストリームを使う）
-    function scanLoop() {
-      if (!window._qrScanActive) return;
-      reader.decodeFromVideoElement(video)
-        .then(function(result) {
-          if (result && window._qrScanActive) {
-            _handleQRResult(result.getText());
-          }
-        })
-        .catch(function(err) {
-          if (!window._qrScanActive) return;
-          // NotFoundException = QR未検出、継続
-          setTimeout(scanLoop, 300);
-        });
-    }
-    scanLoop();
-    return;
-  } catch(e) {
-    console.warn('ZXing初期化失敗、フォールバックへ:', e);
-    _startQRScanFallback(video);
-  }
-}
-
-function _startQRScanFallback(video) {
-  // jsQRフォールバック
-  var canvas = document.getElementById('qrCanvas');
-  if (!canvas) return;
-  var ctx = canvas.getContext('2d');
-  function tick() {
-    if (!window._qrScanActive) return;
-    if (video.readyState < 2 || video.videoWidth === 0) {
-      setTimeout(function(){ requestAnimationFrame(tick); }, 100);
-      return;
-    }
-    canvas.width = Math.min(video.videoWidth, 640);
-    canvas.height = Math.min(video.videoHeight, 480);
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    if (typeof jsQR !== 'undefined') {
-      var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      var code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
-      if (code && code.data) { _handleQRResult(code.data); return; }
-    }
-    requestAnimationFrame(tick);
-  }
-  requestAnimationFrame(tick);
-}
-
-function _handleQRResult(data) {
-  window._qrScanActive = false;
-  var msg = document.getElementById('qrImportMsg');
-
-  // URLパラメータ形式 → デコードしてDCK1:を取り出す
-  var deckCode = data;
-  try {
-    var url = new URL(data);
-    var p = url.searchParams.get('deck');
-    if (p) deckCode = decodeURIComponent(p);
-  } catch(e) {}
-
-  var upper = deckCode.toUpperCase();
-  if (!upper.startsWith('DCK1:')) {
-    if (msg) msg.innerHTML = '<span style="color:#ef5350;">デッキQRではありません</span>';
-    setTimeout(function(){ window._qrScanActive = true; _startQRScan(document.getElementById('qrVideo')); }, 2000);
-    return;
-  }
-
-  // デコード
-  var raw;
-  try { raw = decodeURIComponent(escape(atob(deckCode.slice(5)))); } catch(e) {
-    if (msg) msg.innerHTML = '<span style="color:#ef5350;">QRの読み取りに失敗しました</span>';
-    return;
-  }
-  var deck;
-  try { deck = JSON.parse(raw); } catch(e) {
-    if (msg) msg.innerHTML = '<span style="color:#ef5350;">データが壊れています</span>';
-    return;
-  }
-  if (deck.kind !== 'deck') {
-    if (msg) msg.innerHTML = '<span style="color:#ef5350;">デッキQRではありません</span>';
-    return;
-  }
-
-  // デッキ追加
-  var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
-  var _deckId = deck.deckId || ('qr_' + Date.now());
-  deck.tasks.forEach(function(d) {
-    var t = (typeof createTask === 'function') ? createTask(d.text, today, null, d.section||1, 'both') : null;
-    if (t) {
-      if (d.memo && typeof updateTask === 'function') updateTask(t.id, { memo: d.memo });
-      if (typeof updateTask === 'function') updateTask(t.id, { deckId: _deckId });
-    }
-  });
-  if (typeof addDeckHistory === 'function') addDeckHistory(deck);
-  if (typeof saveAllTasks === 'function') saveAllTasks();
-  if (typeof renderAllSections === 'function') renderAllSections(today);
-  if (typeof addGou === 'function') addGou(1, 'QRデッキ受取');
-
-  // 成功UI
-  if (msg) msg.innerHTML = '<span style="color:#64dcb4;font-size:1.1em;">✅ 受け取った！</span><br><span style="font-size:0.82em;color:#aaa;">' + (deck.title||'デッキ') + '</span>';
-  setTimeout(function(){ closeQRImportModal(); showAdminToast('✨ ' + (deck.title||'デッキ') + 'を受け取った！'); }, 1500);
-}
-function closeQRImportModal() {
-  window._qrScanActive = false;
-  if (window._qrStream) {
-    window._qrStream.getTracks().forEach(function(t){ t.stop(); });
-    window._qrStream = null;
-  }
-  var o = document.getElementById('qrImportOverlay');
-  if (o) o.style.display = 'none';
-}
-
-function closeCraftQROverlay(){ var o=document.getElementById('craftQROverlay'); if(o) o.style.display='none'; }
-function showCraftQR() {
-  var code = window._craftCode || buildCraftCode();
-  if (!code) return;
-  var url = 'https://kikumon-dev.github.io?craft=' + encodeURIComponent(code);
-  var overlay = document.getElementById('craftQROverlay');
-  if (!overlay) {
-    overlay = document.createElement('div');
-    overlay.id = 'craftQROverlay';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:99999;display:flex;align-items:center;justify-content:center;';
-    overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.style.display='none'; });
-    document.body.appendChild(overlay);
-  }
-  overlay.innerHTML = '';
-  var card = document.createElement('div');
-  card.style.cssText = 'background:linear-gradient(160deg,#0d0d00 50%,#1a1400 100%);border:1.5px solid rgba(255,215,0,0.4);border-radius:24px;padding:24px 20px 20px;text-align:center;max-width:340px;width:92vw;box-shadow:0 0 60px rgba(255,215,0,0.15);';
-  var tabHtml = '<div style="display:flex;gap:6px;margin-bottom:18px;background:rgba(255,255,255,0.06);border-radius:12px;padding:4px;">'
-    + '<button id="tabCraftQR" onclick="switchCraftQRTab(&quot;qr&quot;)" style="flex:1;padding:7px;border-radius:9px;border:none;font-size:0.82em;font-weight:700;cursor:pointer;background:#ffd700;color:#0d0d00;">📱 QRで渡す</button>'
-    + '<button id="tabCraftCopy" onclick="switchCraftQRTab(&quot;copy&quot;)" style="flex:1;padding:7px;border-radius:9px;border:none;font-size:0.82em;font-weight:700;cursor:pointer;background:transparent;color:#ffd700;">📋 コードをコピー</button>'
-    + '</div>';
-  var qrPanel = '<div id="panelCraftQR">'
-    + '<div style="color:#ffd700;font-size:1.05em;font-weight:bold;margin-bottom:4px;">👑 王国コードQR</div>'
-    + '<div style="color:#aaa;font-size:0.76em;margin-bottom:12px;">仲間に見せて王国を訪問してもらおう</div>'
-    + '<div id="craftQRCode" style="background:#fff;padding:12px;border-radius:14px;display:inline-block;margin-bottom:10px;"></div>'
-    + '<div style="color:#aaa;font-size:0.72em;">スクショしてLINE・Discordに送ろう</div>'
-    + '</div>';
-  var copyPanel = '<div id="panelCraftCopy" style="display:none;">'
-    + '<div style="color:#ffd700;font-size:1.05em;font-weight:bold;margin-bottom:4px;">📋 王国コード</div>'
-    + '<div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,215,0,0.25);border-radius:10px;padding:10px 12px;font-family:monospace;font-size:0.6em;color:#ffd700;word-break:break-all;text-align:left;max-height:80px;overflow-y:auto;margin-bottom:14px;">' + code + '</div>'
-    + '<button onclick="copyCraftCodeFromQR()" style="width:100%;padding:11px;background:linear-gradient(135deg,#ffd700,#ff8800);border:none;border-radius:12px;color:#0d0d00;font-size:0.92em;font-weight:700;cursor:pointer;margin-bottom:8px;">📋 コードをコピーする</button>'
-    + '</div>';
-  var closeBtn = '<button onclick="closeCraftQROverlay()" style="width:100%;padding:9px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#777;font-size:0.84em;cursor:pointer;margin-top:12px;">閉じる</button>';
-  card.innerHTML = tabHtml + qrPanel + copyPanel + closeBtn;
-  overlay.appendChild(card);
-  overlay.style.display = 'flex';
-  window._craftQRCode = code;
-  setTimeout(function(){
-    var qrEl = document.getElementById('craftQRCode');
-    if (qrEl && typeof QRCode !== 'undefined') {
-      new QRCode(qrEl, { text: code, width:176, height:176, colorDark:'#000000', colorLight:'#ffffff', correctLevel: QRCode.CorrectLevel.M });
-    }
-  }, 150);
-}
-function switchCraftQRTab(tab) {
-  var pQR   = document.getElementById('panelCraftQR');
-  var pCopy = document.getElementById('panelCraftCopy');
-  var tQR   = document.getElementById('tabCraftQR');
-  var tCopy = document.getElementById('tabCraftCopy');
-  if (!pQR||!pCopy) return;
-  if (tab==='qr') {
-    pQR.style.display=''; pCopy.style.display='none';
-    if(tQR){ tQR.style.background='#ffd700'; tQR.style.color='#0d0d00'; }
-    if(tCopy){ tCopy.style.background='transparent'; tCopy.style.color='#ffd700'; }
-  } else {
-    pQR.style.display='none'; pCopy.style.display='';
-    if(tCopy){ tCopy.style.background='#ffd700'; tCopy.style.color='#0d0d00'; }
-    if(tQR){ tQR.style.background='transparent'; tQR.style.color='#ffd700'; }
-  }
-}
-function copyCraftCodeFromQR() {
-  var code = window._craftQRCode;
-  if (!code) return;
-  var done = function(){ showAdminToast('👑 王国コードをコピーした！'); };
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(code).then(done).catch(function(){
-      var ta=document.createElement('textarea'); ta.value=code; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); done();
-    });
-  } else {
-    var ta=document.createElement('textarea'); ta.value=code; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); done();
-  }
-}
 function closeApplyQR() { var o=document.getElementById('applyQROverlay'); if(o) o.style.display='none'; }
 function showApplyQR(code, deckTitle) {
   // APL1コードはURLパラメータ非対応のため、コードそのままをQR化
@@ -13366,10 +13029,8 @@ function showApplyQR(code, deckTitle) {
   window._currentApplyCode = code;
   setTimeout(function(){
     var qrEl = document.getElementById('applyQRCode');
-    if (qrEl && typeof QRCode !== 'undefined') {
-      new QRCode(qrEl, { text: code, width: 176, height: 176, colorDark:'#000000', colorLight:'#ffffff', correctLevel: QRCode.CorrectLevel.M });
-    }
-  }, 150);
+    if (qrEl) renderQRToImg(qrEl, code);
+  }, 80);
 }
 function switchApplyTab(tab) {
   var pQR   = document.getElementById('panelApplyQR');
@@ -13456,10 +13117,8 @@ function showDeckQR(code, deckTitle) {
   // QR生成
   setTimeout(function(){
     var qrEl = document.getElementById('deckQRCode');
-    if (qrEl && typeof QRCode !== 'undefined') {
-      new QRCode(qrEl, { text: url, width: 176, height: 176, colorDark:'#000000', colorLight:'#ffffff', correctLevel: QRCode.CorrectLevel.M });
-    }
-  }, 150);
+    if (qrEl) renderQRToImg(qrEl, url);
+  }, 80);
 }
 function switchDeckTab(tab) {
   var isAdmin = localStorage.getItem('adminMode') === '1';
@@ -13480,6 +13139,183 @@ function switchDeckTab(tab) {
     if (tabCopy) { tabCopy.style.background='transparent'; tabCopy.style.color=accent; }
   }
 }
+// ============================================================
+// QRコード生成（Canvas手書き・外部依存ゼロ・iPhone完全対応）
+// Google Chart API を使用（最もシンプルで確実）
+// ============================================================
+function renderQRToImg(el, text) {
+  // Google Chart API: サーバー側でQR生成→imgタグで表示
+  // iPhoneカメラ・LINEどちらでも確実に読める
+  var encoded = encodeURIComponent(text);
+  var img = document.createElement('img');
+  img.src = 'https://chart.googleapis.com/chart?cht=qr&chs=220x220&chl=' + encoded + '&choe=UTF-8&chld=M|2';
+  img.width = 220;
+  img.height = 220;
+  img.style.cssText = 'display:block;border-radius:10px;';
+  img.alt = 'QRコード';
+  // ロード失敗時フォールバック（オフライン等）
+  img.onerror = function() {
+    el.innerHTML = '<div style="color:#aaa;font-size:0.75em;padding:20px;">QR生成にはネット接続が必要です</div>';
+  };
+  el.innerHTML = '';
+  el.appendChild(img);
+}
+
+// ============================================================
+// アプリ内QRスキャナー（jsQR + getUserMedia・カメラ離脱ゼロ）
+// ============================================================
+function openQRScanner(onResult) {
+  // 既存オーバーレイ除去
+  var old = document.getElementById('qrScanOverlay');
+  if (old) old.remove();
+
+  var overlay = document.createElement('div');
+  overlay.id = 'qrScanOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:#000;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
+
+  overlay.innerHTML = ''
+    + '<div style="color:#64dcb4;font-size:1em;font-weight:bold;margin-bottom:12px;letter-spacing:0.05em;">📷 QRコードを読み取る</div>'
+    + '<div style="position:relative;width:280px;height:280px;border-radius:16px;overflow:hidden;background:#111;">'
+    +   '<video id="qrVideo" playsinline style="width:280px;height:280px;object-fit:cover;"></video>'
+    +   '<canvas id="qrCanvas" width="280" height="280" style="display:none;"></canvas>'
+    +   '<div style="position:absolute;inset:0;pointer-events:none;">'
+    +     '<div style="position:absolute;top:30px;left:30px;width:50px;height:50px;border-top:3px solid #64dcb4;border-left:3px solid #64dcb4;border-radius:4px 0 0 0;"></div>'
+    +     '<div style="position:absolute;top:30px;right:30px;width:50px;height:50px;border-top:3px solid #64dcb4;border-right:3px solid #64dcb4;border-radius:0 4px 0 0;"></div>'
+    +     '<div style="position:absolute;bottom:30px;left:30px;width:50px;height:50px;border-bottom:3px solid #64dcb4;border-left:3px solid #64dcb4;border-radius:0 0 0 4px;"></div>'
+    +     '<div style="position:absolute;bottom:30px;right:30px;width:50px;height:50px;border-bottom:3px solid #64dcb4;border-right:3px solid #64dcb4;border-radius:0 0 4px 0;"></div>'
+    +   '</div>'
+    + '</div>'
+    + '<div id="qrScanStatus" style="color:#aaa;font-size:0.78em;margin-top:10px;">スキャン中...</div>'
+    + '<button onclick="closeQRScanner()" style="margin-top:18px;padding:10px 32px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:#aaa;font-size:0.9em;cursor:pointer;">キャンセル</button>';
+
+  document.body.appendChild(overlay);
+
+  var video = document.getElementById('qrVideo');
+  var canvas = document.getElementById('qrCanvas');
+  var ctx = canvas.getContext('2d');
+  var stream = null;
+  var scanning = true;
+  var animId = null;
+
+  window._qrScanCleanup = function() {
+    scanning = false;
+    if (animId) cancelAnimationFrame(animId);
+    if (stream) stream.getTracks().forEach(function(t){ t.stop(); });
+  };
+
+  // カメラ起動（背面カメラ優先）
+  var constraints = {
+    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+  };
+
+  navigator.mediaDevices.getUserMedia(constraints)
+    .then(function(s) {
+      stream = s;
+      video.srcObject = stream;
+      video.play();
+      video.addEventListener('loadedmetadata', function() {
+        tick();
+      });
+    })
+    .catch(function(err) {
+      var status = document.getElementById('qrScanStatus');
+      if (status) {
+        if (err.name === 'NotAllowedError') {
+          status.textContent = '⚠️ カメラの許可が必要です';
+          status.style.color = '#ff6b6b';
+        } else {
+          status.textContent = '⚠️ カメラを起動できませんでした: ' + err.message;
+          status.style.color = '#ff6b6b';
+        }
+      }
+    });
+
+  function tick() {
+    if (!scanning) return;
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      ctx.drawImage(video, 0, 0, 280, 280);
+      var imageData = ctx.getImageData(0, 0, 280, 280);
+      if (typeof jsQR !== 'undefined') {
+        var code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: 'dontInvert'
+        });
+        if (code && code.data) {
+          scanning = false;
+          window._qrScanCleanup();
+          closeQRScanner();
+          onResult(code.data);
+          return;
+        }
+      } else {
+        var status = document.getElementById('qrScanStatus');
+        if (status) { status.textContent = '⚠️ jsQRライブラリ読込中...'; }
+      }
+    }
+    animId = requestAnimationFrame(tick);
+  }
+}
+
+function closeQRScanner() {
+  if (window._qrScanCleanup) { window._qrScanCleanup(); window._qrScanCleanup = null; }
+  var o = document.getElementById('qrScanOverlay');
+  if (o) o.remove();
+}
+
+// QRスキャンで取得したDCK1コードを直接受け取る
+function receiveDeckByCode(code) {
+  if (!code || !code.startsWith('DCK1:')) {
+    showToast('⚠️ 正しいデッキコードではありません');
+    return;
+  }
+  var raw;
+  try { raw = decodeURIComponent(escape(atob(code.slice(5)))); }
+  catch(e) { showToast('⚠️ コードが破損しています'); return; }
+  var deck;
+  try { deck = JSON.parse(raw); }
+  catch(e) { showToast('⚠️ コードの形式が正しくありません'); return; }
+  if (deck.kind !== 'deck') { showToast('⚠️ デッキコードではありません'); return; }
+  var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
+  var _deckId = deck.deckId || ('qrscan_' + Date.now());
+  deck.tasks.forEach(function(d) {
+    var t = (typeof createTask === 'function') ? createTask(d.text, today, null, d.section||1, 'both') : null;
+    if (t) {
+      if (d.memo && typeof updateTask === 'function') updateTask(t.id, { memo: d.memo });
+      if (typeof updateTask === 'function') updateTask(t.id, { deckId: _deckId });
+    }
+  });
+  if (typeof addDeckHistory === 'function') addDeckHistory(deck);
+  if (typeof saveAllTasks === 'function') saveAllTasks();
+  if (typeof renderAllSections === 'function') renderAllSections(today);
+  if (typeof addGou === 'function') addGou(1, 'QRデッキ受取');
+  // 受け取り完了トースト
+  var title = deck.title || 'デッキ';
+  var count = deck.tasks ? deck.tasks.length : 0;
+  showToast('🎁 「' + title + '」（' + count + '枚）を受け取った！');
+  // 設定タブが開いていれば閉じてホームへ
+  if (typeof closeSettings === 'function') closeSettings();
+}
+
+
+function openDeckQRScanner() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    showToast('このブラウザはカメラスキャンに対応していません。コードを直接入力してください。');
+    return;
+  }
+  openQRScanner(function(data) {
+    // DCK1:xxxxx 形式を期待
+    var decoded = decodeURIComponent(data);
+    // URLパラメータ付きの場合も対応
+    var match = decoded.match(/[?&]deck=([^&]+)/);
+    var code = match ? decodeURIComponent(match[1]) : decoded;
+    if (code.startsWith('DCK1:')) {
+      receiveDeckByCode(code);
+    } else {
+      showToast('⚠️ デッキQRコードではありませんでした');
+    }
+  });
+}
+
+// ============================================================
 function copyDeckCodeFromModal() {
   var code = window._currentDeckShareCode;
   if (!code) return;
@@ -14275,10 +14111,6 @@ function generateDeckEntry() {
     ta.value = js; document.body.appendChild(ta); ta.select();
     document.execCommand('copy'); document.body.removeChild(ta); done();
   }
-  // 承認エントリのQR表示（管理者が申請者にコード確認QRを見せる用）
-  var rawDeck;
-  try { rawDeck = JSON.parse(decodeURIComponent(escape(atob(code.slice(5))))); } catch(e) { rawDeck = null; }
-  if (rawDeck && typeof showApplyQR === 'function') showApplyQR(code, rawDeck.title||'申請デッキ');
 }
 
 function deckBuilderApply() {
@@ -14534,10 +14366,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <h2 style="text-align:center;color:#ffd700;font-size:1.1em;margin:0 0 20px 0;">王国コードを発行する</h2>
     <p style="font-size:0.83em;color:#aaa;margin:0 0 16px 0;text-align:center;">このコードを仲間に渡すと、あなたの王国を見てもらえます</p>
     <div id="craftCodeDisplay" style="background:#0d1b2a;border:1px solid #ffd700;border-radius:8px;padding:12px;font-family:monospace;font-size:0.8em;color:#ffd700;word-break:break-all;margin-bottom:16px;min-height:48px;display:flex;align-items:center;justify-content:center;"></div>
-    <div style="display:flex;gap:8px;margin-bottom:8px;">
-      <button onclick="copyCraftCode()" style="flex:1;padding:11px;background:linear-gradient(135deg,#ffd700,#ff8800);border:none;border-radius:8px;color:#7a4800;font-size:0.92em;font-weight:bold;cursor:pointer;">📋 コードをコピー</button>
-      <button onclick="showCraftQR()" style="padding:11px 14px;background:rgba(255,215,0,0.12);border:1px solid #ffd700;border-radius:8px;color:#ffd700;font-size:0.92em;font-weight:bold;cursor:pointer;">📱 QR</button>
-    </div>
+    <button onclick="copyCraftCode()" style="width:100%;padding:11px;background:linear-gradient(135deg,#ffd700,#ff8800);border:none;border-radius:8px;color:#fff;font-size:0.95em;font-weight:bold;cursor:pointer;margin-bottom:8px;">📋 コードをコピー</button>
     <button onclick="closeCraftShareModal()" style="width:100%;padding:11px;background:transparent;border:1px solid #555;border-radius:8px;color:#aaa;font-size:0.9em;cursor:pointer;">閉じる</button>
   </div>
 </div>
@@ -14547,6 +14376,15 @@ document.addEventListener('DOMContentLoaded', function() {
   <div style="background:#1a1a2e;border:1px solid #ffc8dc;border-radius:16px;padding:32px 28px;max-width:400px;width:90%;color:#fff;position:relative;box-shadow:0 0 40px rgba(255,160,188,0.35);">
     <div style="font-size:2em;text-align:center;margin-bottom:8px;">🗺️</div>
     <h2 style="text-align:center;color:#ffb7d5;font-size:1.1em;margin:0 0 20px 0;">仲間の王国を訪問する</h2>
+    <!-- QRスキャンボタン -->
+    <button onclick="openDeckQRScanner()" style="width:100%;padding:11px;background:linear-gradient(135deg,#3b0f1f,#5c1a30);border:2px solid #ffc8dc;border-radius:8px;color:#ffc8dc;font-size:0.9em;font-weight:700;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;">
+      <span style="font-size:1.1em;">📷</span> QRコードで受け取る
+    </button>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+      <div style="flex:1;height:1px;background:rgba(255,160,188,0.2);"></div>
+      <div style="color:#666;font-size:0.72em;">またはコードを入力</div>
+      <div style="flex:1;height:1px;background:rgba(255,160,188,0.2);"></div>
+    </div>
     <textarea id="craftVisitInput" rows="3" placeholder="CRF1: または DCK1: で始まるコードを貼り付け"
       style="width:100%;padding:10px;border:1.5px solid #ffc8dc;border-radius:8px;background:#0d1b2a;color:#fff;font-size:0.85em;box-sizing:border-box;resize:none;margin-bottom:12px;"></textarea>
     <button onclick="visitCraft()" style="width:100%;padding:11px;background:linear-gradient(135deg,#ffc8dc,#ffa0bc);border:none;border-radius:8px;color:#9c3060;font-size:0.95em;font-weight:bold;cursor:pointer;margin-bottom:8px;box-shadow:0 4px 12px rgba(255,160,188,0.3);">🏰 訪問する</button>
