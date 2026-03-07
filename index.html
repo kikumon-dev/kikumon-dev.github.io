@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.28.91';
+    const APP_VERSION = 'v0.28.98';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -25,6 +25,82 @@
 
     // 起動時クラフトタブ表示制御
     document.addEventListener('DOMContentLoaded', function() {
+      // URLパラメータ ?deck=DCK1:xxx でデッキ自動追加
+      (function() {
+        try {
+          var params = new URLSearchParams(window.location.search);
+          var deckParam = params.get('deck');
+          if (!deckParam) return;
+          // パラメータをクリア（履歴汚染防止）
+          window.history.replaceState({}, '', window.location.pathname);
+          // %3A等のエンコードを戻す
+          var deckDecoded = decodeURIComponent(deckParam);
+          var upper = deckDecoded.toUpperCase();
+          if (!upper.startsWith('DCK1:')) return;
+          var raw;
+          try { raw = decodeURIComponent(escape(atob(deckDecoded.slice(5)))); } catch(e) { return; }
+          var deck;
+          try { deck = JSON.parse(raw); } catch(e) { return; }
+          if (deck.kind !== 'deck') return;
+          // 少し待ってから追加（アプリ初期化後）
+          setTimeout(function() {
+            var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
+            var _deckId = deck.deckId || ('qr_' + Date.now());
+            deck.tasks.forEach(function(d) {
+              var t = (typeof createTask === 'function') ? createTask(d.text, today, null, d.section||1, 'both') : null;
+              if (t) {
+                if (d.memo && typeof updateTask === 'function') updateTask(t.id, { memo: d.memo });
+                if (typeof updateTask === 'function') updateTask(t.id, { deckId: _deckId });
+              }
+            });
+            if (typeof addDeckHistory === 'function') addDeckHistory(deck);
+            if (typeof saveAllTasks === 'function') saveAllTasks();
+            if (typeof renderAllSections === 'function') renderAllSections(today);
+            // QR受け取りトースト（リッチデザイン）
+            var _author = deck.createdBy ? ' by ' + deck.createdBy : '';
+            var qrToast = document.createElement('div');
+            qrToast.style.cssText = [
+              'position:fixed',
+              'top:50%',
+              'left:50%',
+              'transform:translate(-50%,-50%)',
+              'background:linear-gradient(135deg,#0d2137 60%,#1a3a2a 100%)',
+              'color:#fff',
+              'padding:28px 32px',
+              'border-radius:20px',
+              'font-size:1em',
+              'font-weight:bold',
+              'z-index:99999',
+              'text-align:center',
+              'pointer-events:none',
+              'border:1.5px solid rgba(100,220,180,0.5)',
+              'box-shadow:0 0 40px rgba(79,172,254,0.25),0 0 0 1px rgba(100,220,180,0.2)',
+              'min-width:260px',
+              'max-width:88vw',
+              'opacity:0',
+              'transition:opacity 0.4s,transform 0.4s',
+              'line-height:1.7'
+            ].join(';');
+            qrToast.innerHTML = [
+              '<div style="font-size:2em;margin-bottom:8px;">🎁</div>',
+              '<div style="color:#64dcb4;font-size:1.05em;margin-bottom:4px;">' + (deck.title || 'デッキ') + '</div>',
+              '<div style="font-size:0.82em;color:#aaa;margin-bottom:12px;">' + _author + '</div>',
+              '<div style="color:#ffd700;font-size:0.95em;">あ、王国が動き出した。</div>',
+              '<div style="font-size:0.75em;color:#666;margin-top:8px;">' + deck.tasks.length + 'つのタスクを受け取りました</div>'
+            ].join('');
+            document.body.appendChild(qrToast);
+            requestAnimationFrame(function(){
+              requestAnimationFrame(function(){
+                qrToast.style.opacity = '1';
+              });
+            });
+            setTimeout(function(){
+              qrToast.style.opacity = '0';
+              setTimeout(function(){ if(qrToast.parentNode) qrToast.parentNode.removeChild(qrToast); }, 500);
+            }, 4000);
+          }, 800);
+        } catch(e) {}
+      })();
   // ===== データマイグレーション =====
   (function migrateData() {
     var version = parseInt(localStorage.getItem('dataVersion') || '0');
@@ -2792,6 +2868,7 @@
       document.write('<style>.section:nth-child(1){background-color:#ffe6e6 !important;}.section:nth-child(2){background-color:#e8f5e9 !important;}.section:nth-child(3){background-color:#fffef5 !important;}.section:nth-child(4){background-color:#f0f0f0 !important;}</style>');
     }
   </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 <div id="modal-root"></div>
@@ -4684,7 +4761,7 @@ function renderMyDecks() {
 
     var btnPublish = document.createElement('button');
     btnPublish.style.cssText = 'flex:1;padding:6px;background:rgba(255,150,0,0.15);border:1px solid #ff8800;border-radius:6px;color:#ff8800;font-size:0.75em;font-weight:700;cursor:pointer;';
-    btnPublish.textContent = '📋 闇市';
+    btnPublish.textContent = '📋 楽市楽座で配布';
     btnPublish.addEventListener('click', (function(i){ return function(){ myDeckPublish(i); }; })(idx));
 
     var btnDelete = document.createElement('button');
@@ -4712,18 +4789,8 @@ function myDeckPublish(idx) {
   var payload = JSON.stringify({ kind:'deck', status:'active', deckId:deck.deckId, title:deck.title, desc:deck.desc||'', tasks:deck.tasks, createdBy:deck.createdBy, createdAt:deck.createdAt });
   var code = 'DCK1:' + btoa(unescape(encodeURIComponent(payload)));
   var done = function() {
-    var toast = document.getElementById('settingsSaveToast');
-    if (!toast) {
-      toast = document.createElement('div');
-      toast.id = 'settingsSaveToast';
-      toast.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.88);color:#ff8800;padding:18px 32px;border-radius:16px;font-size:1.05em;font-weight:bold;z-index:99999;text-align:center;pointer-events:auto;cursor:pointer;border:1.5px solid rgba(255,136,0,0.5);box-shadow:0 0 24px rgba(255,136,0,0.2);';
-      document.body.appendChild(toast);
-    }
-    toast.innerHTML = '📋 闇市コードをコピーした！<br><span style="font-size:0.78em;color:#aaa;">Discordに貼って配布してね</span><br><span style="font-size:0.68em;color:#666;margin-top:4px;display:block;">タップで閉じる</span>';
-    toast.style.display = 'block';
-    toast.onclick = function(){ toast.style.display = 'none'; clearTimeout(toast._t); };
-    clearTimeout(toast._t);
-    toast._t = setTimeout(function(){ toast.style.display = 'none'; }, 8000);
+    // 配布モーダル表示（コピー+QR）
+    if (typeof showDeckQR === 'function') showDeckQR(code, deck.title);
   };
   if (navigator.clipboard) {
     navigator.clipboard.writeText(code).then(done).catch(function(){
@@ -4738,19 +4805,22 @@ function myDeckApply(idx) {
   var payload = JSON.stringify({ kind:'deck', status:'apply', deckId:deck.deckId, title:deck.title, desc:deck.desc||'', tasks:deck.tasks, createdBy:deck.createdBy, createdAt:deck.createdAt });
   var code = 'APL1:' + btoa(unescape(encodeURIComponent(payload)));
   var msg = '【デッキショップ申請】\nデッキ名：' + deck.title + '\n作成者：' + deck.createdBy + '\nタスク数：' + deck.tasks.length + '枚\n申請コード：\n' + code;
+  var _applyTokuDone = false;
   var done = function() {
-    var toast = document.getElementById('settingsSaveToast');
-    if (!toast) {
-      toast = document.createElement('div');
-      toast.id = 'settingsSaveToast';
-      toast.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.88);color:#4facfe;padding:18px 32px;border-radius:16px;font-size:1.05em;font-weight:bold;z-index:99999;text-align:center;pointer-events:auto;cursor:pointer;border:1.5px solid rgba(79,172,254,0.5);box-shadow:0 0 24px rgba(79,172,254,0.2);';
-      document.body.appendChild(toast);
+    // 徳加算（1回のみ）
+    if (!_applyTokuDone) {
+      _applyTokuDone = true;
+      if (typeof addToku === 'function') addToku(300, '公式申請');
     }
-    toast.innerHTML = '🏪 申請コードをコピーした！<br><span style="font-size:0.78em;color:#aaa;">管理者のDMに貼り付けて送ろう</span><br><span style="font-size:0.68em;color:#666;margin-top:4px;display:block;">タップで閉じる</span>';
-    toast.style.display = 'block';
-    toast.onclick = function(){ toast.style.display = 'none'; clearTimeout(toast._t); };
-    clearTimeout(toast._t);
-    toast._t = setTimeout(function(){ toast.style.display = 'none'; }, 8000);
+    // 特別トースト
+    var applyToast = document.createElement('div');
+    applyToast.style.cssText = 'position:fixed;top:18px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#0a1628,#0d2240);color:#4facfe;padding:14px 28px;border-radius:20px;font-size:1em;font-weight:bold;z-index:99999;text-align:center;pointer-events:none;border:1.5px solid rgba(79,172,254,0.5);box-shadow:0 0 30px rgba(79,172,254,0.25);opacity:0;transition:opacity 0.4s;min-width:220px;';
+    applyToast.innerHTML = '🏪 王国から世界へ、申請した。<br><span style="font-size:0.75em;color:#aaa;font-weight:400;">コードを管理者に送ろう</span>';
+    document.body.appendChild(applyToast);
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ applyToast.style.opacity='1'; }); });
+    setTimeout(function(){ applyToast.style.opacity='0'; setTimeout(function(){ if(applyToast.parentNode) applyToast.parentNode.removeChild(applyToast); },500); }, 3500);
+    // 申請QRモーダル
+    if (typeof showApplyQR === 'function') showApplyQR(code, deck.title);
   };
   if (navigator.clipboard) {
     navigator.clipboard.writeText(msg).then(done).catch(function(){
@@ -11173,6 +11243,18 @@ function renderDeckShop() {
       btn.addEventListener('click', (function(id){ return function(){ receiveDeck(id); }; })(deck.id));
       btnWrap.appendChild(btn);
     }
+    // 管理者モードのときQRボタン追加
+    if (localStorage.getItem('adminMode') === '1') {
+      var btnQR = document.createElement('button');
+      btnQR.textContent = '📱 QR';
+      btnQR.style.cssText = 'background:rgba(100,220,180,0.12);border:1px solid rgba(100,220,180,0.4);border-radius:8px;color:#64dcb4;font-size:0.72em;padding:4px 10px;cursor:pointer;margin-top:2px;';
+      btnQR.addEventListener('click', (function(d){ return function(){
+        var payload = JSON.stringify({ kind:'deck', status:'active', deckId:d.id, title:d.title, desc:d.desc||'', tasks:d.tasks, createdBy:d.createdBy||'やることクラフト公式', createdAt:'' });
+        var code = 'DCK1:' + btoa(unescape(encodeURIComponent(payload)));
+        if (typeof showDeckQR === 'function') showDeckQR(code, d.title);
+      }; })(deck));
+      btnWrap.appendChild(btnQR);
+    }
     btn = btnWrap;
     var row = document.createElement('div');
     row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;';
@@ -11212,6 +11294,12 @@ window._receiveDeckAgain = function(deckId) {
   renderAllSections(today);
   renderDeckShop();
   showAdminToast('🛍️ ' + deck.title + 'を受け取った！');
+  // 管理者モードのときQRモーダルも表示
+  if (localStorage.getItem('adminMode') === '1' && typeof showDeckQR === 'function') {
+    var _p = JSON.stringify({ kind:'deck', status:'active', deckId:deck.id, title:deck.title, desc:deck.desc||'', tasks:deck.tasks, createdBy:deck.createdBy||'やることクラフト公式', createdAt:'' });
+    var _c = 'DCK1:' + btoa(unescape(encodeURIComponent(_p)));
+    showDeckQR(_c, deck.title);
+  }
 }
 </script>
 
@@ -12877,6 +12965,178 @@ function onTaskCompleted(task) {
     }
   }
 }
+
+
+function closeApplyQR() { var o=document.getElementById('applyQROverlay'); if(o) o.style.display='none'; }
+function showApplyQR(code, deckTitle) {
+  var url = 'https://kikumon-dev.github.io?deck=' + encodeURIComponent(code);
+  var overlay = document.getElementById('applyQROverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'applyQROverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:99999;display:flex;align-items:center;justify-content:center;';
+    overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.style.display='none'; });
+    document.body.appendChild(overlay);
+  }
+  overlay.innerHTML = '';
+  var card = document.createElement('div');
+  card.style.cssText = 'background:linear-gradient(160deg,#080f1e 50%,#0a1830 100%);border:1.5px solid rgba(79,172,254,0.4);border-radius:24px;padding:24px 20px 20px;text-align:center;max-width:340px;width:92vw;box-shadow:0 0 60px rgba(79,172,254,0.2);';
+
+  // タブ（左:QR　右:コード）
+  var tabHtml = '<div style="display:flex;gap:6px;margin-bottom:18px;background:rgba(255,255,255,0.06);border-radius:12px;padding:4px;">'
+    + '<button id="tabApplyQR"   onclick="switchApplyTab(&quot;qr&quot;)"   style="flex:1;padding:7px;border-radius:9px;border:none;font-size:0.82em;font-weight:700;cursor:pointer;background:#4facfe;color:#08111e;transition:all 0.2s;">📱 QRで送る</button>'
+    + '<button id="tabApplyCopy" onclick="switchApplyTab(&quot;copy&quot;)" style="flex:1;padding:7px;border-radius:9px;border:none;font-size:0.82em;font-weight:700;cursor:pointer;background:transparent;color:#4facfe;transition:all 0.2s;">📋 コードをコピー</button>'
+    + '</div>';
+
+  var qrPanel = '<div id="panelApplyQR">'
+    + '<div style="color:#4facfe;font-size:1.05em;font-weight:bold;margin-bottom:4px;">🏪 公式申請QR</div>'
+    + '<div style="color:#aaa;font-size:0.76em;margin-bottom:12px;">' + (deckTitle||'デッキ') + '</div>'
+    + '<div id="applyQRCode" style="background:#fff;padding:12px;border-radius:14px;display:inline-block;margin-bottom:10px;"></div>'
+    + '<div style="color:#aaa;font-size:0.72em;">管理者に見せるかスクショを送ろう</div>'
+    + '</div>';
+
+  var copyPanel = '<div id="panelApplyCopy" style="display:none;">'
+    + '<div style="color:#4facfe;font-size:1.05em;font-weight:bold;margin-bottom:4px;">📋 申請コード</div>'
+    + '<div style="color:#aaa;font-size:0.76em;margin-bottom:12px;">' + (deckTitle||'デッキ') + '</div>'
+    + '<div style="background:rgba(255,255,255,0.05);border:1px solid rgba(79,172,254,0.25);border-radius:10px;padding:10px 12px;font-family:monospace;font-size:0.6em;color:#4facfe;word-break:break-all;text-align:left;max-height:80px;overflow-y:auto;margin-bottom:14px;">' + code + '</div>'
+    + '<button onclick="copyApplyCodeFromModal()" style="width:100%;padding:11px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:12px;color:#08111e;font-size:0.92em;font-weight:700;cursor:pointer;margin-bottom:8px;">📋 コードをコピーする</button>'
+    + '<div style="color:#aaa;font-size:0.72em;">管理者のDMに貼り付けて送ろう</div>'
+    + '</div>';
+
+  var closeBtn = '<button onclick="closeApplyQR()" style="width:100%;padding:9px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#777;font-size:0.84em;cursor:pointer;margin-top:12px;">閉じる</button>';
+
+  card.innerHTML = tabHtml + qrPanel + copyPanel + closeBtn;
+  overlay.appendChild(card);
+  overlay.style.display = 'flex';
+  window._currentApplyCode = code;
+  setTimeout(function(){
+    var qrEl = document.getElementById('applyQRCode');
+    if (qrEl && typeof QRCode !== 'undefined') {
+      new QRCode(qrEl, { text: code, width: 176, height: 176, colorDark:'#000000', colorLight:'#ffffff', correctLevel: QRCode.CorrectLevel.M });
+    }
+  }, 150);
+}
+function switchApplyTab(tab) {
+  var pQR   = document.getElementById('panelApplyQR');
+  var pCopy = document.getElementById('panelApplyCopy');
+  var tQR   = document.getElementById('tabApplyQR');
+  var tCopy = document.getElementById('tabApplyCopy');
+  if (!pQR || !pCopy) return;
+  if (tab === 'qr') {
+    pQR.style.display=''; pCopy.style.display='none';
+    if(tQR)   { tQR.style.background='#4facfe'; tQR.style.color='#08111e'; }
+    if(tCopy) { tCopy.style.background='transparent'; tCopy.style.color='#4facfe'; }
+  } else {
+    pQR.style.display='none'; pCopy.style.display='';
+    if(tCopy) { tCopy.style.background='#4facfe'; tCopy.style.color='#08111e'; }
+    if(tQR)   { tQR.style.background='transparent'; tQR.style.color='#4facfe'; }
+  }
+}
+function copyApplyCodeFromModal() {
+  var code = window._currentApplyCode;
+  if (!code) return;
+  var done = function() { showAdminToast('📋 申請コードをコピーした！'); };
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code).then(done).catch(function(){
+      var ta=document.createElement('textarea'); ta.value=code; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); done();
+    });
+  } else {
+    var ta=document.createElement('textarea'); ta.value=code; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); done();
+  }
+}
+function closeDeckQR() { var o=document.getElementById("deckQROverlay"); if(o) o.style.display="none"; }
+function showDeckQR(code, deckTitle) {
+  var isAdmin = localStorage.getItem('adminMode') === '1';
+  var url = 'https://kikumon-dev.github.io?deck=' + encodeURIComponent(code);
+  // カラーテーマ
+  var accent   = isAdmin ? '#ffd700' : '#64dcb4';
+  var accentDim= isAdmin ? 'rgba(255,215,0,0.35)' : 'rgba(100,220,180,0.35)';
+  var bg       = isAdmin ? 'linear-gradient(160deg,#0d0d00 50%,#1a1400 100%)' : 'linear-gradient(160deg,#0d1b2e 50%,#0d2a1a 100%)';
+  var shadow   = isAdmin ? '0 0 60px rgba(255,215,0,0.15)' : '0 0 60px rgba(79,172,254,0.2)';
+  var tabActiveBg   = accent;
+  var tabActiveColor= isAdmin ? '#0d0d00' : '#0d1b2e';
+
+  var overlay = document.getElementById('deckQROverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'deckQROverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:99999;display:flex;align-items:center;justify-content:center;';
+    overlay.addEventListener('click', function(e){ if(e.target===overlay) closeDeckQR(); });
+    document.body.appendChild(overlay);
+  }
+  overlay.innerHTML = '';
+  var card = document.createElement('div');
+  card.style.cssText = 'background:' + bg + ';border:1.5px solid ' + accentDim + ';border-radius:24px;padding:24px 20px 20px;text-align:center;max-width:340px;width:92vw;box-shadow:' + shadow + ';';
+
+  // タブ（左:QR　右:コード）
+  var tabHtml = '<div style="display:flex;gap:6px;margin-bottom:18px;background:rgba(255,255,255,0.06);border-radius:12px;padding:4px;">'
+    + '<button id="tabQR2"   onclick="switchDeckTab(&quot;qr&quot;)"   style="flex:1;padding:7px;border-radius:9px;border:none;font-size:0.82em;font-weight:700;cursor:pointer;background:' + tabActiveBg + ';color:' + tabActiveColor + ';transition:all 0.2s;">📱 QRで渡す</button>'
+    + '<button id="tabCopy2" onclick="switchDeckTab(&quot;copy&quot;)" style="flex:1;padding:7px;border-radius:9px;border:none;font-size:0.82em;font-weight:700;cursor:pointer;background:transparent;color:' + accent + ';transition:all 0.2s;">📋 コードをコピー</button>'
+    + '</div>';
+
+  // QRパネル（デフォルト表示）
+  var qrPanel = '<div id="panelQR">'
+    + '<div style="color:' + accent + ';font-size:1.05em;font-weight:bold;margin-bottom:4px;">📱 QRで渡す</div>'
+    + '<div style="color:#aaa;font-size:0.76em;margin-bottom:12px;">' + (deckTitle||'デッキ') + '</div>'
+    + '<div id="deckQRCode" style="background:#fff;padding:12px;border-radius:14px;display:inline-block;margin-bottom:10px;"></div>'
+    + '<div style="color:#aaa;font-size:0.72em;margin-bottom:2px;">スクショしてLINE・Discordに送ろう</div>'
+    + '</div>';
+
+  // コピーパネル（非表示）
+  var copyPanel = '<div id="panelCopy" style="display:none;">'
+    + '<div style="color:' + accent + ';font-size:1.05em;font-weight:bold;margin-bottom:4px;">📋 楽市楽座コード</div>'
+    + '<div style="color:#aaa;font-size:0.76em;margin-bottom:12px;">' + (deckTitle||'デッキ') + '</div>'
+    + '<div style="background:rgba(255,255,255,0.05);border:1px solid ' + accentDim + ';border-radius:10px;padding:10px 12px;font-family:monospace;font-size:0.6em;color:' + accent + ';word-break:break-all;text-align:left;max-height:80px;overflow-y:auto;margin-bottom:14px;">' + code + '</div>'
+    + '<button onclick="copyDeckCodeFromModal()" style="width:100%;padding:11px;background:linear-gradient(135deg,' + accent + ',' + (isAdmin?'#ff8800':'#4facfe') + ');border:none;border-radius:12px;color:' + tabActiveColor + ';font-size:0.92em;font-weight:700;cursor:pointer;margin-bottom:8px;">📋 コードをコピーする</button>'
+    + '<div style="color:#aaa;font-size:0.72em;">コピーしてLINE・Discordに貼り付けよう</div>'
+    + '</div>';
+
+  var closeBtn = '<button onclick="closeDeckQR()" style="width:100%;padding:9px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#777;font-size:0.84em;cursor:pointer;margin-top:12px;">閉じる</button>';
+
+  card.innerHTML = tabHtml + qrPanel + copyPanel + closeBtn;
+  overlay.appendChild(card);
+  overlay.style.display = 'flex';
+  window._currentDeckShareCode = code;
+  window._currentDeckShareUrl = url;
+  // QR生成
+  setTimeout(function(){
+    var qrEl = document.getElementById('deckQRCode');
+    if (qrEl && typeof QRCode !== 'undefined') {
+      new QRCode(qrEl, { text: url, width: 176, height: 176, colorDark:'#000000', colorLight:'#ffffff', correctLevel: QRCode.CorrectLevel.M });
+    }
+  }, 150);
+}
+function switchDeckTab(tab) {
+  var isAdmin = localStorage.getItem('adminMode') === '1';
+  var accent = isAdmin ? '#ffd700' : '#64dcb4';
+  var activeColor = isAdmin ? '#0d0d00' : '#0d1b2e';
+  var panelCopy = document.getElementById('panelCopy');
+  var panelQR   = document.getElementById('panelQR');
+  var tabCopy   = document.getElementById('tabCopy2');
+  var tabQR     = document.getElementById('tabQR2');
+  if (!panelCopy || !panelQR) return;
+  if (tab === 'copy') {
+    panelCopy.style.display = ''; panelQR.style.display = 'none';
+    if (tabCopy) { tabCopy.style.background=accent; tabCopy.style.color=activeColor; }
+    if (tabQR)   { tabQR.style.background='transparent'; tabQR.style.color=accent; }
+  } else {
+    panelCopy.style.display = 'none'; panelQR.style.display = '';
+    if (tabQR)   { tabQR.style.background=accent; tabQR.style.color=activeColor; }
+    if (tabCopy) { tabCopy.style.background='transparent'; tabCopy.style.color=accent; }
+  }
+}
+function copyDeckCodeFromModal() {
+  var code = window._currentDeckShareCode;
+  if (!code) return;
+  var done = function() { showAdminToast('📋 コードをコピーした！'); };
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code).then(done).catch(function(){
+      var ta=document.createElement('textarea'); ta.value=code; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); done();
+    });
+  } else {
+    var ta=document.createElement('textarea'); ta.value=code; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); done();
+  }
+}
 </script>
 
 <!-- ===== チュートリアルモーダル ===== -->
@@ -13554,11 +13814,9 @@ function deckBuilderPublish() {
       toast.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.88);color:#ffd700;padding:18px 32px;border-radius:16px;font-size:1.05em;font-weight:bold;z-index:99999;text-align:center;pointer-events:none;border:1.5px solid rgba(255,215,0,0.5);box-shadow:0 0 24px rgba(255,215,0,0.2);';
       document.body.appendChild(toast);
     }
-    toast.innerHTML = '⚔️ デッキを発行した！<br><span style="font-size:0.82em;color:#ffcc66;">コードをコピーして配布しよう</span>';
     if (typeof addToku === 'function') addToku(100, 'デッキ配布コード発行');
-    toast.style.display = 'block';
-    clearTimeout(toast._t);
-    toast._t = setTimeout(function(){ toast.style.display = 'none'; }, 3500);
+    // 配布モーダル表示（コピー+QR）
+    if (typeof showDeckQR === 'function') showDeckQR(code, title);
   };
   if (navigator.clipboard) {
     navigator.clipboard.writeText(code).then(done).catch(function() {
@@ -13858,7 +14116,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <!-- 発行・申請・閉じる -->
     <button onclick="deckBuilderApply()" style="width:100%;padding:12px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:10px;color:#003355;font-size:0.95em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(79,172,254,0.3);margin-bottom:8px;">🏪 デッキショップに申請する（公式）</button>
     <button onclick="deckBuilderSave()" style="width:100%;padding:12px;background:linear-gradient(135deg,#34d399,#059669);border:none;border-radius:10px;color:#fff;font-size:0.95em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(52,211,153,0.3);margin-bottom:8px;">💾 デッキを保存する（手元に置く）</button>
-    <button onclick="deckBuilderPublish()" style="width:100%;padding:10px;background:rgba(255,150,0,0.15);border:1px solid #ff8800;border-radius:10px;color:#ff8800;font-size:0.88em;font-weight:700;cursor:pointer;margin-bottom:8px;">📋 デッキコードを発行する（闇市）</button>
+    <button onclick="deckBuilderPublish()" style="width:100%;padding:10px;background:rgba(255,150,0,0.15);border:1px solid #ff8800;border-radius:10px;color:#ff8800;font-size:0.88em;font-weight:700;cursor:pointer;margin-bottom:8px;">📋 デッキコードを発行する（楽市楽座）</button>
     <button onclick="closeDeckBuilder()" style="width:100%;padding:10px;background:transparent;border:1px solid #555;border-radius:8px;color:#888;font-size:0.85em;cursor:pointer;">閉じる</button>
   </div>
 </div>
