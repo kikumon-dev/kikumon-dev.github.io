@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.29.03';
+    const APP_VERSION = 'v0.29.04';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -13007,16 +13007,29 @@ function openQRImportModal() {
 
   window._qrScanActive = true;
 
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } })
     .then(function(stream) {
       window._qrStream = stream;
       var video = document.getElementById('qrVideo');
       if (!video) return;
       video.srcObject = stream;
+      video.setAttribute('playsinline', true);
+      video.setAttribute('muted', true);
       video.play();
-      video.addEventListener('loadedmetadata', function() {
-        _startQRScan(video);
-      });
+      // iPhoneSafari対応：loadedmetadataに頼らずsetTimeoutで開始
+      var started = false;
+      function tryStart() {
+        if (started) return;
+        if (video.videoWidth > 0) {
+          started = true;
+          _startQRScan(video);
+        } else {
+          setTimeout(tryStart, 200);
+        }
+      }
+      video.addEventListener('loadedmetadata', tryStart);
+      video.addEventListener('canplay', tryStart);
+      setTimeout(tryStart, 500); // 強制フォールバック
     })
     .catch(function() {
       var msg = document.getElementById('qrImportMsg');
@@ -13031,15 +13044,17 @@ function _startQRScan(video) {
 
   function tick() {
     if (!window._qrScanActive) return;
-    if (video.readyState !== video.HAVE_ENOUGH_DATA) {
-      requestAnimationFrame(tick); return;
+    if (video.readyState < 2 || video.videoWidth === 0) {
+      setTimeout(function(){ requestAnimationFrame(tick); }, 100);
+      return;
     }
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     if (typeof jsQR !== 'undefined') {
-      var code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+      // attemptBothは認識率が最も高い
+      var code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
       if (code && code.data) {
         _handleQRResult(code.data);
         return;
