@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.29.08';
+    const APP_VERSION = 'v0.29.11';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -2869,7 +2869,7 @@
     }
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
 </head>
 <body>
 <div id="modal-root"></div>
@@ -12986,6 +12986,10 @@ function onTaskCompleted(task) {
 
 
 function openQRImportModal() {
+  var hasBarcodeDetector = ('BarcodeDetector' in window);
+  var hasGetUserMedia = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+  var isIOS = /iP(hone|od|ad)/.test(navigator.userAgent);
+  var canTryScan = hasBarcodeDetector || (hasGetUserMedia && typeof jsQR !== 'undefined');
   var overlay = document.getElementById('qrImportOverlay');
   if (!overlay) {
     overlay = document.createElement('div');
@@ -12996,51 +13000,132 @@ function openQRImportModal() {
   }
   overlay.innerHTML = '';
   var card = document.createElement('div');
-  card.style.cssText = 'background:linear-gradient(160deg,#0a1520,#0d2240);border:1.5px solid rgba(79,172,254,0.4);border-radius:24px;padding:24px 20px 20px;text-align:center;max-width:360px;width:92vw;box-shadow:0 0 40px rgba(79,172,254,0.2);';
+  card.style.cssText = 'background:linear-gradient(160deg,#0a1520,#0d2240);border:1.5px solid rgba(79,172,254,0.4);border-radius:24px;padding:24px 20px 20px;text-align:center;max-width:340px;width:92vw;box-shadow:0 0 40px rgba(79,172,254,0.2);';
+
+  var scanPanelHtml;
+  if (hasBarcodeDetector || (hasGetUserMedia && typeof jsQR !== 'undefined')) {
+    // Android Chrome または iPhone Chrome → カメラスキャン
+    scanPanelHtml = [
+      '<div style="background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.3);border-radius:14px;padding:12px;margin-bottom:14px;">',
+      '  <div style="color:#34d399;font-size:0.85em;font-weight:700;margin-bottom:6px;">📷 カメラでスキャン</div>',
+      '  <video id="qrVideo" style="width:100%;border-radius:8px;background:#000;margin-bottom:8px;max-height:200px;object-fit:cover;" playsinline autoplay muted></video>',
+      '  <canvas id="qrCanvas" style="display:none;"></canvas>',
+      '  <div id="qrScanMsg" style="color:#aaa;font-size:0.75em;text-align:center;">起動中...</div>',
+      '</div>',
+    ].join('');
+  } else {
+    // iPhone Safari → 標準カメラ誘導
+    scanPanelHtml = [
+      '<div style="background:rgba(79,172,254,0.08);border:1px solid rgba(79,172,254,0.3);border-radius:14px;padding:14px 12px;margin-bottom:14px;text-align:left;">',
+      '  <div style="color:#4facfe;font-size:0.85em;font-weight:700;margin-bottom:8px;">📱 iPhoneカメラで読む</div>',
+      '  <div style="color:#ccc;font-size:0.78em;line-height:1.7;">',
+      '    ① 標準カメラアプリでQRを読む<br>',
+      '    ② 通知タップ → アプリが開く<br>',
+      '    ③ デッキが自動で追加される ✅<br>',
+      '    <span style="color:#aaa;font-size:0.9em;">※ Chrome使用でカメラスキャン可能</span>',
+      '  </div>',
+      '</div>',
+    ].join('');
+  }
+  var androidHtml = scanPanelHtml;
+
   card.innerHTML = [
-    '<div style="color:#4facfe;font-size:1.05em;font-weight:bold;margin-bottom:4px;">📷 QRで受け取る</div>',
-    '<div style="color:#aaa;font-size:0.76em;margin-bottom:12px;">デッキQRにカメラを向けてください</div>',
-    '<div id="qrReaderDiv" style="width:250px;margin:0 auto 12px;border-radius:12px;overflow:hidden;"></div>',
-    '<div id="qrImportMsg" style="font-size:0.82em;color:#4facfe;margin-bottom:14px;min-height:22px;">起動中...</div>',
+    '<div style="color:#4facfe;font-size:1.05em;font-weight:bold;margin-bottom:12px;">📷 QRで受け取る</div>',
+    androidHtml,
+    '<div style="color:#aaa;font-size:0.75em;margin-bottom:8px;">またはコードを直接貼り付け</div>',
+    '<textarea id="qrDirectInput" rows="3" placeholder="DCK1: で始まるコードを貼り付け..." style="width:100%;padding:10px;border:1px solid rgba(79,172,254,0.3);border-radius:10px;background:rgba(0,0,0,0.3);color:#fff;font-size:0.78em;box-sizing:border-box;resize:none;margin-bottom:10px;font-family:monospace;"></textarea>',
+    '<button onclick="importFromQRDirectInput()" style="width:100%;padding:10px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:10px;color:#003355;font-size:0.88em;font-weight:700;cursor:pointer;margin-bottom:8px;">📦 このコードで受け取る</button>',
     '<button onclick="closeQRImportModal()" style="width:100%;padding:9px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#777;font-size:0.84em;cursor:pointer;">閉じる</button>'
   ].join('');
   overlay.appendChild(card);
   overlay.style.display = 'flex';
 
-  window._qrScanActive = true;
+  // カメラスキャン開始
+  if (hasBarcodeDetector) {
+    _startBarcodeDetectorScan();
+  } else if (hasGetUserMedia && typeof jsQR !== 'undefined') {
+    _startJsQRScan();
+  }
+}
 
-  setTimeout(function() {
-    var msg = document.getElementById('qrImportMsg');
-    if (typeof Html5Qrcode === 'undefined') {
-      if (msg) msg.innerHTML = '<span style="color:#ef5350;">ライブラリ未ロード</span>';
-      return;
-    }
-    try {
-      var scanner = new Html5Qrcode('qrReaderDiv');
-      window._html5QrScanner = scanner;
-      var config = { fps: 10, qrbox: { width: 200, height: 200 }, aspectRatio: 1.0 };
-      scanner.start(
-        { facingMode: 'environment' },
-        config,
-        function(decodedText) {
-          // 成功コールバック
-          scanner.stop().catch(function(){});
-          _handleQRResult(decodedText);
-        },
-        function(errorMsg) {
-          // スキャン中エラー（無視）
+
+function _startJsQRScan() {
+  window._qrScanActive = true;
+  var msg = document.getElementById('qrScanMsg');
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    .then(function(stream) {
+      window._qrStream = stream;
+      var video = document.getElementById('qrVideo');
+      if (!video) return;
+      video.srcObject = stream;
+      video.setAttribute('playsinline', true);
+      video.play();
+      if (msg) msg.textContent = 'QRにカメラを向けてください';
+      function tick() {
+        if (!window._qrScanActive) return;
+        var canvas = document.getElementById('qrCanvas');
+        if (!canvas || !video || video.readyState < 2 || video.videoWidth === 0) {
+          requestAnimationFrame(tick); return;
         }
-      ).then(function() {
-        if (msg) msg.textContent = 'QRにカメラを向けてください';
-      }).catch(function(err) {
-        if (msg) msg.innerHTML = '<span style="color:#ef5350;">カメラを起動できませんでした</span>';
-        console.warn('html5qrcode start error:', err);
-      });
-    } catch(e) {
-      var msg2 = document.getElementById('qrImportMsg');
-      if (msg2) msg2.innerHTML = '<span style="color:#ef5350;">初期化エラー: ' + e.message + '</span>';
-    }
-  }, 300);
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        try {
+          var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          var code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
+          if (code && code.data) {
+            _handleQRResult(code.data);
+            return;
+          }
+        } catch(e) {
+          // Safari RangeError等を無視して継続
+        }
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    })
+    .catch(function() {
+      var m = document.getElementById('qrScanMsg');
+      if (m) m.innerHTML = '<span style="color:#ef5350;">カメラを起動できませんでした</span>';
+    });
+}
+function _startBarcodeDetectorScan() {
+  window._qrScanActive = true;
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    .then(function(stream) {
+      window._qrStream = stream;
+      var video = document.getElementById('qrVideo');
+      if (!video) return;
+      video.srcObject = stream;
+      video.play();
+      var detector = new BarcodeDetector({ formats: ['qr_code'] });
+      function tick() {
+        if (!window._qrScanActive) return;
+        if (video.readyState < 2) { setTimeout(tick, 200); return; }
+        detector.detect(video).then(function(barcodes) {
+          if (!window._qrScanActive) return;
+          if (barcodes && barcodes.length > 0) {
+            _handleQRResult(barcodes[0].rawValue);
+          } else {
+            requestAnimationFrame(tick);
+          }
+        }).catch(function() {
+          requestAnimationFrame(tick);
+        });
+      }
+      requestAnimationFrame(tick);
+    })
+    .catch(function() {
+      var msg = document.getElementById('qrScanMsg');
+      if (msg) msg.innerHTML = '<span style="color:#ef5350;">カメラを起動できませんでした</span>';
+    });
+}
+
+function importFromQRDirectInput() {
+  var code = (document.getElementById('qrDirectInput').value || '').trim();
+  if (!code) return;
+  _handleQRResult(code);
 }
 
 function _startQRScan(video) {
@@ -13156,11 +13241,6 @@ function _handleQRResult(data) {
 }
 function closeQRImportModal() {
   window._qrScanActive = false;
-  if (window._html5QrScanner) {
-    try { window._html5QrScanner.stop().catch(function(){}); } catch(e) {}
-    try { window._html5QrScanner.clear(); } catch(e) {}
-    window._html5QrScanner = null;
-  }
   if (window._qrStream) {
     window._qrStream.getTracks().forEach(function(t){ t.stop(); });
     window._qrStream = null;
