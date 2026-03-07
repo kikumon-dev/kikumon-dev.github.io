@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.29.04';
+    const APP_VERSION = 'v0.29.05';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -2869,7 +2869,7 @@
     }
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+  <script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
 </head>
 <body>
 <div id="modal-root"></div>
@@ -4755,33 +4755,39 @@ function renderMyDecks() {
     meta.style.cssText = 'font-size:0.72em;color:#666;margin-bottom:8px;';
     meta.textContent = (deck.tasks||[]).length + '枚 / ' + (deck.createdAt||'');
 
+    // 1行目：編集・削除
     var btnRow = document.createElement('div');
-    btnRow.style.cssText = 'display:flex;gap:6px;';
+    btnRow.style.cssText = 'display:flex;gap:6px;margin-bottom:6px;';
+
+    var btnEdit = document.createElement('button');
+    btnEdit.style.cssText = 'flex:1;padding:7px 6px;background:rgba(168,85,247,0.15);border:1px solid #a855f7;border-radius:6px;color:#a855f7;font-size:0.75em;font-weight:700;cursor:pointer;';
+    btnEdit.textContent = '✏️ 編集';
+    btnEdit.addEventListener('click', (function(i){ return function(){ myDeckEdit(i); }; })(idx));
+
+    var btnDelete = document.createElement('button');
+    btnDelete.style.cssText = 'flex:1;padding:7px 6px;background:rgba(239,83,80,0.15);border:1px solid #ef5350;border-radius:6px;color:#ef5350;font-size:0.75em;font-weight:700;cursor:pointer;';
+    btnDelete.textContent = '🗑 削除';
+    btnDelete.addEventListener('click', (function(i){ return function(){ myDeckDelete(i); }; })(idx));
+
+    btnRow.appendChild(btnEdit);
+    btnRow.appendChild(btnDelete);
+
+    // 2行目：公式申請・楽市楽座
+    var btnRow2 = document.createElement('div');
+    btnRow2.style.cssText = 'display:flex;gap:6px;';
 
     var btnApply = document.createElement('button');
-    btnApply.style.cssText = 'flex:1;padding:6px;background:rgba(79,172,254,0.15);border:1px solid #4facfe;border-radius:6px;color:#4facfe;font-size:0.75em;font-weight:700;cursor:pointer;';
+    btnApply.style.cssText = 'flex:1;padding:7px 6px;background:rgba(79,172,254,0.15);border:1px solid #4facfe;border-radius:6px;color:#4facfe;font-size:0.75em;font-weight:700;cursor:pointer;';
     btnApply.textContent = '🏪 公式申請';
     btnApply.addEventListener('click', (function(i){ return function(){ myDeckApply(i); }; })(idx));
 
     var btnPublish = document.createElement('button');
-    btnPublish.style.cssText = 'flex:1;padding:6px;background:rgba(255,150,0,0.15);border:1px solid #ff8800;border-radius:6px;color:#ff8800;font-size:0.75em;font-weight:700;cursor:pointer;';
-    btnPublish.textContent = '📋 楽市楽座で配布';
+    btnPublish.style.cssText = 'flex:1;padding:7px 6px;background:rgba(255,150,0,0.15);border:1px solid #ff8800;border-radius:6px;color:#ff8800;font-size:0.75em;font-weight:700;cursor:pointer;';
+    btnPublish.textContent = '📋 楽市楽座';
     btnPublish.addEventListener('click', (function(i){ return function(){ myDeckPublish(i); }; })(idx));
 
-    var btnDelete = document.createElement('button');
-    btnDelete.style.cssText = 'padding:6px 10px;background:rgba(239,83,80,0.15);border:1px solid #ef5350;border-radius:6px;color:#ef5350;font-size:0.75em;cursor:pointer;';
-    btnDelete.textContent = '削除';
-    btnDelete.addEventListener('click', (function(i){ return function(){ myDeckDelete(i); }; })(idx));
-
-    var btnEdit = document.createElement('button');
-    btnEdit.style.cssText = 'flex:1;padding:6px;background:rgba(168,85,247,0.15);border:1px solid #a855f7;border-radius:6px;color:#a855f7;font-size:0.75em;font-weight:700;cursor:pointer;';
-    btnEdit.textContent = '✏️ 編集';
-    btnEdit.addEventListener('click', (function(i){ return function(){ myDeckEdit(i); }; })(idx));
-
-    btnRow.appendChild(btnEdit);
-    btnRow.appendChild(btnApply);
-    btnRow.appendChild(btnPublish);
-    btnRow.appendChild(btnDelete);
+    btnRow2.appendChild(btnApply);
+    btnRow2.appendChild(btnPublish);
     el.appendChild(title);
     el.appendChild(meta);
     if (deck.createdBy) {
@@ -4791,6 +4797,7 @@ function renderMyDecks() {
       el.appendChild(byEl);
     }
     el.appendChild(btnRow);
+    el.appendChild(btnRow2);
     list.appendChild(el);
   });
 }
@@ -13038,28 +13045,42 @@ function openQRImportModal() {
 }
 
 function _startQRScan(video) {
+  // ZXing-jsを使用
+  try {
+    var ZXing = window.ZXing || (window.ZXingLibrary);
+    if (!ZXing) { console.warn('ZXing未ロード'); return; }
+    var hints = new Map();
+    var formats = [ZXing.BarcodeFormat.QR_CODE];
+    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, formats);
+    var reader = new ZXing.BrowserQRCodeReader(hints);
+    window._zxingReader = reader;
+    reader.decodeFromVideoElement(video).then(function(result) {
+      if (result && window._qrScanActive) {
+        _handleQRResult(result.getText());
+      }
+    }).catch(function(err) {
+      // 継続的スキャン中の「見つからない」エラーは無視
+      if (err && err.name !== 'NotFoundException') {
+        console.warn('ZXing error:', err);
+      }
+    });
+    return;
+  } catch(e) {
+    console.warn('ZXing初期化失敗、フォールバック:', e);
+  }
+  // フォールバック（ZXing失敗時）
   var canvas = document.getElementById('qrCanvas');
   if (!canvas) return;
   var ctx = canvas.getContext('2d');
-
   function tick() {
     if (!window._qrScanActive) return;
     if (video.readyState < 2 || video.videoWidth === 0) {
       setTimeout(function(){ requestAnimationFrame(tick); }, 100);
       return;
     }
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    canvas.width = Math.min(video.videoWidth, 640);
+    canvas.height = Math.min(video.videoHeight, 480);
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    if (typeof jsQR !== 'undefined') {
-      // attemptBothは認識率が最も高い
-      var code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
-      if (code && code.data) {
-        _handleQRResult(code.data);
-        return;
-      }
-    }
     requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
@@ -13120,6 +13141,11 @@ function _handleQRResult(data) {
   setTimeout(function(){ closeQRImportModal(); showAdminToast('✨ ' + (deck.title||'デッキ') + 'を受け取った！'); }, 1500);
 }
 function closeQRImportModal() {
+  window._qrScanActive = false;
+  if (window._zxingReader) {
+    try { window._zxingReader.reset(); } catch(e) {}
+    window._zxingReader = null;
+  }
   if (window._qrStream) {
     window._qrStream.getTracks().forEach(function(t){ t.stop(); });
     window._qrStream = null;
