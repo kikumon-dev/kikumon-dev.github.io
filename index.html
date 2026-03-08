@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.29.19';
+    const APP_VERSION = 'v0.29.20';
 
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
@@ -3423,7 +3423,7 @@
     <div id="stampBar" style="display: none; position: sticky; bottom: 0; left: 0; right: 0; background: #fff; border-top: 2px solid #eee; padding: 6px 8px 4px; z-index: 30; box-shadow: 0 -2px 8px rgba(0,0,0,0.08);">
       <!-- スタンプ＋ツール（flex-wrap で自動折り返し） -->
       <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 5px; justify-content: center; padding-bottom: 2px;">
-        <div id="stampButtons" style="display: contents;"></div>
+        <div id="stampButtons" style="display: flex; flex-wrap: wrap; gap: 5px; align-items: center;"></div>
         <div style="display: flex; gap: 4px; margin-left: 2px;">
           <button onclick="selectEraserMode()" id="stampEraserBtn"
             style="padding: 4px 10px; border-radius: 14px; border: 1.5px solid #ef5350; background: #fff; font-size: 0.75em; cursor: pointer; white-space: nowrap; transition: all 0.2s; color: #ef5350;">🗑</button>
