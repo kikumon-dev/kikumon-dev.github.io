@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.30.5';
+    const APP_VERSION = 'v0.30.7';
 
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
@@ -14916,11 +14916,11 @@ function copyDeckCodeFromModal() {
   <!-- 閉じるボタン（小さく右上に浮かせる） -->
   <button onclick="closeLpModal()" style="position:fixed;top:12px;right:12px;z-index:10000;background:rgba(0,0,0,0.5);border:none;border-radius:50%;color:#fff;width:36px;height:36px;font-size:1em;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
   <!-- iframe フルスクリーン -->
-  <iframe id="lpModalFrame" src="" style="position:fixed;inset:0;width:100%;height:100%;border:none;background:#fff;"></iframe>
+  <iframe id="lpModalFrame" src="" style="position:fixed;inset:0;width:100%;height:100%;border:none;background:#fff;display:none;"></iframe>
 </div>
 
 <!-- 右下？ボタン -->
-<button id="tutorialHelpBtn" onclick="showTutorial()" style="position:fixed;bottom:24px;right:20px;width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;color:#fff;font-size:1.2em;font-weight:bold;cursor:pointer;box-shadow:0 4px 15px rgba(79,172,254,0.5);z-index:9990;display:flex;align-items:center;justify-content:center;">?</button>
+<button id="tutorialHelpBtn" onclick="showTutorial()" style="position:fixed;bottom:24px;right:20px;width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;color:#fff;font-size:1.3em;font-weight:bold;cursor:pointer;box-shadow:0 4px 15px rgba(79,172,254,0.5);z-index:99990;line-height:42px;text-align:center;">?</button>
 <script>
 // ===== チュートリアル =====
 // ===== 王国スタートデッキ =====
@@ -15086,12 +15086,16 @@ function openLpModal(type) {
     women: '🌸 女性向け — やることクラフト',
     men:   '🌿 男性向け — やることクラフト'
   };
-  document.getElementById('lpModalFrame').src = urls[type];
+  var frame = document.getElementById('lpModalFrame');
+  frame.src = urls[type];
+  frame.style.display = 'block';
   document.getElementById('lpModal').style.display = 'block';
   document.body.style.overflow = 'hidden';
 }
 
 function closeLpModal() {
+  var frame = document.getElementById('lpModalFrame');
+  if (frame) { frame.style.display = 'none'; frame.src = ''; }
   document.getElementById('lpModal').style.display = 'none';
   document.getElementById('lpModalFrame').src = '';
   document.body.style.overflow = '';
