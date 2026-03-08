@@ -3542,9 +3542,27 @@
         <h3 style="margin:0 0 6px 0;color:#4facfe;font-size:1em;font-weight:700;display:flex;align-items:center;gap:8px;">🚢 貿易港（β）</h3>
         <p style="font-size:0.78em;color:#aaa;margin:0 0 14px 0;">DCK1: で始まるデッキコードを貼り付けるか、QRコードを読み取ろう。<br><span style="color:#ffd700;font-weight:600;">あ、王国が動いた！</span></p>
         <!-- QRスキャンボタン -->
+        <div style="font-size:0.78em;color:#aaa;margin-bottom:8px;line-height:1.7;">
+          このボタンでQRを読み取れます。読み取れない場合はAndroidカメラで直接読み取ってください。<br>
+          <span style="color:#ffc8dc;">iPhoneをお使いの方は下をご確認ください。</span>
+        </div>
         <button onclick="openDeckQRScanner()" style="width:100%;padding:12px;background:linear-gradient(135deg,#064e3b,#065f46);border:2px solid #34d399;border-radius:10px;color:#34d399;font-size:0.92em;font-weight:700;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;">
           <span style="font-size:1.2em;">📷</span> QRコードを読み取る
         </button>
+        <!-- iPhoneユーザー向け案内（折りたたみ） -->
+        <div style="margin-bottom:10px;">
+          <button onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'" style="width:100%;text-align:left;background:rgba(255,200,220,0.08);border:1px solid rgba(255,200,220,0.2);border-radius:8px;padding:8px 12px;color:#ffc8dc;font-size:0.78em;cursor:pointer;">
+            📱 iPhoneをお使いの方へ
+          </button>
+          <div style="display:none;background:rgba(255,200,220,0.05);border:1px solid rgba(255,200,220,0.15);border-top:none;border-radius:0 0 8px 8px;padding:12px;font-size:0.78em;color:#ccc;line-height:1.9;">
+            iPhoneカメラでQRを読む方がスムーズです。<br>
+            <span style="color:#ffd700;">① </span>iPhoneの標準カメラアプリを開く<br>
+            <span style="color:#ffd700;">② </span>QRコードにカメラを向ける<br>
+            <span style="color:#ffd700;">③ </span>画面上部に通知が出たらタップ<br>
+            <span style="color:#ffd700;">④ </span>アプリが開いてデッキを受け取れます<br>
+            <span style="color:#aaa;font-size:0.9em;">※うまくいかない場合は下のコード入力欄をお使いください</span>
+          </div>
+        </div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
           <div style="flex:1;height:1px;background:rgba(79,172,254,0.2);"></div>
           <div style="color:#555;font-size:0.72em;">またはコードを直接入力</div>
@@ -11388,12 +11406,7 @@ window._receiveDeckAgain = function(deckId) {
   renderAllSections(today);
   renderDeckShop();
   showAdminToast('🛍️ ' + deck.title + 'を受け取った！');
-  // 管理者モードのときQRモーダルも表示
-  if (localStorage.getItem('adminMode') === '1' && typeof showDeckQR === 'function') {
-    var _p = JSON.stringify({ kind:'deck', status:'active', deckId:deck.id, title:deck.title, desc:deck.desc||'', tasks:deck.tasks, createdBy:deck.createdBy||'やることクラフト公式', createdAt:'' });
-    var _c = 'DCK1:' + btoa(unescape(encodeURIComponent(_p)));
-    showDeckQR(_c, deck.title);
-  }
+
 }
 </script>
 
@@ -13277,7 +13290,8 @@ function openQRScanner(onResult) {
   overlay.style.cssText = 'position:fixed;inset:0;background:#000;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
 
   overlay.innerHTML = ''
-    + '<div style="color:#64dcb4;font-size:1em;font-weight:bold;margin-bottom:12px;letter-spacing:0.05em;">📷 QRコードを読み取る</div>'
+    + '<div style="color:#64dcb4;font-size:1em;font-weight:bold;margin-bottom:6px;letter-spacing:0.05em;">📷 QRコードを読み取る</div>'
+    + '<div style="color:#aaa;font-size:0.75em;margin-bottom:12px;text-align:center;">枠の中にQRコードを合わせてください</div>'
     + '<div style="position:relative;width:280px;height:280px;border-radius:16px;overflow:hidden;background:#111;">'
     +   '<video id="qrVideo" playsinline style="width:280px;height:280px;object-fit:cover;"></video>'
     +   '<canvas id="qrCanvas" width="280" height="280" style="display:none;"></canvas>'
@@ -13288,8 +13302,9 @@ function openQRScanner(onResult) {
     +     '<div style="position:absolute;bottom:30px;right:30px;width:50px;height:50px;border-bottom:3px solid #64dcb4;border-right:3px solid #64dcb4;border-radius:0 0 4px 0;"></div>'
     +   '</div>'
     + '</div>'
-    + '<div id="qrScanStatus" style="color:#aaa;font-size:0.78em;margin-top:10px;">スキャン中...</div>'
-    + '<button onclick="closeQRScanner()" style="margin-top:18px;padding:10px 32px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:#aaa;font-size:0.9em;cursor:pointer;">キャンセル</button>';
+    + '<div id="qrScanStatus" style="color:#aaa;font-size:0.78em;margin-top:10px;text-align:center;">スキャン中... しばらくお待ちください</div>'
+    + '<div style="color:#666;font-size:0.72em;margin-top:6px;text-align:center;">うまく読み取れない場合は<br>キャンセルしてコードを直接入力してください</div>'
+    + '<button onclick="closeQRScanner()" style="margin-top:16px;padding:10px 32px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:#aaa;font-size:0.9em;cursor:pointer;">キャンセル</button>';
 
   document.body.appendChild(overlay);
 
@@ -13414,10 +13429,46 @@ function openDeckQRScanner() {
     showToast('このブラウザはカメラスキャンに対応していません。コードを直接入力してください。');
     return;
   }
-  openQRScanner(function(data) {
-    // DCK1:xxxxx 形式を期待
+  // iOS判定 → 事前案内
+  var isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  if (isIOS) {
+    var old = document.getElementById('iosQRGuideOverlay');
+    if (old) old.remove();
+    var guide = document.createElement('div');
+    guide.id = 'iosQRGuideOverlay';
+    guide.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:999999;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;';
+    guide.innerHTML = ''
+      + '<div style="background:#1a1a2e;border:1px solid #ffc8dc;border-radius:16px;padding:28px 24px;max-width:340px;width:100%;color:#fff;text-align:center;">'
+      +   '<div style="font-size:2em;margin-bottom:8px;">📱</div>'
+      +   '<div style="color:#ffc8dc;font-weight:bold;font-size:1em;margin-bottom:12px;">iPhoneをお使いですか？</div>'
+      +   '<div style="font-size:0.82em;color:#ccc;line-height:1.8;margin-bottom:20px;">'
+      +     'iPhoneカメラで読む方がスムーズです。<br><br>'
+      +     '<span style="color:#ffd700;">① </span>標準カメラアプリを開く<br>'
+      +     '<span style="color:#ffd700;">② </span>QRコードにカメラを向ける<br>'
+      +     '<span style="color:#ffd700;">③ </span>画面上部の通知をタップ<br>'
+      +     '<span style="color:#ffd700;">④ </span>アプリでデッキを受け取る<br><br>'
+      +     '<span style="color:#aaa;font-size:0.9em;">※うまくいかない場合はコード入力欄をお使いください</span>'
+      +   '</div>'
+      +   '<button onclick="document.getElementById('iosQRGuideOverlay').remove();openQRScanner(window._deckQRCallback);" style="width:100%;padding:11px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:10px;color:#aaa;font-size:0.88em;cursor:pointer;margin-bottom:10px;">このまま試す</button>'
+      +   '<button onclick="document.getElementById('iosQRGuideOverlay').remove();" style="width:100%;padding:11px;background:transparent;border:1px solid #444;border-radius:10px;color:#666;font-size:0.85em;cursor:pointer;">閉じる</button>'
+      + '</div>';
+    document.body.appendChild(guide);
+    // コールバックを一時保存
+    window._deckQRCallback = function(data) {
+      var decoded = decodeURIComponent(data);
+      var match = decoded.match(/[?&]deck=([^&]+)/);
+      var code = match ? decodeURIComponent(match[1]) : decoded;
+      if (code.startsWith('DCK1:')) {
+        receiveDeckByCode(code);
+      } else {
+        showToast('⚠️ デッキQRコードではありませんでした');
+      }
+    };
+    return; // iOS案内を表示したのでここで終了
+  }
+  // Android / PC → 直接スキャン起動
+  window._deckQRCallback = function(data) {
     var decoded = decodeURIComponent(data);
-    // URLパラメータ付きの場合も対応
     var match = decoded.match(/[?&]deck=([^&]+)/);
     var code = match ? decodeURIComponent(match[1]) : decoded;
     if (code.startsWith('DCK1:')) {
@@ -13425,7 +13476,8 @@ function openDeckQRScanner() {
     } else {
       showToast('⚠️ デッキQRコードではありませんでした');
     }
-  });
+  };
+  openQRScanner(window._deckQRCallback);
 }
 
 // ============================================================
@@ -13444,8 +13496,8 @@ function copyDeckCodeFromModal() {
 </script>
 
 <!-- ===== チュートリアルモーダル ===== -->
-<div id="tutorialOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
-  <div style="background:#1a1a2e;border:1px solid #4facfe;border-radius:16px;padding:28px 24px;max-width:380px;width:92%;color:#fff;position:relative;box-shadow:0 0 40px rgba(79,172,254,0.3);max-height:90vh;overflow-y:auto;">
+<div id="tutorialOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;overflow:hidden;">
+  <div style="background:#1a1a2e;border:1px solid #4facfe;border-radius:16px;padding:28px 24px;max-width:380px;width:92%;color:#fff;position:relative;box-shadow:0 0 40px rgba(79,172,254,0.3);max-height:90vh;overflow-y:auto;overflow-x:hidden;">
     <div style="font-size:2em;text-align:center;margin-bottom:4px;">🏰</div>
     <h2 style="text-align:center;color:#ffd700;font-size:1.1em;margin:0 0 20px 0;letter-spacing:0.05em;">はじめての方へ</h2>
 
@@ -14570,7 +14622,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
 <!-- ===== 王国コード発行モーダル ===== -->
-<div id="craftShareModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
+<div id="craftShareModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;overflow:hidden;">
   <div style="background:#1a1a2e;border:1px solid #ffd700;border-radius:16px;padding:32px 28px;max-width:360px;width:90%;color:#fff;position:relative;box-shadow:0 0 40px rgba(255,215,0,0.3);">
     <div style="font-size:2em;text-align:center;margin-bottom:8px;">👑</div>
     <h2 style="text-align:center;color:#ffd700;font-size:1.1em;margin:0 0 20px 0;">王国コードを発行する</h2>
@@ -14582,14 +14634,32 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
 <!-- ===== 王国訪問モーダル ===== -->
-<div id="craftVisitModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
+<div id="craftVisitModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;overflow:hidden;">
   <div style="background:#1a1a2e;border:1px solid #ffc8dc;border-radius:16px;padding:32px 28px;max-width:400px;width:90%;color:#fff;position:relative;box-shadow:0 0 40px rgba(255,160,188,0.35);">
     <div style="font-size:2em;text-align:center;margin-bottom:8px;">🗺️</div>
     <h2 style="text-align:center;color:#ffb7d5;font-size:1.1em;margin:0 0 20px 0;">仲間の王国を訪問する</h2>
     <!-- QRスキャンボタン -->
+    <div style="font-size:0.78em;color:#aaa;margin-bottom:8px;line-height:1.7;">
+      このボタンでQRを読み取れます。読み取れない場合はAndroidカメラで直接読み取ってください。<br>
+      <span style="color:#ffc8dc;">iPhoneをお使いの方は下をご確認ください。</span>
+    </div>
     <button onclick="openDeckQRScanner()" style="width:100%;padding:11px;background:linear-gradient(135deg,#3b0f1f,#5c1a30);border:2px solid #ffc8dc;border-radius:8px;color:#ffc8dc;font-size:0.9em;font-weight:700;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;">
       <span style="font-size:1.1em;">📷</span> QRコードで受け取る
     </button>
+    <!-- iPhoneユーザー向け案内（折りたたみ） -->
+    <div style="margin-bottom:10px;">
+      <button onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'" style="width:100%;text-align:left;background:rgba(255,200,220,0.08);border:1px solid rgba(255,200,220,0.2);border-radius:8px;padding:8px 12px;color:#ffc8dc;font-size:0.78em;cursor:pointer;">
+        📱 iPhoneをお使いの方へ
+      </button>
+      <div style="display:none;background:rgba(255,200,220,0.05);border:1px solid rgba(255,200,220,0.15);border-top:none;border-radius:0 0 8px 8px;padding:12px;font-size:0.78em;color:#ccc;line-height:1.9;">
+        iPhoneカメラでQRを読む方がスムーズです。<br>
+        <span style="color:#ffd700;">① </span>iPhoneの標準カメラアプリを開く<br>
+        <span style="color:#ffd700;">② </span>QRコードにカメラを向ける<br>
+        <span style="color:#ffd700;">③ </span>画面上部に通知が出たらタップ<br>
+        <span style="color:#ffd700;">④ </span>アプリが開いてデッキを受け取れます<br>
+        <span style="color:#aaa;font-size:0.9em;">※うまくいかない場合は下のコード入力欄をお使いください</span>
+      </div>
+    </div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
       <div style="flex:1;height:1px;background:rgba(255,160,188,0.2);"></div>
       <div style="color:#666;font-size:0.72em;">またはコードを入力</div>
