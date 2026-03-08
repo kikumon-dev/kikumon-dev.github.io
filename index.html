@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.29.20';
+    const APP_VERSION = 'v0.30.0';
 
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
@@ -6356,6 +6356,22 @@ function getDeckGDP() {
                   openDayInfoModal(dateStr);
                 }
               });
+
+              // ── 貼付済みスタンプのD&D（別日に移動） ──
+              stampLabel.draggable = true;
+              stampLabel.addEventListener('dragstart', function(e) {
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', JSON.stringify({ stampId: sid, fromDate: dateStr }));
+                stampLabel.style.opacity = '0.4';
+                e.stopPropagation();
+              });
+              stampLabel.addEventListener('dragend', function() {
+                stampLabel.style.opacity = '1';
+                document.querySelectorAll('.monthly-day-cell').forEach(function(c) {
+                  c.style.outline = ''; c.style.background = '';
+                });
+              });
+
               cell.appendChild(stampLabel);
             });
           }
@@ -6544,6 +6560,39 @@ function getDeckGDP() {
           } catch (err) {}
         });
         
+        // セルへのスタンプD&D受け入れ
+        cell.addEventListener('dragover', function(e) {
+          if (e.dataTransfer.types.includes('text/plain')) {
+            try {
+              // stampIdを持つドラッグのみ受け入れ
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'move';
+              cell.style.outline = '2px solid #f472b6';
+            } catch(ex) {}
+          }
+        });
+        cell.addEventListener('dragleave', function() {
+          cell.style.outline = '';
+        });
+        cell.addEventListener('drop', function(e) {
+          cell.style.outline = '';
+          try {
+            const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+            if (data.stampId && data.fromDate && data.fromDate !== dateStr) {
+              e.preventDefault();
+              e.stopPropagation();
+              // 元の日から削除 → 新しい日に追加
+              removeStampFromDate(data.fromDate, data.stampId);
+              const existing = getDayInfo(dateStr);
+              addStampToDate(dateStr, data.stampId,
+                existing ? existing.workMemo : '',
+                existing ? existing.privateMemo : '');
+              if (navigator.vibrate) navigator.vibrate(30);
+              renderMonthlyView();
+            }
+          } catch(ex) {}
+        });
+
         // セルクリック（新規タスク追加 or 移動先確定 or スタンプ貼付）
         cell.addEventListener('click', (e) => {
           const isSimple = allSettings.ui.simpleMode === 'on';
@@ -11683,16 +11732,6 @@ function loadSettingsUI() {
           'transition:background 0.15s;touch-action:none;'
         ].join('');
 
-        // ハンドル（スマホでも操作しやすいよう大きめに）
-        const handle = document.createElement('span');
-        handle.textContent = '⠿';
-        handle.style.cssText = [
-          'color:#bbb;font-size:1.4em;cursor:grab;flex-shrink:0;',
-          'padding:4px 8px 4px 4px;touch-action:none;',
-          '-webkit-user-select:none;user-select:none;'
-        ].join('');
-
-
         // プレビュー（背景色＋文字色）
         const preview = document.createElement('span');
         preview.style.cssText = 'width:28px;height:28px;border-radius:8px;flex-shrink:0;border:1.5px solid #ddd;';
@@ -11763,7 +11802,6 @@ function loadSettingsUI() {
         delBtn.style.cssText = 'background:none;border:none;color:#e53935;cursor:pointer;font-size:1em;padding:2px 4px;margin-left:auto;flex-shrink:0;';
         delBtn.addEventListener('click', function() { removeStampById(stamp.id); });
 
-        row.appendChild(handle);
         row.appendChild(preview);
         row.appendChild(nameInput);
         row.appendChild(bgLabel);
@@ -11802,9 +11840,11 @@ function loadSettingsUI() {
           }
         });
 
-        // タッチD&D（スマホ対応）
+        // タッチD&D（row全体で掴める）
         var _tDragSrc = null, _tGhost = null;
-        handle.addEventListener('touchstart', function(e) {
+        row.addEventListener('touchstart', function(e) {
+          // input/button/labelのタッチは無視
+          if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'LABEL') return;
           e.preventDefault();
           _tDragSrc = stamp.id;
           var t = e.touches[0];
@@ -11813,7 +11853,7 @@ function loadSettingsUI() {
           document.body.appendChild(_tGhost);
           row.style.opacity = '0.4';
         }, { passive: false });
-        handle.addEventListener('touchmove', function(e) {
+        row.addEventListener('touchmove', function(e) {
           e.preventDefault();
           if (!_tGhost) return;
           var t = e.touches[0];
@@ -11831,7 +11871,7 @@ function loadSettingsUI() {
             }
           }
         }, { passive: false });
-        handle.addEventListener('touchend', function(e) {
+        row.addEventListener('touchend', function(e) {
           if (_tGhost) { _tGhost.remove(); _tGhost = null; }
           row.style.opacity = '1';
           var t = e.changedTouches[0];
