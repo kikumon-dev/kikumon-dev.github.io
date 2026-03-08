@@ -11674,11 +11674,11 @@ function loadSettingsUI() {
       stamps.forEach(function(stamp) {
         const row = document.createElement('div');
         row.dataset.stampId = stamp.id;
-        row.draggable = true;
+        row.draggable = false; // ハンドルのmousedown時のみtrueにする
         row.style.cssText = [
           'display:flex;align-items:center;gap:6px;margin-bottom:6px;',
           'padding:6px 8px;background:#fafafa;border:1.5px solid #e8e8e8;',
-          'border-radius:10px;cursor:grab;flex-wrap:wrap;',
+          'border-radius:10px;flex-wrap:wrap;',
           'transition:background 0.15s;touch-action:none;'
         ].join('');
 
@@ -11690,6 +11690,14 @@ function loadSettingsUI() {
           'padding:4px 8px 4px 4px;touch-action:none;',
           '-webkit-user-select:none;user-select:none;'
         ].join('');
+        // PC: ハンドルを掴んだ時だけrow全体をdraggable=trueにする
+        handle.addEventListener('mousedown', function() {
+          row.draggable = true;
+        });
+        document.addEventListener('mouseup', function _mu() {
+          row.draggable = false;
+          document.removeEventListener('mouseup', _mu);
+        });
 
         // プレビュー（背景色＋文字色）
         const preview = document.createElement('span');
