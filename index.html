@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.30.1';
+    const APP_VERSION = 'v0.30.5';
 
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
@@ -14763,11 +14763,106 @@ function copyDeckCodeFromModal() {
       </div>
     </div>
 
-    <!-- アバウト：アコーディオン -->
+    <!-- 王国の図書館：折りたたみ1個 -->
     <div style="border-top:1px solid rgba(255,255,255,0.15);margin:16px 0 12px;"></div>
-    <div style="font-size:0.78em;color:#aaa;margin-bottom:10px;text-align:center;">📖 やることクラフトについて</div>
+
+    <div id="librarySection">
+      <button onclick="toggleLibrary()" id="libraryToggleBtn"
+        style="width:100%;text-align:center;background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.2);border-radius:10px;padding:10px 12px;color:#ffd700;font-size:0.88em;font-weight:bold;cursor:pointer;letter-spacing:0.05em;">
+        🏰 王国の図書館 ▼
+      </button>
+      <div id="libraryContent" style="display:none;margin-top:8px;">
 
     <div id="aboutAccordion">
+      <!-- やることクラフトが大切にしていること -->
+      <div style="margin-bottom:6px;">
+        <button onclick="toggleAbout('aboutPhilosophy')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#81c784;font-size:0.85em;font-weight:bold;cursor:pointer;">🌿 やることクラフトが大切にしていること</button>
+        <div id="aboutPhilosophy" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:14px 12px;font-size:0.82em;color:#ccc;line-height:1.7;">
+          <div style="color:#ffd700;font-weight:bold;margin-bottom:10px;font-size:0.9em;">🏰 王国の心得</div>
+
+          <div style="margin-bottom:12px;">
+            <div style="color:#4facfe;font-weight:bold;margin-bottom:3px;">🌾 動いていると、楽しくなっていく</div>
+            <div>小さな一歩。まずは楽しく。<br>動き出せば、次が見えてくる。</div>
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <div style="color:#a78bfa;font-weight:bold;margin-bottom:3px;">🪣 自分の分を、決めて守る</div>
+            <div>詰め込みすぎない。全部やろうとしない。<br>今日の自分にできることだけを、丁寧に。<br>それが長く続く王国の秘訣です。</div>
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <div style="color:#f8bbd0;font-weight:bold;margin-bottom:3px;">🎁 余ったら、誰かに渡す</div>
+            <div>うまくいったやり方、続けられたルーティン。<br>デッキにして誰かに贈ってみてください。<br>渡したとき、あなたの王国はもっと豊かになります。</div>
+          </div>
+
+          <div style="margin-bottom:4px;">
+            <div style="color:#ffd700;font-weight:bold;margin-bottom:3px;">🕯️ 在るも、接するも、まごころで</div>
+            <div>単なる「正直」ではなく、まごころ。<br>頭で考えるだけでなく、行動で示す誠実さ。<br>影日向なく、見ていなくても出来ることをやろう。<br>自分自身への誠実さも含まれるよ！<br>まずは楽しく、まごころで！</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- やることクラフトを紹介する -->
+      <div style="margin-bottom:6px;">
+        <button onclick="toggleAbout('aboutIntro')" style="width:100%;text-align:left;background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.25);border-radius:8px;padding:8px 12px;color:#ffd700;font-size:0.85em;font-weight:bold;cursor:pointer;">🏰 やることクラフトを紹介する</button>
+        <div id="aboutIntro" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,215,0,0.15);border-top:none;border-radius:0 0 8px 8px;padding:16px 12px;font-size:0.82em;color:#ccc;line-height:1.7;">
+
+          <div style="color:#ffd700;font-size:0.88em;margin-bottom:16px;line-height:1.7;">
+            やることクラフトを紹介してくれた方に、<br>
+            <strong style="color:#fff;">デッキをプレゼントします。</strong><br>
+            <span style="color:#aaa;font-size:0.9em;">紹介後、Discordでお知らせください。</span>
+      
+
+          <!-- LP閲覧ボタン -->
+          <div style="margin-bottom:20px;">
+            <div style="font-size:0.78em;color:#aaa;margin-bottom:10px;">📖 紹介ページを読む</div>
+            <div style="display:flex;gap:10px;">
+              <button onclick="openLpModal('women')" style="flex:1;padding:10px 8px;background:rgba(248,187,208,0.12);border:1px solid rgba(248,187,208,0.3);border-radius:8px;color:#f8bbd0;font-size:0.82em;font-weight:bold;cursor:pointer;">🌸 女性向けを読む</button>
+              <button onclick="openLpModal('men')" style="flex:1;padding:10px 8px;background:rgba(129,199,132,0.12);border:1px solid rgba(129,199,132,0.3);border-radius:8px;color:#81c784;font-size:0.82em;font-weight:bold;cursor:pointer;">🌿 男性向けを読む</button>
+        
+      
+
+          <!-- QRコード -->
+          <div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:16px;margin-bottom:4px;">
+            <div style="font-size:0.78em;color:#aaa;margin-bottom:12px;">📲 QRコードで共有する</div>
+
+            <div style="display:flex;gap:16px;flex-wrap:wrap;">
+              <!-- 女性向け -->
+              <div style="text-align:center;">
+                <div style="font-size:0.75em;color:#f8bbd0;font-weight:bold;margin-bottom:6px;">🌸 女性向け</div>
+                <div style="background:white;border-radius:6px;padding:6px;display:inline-block;">
+                  <img id="qrWomen" src="" alt="女性向けLP QR" style="width:100px;height:100px;display:block;">
+            
+          
+              <!-- 男性向け -->
+              <div style="text-align:center;">
+                <div style="font-size:0.75em;color:#81c784;font-weight:bold;margin-bottom:6px;">🌿 男性向け</div>
+                <div style="background:white;border-radius:6px;padding:6px;display:inline-block;">
+                  <img id="qrMen" src="" alt="男性向けLP QR" style="width:100px;height:100px;display:block;">
+            
+          
+              <!-- Discord -->
+              <div style="text-align:center;">
+                <div style="font-size:0.75em;color:#a78bfa;font-weight:bold;margin-bottom:6px;">💬 Discord</div>
+                <div style="background:white;border-radius:6px;padding:6px;display:inline-block;">
+                  <img id="qrDiscord" src="" alt="Discord QR" style="width:100px;height:100px;display:block;">
+            
+          
+              <!-- LINE -->
+              <div style="text-align:center;">
+                <div style="font-size:0.75em;color:#4caf50;font-weight:bold;margin-bottom:6px;">💚 LINE</div>
+                <div style="background:white;border-radius:6px;padding:6px;display:inline-block;width:112px;height:112px;display:flex;align-items:center;justify-content:center;">
+                  <img id="qrLine" src="" alt="LINE QR" style="width:100px;height:100px;display:none;">
+                  <div id="qrLinePlaceholder" style="width:100px;height:100px;display:flex;align-items:center;justify-content:center;font-size:0.7em;color:#aaa;text-align:center;line-height:1.5;">準備中</div>
+            
+          
+        
+      
+
+    
+  
+
+
       <!-- GDP -->
       <div style="margin-bottom:6px;">
         <button onclick="toggleAbout('aboutGDP')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#ffd700;font-size:0.85em;font-weight:bold;cursor:pointer;">💰 GDPとは？</button>
@@ -14806,95 +14901,9 @@ function copyDeckCodeFromModal() {
         </div>
       </div>
 
-      <!-- やることクラフトが大切にしていること -->
-      <div style="margin-bottom:6px;">
-        <button onclick="toggleAbout('aboutPhilosophy')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#81c784;font-size:0.85em;font-weight:bold;cursor:pointer;">🌿 やることクラフトが大切にしていること</button>
-        <div id="aboutPhilosophy" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:14px 12px;font-size:0.82em;color:#ccc;line-height:1.7;">
-          <div style="color:#ffd700;font-weight:bold;margin-bottom:10px;font-size:0.9em;">🏰 王国の心得</div>
-
-          <div style="margin-bottom:12px;">
-            <div style="color:#4facfe;font-weight:bold;margin-bottom:3px;">🌾 動いていると、楽しくなっていく</div>
-            <div>小さな一歩。まずは楽しく。<br>動き出せば、次が見えてくる。</div>
-          </div>
-
-          <div style="margin-bottom:12px;">
-            <div style="color:#a78bfa;font-weight:bold;margin-bottom:3px;">🪣 自分の分を、決めて守る</div>
-            <div>詰め込みすぎない。全部やろうとしない。<br>今日の自分にできることだけを、丁寧に。<br>それが長く続く王国の秘訣です。</div>
-          </div>
-
-          <div style="margin-bottom:12px;">
-            <div style="color:#f8bbd0;font-weight:bold;margin-bottom:3px;">🎁 余ったら、誰かに渡す</div>
-            <div>うまくいったやり方、続けられたルーティン。<br>デッキにして誰かに贈ってみてください。<br>渡したとき、あなたの王国はもっと豊かになります。</div>
-          </div>
-
-          <div style="margin-bottom:4px;">
-            <div style="color:#ffd700;font-weight:bold;margin-bottom:3px;">🕯️ 在るも、接するも、まごころで</div>
-            <div>単なる「正直」ではなく、まごころ。<br>頭で考えるだけでなく、行動で示す誠実さ。<br>影日向なく、見ていなくても出来ることをやろう。<br>自分自身への誠実さも含まれるよ！<br>まずは楽しく、まごころで！</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- やることクラフトを紹介する -->
-      <div style="margin-bottom:6px;">
-        <button onclick="toggleAbout('aboutIntro')" style="width:100%;text-align:left;background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.25);border-radius:8px;padding:8px 12px;color:#ffd700;font-size:0.85em;font-weight:bold;cursor:pointer;">🏰 やることクラフトを紹介する</button>
-        <div id="aboutIntro" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,215,0,0.15);border-top:none;border-radius:0 0 8px 8px;padding:16px 12px;font-size:0.82em;color:#ccc;line-height:1.7;">
-
-          <div style="color:#ffd700;font-size:0.88em;margin-bottom:16px;line-height:1.7;">
-            やることクラフトを紹介してくれた方に、<br>
-            <strong style="color:#fff;">デッキをプレゼントします。</strong><br>
-            <span style="color:#aaa;font-size:0.9em;">紹介後、Discordでお知らせください。</span>
-          </div>
-
-          <!-- LP閲覧ボタン -->
-          <div style="margin-bottom:20px;">
-            <div style="font-size:0.78em;color:#aaa;margin-bottom:10px;">📖 紹介ページを読む</div>
-            <div style="display:flex;gap:10px;">
-              <button onclick="openLpModal('women')" style="flex:1;padding:10px 8px;background:rgba(248,187,208,0.12);border:1px solid rgba(248,187,208,0.3);border-radius:8px;color:#f8bbd0;font-size:0.82em;font-weight:bold;cursor:pointer;">🌸 女性向けを読む</button>
-              <button onclick="openLpModal('men')" style="flex:1;padding:10px 8px;background:rgba(129,199,132,0.12);border:1px solid rgba(129,199,132,0.3);border-radius:8px;color:#81c784;font-size:0.82em;font-weight:bold;cursor:pointer;">🌿 男性向けを読む</button>
-            </div>
-          </div>
-
-          <!-- QRコード -->
-          <div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:16px;margin-bottom:4px;">
-            <div style="font-size:0.78em;color:#aaa;margin-bottom:12px;">📲 QRコードで共有する</div>
-
-            <div style="display:flex;gap:16px;flex-wrap:wrap;">
-              <!-- 女性向け -->
-              <div style="text-align:center;">
-                <div style="font-size:0.75em;color:#f8bbd0;font-weight:bold;margin-bottom:6px;">🌸 女性向け</div>
-                <div style="background:white;border-radius:6px;padding:6px;display:inline-block;">
-                  <img id="qrWomen" src="" alt="女性向けLP QR" style="width:100px;height:100px;display:block;">
-                </div>
-              </div>
-              <!-- 男性向け -->
-              <div style="text-align:center;">
-                <div style="font-size:0.75em;color:#81c784;font-weight:bold;margin-bottom:6px;">🌿 男性向け</div>
-                <div style="background:white;border-radius:6px;padding:6px;display:inline-block;">
-                  <img id="qrMen" src="" alt="男性向けLP QR" style="width:100px;height:100px;display:block;">
-                </div>
-              </div>
-              <!-- Discord -->
-              <div style="text-align:center;">
-                <div style="font-size:0.75em;color:#a78bfa;font-weight:bold;margin-bottom:6px;">💬 Discord</div>
-                <div style="background:white;border-radius:6px;padding:6px;display:inline-block;">
-                  <img id="qrDiscord" src="" alt="Discord QR" style="width:100px;height:100px;display:block;">
-                </div>
-              </div>
-              <!-- LINE -->
-              <div style="text-align:center;">
-                <div style="font-size:0.75em;color:#4caf50;font-weight:bold;margin-bottom:6px;">💚 LINE</div>
-                <div style="background:white;border-radius:6px;padding:6px;display:inline-block;width:112px;height:112px;display:flex;align-items:center;justify-content:center;">
-                  <img id="qrLine" src="" alt="LINE QR" style="width:100px;height:100px;display:none;">
-                  <div id="qrLinePlaceholder" style="width:100px;height:100px;display:flex;align-items:center;justify-content:center;font-size:0.7em;color:#aaa;text-align:center;line-height:1.5;">準備中</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
     </div>
+      </div><!-- /libraryContent -->
+    </div><!-- /librarySection -->
 
     <button id="tutorialClose" style="width:100%;padding:12px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:8px;color:#fff;font-size:1em;font-weight:bold;cursor:pointer;margin-top:12px;">さあ、冒険へ旅立とう！ ✨</button>
   </div>
@@ -14911,7 +14920,7 @@ function copyDeckCodeFromModal() {
 </div>
 
 <!-- 右下？ボタン -->
-<button id="tutorialHelpBtn" onclick="showTutorial()" style="position:fixed;bottom:24px;right:20px;width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;color:#fff;font-size:1.2em;font-weight:bold;cursor:pointer;box-shadow:0 4px 15px rgba(79,172,254,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;">?</button>
+<button id="tutorialHelpBtn" onclick="showTutorial()" style="position:fixed;bottom:24px;right:20px;width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;color:#fff;font-size:1.2em;font-weight:bold;cursor:pointer;box-shadow:0 4px 15px rgba(79,172,254,0.5);z-index:9990;display:flex;align-items:center;justify-content:center;">?</button>
 <script>
 // ===== チュートリアル =====
 // ===== 王国スタートデッキ =====
@@ -14945,6 +14954,15 @@ function showTutorial() {
   var el = document.getElementById('tutorialOverlay');
   if (el) { el.style.display = 'flex'; }
 }
+function toggleLibrary() {
+  var content = document.getElementById('libraryContent');
+  var btn = document.getElementById('libraryToggleBtn');
+  if (!content) return;
+  var isOpen = content.style.display !== 'none';
+  content.style.display = isOpen ? 'none' : 'block';
+  btn.textContent = isOpen ? '🏰 王国の図書館 ▼' : '🏰 王国の図書館 ▲';
+}
+
 function toggleAbout(id) {
   var el = document.getElementById(id);
   if (!el) return;
