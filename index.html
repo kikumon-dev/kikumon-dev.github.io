@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.29.13';
+    const APP_VERSION = 'v0.29.17';
 
     function toggleCraftMode(enabled) {
       localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
@@ -104,18 +104,15 @@
   // ===== データマイグレーション =====
   (function migrateData() {
     var version = parseInt(localStorage.getItem('dataVersion') || '0');
-    // v0→v1: guildLicenseのtype→kind変換
+    // v0→v1: guildLicenseのtype→kind変換（allTasks内を対象に）
     if (version < 1) {
       try {
-        var gl = localStorage.getItem('guildLicense');
-        if (gl) {
-          var data = JSON.parse(gl);
-          if (data.type && !data.kind) {
-            data.kind = 'guildLicense';
-            delete data.type;
-            localStorage.setItem('guildLicense', JSON.stringify(data));
-            console.log('[migrate] guildLicense type→kind OK');
-          }
+        var _glEntry = allTasks.find(function(t){ return t.kind === 'guildLicense'; });
+        if (_glEntry && _glEntry.type && !_glEntry.kind) {
+          _glEntry.kind = 'guildLicense';
+          delete _glEntry.type;
+          saveAllTasks();
+          console.log('[migrate] guildLicense type→kind OK');
         }
       } catch(e) { console.warn('[migrate] guildLicense失敗', e); }
       localStorage.setItem('dataVersion', '1');
@@ -126,6 +123,72 @@
         if (btn) btn.style.display = '';
       }
     });
+    // ===== v0.29.17: deckHistory / myDecks / guildLicense → allTasks 移行 =====
+  (function migrateToAllTasks() {
+    var changed = false;
+
+    // deckHistory移行
+    try {
+      var legacyDH = localStorage.getItem('deckHistory');
+      if (legacyDH) {
+        var dhArr = JSON.parse(legacyDH);
+        if (Array.isArray(dhArr) && dhArr.length > 0) {
+          dhArr.forEach(function(h) {
+            var exists = allTasks.some(function(t){ return t.kind === 'deckHistory' && t.deckId === h.deckId; });
+            if (!exists) {
+              allTasks.push(Object.assign({ id: 'dh_' + (h.deckId || Date.now()), createdAt: new Date().toISOString() }, h, { kind: 'deckHistory' }));
+              changed = true;
+            }
+          });
+        }
+        localStorage.removeItem('deckHistory');
+        console.log('[migrate v0.29.17] deckHistory → allTasks 完了');
+      }
+    } catch(e) { console.warn('[migrate v0.29.17] deckHistory失敗', e); }
+
+    // myDecks移行
+    try {
+      var legacyMD = localStorage.getItem('myDecks');
+      if (legacyMD) {
+        var mdArr = JSON.parse(legacyMD);
+        if (Array.isArray(mdArr) && mdArr.length > 0) {
+          mdArr.forEach(function(d) {
+            var exists = allTasks.some(function(t){ return t.kind === 'myDeck' && t.deckId === d.deckId; });
+            if (!exists) {
+              var newId = d.id || d.deckId || ('md_' + Date.now());
+              allTasks.push(Object.assign({ createdAt: new Date().toISOString() }, d, { id: newId, kind: 'myDeck' }));
+              changed = true;
+            }
+          });
+        }
+        localStorage.removeItem('myDecks');
+        console.log('[migrate v0.29.17] myDecks → allTasks 完了');
+      }
+    } catch(e) { console.warn('[migrate v0.29.17] myDecks失敗', e); }
+
+    // guildLicense移行
+    try {
+      var legacyGL = localStorage.getItem('guildLicense');
+      if (legacyGL) {
+        var glData = JSON.parse(legacyGL);
+        var exists = allTasks.some(function(t){ return t.kind === 'guildLicense'; });
+        if (!exists && glData && (glData.kind === 'guildLicense')) {
+          glData.id = glData.id || ('gl_' + Date.now());
+          glData.createdAt = glData.createdAt || new Date().toISOString();
+          allTasks.push(glData);
+          changed = true;
+        }
+        localStorage.removeItem('guildLicense');
+        console.log('[migrate v0.29.17] guildLicense → allTasks 完了');
+      }
+    } catch(e) { console.warn('[migrate v0.29.17] guildLicense失敗', e); }
+
+    if (changed) {
+      localStorage.setItem('allTasks', JSON.stringify(allTasks));
+      console.log('[migrate v0.29.17] allTasks保存完了');
+    }
+  })();
+
     // ===== iOS viewport高さ対策（キーボード表示時のモーダル拡大バグ防止） =====
     function setVhVar() {
       var vh = (window.visualViewport ? window.visualViewport.height : window.innerHeight) * 0.01;
@@ -4516,7 +4579,7 @@
       if (!q) { container.innerHTML = ''; document.getElementById('searchCount').textContent = '0件'; return; }
 
       // タスク検索（kindが'note'以外 または 未設定の古いタスクも対象）
-      const taskHits = allTasks.filter(t => t.kind !== 'note' &&
+      const taskHits = allTasks.filter(t => t.kind !== 'note' && t.kind !== 'deckHistory' && t.kind !== 'myDeck' && t.kind !== 'guildLicense' &&
         ((t.text || '').toLowerCase().includes(q) || (t.memo || '').toLowerCase().includes(q))
       ).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
@@ -4700,45 +4763,42 @@
 
     // ===== deckHistory管理 =====
     function getDeckHistory() {
-      try {
-        return JSON.parse(localStorage.getItem('deckHistory') || '[]');
-      } catch(e) { return []; }
-    }
-    function saveDeckHistory(history) {
-      localStorage.setItem('deckHistory', JSON.stringify(history));
+      return allTasks.filter(function(t){ return t.kind === 'deckHistory'; });
     }
     function addDeckHistory(deck) {
-      var history = getDeckHistory();
-      var existing = history.find(function(h){ return h.deckId === deck.deckId; });
+      var existing = allTasks.find(function(t){ return t.kind === 'deckHistory' && t.deckId === deck.deckId; });
       if (existing) return; // 重複はスキップ
-      history.push({
+      allTasks.push({
+        id: (typeof generateTaskId === 'function') ? generateTaskId() : ('dh_' + Date.now()),
         deckId: deck.deckId || ('manual_' + Date.now()),
         kind: 'deckHistory',
         title: deck.title || '名称不明のデッキ',
         status: deck.status || 'active',
         createdBy: deck.createdBy || '不明',
-        receivedAt: getLocalDateStr(new Date()),
+        receivedAt: (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10),
         taskCount: (deck.tasks || []).length,
-        stats: { completed: 0 }
+        stats: { completed: 0 },
+        createdAt: new Date().toISOString()
       });
-      saveDeckHistory(history);
+      saveAllTasks();
       // 🔥 業判定はソース呼び出し元で行う（ここでは行わない）
     }
     function incrementDeckHistoryStat(deckId) {
       if (!deckId) return;
-      var history = getDeckHistory();
-      var entry = history.find(function(h){ return h.deckId === deckId; });
+      var entry = allTasks.find(function(t){ return t.kind === 'deckHistory' && t.deckId === deckId; });
       if (entry) {
+        if (!entry.stats) entry.stats = { completed: 0 };
         entry.stats.completed = (entry.stats.completed || 0) + 1;
-        saveDeckHistory(history);
+        saveAllTasks();
       }
     }
     // ===== マイデッキ（手元保存）=====
 function getMyDecks() {
-  try { return JSON.parse(localStorage.getItem('myDecks') || '[]'); } catch(e) { return []; }
+  return allTasks.filter(function(t){ return t.kind === 'myDeck'; });
 }
 function saveMyDecks(decks) {
-  localStorage.setItem('myDecks', JSON.stringify(decks));
+  // allTasks統合済み。saveAllTasksで保存。互換のため残す。
+  saveAllTasks();
 }
 function renderMyDecks() {
   var decks = getMyDecks();
@@ -4769,22 +4829,28 @@ function renderMyDecks() {
     var btnApply = document.createElement('button');
     btnApply.style.cssText = 'flex:1;padding:6px;background:rgba(79,172,254,0.15);border:1px solid #4facfe;border-radius:6px;color:#4facfe;font-size:0.75em;font-weight:700;cursor:pointer;';
     btnApply.textContent = '🏪 公式申請';
-    btnApply.addEventListener('click', (function(i){ return function(){ myDeckApply(i); }; })(idx));
+    btnApply.addEventListener('click', (function(d){ return function(){ myDeckApply(getMyDecks().findIndex(function(x){return x.id===d.id;})); }; })(deck));
 
     var btnPublish = document.createElement('button');
     btnPublish.style.cssText = 'flex:1;padding:6px;background:rgba(255,150,0,0.15);border:1px solid #ff8800;border-radius:6px;color:#ff8800;font-size:0.75em;font-weight:700;cursor:pointer;';
     btnPublish.textContent = '📋 楽市楽座で配布';
-    btnPublish.addEventListener('click', (function(i){ return function(){ myDeckPublish(i); }; })(idx));
+    btnPublish.addEventListener('click', (function(d){ return function(){ myDeckPublish(getMyDecks().findIndex(function(x){return x.id===d.id;})); }; })(deck));
 
     var btnDelete = document.createElement('button');
     btnDelete.style.cssText = 'padding:6px 10px;background:rgba(239,83,80,0.15);border:1px solid #ef5350;border-radius:6px;color:#ef5350;font-size:0.75em;cursor:pointer;';
     btnDelete.textContent = '削除';
-    btnDelete.addEventListener('click', (function(i){ return function(){ myDeckDelete(i); }; })(idx));
+    btnDelete.addEventListener('click', (function(d){ return function(){
+      if (!confirm('このデッキを削除しますか？')) return;
+      var i = allTasks.findIndex(function(t){ return t.id === d.id; });
+      if (i >= 0) allTasks.splice(i, 1);
+      saveAllTasks();
+      renderMyDecks();
+    }; })(deck));
 
     var btnEdit = document.createElement('button');
     btnEdit.style.cssText = 'flex:1;padding:6px;background:rgba(168,85,247,0.15);border:1px solid #a855f7;border-radius:6px;color:#a855f7;font-size:0.75em;font-weight:700;cursor:pointer;';
     btnEdit.textContent = '✏️ 編集';
-    btnEdit.addEventListener('click', (function(i){ return function(){ myDeckEdit(i); }; })(idx));
+    btnEdit.addEventListener('click', (function(d){ return function(){ myDeckEdit(getMyDecks().findIndex(function(x){return x.id===d.id;})); }; })(deck));
 
     btnRow.appendChild(btnEdit);
     btnRow.appendChild(btnApply);
@@ -4851,8 +4917,12 @@ function myDeckApply(idx) {
 function myDeckDelete(idx) {
   if (!confirm('このデッキを削除しますか？')) return;
   var decks = getMyDecks();
-  decks.splice(idx, 1);
-  saveMyDecks(decks);
+  var target = decks[idx];
+  if (!target) return;
+  var deckId = target.id;
+  var i = allTasks.findIndex(function(t){ return t.id === deckId; });
+  if (i >= 0) allTasks.splice(i, 1);
+  saveAllTasks();
   renderMyDecks();
 }
 
@@ -5390,7 +5460,7 @@ function getDeckGDP() {
 
         body.appendChild(col);
         const tasksOnDay = allTasks.filter(t =>
-          t.kind !== 'note' && t.date === dateStr && t.time && isCalendarVisible(t.calendarId)
+          t.kind !== 'note' && t.kind !== 'deckHistory' && t.kind !== 'myDeck' && t.kind !== 'guildLicense' && t.date === dateStr && t.time && isCalendarVisible(t.calendarId)
         );
 
         // 重なり解消: 列割り当て（タイムラインと同ロジック）
@@ -8222,11 +8292,12 @@ function getDeckGDP() {
         if (key.startsWith('deck_received_')) localStorage.removeItem(key);
       });
 
-      // 行動貿易履歴・王国GDPをクリア
+      // 行動貿易履歴・マイデッキ・guildLicenseはallTasks内に統合済み
+      // allTasks削除で一緒にクリアされる
+      // 旧キーの掃除（マイグレーション後の残骸を念のため削除）
       localStorage.removeItem('deckHistory');
-
-      // マイデッキをクリア
       localStorage.removeItem('myDecks');
+      localStorage.removeItem('guildLicense');
 
       // 日次ビューを再描画
       renderAllSections();
@@ -8270,11 +8341,13 @@ function getDeckGDP() {
       
       const _taskCount = allTasks.filter(t => t.kind === 'task' || !t.kind).length;
       const _noteCount = allTasks.filter(t => t.kind === 'note').length;
-      const _otherCount = allTasks.length - _taskCount - _noteCount;
+      const _dhCount = allTasks.filter(t => t.kind === 'deckHistory').length;
+      const _mdCount = allTasks.filter(t => t.kind === 'myDeck').length;
       let exportMsg = `エクスポート完了！\n\n`;
       exportMsg += `✅ タスク：${_taskCount}件\n`;
       if (_noteCount > 0) exportMsg += `📝 自由帳ノート：${_noteCount}件\n`;
-      if (_otherCount > 0) exportMsg += `📦 その他：${_otherCount}件\n`;
+      if (_dhCount > 0) exportMsg += `⚔️ デッキ履歴：${_dhCount}件\n`;
+      if (_mdCount > 0) exportMsg += `🃏 マイデッキ：${_mdCount}件\n`;
       exportMsg += `\n合計：${allTasks.length}件\nファイル: ${filename}`;
       alert(exportMsg);
     }
@@ -8299,9 +8372,11 @@ function getDeckGDP() {
           // ③ 完了タスクを含めるか確認
           const includeCompleted = confirm('完了済みタスクも復元しますか？\n（キャンセルで未完了タスクのみ）');
           let _invalidCount = 0;
+          const _NON_TASK_KINDS = ['note', 'dailyStatus', 'family', 'deckHistory', 'myDeck', 'guildLicense'];
           const validTasks = tasksData.filter(task => {
             if (!task.id || typeof task.id !== 'string') { _invalidCount++; return false; }
-            if (task.kind === 'task') {
+            if (_NON_TASK_KINDS.includes(task.kind)) return true; // 非タスクkindはそのまま通す
+            if (task.kind === 'task' || !task.kind) {
               if (!task.text || typeof task.text !== 'string') { _invalidCount++; return false; }
               if (!task.section || ![1,2,3,4].includes(task.section)) { _invalidCount++; return false; }
               if (!task.date || !/^\d{4}-\d{2}-\d{2}$/.test(task.date)) { _invalidCount++; return false; }
@@ -8976,7 +9051,7 @@ function getDeckGDP() {
       const today = new Date(); today.setHours(0,0,0,0);
       const rangeEnd = rangeDays > 0 ? new Date(today.getTime() + rangeDays * 86400000) : null;
       return allTasks.filter(t => {
-        if (t.kind === 'note') return false;
+        if (t.kind === 'note' || t.kind === 'deckHistory' || t.kind === 'myDeck' || t.kind === 'guildLicense') return false;
         const cal = getCalendar(t.calendarId);
         if (cal && !cal.shareable) return false;
         if (targetCalendarIds && !targetCalendarIds.includes(t.calendarId || 'default')) return false;
@@ -11297,6 +11372,7 @@ window._receiveDeckAgain = function(deckId) {
   var deck = OFFICIAL_DECKS.find(function(d){ return d.id === deckId; });
   if (!deck) return;
   // 受取済みでも通常受け取り可能（再度受け取るはrecieveDeckAgain）
+  if (!confirm((deck.title||'デッキ') + '（' + (deck.tasks||[]).length + '枚）を王国に取り込みますか？')) return;
   var today = getLocalDateStr(new Date());
   deck.tasks.forEach(function(t) {
     var newTask = createTask(t.text, today, t.time || null, t.section, 'daily_only');
@@ -11639,10 +11715,15 @@ function visitCraft() {
     var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
     // 🔥 DCK1（外部コード入力）→ 業+1
     if (typeof addGou === 'function') addGou(1, 'DCK1外部デッキ受取');
+    var _visitDeckId = deck.deckId || ('visit_' + Date.now());
     deck.tasks.forEach(function(d) {
       var t = (typeof createTask === 'function') ? createTask(d.text, today, null, d.section||1, 'daily_only') : null;
-      if (t && d.memo && typeof updateTask === 'function') updateTask(t.id, { memo: d.memo });
+      if (t) {
+        if (d.memo && typeof updateTask === 'function') updateTask(t.id, { memo: d.memo });
+        if (typeof updateTask === 'function') updateTask(t.id, { deckId: _visitDeckId });
+      }
     });
+    if (typeof addDeckHistory === 'function') addDeckHistory(deck);
     if (typeof saveAllTasks === 'function') saveAllTasks();
     if (typeof renderAllSections === 'function') renderAllSections(today);
     closeCraftVisitModal();
@@ -13225,32 +13306,34 @@ function openQRScanner(onResult) {
     if (stream) stream.getTracks().forEach(function(t){ t.stop(); });
   };
 
-  // カメラ起動（背面カメラ優先）
-  var constraints = {
-    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
-  };
-
-  navigator.mediaDevices.getUserMedia(constraints)
-    .then(function(s) {
-      stream = s;
-      video.srcObject = stream;
-      video.play();
-      video.addEventListener('loadedmetadata', function() {
-        tick();
-      });
-    })
-    .catch(function(err) {
-      var status = document.getElementById('qrScanStatus');
-      if (status) {
-        if (err.name === 'NotAllowedError') {
-          status.textContent = '⚠️ カメラの許可が必要です';
-          status.style.color = '#ff6b6b';
-        } else {
-          status.textContent = '⚠️ カメラを起動できませんでした: ' + err.message;
-          status.style.color = '#ff6b6b';
+  // カメラ起動（背面カメラ優先・PCはフォールバック）
+  function startCamera(constraints) {
+    navigator.mediaDevices.getUserMedia(constraints)
+      .then(function(s) {
+        stream = s;
+        video.srcObject = stream;
+        video.play();
+        video.addEventListener('loadedmetadata', function() { tick(); });
+      })
+      .catch(function(err) {
+        // facingMode指定でコケた場合、制約なしでリトライ（PC対応）
+        if (constraints.video && constraints.video.facingMode && err.name !== 'NotAllowedError') {
+          startCamera({ video: true });
+          return;
         }
-      }
-    });
+        var status = document.getElementById('qrScanStatus');
+        if (status) {
+          if (err.name === 'NotAllowedError') {
+            status.innerHTML = '⚠️ カメラの許可が必要です<br><span style="font-size:0.9em;color:#aaa;">ブラウザのアドレスバー横のカメラアイコンから許可してください</span>';
+            status.style.color = '#ff6b6b';
+          } else {
+            status.textContent = '⚠️ カメラを起動できませんでした: ' + err.message;
+            status.style.color = '#ff6b6b';
+          }
+        }
+      });
+  }
+  startCamera({ video: { facingMode: { ideal: 'environment' } } });
 
   function tick() {
     if (!scanning) return;
@@ -13296,6 +13379,9 @@ function receiveDeckByCode(code) {
   try { deck = JSON.parse(raw); }
   catch(e) { showToast('⚠️ コードの形式が正しくありません'); return; }
   if (deck.kind !== 'deck') { showToast('⚠️ デッキコードではありません'); return; }
+  // カメラを先に閉じてからconfirm（モバイルでの二重オーバーレイ防止）
+  if (typeof closeQRScanner === 'function') closeQRScanner();
+  if (!confirm((deck.title||'デッキ') + '（' + (deck.tasks||[]).length + '枚）を王国に取り込みますか？')) return;
   var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
   var _deckId = deck.deckId || ('qrscan_' + Date.now());
   deck.tasks.forEach(function(d) {
@@ -13319,6 +13405,11 @@ function receiveDeckByCode(code) {
 
 
 function openDeckQRScanner() {
+  // HTTPS環境チェック（getUserMediaはHTTPS必須）
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+    showToast('📷 QRスキャンはHTTPS環境（GitHub Pages）でのみ動作します。コードを直接入力してください。');
+    return;
+  }
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     showToast('このブラウザはカメラスキャンに対応していません。コードを直接入力してください。');
     return;
@@ -13453,6 +13544,47 @@ function copyDeckCodeFromModal() {
         </div>
       </div>
 
+      <!-- やることクラフトを紹介する -->
+      <div style="margin-bottom:6px;">
+        <button onclick="toggleAbout('aboutIntro')" style="width:100%;text-align:left;background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.25);border-radius:8px;padding:8px 12px;color:#ffd700;font-size:0.85em;font-weight:bold;cursor:pointer;">🏰 やることクラフトを紹介する</button>
+        <div id="aboutIntro" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,215,0,0.15);border-top:none;border-radius:0 0 8px 8px;padding:16px 12px;font-size:0.82em;color:#ccc;line-height:1.7;">
+
+          <div style="color:#ffd700;font-size:0.88em;margin-bottom:16px;line-height:1.7;">
+            やることクラフトを紹介してくれた方に、<br>
+            <strong style="color:#fff;">デッキをプレゼントします。</strong><br>
+            <span style="color:#aaa;font-size:0.9em;">紹介後、Discordでお知らせください。</span>
+          </div>
+
+          <!-- 女性向けLP -->
+          <div style="margin-bottom:20px;">
+            <div style="font-size:0.8em;color:#f8bbd0;font-weight:bold;margin-bottom:8px;letter-spacing:0.05em;">🌸 女性向け</div>
+            <div style="background:white;border-radius:8px;padding:8px;display:inline-block;">
+              <img id="qrWomen" src="" alt="女性向けLP QR" style="width:120px;height:120px;display:block;">
+            </div>
+            <div style="font-size:0.75em;color:#aaa;margin-top:6px;">kikumon-dev.github.io</div>
+          </div>
+
+          <!-- 男性向けLP -->
+          <div style="margin-bottom:20px;">
+            <div style="font-size:0.8em;color:#81c784;font-weight:bold;margin-bottom:8px;letter-spacing:0.05em;">🌿 男性向け</div>
+            <div style="background:white;border-radius:8px;padding:8px;display:inline-block;">
+              <img id="qrMen" src="" alt="男性向けLP QR" style="width:120px;height:120px;display:block;">
+            </div>
+            <div style="font-size:0.75em;color:#aaa;margin-top:6px;">kikumon-dev.github.io</div>
+          </div>
+
+          <!-- Discord -->
+          <div style="border-top:1px solid rgba(255,255,255,0.1);padding-top:16px;">
+            <div style="font-size:0.8em;color:#a78bfa;font-weight:bold;margin-bottom:8px;letter-spacing:0.05em;">💬 Discordコミュニティ</div>
+            <div style="background:white;border-radius:8px;padding:8px;display:inline-block;">
+              <img id="qrDiscord" src="" alt="Discord QR" style="width:120px;height:120px;display:block;">
+            </div>
+            <div style="font-size:0.75em;color:#aaa;margin-top:6px;">招待リンクはDiscordで確認</div>
+          </div>
+
+        </div>
+      </div>
+
     </div>
 
     <button id="tutorialClose" style="width:100%;padding:12px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:8px;color:#fff;font-size:1em;font-weight:bold;cursor:pointer;margin-top:12px;">さあ、冒険へ旅立とう！ ✨</button>
@@ -13498,6 +13630,18 @@ function toggleAbout(id) {
   var el = document.getElementById(id);
   if (!el) return;
   el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  if (id === 'aboutIntro' && el.style.display === 'block') {
+    var base = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=';
+    var womenUrl  = 'https://kikumon-dev.github.io/lp-women/';
+    var menUrl    = 'https://kikumon-dev.github.io/lp-men/';
+    var discordUrl= 'https://discord.gg/XXXXXXXXX';     // Discord招待（後で差し替え）
+    var qw = document.getElementById('qrWomen');
+    var qm = document.getElementById('qrMen');
+    var qd = document.getElementById('qrDiscord');
+    if (qw && !qw.src.includes('qrserver')) qw.src = base + encodeURIComponent(womenUrl);
+    if (qm && !qm.src.includes('qrserver')) qm.src = base + encodeURIComponent(menUrl);
+    if (qd && !qd.src.includes('qrserver')) qd.src = base + encodeURIComponent(discordUrl);
+  }
 }
 
 // ===== 管理者モード =====
@@ -13732,20 +13876,6 @@ function toggleAdminMode() {
   }
 }
 
-function showAdminToast(msg) {
-  var t = document.getElementById('settingsSaveToast');
-  if (!t) {
-    t = document.createElement('div');
-    t.id = 'settingsSaveToast';
-    t.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.85);color:#ffd700;padding:16px 28px;border-radius:14px;font-size:1em;font-weight:bold;z-index:99999;text-align:center;pointer-events:none;border:1px solid rgba(255,215,0,0.4);';
-    document.body.appendChild(t);
-  }
-  t.innerHTML = msg;
-  t.style.display = 'block';
-  clearTimeout(t._t);
-  t._t = setTimeout(function(){ t.style.display = 'none'; }, 2000);
-}
-
 // ===== 商人ギルドモード =====
 function openGuildMode() {
   var modal = document.getElementById('guildModal');
@@ -13753,7 +13883,7 @@ function openGuildMode() {
   document.getElementById('guildLicenseInput').value = '';
   modal.style.display = 'flex';
   // 既にライセンス保持なら案内を変える
-  if (localStorage.getItem('guildLicense')) {
+  if (allTasks.some(function(t){ return t.kind === 'guildLicense'; })) {
     document.getElementById('guildLicenseInput').placeholder = '既に行動貿易ライセンスを持っています。新しいコードで上書きできます。';
   }
 }
@@ -13775,8 +13905,13 @@ function applyGuildLicense() {
   try { data = JSON.parse(raw); }
   catch(e) { alert('コードの形式が正しくありません'); return; }
   if (data.kind !== 'guildLicense') { alert('コードの形式が正しくありません'); return; }
-  // ライセンス保存
-  localStorage.setItem('guildLicense', JSON.stringify(data));
+  // ライセンス保存（allTasks統合）
+  var _glIdx2 = allTasks.findIndex(function(t){ return t.kind === 'guildLicense'; });
+  if (_glIdx2 >= 0) allTasks.splice(_glIdx2, 1);
+  data.id = data.id || (typeof generateTaskId === 'function' ? generateTaskId() : 'gl_' + Date.now());
+  data.createdAt = data.createdAt || new Date().toISOString();
+  allTasks.push(data);
+  saveAllTasks();
   closeGuildMode();
   // トースト
   var toast = document.getElementById('settingsSaveToast');
@@ -13838,7 +13973,7 @@ function issueGuildLicense() {
 
 function updateGuildUI() {
   // ギルドライセンス保持者のみデッキビルダーを表示
-  var hasLicense = !!localStorage.getItem('guildLicense');
+  var hasLicense = allTasks.some(function(t){ return t.kind === 'guildLicense'; });
   var btn = document.getElementById('guildDeckBuilderBtn');
   if (btn) btn.style.display = hasLicense ? 'block' : 'none';
 }
@@ -13860,10 +13995,13 @@ function deckBuilderSave() {
     var decks = getMyDecks();
     var orig = decks[window._editingMyDeckIdx];
     if (orig) {
-      orig.title = title; orig.desc = desc;
-      orig.tasks = _deckBuilderTasks.slice();
-      orig.createdBy = myName; orig.savedAt = today;
-      saveMyDecks(decks);
+      var origInAll = allTasks.find(function(t){ return t.id === orig.id; });
+      if (origInAll) {
+        origInAll.title = title; origInAll.desc = desc;
+        origInAll.tasks = _deckBuilderTasks.slice();
+        origInAll.createdBy = myName; origInAll.savedAt = today;
+        saveAllTasks();
+      }
       window._editingMyDeckIdx = -1;
       renderMyDecks();
       closeDeckBuilder();
@@ -13873,10 +14011,9 @@ function deckBuilderSave() {
   }
   window._editingMyDeckIdx = -1;
   var deckId = (typeof generateTaskId === 'function') ? generateTaskId() : crypto.randomUUID();
-  var deck = { deckId: deckId, title: title, desc: desc, tasks: _deckBuilderTasks.slice(), createdBy: myName, createdAt: today, savedAt: today };
-  var decks = getMyDecks();
-  decks.push(deck);
-  saveMyDecks(decks);
+  var deck = { id: deckId, deckId: deckId, kind: 'myDeck', title: title, desc: desc, tasks: _deckBuilderTasks.slice(), createdBy: myName, createdAt: today, savedAt: today };
+  allTasks.push(deck);
+  saveAllTasks();
   // トースト
   var toast = document.getElementById('settingsSaveToast');
   if (!toast) {
@@ -13921,6 +14058,8 @@ function openDeckBuilder() {
 
 function myDeckEdit(idx) {
   var deck = getMyDecks()[idx]; if (!deck) return;
+  // idベースで編集対象を記録（allTasks統合後の互換）
+  window._editingMyDeckId = deck.id;
   // デッキビルダーを編集モードで開く
   _deckBuilderTasks = (deck.tasks || []).slice();
   _deckBuilderEditingIdx = -1;
