@@ -12,10 +12,10 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.29.17';
+    const APP_VERSION = 'v0.29.19';
 
     function toggleCraftMode(enabled) {
-      localStorage.setItem('craftModeEnabled', enabled ? 'true' : 'false');
+      allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
       if (btn) btn.style.display = enabled ? '' : 'none';
       const modeDiv = document.getElementById('craftRenderModeSetting');
@@ -118,7 +118,7 @@
       localStorage.setItem('dataVersion', '1');
     }
   })();
-      if (localStorage.getItem('craftModeEnabled') === 'true') {
+      if ((allSettings.ui.craftModeEnabled === true || allSettings.ui.craftModeEnabled === 'true')) {
         const btn = document.getElementById('navCraft');
         if (btn) btn.style.display = '';
       }
@@ -1849,8 +1849,8 @@
     @media screen and (max-width: 768px) {
       .wg-rowh-sp { display: none !important; }
       .wg-rowh-pc { display: none !important; }
-      .wg-rowh-sp-bar { display: flex !important; }
-      .wg-reset-btn { display: none !important; }
+      .wg-rowh-sp-bar { display: none !important; }
+      /* スマホでも↺ボタンは表示（新統合スライダー行に含まれるため） */
 
       .weekly-header {
         gap: 4px;
@@ -3362,35 +3362,29 @@
         <button class="monthly-nav-btn" onclick="changeWeek(-1)">◀ 先週</button>
         <h2 id="weeklyTitle"></h2>
         <button class="monthly-nav-btn" onclick="changeWeek(1)">来週 ▶</button>
-        <!-- 1行目右：👨‍👩‍👧 ↔スライダー（PC）or ↔スライダー（スマホ） -->
-        <div style="display:flex;align-items:center;gap:2px;margin-left:4px;flex-shrink:0;">
+        <!-- 右端：👨‍👩‍👧ボタン -->
+        <div style="display:flex;align-items:center;gap:4px;margin-left:4px;flex-shrink:0;">
           <button onclick="openFamilyShareModal()" title="家族と共有"
             style="font-size:0.72em;background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff;border:none;border-radius:6px;padding:3px 8px;cursor:pointer;font-weight:700;">👨‍👩‍👧</button>
-          <span style="font-size:0.65em;color:#bbb;">↔</span>
-          <input type="range" id="weeklyWidthSlider" min="100" max="300" value="100"
-            style="width:40px;accent-color:#4facfe;cursor:pointer;"
-            oninput="window.adjustWeeklyWidth(this.value)"
-            ondblclick="window.resetWeeklyWidth()">
-          <button onclick="resetWeeklyWidth()" class="wg-reset-btn" style="font-size:0.6em;color:#aaa;background:none;border:1px solid #ddd;border-radius:3px;padding:1px 4px;cursor:pointer;">↺</button>
-          <!-- PC専用：縦スライダーも1行目に -->
-          <span class="wg-rowh-pc" style="font-size:0.65em;color:#bbb;">↕</span>
-          <input type="range" id="weeklyRowHSlider" min="80" max="240" value="80"
-            class="wg-rowh-pc"
-            style="width:40px;accent-color:#a78bfa;cursor:pointer;"
-            oninput="window.adjustWeeklyRowH(this.value)"
-            ondblclick="window.resetWeeklyRowH()">
-          <button onclick="resetWeeklyRowH()" class="wg-rowh-pc wg-reset-btn" style="font-size:0.6em;color:#aaa;background:none;border:1px solid #ddd;border-radius:3px;padding:1px 4px;cursor:pointer;">↺</button>
-        </div>
-      <!-- スマホ専用2行目：↕縦スライダー -->
-        <div class="wg-rowh-sp-bar" style="width:100%;display:flex;align-items:center;gap:4px;padding:2px 8px;box-sizing:border-box;">
-          <span style="font-size:0.65em;color:#bbb;">↕</span>
-          <input type="range" id="weeklyRowHSliderSp" min="80" max="240" value="80"
-            style="flex:1;accent-color:#a78bfa;cursor:pointer;"
-            oninput="window.adjustWeeklyRowH(this.value)"
-            ondblclick="window.resetWeeklyRowH()">
-          <button onclick="resetWeeklyRowH()" style="font-size:0.6em;color:#aaa;background:none;border:1px solid #ddd;border-radius:3px;padding:1px 4px;cursor:pointer;">↺</button>
         </div>
       </div>
+      <!-- 2行目：↕縦 / ↔横 を半分半分 + リセット（縦が左・横が右） -->
+      <div style="width:100%;display:flex;align-items:center;gap:0;padding:3px 8px 4px;box-sizing:border-box;border-bottom:1px solid #f0f0f0;">
+        <span style="font-size:0.65em;color:#f472b6;flex-shrink:0;margin-right:3px;">↕</span>
+        <input type="range" id="weeklyRowHSlider" min="80" max="240" value="80"
+          style="flex:1;accent-color:#f472b6;cursor:pointer;min-width:0;background:transparent;-webkit-appearance:none;height:4px;border-radius:2px;background:linear-gradient(to right,#f472b6 0%,#f472b6 0%,#e5e7eb 0%);"
+          oninput="window.adjustWeeklyRowH(this.value)"
+          ondblclick="window.resetWeeklyRowH()">
+        <span style="font-size:0.65em;color:#60a5fa;flex-shrink:0;margin-left:8px;margin-right:3px;">↔</span>
+        <input type="range" id="weeklyWidthSlider" min="100" max="300" value="100"
+          style="flex:1;accent-color:#60a5fa;cursor:pointer;min-width:0;background:transparent;-webkit-appearance:none;height:4px;border-radius:2px;background:linear-gradient(to right,#60a5fa 0%,#60a5fa 0%,#e5e7eb 0%);"
+          oninput="window.adjustWeeklyWidth(this.value)"
+          ondblclick="window.resetWeeklyWidth()">
+        <button onclick="window.resetWeeklyWidth();window.resetWeeklyRowH();"
+          style="font-size:0.6em;color:#aaa;background:none;border:1px solid #ddd;border-radius:3px;padding:1px 5px;cursor:pointer;flex-shrink:0;margin-left:4px;">↺</button>
+      </div>
+      <!-- 非表示ダミー（JS互換用） -->
+      <input type="range" id="weeklyRowHSliderSp" min="80" max="240" value="80" style="display:none;" oninput="window.adjustWeeklyRowH(this.value)">
       <!-- カレンダークイックフィルター -->
       <div id="weeklyCalendarFilter" style="display:flex;gap:6px;padding:4px 12px 6px;flex-wrap:wrap;border-bottom:1px solid #f0f0f0;background:#fff;"></div>
     </div>
@@ -3464,43 +3458,152 @@
   <!-- 設定ビュー -->
   <div id="craftView" style="display:none;width:100%;height:calc(100vh - 50px);position:relative;background:#0a0a1a;overflow:hidden;">
   <canvas id="craftCanvas" style="width:100%;height:100%;display:block;"></canvas>
-  <div id="craftHUD" style="position:absolute;top:16px;left:16px;right:16px;pointer-events:none;">
-    <div style="background:rgba(0,0,0,0.7);border:1px solid rgba(255,200,50,0.4);border-radius:12px;padding:12px 16px;color:#fff;font-family:monospace;backdrop-filter:blur(8px);">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-        <div>
-          <span id="craftKingdomName" style="color:#ffd700;font-size:1.1em;font-weight:bold;">アリアハン王国</span>
-          <span id="craftLevel" style="color:#aaa;font-size:0.85em;margin-left:8px;">Lv.1</span>
+
+  <div id="craftHUD" style="position:absolute;top:0;left:0;right:0;pointer-events:none;">
+    <!-- メインHUDバー：超薄型グラスモーフィズム -->
+    <div style="
+      background: linear-gradient(180deg, rgba(4,10,24,0.72) 0%, rgba(4,10,24,0.0) 100%);
+      padding: 14px 20px 22px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    ">
+      <!-- 左：王国名 + Lv + EXPバー -->
+      <div style="display:flex;flex-direction:column;gap:5px;min-width:0;">
+        <div style="display:flex;align-items:baseline;gap:8px;">
+          <span id="craftKingdomName" style="
+            color:#fff;
+            font-size:1.05em;
+            font-weight:700;
+            font-family:'Hiragino Sans','Yu Gothic',sans-serif;
+            letter-spacing:0.03em;
+            text-shadow:0 0 12px rgba(255,220,100,0.6),0 1px 3px rgba(0,0,0,0.8);
+          ">王国</span>
+          <span id="craftLevel" style="
+            color:rgba(255,220,100,0.85);
+            font-size:0.72em;
+            font-weight:600;
+            font-family:monospace;
+            letter-spacing:0.05em;
+            text-shadow:0 0 8px rgba(255,200,80,0.5);
+          ">Lv.1</span>
         </div>
-        <div style="display:flex;gap:12px;font-size:0.82em;">
-          <span>💎 <span id="craftGold">0</span></span>
-          <span>🥇 <span id="craftStone">0</span></span>
-          <span>🥈 <span id="craftWood">0</span></span>
-          <span>🥉 <span id="craftEarth">0</span></span>
+        <!-- EXPバー：細いグロウライン -->
+        <div style="width:140px;height:3px;background:rgba(255,255,255,0.08);border-radius:99px;overflow:hidden;position:relative;">
+          <div id="craftExpBar" style="
+            height:100%;
+            background:linear-gradient(90deg,rgba(255,200,60,0.9),rgba(255,120,40,0.9));
+            border-radius:99px;
+            transition:width 0.6s cubic-bezier(.4,0,.2,1);
+            width:0%;
+            box-shadow:0 0 6px rgba(255,180,40,0.8);
+          "></div>
+        </div>
+        <div id="craftNextInfo" style="
+          font-size:0.62em;
+          color:rgba(255,255,255,0.35);
+          font-family:monospace;
+          letter-spacing:0.04em;
+        "></div>
+      </div>
+
+      <!-- 右：資源バッジ群 -->
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
+          <div style="
+            background:rgba(255,255,255,0.07);
+            border:1px solid rgba(255,255,255,0.10);
+            border-radius:20px;
+            padding:3px 9px;
+            font-size:0.72em;
+            color:rgba(255,255,255,0.85);
+            font-family:monospace;
+            display:flex;align-items:center;gap:4px;
+            backdrop-filter:blur(4px);
+          ">💎 <span id="craftGold" style="color:#a8d8ff;font-weight:700;">0</span></div>
+          <div style="
+            background:rgba(255,255,255,0.07);
+            border:1px solid rgba(255,255,255,0.10);
+            border-radius:20px;
+            padding:3px 9px;
+            font-size:0.72em;
+            color:rgba(255,255,255,0.85);
+            font-family:monospace;
+            display:flex;align-items:center;gap:4px;
+            backdrop-filter:blur(4px);
+          ">🥇 <span id="craftStone" style="color:#ffd98a;font-weight:700;">0</span></div>
+          <div style="
+            background:rgba(255,255,255,0.07);
+            border:1px solid rgba(255,255,255,0.10);
+            border-radius:20px;
+            padding:3px 9px;
+            font-size:0.72em;
+            color:rgba(255,255,255,0.85);
+            font-family:monospace;
+            display:flex;align-items:center;gap:4px;
+            backdrop-filter:blur(4px);
+          ">🥈 <span id="craftWood" style="color:#c8e8c8;font-weight:700;">0</span></div>
+          <div style="
+            background:rgba(255,255,255,0.07);
+            border:1px solid rgba(255,255,255,0.10);
+            border-radius:20px;
+            padding:3px 9px;
+            font-size:0.72em;
+            color:rgba(255,255,255,0.85);
+            font-family:monospace;
+            display:flex;align-items:center;gap:4px;
+            backdrop-filter:blur(4px);
+          ">🥉 <span id="craftEarth" style="color:#f4c8a8;font-weight:700;">0</span></div>
         </div>
       </div>
-      <div style="margin-top:8px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;">
-        <div id="craftExpBar" style="height:100%;background:linear-gradient(90deg,#ffd700,#ff8c00);border-radius:2px;transition:width 0.5s;width:0%;"></div>
-      </div>
-      <div id="craftNextInfo" style="margin-top:6px;font-size:0.75em;color:#888;"></div>
     </div>
   </div>
   <div id="craftMessage" style="position:absolute;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:#ffd700;padding:10px 20px;border-radius:20px;font-family:monospace;font-size:0.9em;border:1px solid rgba(255,215,0,0.4);opacity:0;transition:opacity 0.5s;white-space:nowrap;pointer-events:none;"></div>
   <!-- 王国GDP＋徳（＋管理者：業・徳分） バッジ（左下） -->
-  <div id="craftGDPBadge" style="position:absolute;bottom:16px;left:16px;background:rgba(0,0,0,0.75);border:1px solid rgba(76,175,80,0.5);border-radius:12px;padding:8px 14px;color:#fff;font-family:monospace;backdrop-filter:blur(6px);text-align:left;min-width:90px;cursor:pointer;" onclick="adminBadgeTap()">
-    <div style="font-size:0.6em;color:#aaa;margin-bottom:1px;">💰 GDP</div>
-    <div id="craftGDPValue" style="font-size:1.3em;font-weight:900;color:#ffd700;line-height:1.2;">0</div>
-    <div style="font-size:0.6em;color:#aaa;margin-top:5px;margin-bottom:1px;">🌸 徳</div>
-    <div id="craftTokuValue" style="font-size:1.3em;font-weight:900;color:#f8bbd0;line-height:1.2;">0</div>
+  <!-- 左下：GDP＋徳バッジ -->
+  <div id="craftGDPBadge" style="
+    position:absolute;bottom:20px;left:16px;
+    background:rgba(4,10,22,0.48);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:14px;
+    padding:9px 13px;
+    color:#fff;
+    font-family:'Hiragino Sans','Yu Gothic',monospace;
+    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(16px);
+    cursor:pointer;
+    box-shadow:0 8px 32px rgba(0,0,0,0.35),inset 0 1px 0 rgba(255,255,255,0.06);
+    min-width:74px;
+  " onclick="adminBadgeTap()">
+    <div style="display:flex;flex-direction:row;gap:12px;align-items:center;">
+      <div style="text-align:center;">
+        <div style="font-size:0.5em;color:rgba(255,220,80,0.55);letter-spacing:0.12em;margin-bottom:2px;">GDP</div>
+        <div id="craftGDPValue" style="font-size:1.05em;font-weight:800;color:#ffd966;line-height:1;text-shadow:0 0 8px rgba(255,215,0,0.35);">0</div>
+      </div>
+      <div style="width:1px;height:28px;background:rgba(255,255,255,0.07);"></div>
+      <div style="text-align:center;">
+        <div style="font-size:0.5em;color:rgba(255,180,210,0.55);letter-spacing:0.12em;margin-bottom:2px;">徳</div>
+        <div id="craftTokuValue" style="font-size:1.05em;font-weight:800;color:#ffb7d5;line-height:1;text-shadow:0 0 8px rgba(255,140,190,0.35);">0</div>
+      </div>
+    </div>
     <!-- 管理者モードのみ表示 -->
     <div id="adminBadgeExtra" style="display:none !important;">
-      <div style="font-size:0.6em;color:#aaa;margin-top:5px;margin-bottom:1px;">🔥 業</div>
-      <div id="craftGouValue" style="font-size:1.3em;font-weight:900;color:#ff8a65;line-height:1.2;">0</div>
-      <div style="border-top:1px solid rgba(255,255,255,0.2);margin:6px 0 4px;"></div>
-      <div style="font-size:0.6em;color:#aaa;margin-bottom:1px;">⚖️ 徳分</div>
-      <div id="craftTokubunValue" style="font-size:1.3em;font-weight:900;line-height:1.2;">0</div>
+      <div style="height:1px;background:rgba(255,255,255,0.06);margin:7px 0 5px;"></div>
+      <div style="display:flex;flex-direction:row;gap:12px;align-items:center;">
+        <div style="text-align:center;">
+          <div style="font-size:0.5em;color:rgba(255,140,100,0.55);letter-spacing:0.12em;margin-bottom:2px;">業</div>
+          <div id="craftGouValue" style="font-size:1.05em;font-weight:800;color:#ff8a65;line-height:1;">0</div>
+        </div>
+        <div style="width:1px;height:24px;background:rgba(255,255,255,0.07);"></div>
+        <div style="text-align:center;">
+          <div style="font-size:0.5em;color:rgba(200,200,200,0.5);letter-spacing:0.12em;margin-bottom:2px;">徳分</div>
+          <div id="craftTokubunValue" style="font-size:1.05em;font-weight:800;line-height:1;">0</div>
+        </div>
+      </div>
     </div>
   </div>
-  <div style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.3);font-size:0.7em;font-family:monospace;pointer-events:none;">ドラッグで視点回転 / スクロールでズーム</div>
+  <div style="position:absolute;bottom:22px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.14);font-size:0.58em;font-family:monospace;pointer-events:none;letter-spacing:0.08em;">ドラッグで視点回転 / スクロールでズーム</div>
 </div>
 <div id="shopView" class="settings-view" style="display:none;">
   <div class="settings-container">
@@ -3594,7 +3697,7 @@
             <input type="file" id="avatarInput" accept="image/*" style="display: none;" onchange="handleAvatarChange(event)">
             <div class="profile-name-edit">
               <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #262626; font-size: 0.9em;">表示名</label>
-              <input type="text" id="profileNameInput" placeholder="あなたの名前..." maxlength="20" style="width: 100%; padding: 12px; border: 2px solid #e8e8e8; border-radius: 10px; font-size: 1em; box-sizing: border-box;" oninput="localStorage.setItem('profileName', this.value.trim()); var ind = document.getElementById('profileNameUnsaved'); if(ind) ind.style.display='none';">
+              <input type="text" id="profileNameInput" placeholder="あなたの名前..." maxlength="20" style="width: 100%; padding: 12px; border: 2px solid #e8e8e8; border-radius: 10px; font-size: 1em; box-sizing: border-box;" oninput="allSettings.profile.name = this.value.trim(); saveAllSettings(); var ind = document.getElementById('profileNameUnsaved'); if(ind) ind.style.display='none';">
               <div style="margin-top:12px;">
                 <label style="display:block;margin-bottom:8px;font-weight:600;color:#262626;font-size:0.9em;">あなたは？</label>
                 <div style="display:flex;gap:8px;">
@@ -3813,10 +3916,12 @@
 
         <!-- スタンプ設定 -->
         <div id="stampSettingsArea" style="display: none;">
-          <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #262626; font-size: 0.9em;">スタンプ設定</label>
-          <p style="font-size: 0.8em; color: #8e8e8e; margin: 0 0 10px 0;">最大20個。名前・色・時間帯を設定できます。</p>
-          <div id="stampList" style="margin-bottom: 12px;"></div>
-          <button onclick="addStampSetting()" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; border-radius: 8px; padding: 8px 16px; font-size: 0.85em; cursor: pointer;">＋ スタンプ追加</button>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+            <label style="font-weight:600; color:#262626; font-size:0.9em;">スタンプ設定</label>
+            <button onclick="addStampSetting()" style="background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:0.82em;cursor:pointer;font-weight:600;">＋ 追加</button>
+          </div>
+          <p style="font-size:0.78em;color:#8e8e8e;margin:0 0 10px 0;">ドラッグで並び替え。最大20個。</p>
+          <div id="stampList" style="margin-bottom:12px;"></div>
         </div>
       </div>
       
@@ -4284,6 +4389,199 @@
     let allTasks = []; // 全タスクの唯一のデータソース
     window.allTasks = allTasks; // クラフトモードから参照できるよう公開
 
+    // ===== allSettings SSOT（v0.29.19新設） =====
+    const SETTINGS_DEFAULT = {
+      profile: {
+        name:       '',
+        gender:     'king',
+        avatar:     '',
+        senderName: ''
+      },
+      ui: {
+        initialView:      'daily',
+        dailyViewMode:    'list',
+        simpleMode:       'off',
+        monthlyMode:      'fixed',
+        weeklyDays:       '7',
+        weeklyRowH:       80,
+        weeklyCellScale:  100,
+        weeklyTimeBar:    'on',
+        tlScrollMode:     'auto',
+        tlRowHeights:     null,
+        wgScrollMode:     'auto',
+        useColors:        true,
+        craftModeEnabled: false,
+        craftRenderMode:  '3d'
+      },
+      calendar: {
+        list:        [],
+        mainId:      '',
+        autoMain:    true,
+        calIdMigMap: {}
+      },
+      craft: {
+        completedTotal:  0,
+        completedStreak: 0,
+        lastHotokuIdx:   -1,
+        okaeriDate:      ''
+      },
+      deck: {
+        received:    {},
+        starterDone: false
+      },
+      flags: {
+        tutorialSeen:       false,
+        adminMode:          false,
+        inspectionMode:     false,
+        purpose:            '',
+        purposeConfirmed:   false,
+        stopCondition:      '',
+        stopConditionSaved: false
+      },
+      meta: {
+        dataVersion: 1
+      }
+    };
+
+    let allSettings = JSON.parse(JSON.stringify(SETTINGS_DEFAULT)); // deep copy
+
+    function saveAllSettings() {
+      try {
+        localStorage.setItem('allSettings', JSON.stringify(allSettings));
+      } catch(e) {
+        console.error('[allSettings] save失敗', e);
+      }
+    }
+
+    function loadAllSettings() {
+      try {
+        const saved = localStorage.getItem('allSettings');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          // deep merge（デフォルト値を保ちつつ保存値で上書き）
+          allSettings = deepMergeSettings(JSON.parse(JSON.stringify(SETTINGS_DEFAULT)), parsed);
+          // weeklyCellScale: 旧形式（≦3）→100単位に変換
+          if (allSettings.ui.weeklyCellScale !== undefined && allSettings.ui.weeklyCellScale <= 3) {
+            allSettings.ui.weeklyCellScale = Math.round(allSettings.ui.weeklyCellScale * 100) || 100;
+            saveAllSettings();
+          }
+        } else {
+          // 初回 or allSettings未存在 → 旧キーからマイグレーション
+          migrateOldKeysToAllSettings();
+        }
+      } catch(e) {
+        console.error('[allSettings] load失敗', e);
+        allSettings = JSON.parse(JSON.stringify(SETTINGS_DEFAULT));
+      }
+    }
+
+    function deepMergeSettings(base, override) {
+      if (!override || typeof override !== 'object') return base;
+      Object.keys(base).forEach(function(k) {
+        if (override[k] !== undefined) {
+          if (typeof base[k] === 'object' && base[k] !== null && !Array.isArray(base[k])) {
+            base[k] = deepMergeSettings(base[k], override[k]);
+          } else {
+            base[k] = override[k];
+          }
+        }
+      });
+      // overrideにあってbaseにないキーも取り込む（将来の拡張対応）
+      Object.keys(override).forEach(function(k) {
+        if (base[k] === undefined) base[k] = override[k];
+      });
+      return base;
+    }
+
+    function migrateOldKeysToAllSettings() {
+      // 旧LocalStorageキー → allSettings へ移行（初回のみ）
+      var s = allSettings;
+
+      // profile
+      var n = localStorage.getItem('profileName');     if (n) s.profile.name = n;
+      var g = localStorage.getItem('profileGender');   if (g) s.profile.gender = g;
+      var a = localStorage.getItem('profileAvatar');   if (a) s.profile.avatar = a;
+      var sn = localStorage.getItem('senderName');     if (sn) s.profile.senderName = sn;
+
+      // ui
+      var iv = localStorage.getItem('initialView');    if (iv) s.ui.initialView = iv;
+      var dv = localStorage.getItem('dailyViewMode');  if (dv) s.ui.dailyViewMode = dv;
+      var sm = localStorage.getItem('simpleMode');     if (sm) s.ui.simpleMode = sm;
+      var mm = localStorage.getItem('monthlyMode');    if (mm) s.ui.monthlyMode = mm;
+      var wd = localStorage.getItem('weeklyDays');     if (wd) s.ui.weeklyDays = wd;
+      var wrh = localStorage.getItem('weeklyRowH');    if (wrh) s.ui.weeklyRowH = parseFloat(wrh);
+      var wcs = localStorage.getItem('weeklyCellScale'); if (wcs) s.ui.weeklyCellScale = parseFloat(wcs);
+      var wtb = localStorage.getItem('weeklyTimeBar'); if (wtb) s.ui.weeklyTimeBar = wtb;
+      var tls = localStorage.getItem('tlScrollMode');  if (tls) s.ui.tlScrollMode = tls;
+      var tlr = localStorage.getItem('tlRowHeights');  if (tlr) { try { s.ui.tlRowHeights = JSON.parse(tlr); } catch(e){} }
+      var wgs = localStorage.getItem('wgScrollMode');  if (wgs) s.ui.wgScrollMode = wgs;
+      var uc = localStorage.getItem('useColors');      if (uc !== null) s.ui.useColors = (uc !== 'false');
+      var cme = localStorage.getItem('craftModeEnabled'); if (cme) s.ui.craftModeEnabled = (cme === 'true');
+      var crm = localStorage.getItem('craftRenderMode'); if (crm) s.ui.craftRenderMode = crm;
+
+      // calendar
+      var cals = localStorage.getItem('calendars');    if (cals) { try { s.calendar.list = JSON.parse(cals); } catch(e){} }
+      var mid = localStorage.getItem('mainCalendarId'); if (mid) s.calendar.mainId = mid;
+      var am = localStorage.getItem('autoMainCalendar'); if (am !== null) s.calendar.autoMain = (am !== 'false');
+      var cim = localStorage.getItem('_calIdMigMap'); if (cim) { try { s.calendar.calIdMigMap = JSON.parse(cim); } catch(e){} }
+
+      // craft
+      var ct = allSettings.craft.completedTotal;  if (ct) s.craft.completedTotal = parseInt(ct)||0;
+      var cs = allSettings.craft.completedStreak; if (cs) s.craft.completedStreak = parseInt(cs)||0;
+      var lh = localStorage.getItem('lastHotokuIdx');       if (lh) s.craft.lastHotokuIdx = parseInt(lh)||0;
+      var od = localStorage.getItem('okaeriDate');          if (od) s.craft.okaeriDate = od;
+
+      // deck
+      var sr = localStorage.getItem('starterDeckReceived'); if (sr) s.deck.starterDone = true;
+      // deck_received_* を received{} に統合
+      try {
+        for (var i = 0; i < localStorage.length; i++) {
+          var key = localStorage.key(i);
+          if (key && key.startsWith('deck_received_')) {
+            var deckId = key.replace('deck_received_', '');
+            s.deck.received[deckId] = true;
+          }
+        }
+      } catch(e) {}
+
+      // flags
+      var ts = localStorage.getItem('tutorialSeen');       if (ts) s.flags.tutorialSeen = true;
+      var adm = localStorage.getItem('adminMode');         if (adm === '1') s.flags.adminMode = true;
+      var ins = localStorage.getItem('inspectionMode');    if (ins) s.flags.inspectionMode = parseInt(ins)||0;
+      var pur = localStorage.getItem('purpose');           if (pur) s.flags.purpose = pur;
+      var pc = localStorage.getItem('purposeConfirmed');   if (pc) s.flags.purposeConfirmed = true;
+      var sc = localStorage.getItem('stopCondition');      if (sc) s.flags.stopCondition = sc;
+      var scs = localStorage.getItem('stopConditionSaved'); if (scs) s.flags.stopConditionSaved = true;
+
+      // meta
+      var dv2 = localStorage.getItem('dataVersion');       if (dv2) s.meta.dataVersion = parseInt(dv2)||1;
+
+      // weeklyCellScale: 1.0以下の値は旧形式（0.0〜3.0倍率）→100単位に変換
+      if (s.ui && s.ui.weeklyCellScale !== undefined && s.ui.weeklyCellScale <= 3) {
+        s.ui.weeklyCellScale = Math.round(s.ui.weeklyCellScale * 100);
+      }
+      saveAllSettings();
+      console.log('[allSettings] 旧キーからマイグレーション完了');
+    }
+
+    // allSettingsのゲッター（コード各所で使いやすく）
+    function getSetting(path) {
+      // 例: getSetting('ui.craftModeEnabled')
+      return path.split('.').reduce(function(obj, k) {
+        return obj && obj[k] !== undefined ? obj[k] : undefined;
+      }, allSettings);
+    }
+    function setSetting(path, value) {
+      var keys = path.split('.');
+      var obj = allSettings;
+      for (var i = 0; i < keys.length - 1; i++) {
+        if (!obj[keys[i]]) obj[keys[i]] = {};
+        obj = obj[keys[i]];
+      }
+      obj[keys[keys.length - 1]] = value;
+      saveAllSettings();
+    }
+
     // ===== カレンダー定義 SSOT =====
     const DEFAULT_CALENDARS = []; // v0.28: 初回セットアップで生成
     let calendars = [];
@@ -4557,7 +4855,7 @@
         completed: false,
         displayScope: _scope,
         calendarId: calendarId,          // どのカレンダーに属するか
-        owner: localStorage.getItem('profileName') || null,
+        owner: allSettings.profile.name || null,
         ownerId: getOrCreateDeviceId(),  // 端末固有ID（識別用）
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -4992,10 +5290,10 @@ function getDeckGDP() {
             allTasks = INITIAL_DATA;
             saveAllTasks(); window.allTasks = allTasks;
             if (INITIAL_PURPOSE) {
-              localStorage.setItem('purpose', INITIAL_PURPOSE);
+              allSettings.flags.purpose = INITIAL_PURPOSE; saveAllSettings();
             }
             if (INITIAL_STOP_CONDITION) {
-              localStorage.setItem('stopCondition', INITIAL_STOP_CONDITION);
+              allSettings.flags.stopCondition = INITIAL_STOP_CONDITION; saveAllSettings();
             }
             return;
           }
@@ -5034,10 +5332,10 @@ function getDeckGDP() {
         saveAllTasks(); window.allTasks = allTasks;
         
         if (INITIAL_PURPOSE) {
-          localStorage.setItem('purpose', INITIAL_PURPOSE);
+          allSettings.flags.purpose = INITIAL_PURPOSE; saveAllSettings();
         }
         if (INITIAL_STOP_CONDITION) {
-          localStorage.setItem('stopCondition', INITIAL_STOP_CONDITION);
+          allSettings.flags.stopCondition = INITIAL_STOP_CONDITION; saveAllSettings();
         }
       }
 
@@ -5052,12 +5350,12 @@ function getDeckGDP() {
       }
 
       // 目的・止める仕組みをlocalStorageから復元
-      const savedPurpose = localStorage.getItem('purpose');
+      const savedPurpose = allSettings.flags.purpose;
       if (savedPurpose) {
         purpose = savedPurpose;
         purposeConfirmed = true;
       }
-      const savedStopCondition = localStorage.getItem('stopCondition');
+      const savedStopCondition = allSettings.flags.stopCondition;
       if (savedStopCondition) {
         stopCondition = savedStopCondition;
         stopConditionSaved = true;
@@ -5093,8 +5391,8 @@ function getDeckGDP() {
         document.getElementById('purposeText').textContent = '目的: ' + purpose;
         
         // 目的をlocalStorageに保存
-        localStorage.setItem('purpose', purpose);
-        localStorage.setItem('purposeConfirmed', 'true');
+        allSettings.flags.purpose = purpose; saveAllSettings();
+        allSettings.flags.purposeConfirmed = true; saveAllSettings();
         
         // 確定後、5秒カウントダウン → イメージ開始
         const timerBtn = document.getElementById('timerBtn');
@@ -5154,8 +5452,8 @@ function getDeckGDP() {
         document.getElementById('stopConditionText').textContent = stopCondition;
         
         // 止める仕組みをlocalStorageに保存
-        localStorage.setItem('stopCondition', stopCondition);
-        localStorage.setItem('stopConditionSaved', 'true');
+        allSettings.flags.stopCondition = stopCondition; saveAllSettings();
+        allSettings.flags.stopConditionSaved = true; saveAllSettings();
       }
     }
 
@@ -5284,7 +5582,7 @@ function getDeckGDP() {
       const now      = new Date();
       const nowHour  = now.getHours();
       const nowMin   = now.getMinutes();
-      const ROW_H    = parseInt(localStorage.getItem('weeklyRowH') || '80');
+      const ROW_H    = parseInt(allSettings.ui.weeklyRowH || '80');
       const TOTAL_H  = ROW_H * 24;
       // CSS変数でROW_Hを動的に設定
       document.documentElement.style.setProperty('--wg-row-h', ROW_H + 'px');
@@ -5321,8 +5619,8 @@ function getDeckGDP() {
         4:{ bg:'#f0f0f0', bd:'#999999' },
       };
 
-      const weeklyDaySetting = parseInt(localStorage.getItem('weeklyDays') || '7');
-      const showTimeBar = (localStorage.getItem('weeklyTimeBar') || 'show') === 'show';
+      const weeklyDaySetting = parseInt(allSettings.ui.weeklyDays || '7');
+      const showTimeBar = (allSettings.ui.weeklyTimeBar || 'show') === 'show';
       // スマホで7日設定の場合は今日中心の3日に自動調整
       const isMobileView = window.innerWidth <= 768;
       // 設定値通りに表示（スマホでも設定を尊重）
@@ -5339,12 +5637,12 @@ function getDeckGDP() {
       const TIME_W = showTimeBar ? 70 : 0;  // 時刻バー幅
       // スマホ: 画面幅をできる限り使って列幅計算（最小80px）
       // スライダー倍率（100〜300%）を反映
-      const cellScale = parseFloat(localStorage.getItem('weeklyCellScale') || '100') / 100;
+      const cellScale = parseFloat(allSettings.ui.weeklyCellScale || '100') / 100;
       // 行高スライダーの初期値を復元
       const _rowHSlider = document.getElementById('weeklyRowHSlider');
-      if (_rowHSlider) _rowHSlider.value = localStorage.getItem('weeklyRowH') || '80';
+      if (_rowHSlider) _rowHSlider.value = allSettings.ui.weeklyRowH || '80';
       var _rowHSliderSp = document.getElementById('weeklyRowHSliderSp');
-      if (_rowHSliderSp) _rowHSliderSp.value = localStorage.getItem('weeklyRowH') || '80';
+      if (_rowHSliderSp) _rowHSliderSp.value = allSettings.ui.weeklyRowH || '80';
       const baseCellW = isMobileView
         ? Math.max(80, Math.floor((window.innerWidth - TIME_W) / effectiveDays))
         : Math.max(120, Math.floor((window.innerWidth - TIME_W - 20) / effectiveDays));
@@ -5518,7 +5816,7 @@ function getDeckGDP() {
         });
 
         wgItems.forEach(({ task, topPx, blockH, col: colIdx, totalCols }) => {
-          const myName     = localStorage.getItem('profileName') || null;
+          const myName     = allSettings.profile.name || null;
           const taskCal    = getCalendar(task.calendarId);
           const calColor   = taskCal ? { bg: taskCal.color + '22', bd: taskCal.color } : null;
           const ownerColor = (task.owner && task.owner !== myName) ? getOwnerColor(task.owner) : null;
@@ -5631,7 +5929,7 @@ function getDeckGDP() {
 
       // 週間ビュースクロール位置
       setTimeout(function() {
-        var _wgMode = localStorage.getItem('wgScrollMode') || 'now';
+        var _wgMode = allSettings.ui.wgScrollMode || 'now';
         var scrollArea = document.getElementById('weeklyScrollArea');
         if (!scrollArea) return;
         if (_wgMode === 'last') {
@@ -5897,7 +6195,7 @@ function getDeckGDP() {
       renderCalendarFilter('monthlyCalendarFilter', renderMonthlyView);
       
       // 月間表示モード取得
-      const monthlyMode = localStorage.getItem('monthlyMode') || 'fixed';
+      const monthlyMode = allSettings.ui.monthlyMode || 'fixed';
       
       // expandモード時はカレンダーの最小幅を拡張
       if (monthlyMode === 'expand') {
@@ -6024,37 +6322,42 @@ function getDeckGDP() {
           cell.appendChild(holidayDiv);
         }
         
-        // シンプルモード：スタンプ表示
-        const isSimple = localStorage.getItem('simpleMode') === 'on';
+        // シンプルモード：スタンプ表示（複数対応）
+        const isSimple = allSettings.ui.simpleMode === 'on';
         if (isSimple) {
           const dayInfo = getDayInfo(dateStr);
           
-          if (dayInfo && dayInfo.stampId) {
-            const def = getStampDef(dayInfo.stampId);
-            if (def) {
+          const stampIds = (dayInfo && dayInfo.stampIds) ? dayInfo.stampIds : [];
+          if (stampIds.length > 0) {
+            stampIds.forEach(function(sid) {
+              const def = getStampDef(sid);
+              if (!def) return;
               const stampLabel = document.createElement('div');
               stampLabel.className = 'stamp-label';
               stampLabel.textContent = def.name;
+              // 選択中スタンプは枠線でハイライト
+              const isSelected = selectedStamp && selectedStamp.id === sid;
               stampLabel.style.cssText = `
                 background: ${def.color}; color: ${def.textColor || '#333'}; 
-                padding: 2px 8px; border-radius: 10px; font-size: 0.75em; font-weight: 600;
-                text-align: center; margin-bottom: 2px; cursor: pointer;
+                padding: 2px 6px; border-radius: 10px; font-size: 0.72em; font-weight: 600;
+                text-align: center; margin-bottom: 1px; cursor: pointer;
+                border: 2px solid ${isSelected ? (def.textColor||'#333') : 'transparent'};
               `;
-              // スタンプラベルタップ：消しゴム中は削除、通常は詳細モーダル
-              stampLabel.addEventListener('click', (e) => {
+              stampLabel.addEventListener('click', function(e) {
                 if (eraserMode) {
                   e.stopPropagation();
-                  removeDayInfo(dateStr);
+                  removeStampFromDate(dateStr, sid);
                   renderMonthlyView();
                   if (navigator.vibrate) navigator.vibrate(30);
-                } else if (!selectedStamp) {
+                } else if (selectedStamp) {
+                  // スタンプ選択中 → セルclickに委譲
+                } else {
                   e.stopPropagation();
                   openDayInfoModal(dateStr);
                 }
-                // selectedStamp時はstopPropagationしない → セルのclickに委譲（上書き処理）
               });
               cell.appendChild(stampLabel);
-            }
+            });
           }
           
           // メモアイコン表示
@@ -6243,7 +6546,7 @@ function getDeckGDP() {
         
         // セルクリック（新規タスク追加 or 移動先確定 or スタンプ貼付）
         cell.addEventListener('click', (e) => {
-          const isSimple = localStorage.getItem('simpleMode') === 'on';
+          const isSimple = allSettings.ui.simpleMode === 'on';
           if (movingTaskId && (e.target === cell || e.target === dayNum || e.target.classList.contains('monthly-holiday-name'))) {
             // 移動モード中：このセルに移動
             completeMoveMode(dateStr);
@@ -6361,28 +6664,29 @@ function getDeckGDP() {
     function adjustMonthlyWidth(p) { adjustCalendarWidth('monthlyCalendar', p); }
     function resetMonthlyWidth()   { resetCalendarWidth('monthlyWidthSlider', 'monthlyCalendar'); }
     function adjustWeeklyWidth(p) {
-      localStorage.setItem('weeklyCellScale', p);
+      allSettings.ui.weeklyCellScale = p; saveAllSettings();
       // スライダーの塗り色を更新
       const pct = ((p - 100) / (300 - 100) * 100).toFixed(1);
       const sl = document.getElementById('weeklyWidthSlider');
-      if (sl) sl.style.setProperty('--val', pct + '%');
+      if (sl) sl.style.background = `linear-gradient(to right,#60a5fa 0%,#60a5fa ${pct}%,#e5e7eb ${pct}%)`;
       renderWeeklyView();
     }
     function adjustWeeklyRowH(v) {
       v = parseInt(v);
-      localStorage.setItem('weeklyRowH', v);
+      allSettings.ui.weeklyRowH = v; saveAllSettings();
+      const pct = ((v - 80) / (240 - 80) * 100).toFixed(1);
       ['weeklyRowHSlider','weeklyRowHSliderSp'].forEach(function(id){
         var sl = document.getElementById(id);
-        if (sl) sl.value = v;
+        if (sl) { sl.value = v; sl.style.background = `linear-gradient(to right,#f472b6 0%,#f472b6 ${pct}%,#e5e7eb ${pct}%)`; }
       });
       renderWeeklyView();
     }
     function resetWeeklyRowH() {
       ['weeklyRowHSlider','weeklyRowHSliderSp'].forEach(function(id){
         var sl = document.getElementById(id);
-        if (sl) sl.value = 80;
+        if (sl) { sl.value = 80; sl.style.background = 'linear-gradient(to right,#f472b6 0%,#f472b6 0%,#e5e7eb 0%)'; }
       });
-      localStorage.removeItem('weeklyRowH');
+      allSettings.ui.weeklyRowH = 80; saveAllSettings();
       renderWeeklyView();
     }
     window.adjustWeeklyRowH = adjustWeeklyRowH;
@@ -6391,8 +6695,8 @@ function getDeckGDP() {
     window.renderWeeklyView = renderWeeklyView;
     function resetWeeklyWidth() {
       const sl = document.getElementById('weeklyWidthSlider');
-      if (sl) { sl.value = 100; sl.style.setProperty('--val', '0%'); }
-      localStorage.removeItem('weeklyCellScale');
+      if (sl) { sl.value = 100; sl.style.background = 'linear-gradient(to right,#60a5fa 0%,#60a5fa 0%,#e5e7eb 0%)'; }
+      allSettings.ui.weeklyCellScale = 100; saveAllSettings();
       renderWeeklyView();
     }
     window.resetWeeklyWidth = resetWeeklyWidth;
@@ -6413,11 +6717,11 @@ function getDeckGDP() {
 
     function adjustTlRowHeight(val) {
       var h = parseInt(val);
-      localStorage.setItem('tlRowHeights', JSON.stringify(Array(24).fill(h)));
+      allSettings.ui.tlRowHeights = Array(24).fill(h); saveAllSettings();
       renderTimelineView();
     }
     function resetTlRowHeight() {
-      localStorage.removeItem('tlRowHeights');
+      allSettings.ui.tlRowHeights = null; saveAllSettings();
       document.getElementById('tlHeightSlider').value = 80;
       renderTimelineView();
     }
@@ -6443,7 +6747,7 @@ function getDeckGDP() {
       const TL_ROW_H = 80; // デフォルト行高
       const TL_MIN_H = 24; // 最小行高
       // localStorage から行高を復元（なければデフォルト）
-      var _tlHStr = localStorage.getItem('tlRowHeights');
+      var _tlHStr = JSON.stringify(allSettings.ui.tlRowHeights);
       var tlRowHeights = _tlHStr ? JSON.parse(_tlHStr) : null;
       if (!tlRowHeights || tlRowHeights.length !== 24) {
         tlRowHeights = [];
@@ -6542,7 +6846,7 @@ function getDeckGDP() {
             if (lbl) lbl.style.fontSize = fs + 'em';
           }
         }
-        localStorage.setItem('tlRowHeights', JSON.stringify(tlRowHeights));
+        allSettings.ui.tlRowHeights = tlRowHeights; saveAllSettings();
       }
       // 時間グリッド線（独立div・ドラッグ可能）
       for (var h = 0; h < 24; h++) {
@@ -6717,7 +7021,7 @@ function getDeckGDP() {
         3:{ bg:'#fffef5', bd:'#ffc107' },
         4:{ bg:'#f0f0f0', bd:'#999999' },
       };
-      var myName = localStorage.getItem('profileName') || null;
+      var myName = allSettings.profile.name || null;
 
       // ── 重なり検出：グリーディー列割り当て ──────────────────
       var timedTasks = dayTasks.filter(function(t) { return !!t.time; }).map(function(t) {
@@ -6960,7 +7264,7 @@ function getDeckGDP() {
 
       // スクロール位置の復元
       setTimeout(function() {
-        var _tlScrollMode = localStorage.getItem('tlScrollMode') || 'now';
+        var _tlScrollMode = allSettings.ui.tlScrollMode || 'now';
         var bodyEl = document.getElementById('timelineBody');
         var tlView = document.getElementById('timelineView');
         if (_tlScrollMode === 'last') {
@@ -7045,24 +7349,41 @@ function getDeckGDP() {
           const isToday = dateStr === todayStr;
           const isHoliday = japaneseHolidays[dateStr];
           
-          // その日のタスク数をカウント
-          const dayTasks = allTasks.filter(t => t.date === dateStr);
-          const taskCount = dayTasks.length;
-          
+          // その日のタスク数をカウント（kind:'stamp'/'dailyStatus'除く）
+          const isSimpleY = allSettings.ui.simpleMode === 'on';
+          const dayTasks = allTasks.filter(t => t.date === dateStr && t.kind !== 'stamp');
+          const taskCount = isSimpleY
+            ? dayTasks.filter(t => t.kind !== 'dailyStatus').length
+            : dayTasks.length;
+
+          // シンプルモード時：最初のスタンプ色を取得
+          let stampBgColor = '';
+          let stampTextColor = '';
+          if (isSimpleY) {
+            const dayInfo = getDayInfo(dateStr);
+            if (dayInfo && dayInfo.stampIds && dayInfo.stampIds.length > 0) {
+              const def = getStampDef(dayInfo.stampIds[0]);
+              if (def) { stampBgColor = def.color; stampTextColor = def.textColor || '#333'; }
+            }
+          }
+
           let cellClass = 'yearly-cell';
           if (isToday) cellClass += ' today';
           if (dayOfWeek === 0) cellClass += ' sunday';
           if (dayOfWeek === 6) cellClass += ' saturday';
           if (isHoliday) cellClass += ' holiday';
           if (taskCount > 0) cellClass += ' has-task';
-          
-          // セル内容：曜日 + タスク数
+
+          // セル内容：曜日 + タスク数 or スタンプ
           let cellContent = `<span class="yearly-weekday">${weekdayName}</span>`;
-          if (taskCount > 0) {
+          if (isSimpleY && stampBgColor) {
+            cellContent = `<span style="font-size:0.62em;font-weight:700;color:${stampTextColor};line-height:1.1;">${getStampDef(getDayInfo(dateStr).stampIds[0]).name}</span>`;
+          } else if (taskCount > 0) {
             cellContent += `<span class="yearly-task-count">${taskCount}</span>`;
           }
-          
-          html += `<div class="${cellClass}" data-date="${dateStr}" onclick="onYearlyCellClick('${dateStr}')">${cellContent}</div>`;
+
+          const cellStyle = (isSimpleY && stampBgColor) ? ` style="background:${stampBgColor};"` : '';
+          html += `<div class="${cellClass}"${cellStyle} data-date="${dateStr}" onclick="onYearlyCellClick('${dateStr}')">${cellContent}</div>`;
         }
       }
       
@@ -7640,7 +7961,7 @@ function getDeckGDP() {
     var _ADMIN_PATTERN = ['king','king','princess','princess','king','princess','king','princess','king','king'];
     var _GUILD_PATTERN  = ['princess','princess','king','king','princess','princess','king','king','princess','princess'];
     function selectGender(val) {
-      localStorage.setItem('profileGender', val);
+      allSettings.profile.gender = val; saveAllSettings();
       updateGenderUI(val);
       // シーケンス検知
       _genderSeq.push(val);
@@ -7660,7 +7981,7 @@ function getDeckGDP() {
     function saveGender() {
       const val = document.querySelector('input[name="profileGender"]:checked');
       if (val) {
-        localStorage.setItem('profileGender', val.value);
+        allSettings.profile.gender = val.value; saveAllSettings();
         updateGenderUI(val.value);
       }
     }
@@ -7872,6 +8193,11 @@ function getDeckGDP() {
       const task = allTasks.find(t => t.id === taskId);
       if (!task) {
         console.error('タスクが見つかりません:', taskId);
+        return;
+      }
+      // kind:'stamp'は設定UIからのみ削除可（誤削除防止）
+      if (task.kind === 'stamp') {
+        console.warn('[deleteTaskById] kind:stamp は設定UIから削除してください');
         return;
       }
       
@@ -8225,16 +8551,25 @@ function getDeckGDP() {
 
     // 汎用confirm（アーティファクト環境のconfirm()代替）
     var _confirmCallback = null;
-    function showConfirm(message, onOk) {
+    function showConfirm(message, okLabel, isDanger, onOk) {
+      // 後方互換：第2引数がfunctionの場合は旧形式(message, onOk)
+      if (typeof okLabel === 'function') { onOk = okLabel; okLabel = null; isDanger = true; }
       document.getElementById('modal-message').innerHTML = message.replace(/\n/g, '<br>');
       _confirmCallback = onOk;
-      // ボタンのリスナーを毎回付け直す
       const cancelBtn = document.getElementById('modal-cancel-btn');
       const confirmBtn = document.getElementById('modal-confirm-btn');
       const newCancel = cancelBtn.cloneNode(true);
       const newConfirm = confirmBtn.cloneNode(true);
       cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
       confirmBtn.parentNode.replaceChild(newConfirm, confirmBtn);
+      newConfirm.textContent = okLabel || '削除';
+      if (isDanger === false) {
+        newConfirm.style.background = 'linear-gradient(135deg,#ffd700,#ff8800)';
+        newConfirm.style.color = '#7a4800';
+      } else {
+        newConfirm.style.background = '';
+        newConfirm.style.color = '';
+      }
       newCancel.addEventListener('click', function() { closeModal(); });
       newConfirm.addEventListener('click', function() { executeDelete(); });
       document.getElementById('customModal').classList.add('show');
@@ -8260,13 +8595,9 @@ function getDeckGDP() {
       localStorage.removeItem('tokuPoints');
       localStorage.removeItem('gouPoints');
       localStorage.removeItem('tokuLog');
-      localStorage.removeItem('adminMode');
-      
-      // 目的・止める仕組み
-      localStorage.removeItem('purpose');
-      localStorage.removeItem('purposeConfirmed');
-      localStorage.removeItem('stopCondition');
-      localStorage.removeItem('stopConditionSaved');
+      localStorage.removeItem('allSettings');
+      allSettings = JSON.parse(JSON.stringify(SETTINGS_DEFAULT));
+      saveAllSettings();
       
       // 変数をリセット
       allTasks = [];
@@ -8311,11 +8642,13 @@ function getDeckGDP() {
       });
 
       // 行動貿易履歴・マイデッキ・guildLicenseはallTasks内に統合済み
-      // allTasks削除で一緒にクリアされる
-      // 旧キーの掃除（マイグレーション後の残骸を念のため削除）
       localStorage.removeItem('deckHistory');
       localStorage.removeItem('myDecks');
       localStorage.removeItem('guildLicense');
+
+      // スタンプ定義を再初期化（リセット後に空になるため）
+      initStampDefs();
+      renderStampBar();
 
       // 日次ビューを再描画
       renderAllSections();
@@ -8338,7 +8671,11 @@ function getDeckGDP() {
         exportedAt: new Date().toISOString(),
         calendars: calendars,
         deletedIds: deletedIds,
-        tasks: allTasks
+        tasks: allTasks,
+        settings: (function(){
+          // avatarは容量が大きいので別途除外しない（ユーザーの選択に任せる）
+          return allSettings;
+        })()
       };
       
       const jsonStr = JSON.stringify(exportObj, null, 2);
@@ -8390,7 +8727,7 @@ function getDeckGDP() {
           // ③ 完了タスクを含めるか確認
           const includeCompleted = confirm('完了済みタスクも復元しますか？\n（キャンセルで未完了タスクのみ）');
           let _invalidCount = 0;
-          const _NON_TASK_KINDS = ['note', 'dailyStatus', 'family', 'deckHistory', 'myDeck', 'guildLicense'];
+          const _NON_TASK_KINDS = ['note', 'dailyStatus', 'family', 'deckHistory', 'myDeck', 'guildLicense', 'stamp'];
           const validTasks = tasksData.filter(task => {
             if (!task.id || typeof task.id !== 'string') { _invalidCount++; return false; }
             if (_NON_TASK_KINDS.includes(task.kind)) return true; // 非タスクkindはそのまま通す
@@ -8469,7 +8806,7 @@ function getDeckGDP() {
           );
           // ⑥ updatedAtで判定：自分の更新が新しければ上書きしない
           fixedTasks.forEach(function(incoming) {
-            if (!existingIds.has(incoming.id)) return; // 新規は上でpush済み
+            if (!existingIds.has(incoming.id)) return;
             const existing = allTasks.find(t => t.id === incoming.id);
             if (!existing) return;
             const incomingTime = new Date(incoming.updatedAt || 0).getTime();
@@ -8483,8 +8820,12 @@ function getDeckGDP() {
           incomingDeletedIds.forEach(function(id) { myDeletedIds.add(id); });
           localStorage.setItem('deletedTaskIds', JSON.stringify([...myDeletedIds]));
           saveAllTasks();
-          if (data.purpose) localStorage.setItem('purpose', data.purpose);
-          if (data.stopCondition) localStorage.setItem('stopCondition', data.stopCondition);
+          if (data.purpose) { allSettings.flags.purpose = data.purpose; }
+          if (data.stopCondition) { allSettings.flags.stopCondition = data.stopCondition; }
+          if (data.settings) {
+            allSettings = deepMergeSettings(JSON.parse(JSON.stringify(SETTINGS_DEFAULT)), data.settings);
+          }
+          saveAllSettings();
           if (data.calendars && Array.isArray(data.calendars)) {
             // マージ方式：IDが同じなら更新、新しければ追加、自分固有のものは残す
             let myCals = JSON.parse(localStorage.getItem('calendars') || '[]');
@@ -8523,7 +8864,7 @@ function getDeckGDP() {
       USE_COLORS = !USE_COLORS;
       applyColors();
       // 状態を保存
-      localStorage.setItem('useColors', USE_COLORS);
+      allSettings.ui.useColors = USE_COLORS; saveAllSettings();
     }
 
     // 逃げログの表示切り替え
@@ -8562,7 +8903,9 @@ function getDeckGDP() {
     updateDate();
     
     // マスターデータをロード
+    loadAllSettings(); // allSettings SSOT（v0.29.19）
     loadAllTasks();
+    initStampDefs(); // kind:'stamp' 初期化・マイグレーション（v0.29.19）
     migrateToDisplayScope();
     
     // 日次ビューを初期描画
@@ -8575,7 +8918,7 @@ function getDeckGDP() {
     logAction('open');
     
     // 色設定を読み込み
-    const savedColorSetting = localStorage.getItem('useColors');
+    const savedColorSetting = allSettings.ui.useColors;
     if (savedColorSetting !== null) {
       USE_COLORS = savedColorSetting === 'true';
       applyColors();
@@ -8593,7 +8936,7 @@ function getDeckGDP() {
 
     // 起動時の初期ビューを適用
     (function() {
-      const initialView = localStorage.getItem('initialView') || 'monthly';
+      const initialView = allSettings.ui.initialView || 'monthly';
       setTimeout(() => {
         switchView(initialView);
       }, 100);
@@ -8626,7 +8969,7 @@ function getDeckGDP() {
       document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
       
       if (view === 'daily') {
-        const dailyMode = localStorage.getItem('dailyViewMode') || 'matrix';
+        const dailyMode = allSettings.ui.dailyViewMode || 'matrix';
         if (dailyMode === 'timeline') {
           document.getElementById('timelineView').style.display = 'flex'; document.getElementById('timelineView').style.flexDirection = 'column';
           if (!currentTimelineDate) currentTimelineDate = new Date();
@@ -8685,12 +9028,12 @@ function getDeckGDP() {
         document.getElementById('navCraft').classList.add('active');
         if(typeof window.initCraftWorld==='function') window.initCraftWorld();
         // おかえりメッセージ（初回訪問済み＆1日1回のみ）
-        if (localStorage.getItem('tutorialSeen')) {
+        if (allSettings.flags.tutorialSeen) {
           var _today = new Date().toDateString();
-          if (localStorage.getItem('okaeriDate') !== _today) {
-            localStorage.setItem('okaeriDate', _today);
+          if (allSettings.craft.okaeriDate !== _today) {
+            allSettings.craft.okaeriDate = _today; saveAllSettings();
             setTimeout(function(){
-              var _gender = localStorage.getItem('profileGender') || 'king';
+              var _gender = allSettings.profile.gender || 'king';
               var _msg = _gender === 'princess' ? '👑 おかえり、姫よ' : '👑 おかえり、王よ';
               showCraftMessage(_msg);
             }, 600);
@@ -9085,7 +9428,7 @@ function getDeckGDP() {
     // 共有コード生成（calendarId指定対応）
     async function buildFamilyCode(pw, targetCalendarIds = null, rangeDays = 30) {
       const shareTasks = getFamilyShareTasks(targetCalendarIds, rangeDays);
-      const myName = localStorage.getItem('profileName') || null;
+      const myName = allSettings.profile.name || null;
       const myDeviceId = getOrCreateDeviceId();
       const payload = JSON.stringify({
         kind: 'family',
@@ -9210,8 +9553,8 @@ function getDeckGDP() {
       document.getElementById('familyShareModal').classList.add('show');
 
       // プロフィール名があればsenderNameに自動セット
-      const profileName = localStorage.getItem('profileName') || '';
-      const savedSender = localStorage.getItem('senderName') || profileName;
+      const profileName = allSettings.profile.name || '';
+      const savedSender = allSettings.profile.senderName || profileName;
       if (savedSender) {
         const inp = document.getElementById('familySenderNameInput');
         if (inp) inp.value = savedSender;
@@ -9239,7 +9582,7 @@ function getDeckGDP() {
         });
       }
       // 名前未設定なら入力欄を表示
-      const myName = (localStorage.getItem('profileName') || '').trim();
+      const myName = (allSettings.profile.name || '').trim();
       const nameArea = document.getElementById('familySenderNameArea');
       if (nameArea) nameArea.style.display = myName ? 'none' : 'block';
       familyShareReset();
@@ -9279,7 +9622,7 @@ function getDeckGDP() {
       const inp = document.getElementById('familySenderNameInput');
       const name = (inp ? inp.value : '').trim();
       if (!name) return;
-      localStorage.setItem('profileName', name);
+      allSettings.profile.name = name; saveAllSettings();
       const settingInp = document.getElementById('profileNameInput');
       if (settingInp) settingInp.value = name;
       document.getElementById('familySenderNameArea').style.display = 'none';
@@ -9289,7 +9632,7 @@ function getDeckGDP() {
 
     async function familyGenerateCode() {
       // 名前未設定チェック（promptは使わずUI内で処理）
-      const myName = (localStorage.getItem('profileName') || '').trim();
+      const myName = (allSettings.profile.name || '').trim();
       if (!myName) {
         const nameArea = document.getElementById('familySenderNameArea');
         if (nameArea) nameArea.style.display = 'block';
@@ -10047,10 +10390,10 @@ function loadSettingsUI() {
       // クラフトモード
       const craftCheck = document.getElementById('craftModeEnabled');
       if (craftCheck) {
-        if (localStorage.getItem('craftModeEnabled') === null) {
-          localStorage.setItem('craftModeEnabled', 'true');
+        if (allSettings.ui.craftModeEnabled === false || allSettings.ui.craftModeEnabled === null) {
+          allSettings.ui.craftModeEnabled = true; saveAllSettings();
         }
-        const enabled = localStorage.getItem('craftModeEnabled') === 'true';
+        const enabled = (allSettings.ui.craftModeEnabled === true || allSettings.ui.craftModeEnabled === 'true');
         craftCheck.checked = enabled;
         craftCheck.onchange = function(){ toggleCraftMode(this.checked); };
         // 描画モード設定の表示/非表示
@@ -10058,14 +10401,14 @@ function loadSettingsUI() {
         if (modeDiv) modeDiv.style.display = enabled ? '' : 'none';
       }
       // 描画モード
-      const renderMode = localStorage.getItem('craftRenderMode') || '2d';
+      const renderMode = allSettings.ui.craftRenderMode || '2d';
       const r2d = document.getElementById('craftMode2D');
       const r3d = document.getElementById('craftMode3D');
       if (r2d) r2d.checked = renderMode === '2d';
       if (r3d) r3d.checked = renderMode === '3d';
       if (r2d) // 描画モード切替：canvasを作り直してから再起動
       function _switchRenderMode(mode) {
-        localStorage.setItem('craftRenderMode', mode);
+        allSettings.ui.craftRenderMode = mode; saveAllSettings();
         // アニメ停止
         if (typeof _craftAnimFrame !== 'undefined' && _craftAnimFrame) {
           cancelAnimationFrame(_craftAnimFrame); _craftAnimFrame = null;
@@ -10097,50 +10440,50 @@ function loadSettingsUI() {
       if (r3d) r3d.onchange = function(){ if(this.checked) _switchRenderMode('3d'); };
       loadCalendarSettingsUI();
       // 初期ビュー
-      const initialView = localStorage.getItem('initialView') || 'monthly';
+      const initialView = allSettings.ui.initialView || 'monthly';
       const radios = document.querySelectorAll('input[name="initialView"]');
       radios.forEach(radio => {
         radio.checked = (radio.value === initialView);
       });
       
       // 月間表示モード
-      const monthlyMode = localStorage.getItem('monthlyMode') || 'fixed';
+      const monthlyMode = allSettings.ui.monthlyMode || 'fixed';
       const monthlyRadios = document.querySelectorAll('input[name="monthlyMode"]');
       monthlyRadios.forEach(radio => {
         radio.checked = (radio.value === monthlyMode);
       });
 
       // 週間ビュースクロールモード
-      const wgScrollMode = localStorage.getItem('wgScrollMode') || 'now';
+      const wgScrollMode = allSettings.ui.wgScrollMode || 'now';
       const wgScrollRadios = document.querySelectorAll('input[name="wgScrollMode"]');
       wgScrollRadios.forEach(radio => { radio.checked = (radio.value === wgScrollMode); });
 
       // タイムラインスクロールモード
-      const tlScrollMode = localStorage.getItem('tlScrollMode') || 'now';
+      const tlScrollMode = allSettings.ui.tlScrollMode || 'now';
       const tlScrollRadios = document.querySelectorAll('input[name="tlScrollMode"]');
       tlScrollRadios.forEach(radio => { radio.checked = (radio.value === tlScrollMode); });
 
       // 週間表示日数
-      const weeklyDays = localStorage.getItem('weeklyDays') || '7';
+      const weeklyDays = allSettings.ui.weeklyDays || '7';
       document.querySelectorAll('input[name="weeklyDays"]').forEach(radio => {
         radio.checked = (radio.value === weeklyDays);
       });
 
       // 週間時刻バー
-      const weeklyTimeBar = localStorage.getItem('weeklyTimeBar') || 'show';
+      const weeklyTimeBar = allSettings.ui.weeklyTimeBar || 'show';
       document.querySelectorAll('input[name="weeklyTimeBar"]').forEach(radio => {
         radio.checked = (radio.value === weeklyTimeBar);
       });
 
       // 日次ビュー表示モード
-      const dailyMode = localStorage.getItem('dailyViewMode') || 'matrix';
+      const dailyMode = allSettings.ui.dailyViewMode || 'matrix';
       const dailyRadios = document.querySelectorAll('input[name="dailyViewMode"]');
       dailyRadios.forEach(radio => {
         radio.checked = (radio.value === dailyMode);
       });
 
       // シンプルモード
-      const simpleMode = localStorage.getItem('simpleMode') === 'on';
+      const simpleMode = allSettings.ui.simpleMode === 'on';
       const simpleToggle = document.getElementById('simpleModeToggle');
       simpleToggle.checked = simpleMode;
       updateSimpleToggleUI(simpleMode);
@@ -10148,11 +10491,11 @@ function loadSettingsUI() {
       if (simpleMode) loadStampSettingsUI();
       
       // プロフィール
-      const savedName = localStorage.getItem('profileName') || '';
+      const savedName = allSettings.profile.name || '';
       // 性別設定の初期化
-      const savedGender = localStorage.getItem('profileGender') || 'king';
+      const savedGender = allSettings.profile.gender || 'king';
       updateGenderUI(savedGender);
-      const savedAvatar = localStorage.getItem('profileAvatar') || '';
+      const savedAvatar = allSettings.profile.avatar || '';
       
       document.getElementById('profileNameInput').value = savedName;
       
@@ -10229,7 +10572,7 @@ function loadSettingsUI() {
             document.getElementById('profileAvatarPlaceholder').style.display = 'none';
             document.getElementById('avatarRemoveBtn').style.display = 'block';
             
-            localStorage.setItem('profileAvatar', resizedBase64);
+            allSettings.profile.avatar = resizedBase64; saveAllSettings();
             updateNavAvatar();
             
             
@@ -10251,13 +10594,13 @@ function loadSettingsUI() {
       document.getElementById('avatarInput').value = '';
       
       // 即座にlocalStorageから削除＆ナビ更新
-      localStorage.removeItem('profileAvatar');
+      allSettings.profile.avatar = ''; saveAllSettings();
       updateNavAvatar();
     }
     
     // ナビバーのアバターを更新
     function updateNavAvatar() {
-      const savedAvatar = localStorage.getItem('profileAvatar');
+      const savedAvatar = allSettings.profile.avatar;
       const navAvatar = document.getElementById('navAvatar');
       const navAvatarWrapper = document.getElementById('navAvatarWrapper');
       const navPlaceholder = document.getElementById('navAvatarPlaceholder');
@@ -10541,8 +10884,8 @@ function loadSettingsUI() {
     function saveProfileQuick() {
       var nameEl = document.getElementById('profileNameInput');
       var name = nameEl ? nameEl.value.trim() : '';
-      if (name) localStorage.setItem('profileName', name);
-      var gender = localStorage.getItem('profileGender') || 'king';
+      if (name) allSettings.profile.name = name; saveAllSettings();
+      var gender = allSettings.profile.gender || 'king';
       var gLabel = gender === 'princess' ? '姫' : '王';
       // 設定保存トーストと同じ方式
       var _toastEl = document.getElementById('settingsSaveToast');
@@ -10567,43 +10910,43 @@ function loadSettingsUI() {
 
         // 各ラジオボタン（null安全）
         var _sv = document.querySelector('input[name="initialView"]:checked');
-        if (_sv) localStorage.setItem('initialView', _sv.value);
+        if (_sv) allSettings.ui.initialView = _sv.value; saveAllSettings();
         var _tlSm = document.querySelector('input[name="tlScrollMode"]:checked');
-        if (_tlSm) localStorage.setItem('tlScrollMode', _tlSm.value);
+        if (_tlSm) allSettings.ui.tlScrollMode = _tlSm.value; saveAllSettings();
         var _wgSm = document.querySelector('input[name="wgScrollMode"]:checked');
-        if (_wgSm) localStorage.setItem('wgScrollMode', _wgSm.value);
+        if (_wgSm) allSettings.ui.wgScrollMode = _wgSm.value; saveAllSettings();
         var _mm = document.querySelector('input[name="monthlyMode"]:checked');
-        if (_mm) localStorage.setItem('monthlyMode', _mm.value);
+        if (_mm) allSettings.ui.monthlyMode = _mm.value; saveAllSettings();
         var _wd = document.querySelector('input[name="weeklyDays"]:checked');
-        if (_wd) localStorage.setItem('weeklyDays', _wd.value);
+        if (_wd) allSettings.ui.weeklyDays = _wd.value; saveAllSettings();
         var _tb = document.querySelector('input[name="weeklyTimeBar"]:checked');
-        if (_tb) localStorage.setItem('weeklyTimeBar', _tb.value);
+        if (_tb) allSettings.ui.weeklyTimeBar = _tb.value; saveAllSettings();
         var _dm = document.querySelector('input[name="dailyViewMode"]:checked');
-        if (_dm) localStorage.setItem('dailyViewMode', _dm.value);
+        if (_dm) allSettings.ui.dailyViewMode = _dm.value; saveAllSettings();
 
         // シンプルモード
         var simpleToggle = document.getElementById('simpleModeToggle');
-        if (simpleToggle) localStorage.setItem('simpleMode', simpleToggle.checked ? 'on' : 'off');
+        if (simpleToggle) allSettings.ui.simpleMode = simpleToggle.checked ? 'on' : 'off'; saveAllSettings();
 
         // スタンプ設定
         saveStampSettings();
 
         // プロフィール名
         var profileNameEl = document.getElementById('profileNameInput');
-        if (profileNameEl) localStorage.setItem('profileName', profileNameEl.value.trim());
+        if (profileNameEl) allSettings.profile.name = profileNameEl.value.trim(); saveAllSettings();
 
         // 性別：selectGenderでlocalStorageに既に書き込み済みなので読むだけ
         // （何も選択されていない場合のフォールバックのみ）
-        if (!localStorage.getItem('profileGender')) {
-          localStorage.setItem('profileGender', 'king');
+        if (!allSettings.profile.gender) {
+          allSettings.profile.gender = 'king'; saveAllSettings();
         }
 
         // アバター
         var avatarPreview = document.getElementById('profileAvatarPreview');
         if (avatarPreview && avatarPreview.style.display !== 'none' && avatarPreview.src) {
-          localStorage.setItem('profileAvatar', avatarPreview.src);
+          allSettings.profile.avatar = avatarPreview.src; saveAllSettings();
         } else {
-          localStorage.removeItem('profileAvatar');
+          allSettings.profile.avatar = ''; saveAllSettings();
         }
 
         // ナビバー更新・シンプルモード適用
@@ -10618,9 +10961,9 @@ function loadSettingsUI() {
           _toastEl.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.85);color:#ffd700;padding:16px 28px;border-radius:14px;font-size:1em;font-weight:bold;z-index:99999;text-align:center;pointer-events:none;border:1px solid rgba(255,215,0,0.4);';
           document.body.appendChild(_toastEl);
         }
-        var _g = localStorage.getItem('profileGender') || 'king';
+        var _g = allSettings.profile.gender || 'king';
         var _gLabel = _g === 'princess' ? '姫' : '王';
-        var _n = localStorage.getItem('profileName') || '旅人';
+        var _n = allSettings.profile.name || '旅人';
         _toastEl.innerHTML = '✅ 保存しました！ ' + _n + '（' + _gLabel + '）<br><span style="font-size:0.82em;color:#ffcc66;">⚠️ 名前や性別を変更した場合は、王国コードを再発行してください</span>';
         _toastEl.style.display = 'block';
         setTimeout(function(){ _toastEl.style.display = 'none'; }, 2000);
@@ -10639,7 +10982,7 @@ function loadSettingsUI() {
     
     // 初期ビューを取得
     function getInitialView() {
-      return localStorage.getItem('initialView') || 'monthly';
+      return allSettings.ui.initialView || 'monthly';
     }
     
     // 起動時にナビアバターを更新
@@ -10766,7 +11109,7 @@ function loadSettingsUI() {
       }
       
       // 状態を保存
-      localStorage.setItem('inspectionMode', inspectionMode);
+      allSettings.flags.inspectionMode = inspectionMode; saveAllSettings();
     }
 
     // 状態の復元（ページロード時）
@@ -10774,7 +11117,7 @@ function loadSettingsUI() {
     // デフォルトは月間ビュー（全体を俯瞰できる）
     switchView(savedView || 'monthly');
     
-    const savedInspectionMode = localStorage.getItem('inspectionMode');
+    const savedInspectionMode = allSettings.flags.inspectionMode;
     if (savedInspectionMode !== null) {
       const targetMode = parseInt(savedInspectionMode);
       inspectionMode = (targetMode - 1 + 4) % 4;
@@ -10782,34 +11125,100 @@ function loadSettingsUI() {
     }
 
     // ===== シンプルモード =====
-    let selectedStamp = null;
-    let eraserMode = false;
+    var selectedStamp = null;
+    var eraserMode = false;
 
-    // 季節アート（月ごとのemoji）
-    // デフォルトスタンプ
-    const DEFAULT_STAMPS = [
-      { id: 's1', name: '日勤', color: '#ffcdd2', textColor: '#c62828', startTime: '08:30', endTime: '17:00' },
-      { id: 's2', name: '長日勤', color: '#f8bbd0', textColor: '#ad1457', startTime: '08:30', endTime: '20:00' },
-      { id: 's3', name: '入り', color: '#e1bee7', textColor: '#6a1b9a', startTime: '16:30', endTime: '01:00' },
-      { id: 's4', name: '明け', color: '#c5cae9', textColor: '#283593', startTime: '00:00', endTime: '09:00' },
-      { id: 's5', name: '休み', color: '#b2dfdb', textColor: '#00695c', startTime: '', endTime: '' },
-      { id: 's6', name: '有給', color: '#fff9c4', textColor: '#f57f17', startTime: '', endTime: '' }
+    // ===== kind:'stamp' SSOT（v0.29.19） =====
+    // デフォルトスタンプ定義（初回起動時にallTasksへ投入）
+    const DEFAULT_STAMP_DEFS = [
+      { name: '日勤',  color: '#ffcdd2', textColor: '#c62828', startTime: '08:30', endTime: '17:00', order: 0 },
+      { name: '長日勤', color: '#f8bbd0', textColor: '#ad1457', startTime: '08:30', endTime: '20:00', order: 1 },
+      { name: '入り',  color: '#e1bee7', textColor: '#6a1b9a', startTime: '16:30', endTime: '01:00', order: 2 },
+      { name: '明け',  color: '#c5cae9', textColor: '#283593', startTime: '00:00', endTime: '09:00', order: 3 },
+      { name: '休み',  color: '#b2dfdb', textColor: '#00695c', startTime: '',      endTime: '',       order: 4 },
+      { name: '有給',  color: '#fff9c4', textColor: '#f57f17', startTime: '',      endTime: '',       order: 5 }
     ];
 
+    // kind:'stamp' の一覧取得（order順）
     function getStamps() {
-      const saved = localStorage.getItem('simpleStamps');
-      return saved ? JSON.parse(saved) : DEFAULT_STAMPS;
+      return allTasks
+        .filter(t => t.kind === 'stamp')
+        .sort((a, b) => (a.order || 0) - (b.order || 0));
     }
 
-    // ===== dailyStatus CRUD（allTasksに統合） =====
+    // kind:'stamp' のID→定義取得
+    function getStampDef(stampId) {
+      return allTasks.find(t => t.kind === 'stamp' && t.id === stampId) || null;
+    }
+
+    // kind:'stamp' 初期化（初回 or マイグレーション）
+    function initStampDefs() {
+      // ① 旧simpleStamps（localStorage）→ kind:'stamp' へ移行
+      const legacySimple = localStorage.getItem('simpleStamps');
+      if (legacySimple) {
+        try {
+          const legacyArr = JSON.parse(legacySimple);
+          // 旧ID（s1〜s6）→UUID マッピングを作成
+          window._stampIdMap = {};
+          legacyArr.forEach(function(s, i) {
+            const newId = generateTaskId();
+            window._stampIdMap[s.id] = newId;
+            if (!allTasks.find(t => t.kind === 'stamp' && t.name === s.name)) {
+              allTasks.push({
+                id: newId,
+                kind: 'stamp',
+                name: s.name,
+                color: s.color,
+                textColor: s.textColor || '#333',
+                startTime: s.startTime || '',
+                endTime: s.endTime || '',
+                order: i,
+                createdAt: new Date().toISOString()
+              });
+            }
+          });
+          localStorage.removeItem('simpleStamps');
+          console.log('[migrate] simpleStamps → kind:stamp 完了');
+        } catch(e) { console.warn('[migrate] simpleStamps失敗', e); }
+      }
+
+      // ② kind:'stamp' が0件 → デフォルト投入
+      if (getStamps().length === 0) {
+        DEFAULT_STAMP_DEFS.forEach(function(def, i) {
+          allTasks.push(Object.assign({ id: generateTaskId(), kind: 'stamp', createdAt: new Date().toISOString() }, def));
+        });
+        console.log('[init] デフォルトkind:stamp 投入');
+      }
+
+      // ③ 旧dailyStatus.stampId（単数）→ stampIds[]（配列）マイグレーション
+      let migCount = 0;
+      allTasks.forEach(function(t) {
+        if (t.kind === 'dailyStatus' && t.stampId && !t.stampIds) {
+          // 旧IDがs1〜s6の場合はUUIDマップで変換、それ以外はそのまま
+          const mapped = (window._stampIdMap && window._stampIdMap[t.stampId]) || t.stampId;
+          t.stampIds = [mapped];
+          delete t.stampId;
+          migCount++;
+        }
+      });
+      if (migCount > 0) console.log('[migrate] dailyStatus.stampId → stampIds[] ' + migCount + '件');
+
+      saveAllTasks();
+    }
+
+    // ===== dailyStatus CRUD（allTasksに統合・複数スタンプ対応） =====
     function getDayInfo(date) {
       return allTasks.find(t => t.kind === 'dailyStatus' && t.date === date) || null;
     }
 
-    function setDayInfo(date, stampId, workMemo, privateMemo) {
+    // stampIdを追加（複数対応）・既存なら新規作成
+    function addStampToDate(date, stampId, workMemo, privateMemo) {
       const existing = getDayInfo(date);
       if (existing) {
-        existing.stampId = stampId;
+        if (!existing.stampIds) existing.stampIds = [];
+        if (!existing.stampIds.includes(stampId)) {
+          existing.stampIds.push(stampId);
+        }
         if (workMemo !== undefined) existing.workMemo = workMemo;
         if (privateMemo !== undefined) existing.privateMemo = privateMemo;
         existing.updatedAt = new Date().toISOString();
@@ -10818,7 +11227,49 @@ function loadSettingsUI() {
           id: generateTaskId(),
           kind: 'dailyStatus',
           date: date,
-          stampId: stampId,
+          stampIds: [stampId],
+          workMemo: workMemo || '',
+          privateMemo: privateMemo || '',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      }
+      saveAllTasks();
+    }
+
+    // stampIdを削除（複数対応）・0件になったらdailyStatus自体を削除
+    function removeStampFromDate(date, stampId) {
+      const existing = getDayInfo(date);
+      if (!existing) return false;
+      if (!existing.stampIds) existing.stampIds = [];
+      const idx = existing.stampIds.indexOf(stampId);
+      if (idx !== -1) existing.stampIds.splice(idx, 1);
+      if (existing.stampIds.length === 0 && !existing.workMemo && !existing.privateMemo) {
+        // スタンプもメモもなければ削除
+        const ti = allTasks.findIndex(t => t.kind === 'dailyStatus' && t.date === date);
+        if (ti !== -1) allTasks.splice(ti, 1);
+      } else {
+        existing.updatedAt = new Date().toISOString();
+      }
+      saveAllTasks();
+      return true;
+    }
+
+    // 後方互換：旧setDayInfo（単数stampId）→ 新APIに委譲
+    function setDayInfo(date, stampId, workMemo, privateMemo) {
+      const existing = getDayInfo(date);
+      if (existing) {
+        // 既存のstampIdsを上書き（単数指定の場合は置き換え動作を維持）
+        existing.stampIds = stampId ? [stampId] : (existing.stampIds || []);
+        if (workMemo !== undefined) existing.workMemo = workMemo;
+        if (privateMemo !== undefined) existing.privateMemo = privateMemo;
+        existing.updatedAt = new Date().toISOString();
+      } else {
+        allTasks.push({
+          id: generateTaskId(),
+          kind: 'dailyStatus',
+          date: date,
+          stampIds: stampId ? [stampId] : [],
           workMemo: workMemo || '',
           privateMemo: privateMemo || '',
           createdAt: new Date().toISOString(),
@@ -10836,12 +11287,6 @@ function loadSettingsUI() {
         return true;
       }
       return false;
-    }
-
-    // スタンプ定義からID→表示情報を取得
-    function getStampDef(stampId) {
-      const stamps = getStamps();
-      return stamps.find(s => s.id === stampId) || null;
     }
 
 
@@ -10890,9 +11335,8 @@ function loadSettingsUI() {
       }
     }
 
-    // 日付セルにスタンプ貼付 or 消しゴム削除
+    // 日付セルにスタンプ貼付 or 消しゴム削除（複数スタンプ対応）
     function applyStampToDate(dateStr) {
-      // 消しゴムモード → dailyStatusのみ削除
       if (eraserMode) {
         if (removeDayInfo(dateStr)) {
           renderMonthlyView();
@@ -10900,18 +11344,19 @@ function loadSettingsUI() {
         }
         return;
       }
-      // スタンプ貼付
       if (selectedStamp) {
         const existing = getDayInfo(dateStr);
-        if (existing && existing.stampId === selectedStamp.id) {
-          // 同じスタンプ再タップ → 解除
-          removeDayInfo(dateStr);
+        const currentIds = (existing && existing.stampIds) ? existing.stampIds : [];
+        if (currentIds.includes(selectedStamp.id)) {
+          // 同じスタンプ再タップ → そのスタンプだけ解除
+          removeStampFromDate(dateStr, selectedStamp.id);
         } else {
-          // 新規 or 上書き（メモは保持）
-          setDayInfo(dateStr, selectedStamp.id,
+          // 新規追加（複数可）
+          addStampToDate(dateStr, selectedStamp.id,
             existing ? existing.workMemo : '',
             existing ? existing.privateMemo : '');
         }
+        if (navigator.vibrate) navigator.vibrate(20);
         renderMonthlyView();
       }
     }
@@ -10920,11 +11365,19 @@ function loadSettingsUI() {
     function openDayInfoModal(dateStr) {
       const dayInfo = getDayInfo(dateStr);
       if (!dayInfo) return;
-      const def = getStampDef(dayInfo.stampId);
+      const stampIds = (dayInfo && dayInfo.stampIds) ? dayInfo.stampIds : [];
+      const defs = stampIds.map(id => getStampDef(id)).filter(Boolean);
       const dateParts = dateStr.split('-');
       const dateLabel = `${parseInt(dateParts[1])}/${parseInt(dateParts[2])}`;
-      
-      // モーダルHTML
+      // 削除可能なスタンプバッジ（×ボタン付き）
+      const stampBadges = defs.map(d =>
+        `<span style="display:inline-flex;align-items:center;gap:4px;background:${d.color};color:${d.textColor||'#333'};padding:3px 8px;border-radius:12px;font-size:0.82em;font-weight:600;margin:2px;">` +
+        `${d.name}` +
+        `<button onclick="(function(){var di=window._currentDayInfo;if(!di)return;var idx=di.stampIds.indexOf('${d.id}');if(idx!==-1){di.stampIds.splice(idx,1);saveAllTasks();renderMonthlyView();}var modal=document.getElementById('dayInfoModal');if(modal){modal.remove();if(di.stampIds.length>0)openDayInfoModal('${dateStr}');}})();" ` +
+        `style="background:none;border:none;cursor:pointer;color:${d.textColor||'#333'};font-size:0.9em;padding:0 0 0 2px;line-height:1;opacity:0.7;" title="外す">✕</button>` +
+        `</span>`
+      ).join('');
+
       const modal = document.createElement('div');
       modal.id = 'dayInfoModal';
       modal.style.cssText = `
@@ -10932,17 +11385,17 @@ function loadSettingsUI() {
         background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center;
       `;
       modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
-      
+
       const box = document.createElement('div');
       box.style.cssText = `
         background: #fff; border-radius: 16px; padding: 24px; width: 90%; max-width: 360px;
         box-shadow: 0 8px 32px rgba(0,0,0,0.2);
       `;
-      
+
       box.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
           <span style="font-size: 1.2em; font-weight: 700;">${dateLabel}</span>
-          ${def ? `<span style="background: ${def.color}; color: ${def.textColor || '#333'}; padding: 4px 12px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">${def.name}</span>` : ''}
+          ${stampBadges}
         </div>
         <div style="margin-bottom: 14px;">
           <label style="font-size: 0.8em; font-weight: 600; color: #78909c;">■ 仕事メモ</label>
@@ -10958,6 +11411,7 @@ function loadSettingsUI() {
         </div>
       `;
       
+      window._currentDayInfo = dayInfo; // スタンプ削除ボタンから参照
       modal.appendChild(box);
       document.body.appendChild(modal);
       
@@ -10965,7 +11419,8 @@ function loadSettingsUI() {
       document.getElementById('dayInfoSaveBtn').onclick = function() {
         const wm = document.getElementById('dayInfoWorkMemo').value.trim();
         const pm = document.getElementById('dayInfoPrivateMemo').value.trim();
-        setDayInfo(dateStr, dayInfo.stampId, wm, pm);
+        // メモのみ更新（stampIdsは変更しない）
+        if (dayInfo) { dayInfo.workMemo = wm; dayInfo.privateMemo = pm; dayInfo.updatedAt = new Date().toISOString(); saveAllTasks(); }
         modal.remove();
         renderMonthlyView();
       };
@@ -11010,10 +11465,11 @@ function loadSettingsUI() {
           if (cell && cell.dataset.date && d.stamp) {
             const key = cell.dataset.date;
             const existing = getDayInfo(key);
-            if (existing && existing.stampId === d.stamp.id) {
-              removeDayInfo(key);
+            const curIds = (existing && existing.stampIds) ? existing.stampIds : [];
+            if (curIds.includes(d.stamp.id)) {
+              removeStampFromDate(key, d.stamp.id);
             } else {
-              setDayInfo(key, d.stamp.id,
+              addStampToDate(key, d.stamp.id,
                 existing ? existing.workMemo : '',
                 existing ? existing.privateMemo : '');
             }
@@ -11142,7 +11598,7 @@ function loadSettingsUI() {
 
     // シンプルモードON/OFF
     function applySimpleMode() {
-      const isSimple = localStorage.getItem('simpleMode') === 'on';
+      const isSimple = allSettings.ui.simpleMode === 'on';
       const navDaily = document.getElementById('navDaily');
       const navWeekly = document.getElementById('navWeekly');
       const navYearly = document.getElementById('navYearly');
@@ -11206,74 +11662,265 @@ function loadSettingsUI() {
       }
     }
 
-    // スタンプ設定UI
+    // ===== スタンプ設定UI（v0.29.19 allTasks連携・D&D並び替え）=====
+    var _stampDragSrc = null; // D&D中の元ID
+
     function loadStampSettingsUI() {
-      const stamps = getStamps();
+      const stamps = getStamps(); // order順
       const list = document.getElementById('stampList');
+      if (!list) return;
       list.innerHTML = '';
-      stamps.forEach((stamp, idx) => {
+
+      stamps.forEach(function(stamp) {
         const row = document.createElement('div');
-        row.style.cssText = 'display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap;';
-        row.innerHTML = `
-          <input type="text" value="${stamp.name}" data-idx="${idx}" data-field="name"
-            style="width: 60px; padding: 4px 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85em;"
-            onchange="updateStampField(${idx}, 'name', this.value)">
-          <input type="color" value="${stamp.color}" data-idx="${idx}"
-            style="width: 30px; height: 28px; border: none; cursor: pointer; border-radius: 4px;"
-            onchange="updateStampField(${idx}, 'color', this.value)">
-          <input type="time" value="${stamp.startTime || ''}" placeholder="開始"
-            style="width: 75px; padding: 3px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.8em;"
-            onchange="updateStampField(${idx}, 'startTime', this.value)">
-          <span style="font-size: 0.8em; color: #999;">〜</span>
-          <input type="time" value="${stamp.endTime || ''}" placeholder="終了"
-            style="width: 75px; padding: 3px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.8em;"
-            onchange="updateStampField(${idx}, 'endTime', this.value)">
-          <button onclick="removeStamp(${idx})" style="background: none; border: none; color: #e53935; cursor: pointer; font-size: 1.1em; padding: 2px 6px;">✕</button>
-        `;
+        row.dataset.stampId = stamp.id;
+        row.draggable = true;
+        row.style.cssText = [
+          'display:flex;align-items:center;gap:6px;margin-bottom:6px;',
+          'padding:6px 8px;background:#fafafa;border:1.5px solid #e8e8e8;',
+          'border-radius:10px;cursor:grab;flex-wrap:wrap;',
+          'transition:background 0.15s;touch-action:none;'
+        ].join('');
+
+        // ハンドル（スマホでも操作しやすいよう大きめに）
+        const handle = document.createElement('span');
+        handle.textContent = '⠿';
+        handle.style.cssText = [
+          'color:#bbb;font-size:1.4em;cursor:grab;flex-shrink:0;',
+          'padding:4px 8px 4px 4px;touch-action:none;',
+          '-webkit-user-select:none;user-select:none;'
+        ].join('');
+
+        // プレビュー（背景色＋文字色）
+        const preview = document.createElement('span');
+        preview.style.cssText = 'width:28px;height:28px;border-radius:8px;flex-shrink:0;border:1.5px solid #ddd;';
+        preview.style.background = stamp.color;
+
+        // 名前
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.value = stamp.name;
+        nameInput.maxLength = 8;
+        nameInput.style.cssText = 'width:58px;padding:4px 6px;border:1px solid #ddd;border-radius:6px;font-size:0.85em;';
+        nameInput.addEventListener('change', function() { updateStampFieldById(stamp.id, 'name', this.value); });
+        nameInput.addEventListener('input', function() {
+          // スタンプバーのプレビューもリアルタイム更新
+          const barBtn = document.querySelector('[data-stamp-id="' + stamp.id + '"]');
+          if (barBtn) barBtn.textContent = this.value;
+        });
+
+        // 背景色ピッカー
+        const bgLabel = document.createElement('label');
+        bgLabel.style.cssText = 'display:flex;flex-direction:column;align-items:center;font-size:0.65em;color:#888;gap:1px;cursor:pointer;';
+        bgLabel.textContent = '背景';
+        const bgPicker = document.createElement('input');
+        bgPicker.type = 'color';
+        bgPicker.value = stamp.color || '#e0e0e0';
+        bgPicker.style.cssText = 'width:28px;height:22px;border:none;cursor:pointer;border-radius:4px;padding:0;';
+        bgPicker.addEventListener('input', function() {
+          preview.style.background = this.value;
+          updateStampFieldById(stamp.id, 'color', this.value);
+        });
+        bgLabel.appendChild(bgPicker);
+
+        // 文字色ピッカー
+        const fgLabel = document.createElement('label');
+        fgLabel.style.cssText = 'display:flex;flex-direction:column;align-items:center;font-size:0.65em;color:#888;gap:1px;cursor:pointer;';
+        fgLabel.textContent = '文字';
+        const fgPicker = document.createElement('input');
+        fgPicker.type = 'color';
+        fgPicker.value = stamp.textColor || '#333333';
+        fgPicker.style.cssText = 'width:28px;height:22px;border:none;cursor:pointer;border-radius:4px;padding:0;';
+        fgPicker.addEventListener('input', function() {
+          updateStampFieldById(stamp.id, 'textColor', this.value);
+        });
+        fgLabel.appendChild(fgPicker);
+
+        // 開始時間
+        const startInput = document.createElement('input');
+        startInput.type = 'time';
+        startInput.value = stamp.startTime || '';
+        startInput.style.cssText = 'width:74px;padding:3px;border:1px solid #ddd;border-radius:6px;font-size:0.78em;';
+        startInput.addEventListener('change', function() { updateStampFieldById(stamp.id, 'startTime', this.value); });
+
+        // 〜
+        const sep = document.createElement('span');
+        sep.textContent = '〜';
+        sep.style.cssText = 'font-size:0.78em;color:#bbb;flex-shrink:0;';
+
+        // 終了時間
+        const endInput = document.createElement('input');
+        endInput.type = 'time';
+        endInput.value = stamp.endTime || '';
+        endInput.style.cssText = 'width:74px;padding:3px;border:1px solid #ddd;border-radius:6px;font-size:0.78em;';
+        endInput.addEventListener('change', function() { updateStampFieldById(stamp.id, 'endTime', this.value); });
+
+        // 削除ボタン
+        const delBtn = document.createElement('button');
+        delBtn.textContent = '✕';
+        delBtn.style.cssText = 'background:none;border:none;color:#e53935;cursor:pointer;font-size:1em;padding:2px 4px;margin-left:auto;flex-shrink:0;';
+        delBtn.addEventListener('click', function() { removeStampById(stamp.id); });
+
+        row.appendChild(handle);
+        row.appendChild(preview);
+        row.appendChild(nameInput);
+        row.appendChild(bgLabel);
+        row.appendChild(fgLabel);
+        row.appendChild(startInput);
+        row.appendChild(sep);
+        row.appendChild(endInput);
+        row.appendChild(delBtn);
+
+        // D&D イベント
+        row.addEventListener('dragstart', function(e) {
+          _stampDragSrc = stamp.id;
+          e.dataTransfer.effectAllowed = 'move';
+          row.style.opacity = '0.4';
+        });
+        row.addEventListener('dragend', function() {
+          row.style.opacity = '1';
+          _stampDragSrc = null;
+          document.querySelectorAll('#stampList [data-stamp-id]').forEach(function(r) {
+            r.style.borderColor = '#e8e8e8';
+          });
+        });
+        row.addEventListener('dragover', function(e) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          row.style.borderColor = '#4facfe';
+        });
+        row.addEventListener('dragleave', function() {
+          row.style.borderColor = '#e8e8e8';
+        });
+        row.addEventListener('drop', function(e) {
+          e.preventDefault();
+          row.style.borderColor = '#e8e8e8';
+          if (_stampDragSrc && _stampDragSrc !== stamp.id) {
+            reorderStamps(_stampDragSrc, stamp.id);
+          }
+        });
+
+        // タッチD&D（スマホ対応）
+        var _tDragSrc = null, _tGhost = null;
+        handle.addEventListener('touchstart', function(e) {
+          e.preventDefault();
+          _tDragSrc = stamp.id;
+          var t = e.touches[0];
+          _tGhost = row.cloneNode(true);
+          _tGhost.style.cssText += 'position:fixed;left:' + (t.clientX - 20) + 'px;top:' + (t.clientY - 20) + 'px;opacity:0.7;z-index:9999;pointer-events:none;width:' + row.offsetWidth + 'px;';
+          document.body.appendChild(_tGhost);
+          row.style.opacity = '0.4';
+        }, { passive: false });
+        handle.addEventListener('touchmove', function(e) {
+          e.preventDefault();
+          if (!_tGhost) return;
+          var t = e.touches[0];
+          _tGhost.style.left = (t.clientX - 20) + 'px';
+          _tGhost.style.top = (t.clientY - 20) + 'px';
+          // ホバー先ハイライト
+          _tGhost.style.display = 'none';
+          var el = document.elementFromPoint(t.clientX, t.clientY);
+          _tGhost.style.display = '';
+          if (el) {
+            var targetRow = el.closest('[data-stamp-id]');
+            document.querySelectorAll('#stampList [data-stamp-id]').forEach(function(r) { r.style.borderColor = '#e8e8e8'; });
+            if (targetRow && targetRow.dataset.stampId !== _tDragSrc) {
+              targetRow.style.borderColor = '#4facfe';
+            }
+          }
+        }, { passive: false });
+        handle.addEventListener('touchend', function(e) {
+          if (_tGhost) { _tGhost.remove(); _tGhost = null; }
+          row.style.opacity = '1';
+          var t = e.changedTouches[0];
+          var el = document.elementFromPoint(t.clientX, t.clientY);
+          if (el) {
+            var targetRow = el.closest('[data-stamp-id]');
+            if (targetRow && targetRow.dataset.stampId && targetRow.dataset.stampId !== _tDragSrc) {
+              reorderStamps(_tDragSrc, targetRow.dataset.stampId);
+            }
+          }
+          document.querySelectorAll('#stampList [data-stamp-id]').forEach(function(r) { r.style.borderColor = '#e8e8e8'; });
+          _tDragSrc = null;
+        });
+
         list.appendChild(row);
       });
     }
 
-    function updateStampField(idx, field, value) {
-      const stamps = getStamps();
-      if (stamps[idx]) {
-        stamps[idx][field] = value;
-        localStorage.setItem('simpleStamps', JSON.stringify(stamps));
+    // IDベースでフィールド更新（allTasks直接更新）
+    function updateStampFieldById(stampId, field, value) {
+      const stamp = allTasks.find(t => t.kind === 'stamp' && t.id === stampId);
+      if (stamp) {
+        stamp[field] = value;
+        saveAllTasks();
+        renderStampBar(); // スタンプバーにも即時反映
       }
     }
 
+    // スタンプ追加（allTasks）
     function addStampSetting() {
       const stamps = getStamps();
-      if (stamps.length >= 20) { alert('スタンプは最大20個です'); return; }
-      stamps.push({
-        id: 's' + Date.now(),
+      if (stamps.length >= 20) {
+        showConfirm('スタンプは最大20個までです。', 'OK', false, null);
+        return;
+      }
+      const newStamp = {
+        id: generateTaskId(),
+        kind: 'stamp',
         name: '新規',
         color: '#e0e0e0',
-        textColor: '#333',
+        textColor: '#555555',
         startTime: '',
-        endTime: ''
-      });
-      localStorage.setItem('simpleStamps', JSON.stringify(stamps));
+        endTime: '',
+        order: stamps.length,
+        createdAt: new Date().toISOString()
+      };
+      allTasks.push(newStamp);
+      saveAllTasks();
       loadStampSettingsUI();
+      renderStampBar();
     }
 
+    // スタンプ削除（allTasks）
+    function removeStampById(stampId) {
+      const idx = allTasks.findIndex(t => t.kind === 'stamp' && t.id === stampId);
+      if (idx !== -1) {
+        allTasks.splice(idx, 1);
+        saveAllTasks();
+        loadStampSettingsUI();
+        renderStampBar();
+      }
+    }
+
+    // 後方互換（インデックス指定）
     function removeStamp(idx) {
       const stamps = getStamps();
-      stamps.splice(idx, 1);
-      localStorage.setItem('simpleStamps', JSON.stringify(stamps));
-      loadStampSettingsUI();
+      if (stamps[idx]) removeStampById(stamps[idx].id);
     }
 
-    function saveStampSettings() {
-      // 設定UIから最新の値を収集
-      const stamps = getStamps();
-      const nameInputs = document.querySelectorAll('#stampList input[data-field="name"]');
-      nameInputs.forEach(input => {
-        const idx = parseInt(input.dataset.idx);
-        if (stamps[idx]) stamps[idx].name = input.value;
+    // D&Dによる並び替え（src → target の前に移動）
+    function reorderStamps(srcId, targetId) {
+      const stamps = getStamps(); // order順
+      const srcIdx = stamps.findIndex(s => s.id === srcId);
+      const tgtIdx = stamps.findIndex(s => s.id === targetId);
+      if (srcIdx === -1 || tgtIdx === -1) return;
+      const [moved] = stamps.splice(srcIdx, 1);
+      const newTgt = stamps.findIndex(s => s.id === targetId);
+      stamps.splice(newTgt, 0, moved);
+      // order を連番で振り直す
+      stamps.forEach(function(s, i) {
+        const t = allTasks.find(t => t.kind === 'stamp' && t.id === s.id);
+        if (t) t.order = i;
       });
-      localStorage.setItem('simpleStamps', JSON.stringify(stamps));
+      saveAllTasks();
+      loadStampSettingsUI();
+      renderStampBar();
     }
+
+    // saveStampSettings は設定保存ボタン押下時に呼ばれるが、
+    // v0.29.19以降はリアルタイム保存なので何もしない（後方互換維持）
+    function saveStampSettings() { /* allTasks直接保存に移行済み */ }
 
     // v0.10.0: 旧localStorageキー掃除
     localStorage.removeItem('stampData');
@@ -11295,7 +11942,7 @@ function renderDeckHistory() {
   var el = document.getElementById('deckHistorySection');
   if (!el) return;
   var history = getDeckHistory();
-  var gdp = getCraftStats().total;
+  var gdp = (typeof getCraftStats === 'function') ? getCraftStats().total : 0;
   if (history.length === 0) {
     el.innerHTML = '<div style="font-size:0.78em;color:#555;text-align:center;padding:8px 0;">まだデッキを受け取っていません</div>';
     return;
@@ -11319,13 +11966,38 @@ function renderDeckHistory() {
   el.innerHTML = html;
 }
 
+function receiveDeck(deckId) {
+  var deck = OFFICIAL_DECKS.find(function(d){ return d.id === deckId; });
+  if (!deck) return;
+  showConfirm((deck.title||'デッキ') + '（' + (deck.tasks||[]).length + '枚）を王国に取り込みますか？', '受け取る', false, function() {
+    var today = getLocalDateStr(new Date());
+    deck.tasks.forEach(function(t) {
+      var newTask = createTask(t.text, today, t.time || null, t.section, 'daily_only');
+      if (t.memo) updateTask(newTask.id, { memo: t.memo });
+      if (t.endTime) updateTask(newTask.id, { endTime: t.endTime });
+      updateTask(newTask.id, { deckId: deck.id });
+    });
+    addDeckHistory({ deckId: deck.id, title: deck.title, status: 'active', createdBy: 'やることクラフト公式', tasks: deck.tasks });
+    allSettings.deck.received[deckId] = true; saveAllSettings();
+    saveAllTasks();
+    renderAllSections(today);
+    renderDeckShop();
+    showAdminToast('🛍️ ' + deck.title + 'を受け取った！');
+  });
+}
+
+function receiveDeckAgain(deckId) {
+  delete allSettings.deck.received[deckId]; saveAllSettings();
+  receiveDeck(deckId);
+}
+
 function renderDeckShop() {
   var el = document.getElementById('deckShopList');
   if (!el) return;
   if (typeof OFFICIAL_DECKS === 'undefined') return;
   el.innerHTML = '';
   OFFICIAL_DECKS.forEach(function(deck) {
-    var received = localStorage.getItem('deck_received_' + deck.id);
+    var received = allSettings.deck.received[deck.id];
     var card = document.createElement('div');
     card.style.cssText = 'border:1px solid ' + (received ? '#e0e0e0' : '#ffe0a0') + ';border-radius:12px;padding:14px 16px;background:' + (received ? '#fafafa' : '#fffdf5') + ';';
     var info = document.createElement('div');
@@ -11355,7 +12027,7 @@ function renderDeckShop() {
       btnWrap.appendChild(btn);
     }
     // 管理者モードのときQRボタン追加
-    if (localStorage.getItem('adminMode') === '1') {
+    if (allSettings.flags.adminMode === '1') {
       var btnQR = document.createElement('button');
       btnQR.textContent = '📱 QR';
       btnQR.style.cssText = 'background:rgba(100,220,180,0.12);border:1px solid rgba(100,220,180,0.4);border-radius:8px;color:#64dcb4;font-size:0.72em;padding:4px 10px;cursor:pointer;margin-top:2px;';
@@ -11375,39 +12047,7 @@ function renderDeckShop() {
   });
 }
 
-function receiveDeckAgain(deckId) {
-  if (typeof window._receiveDeckAgain === 'function') {
-    window._receiveDeckAgain(deckId);
-  }
-}
 
-window._receiveDeckAgain = function(deckId) {
-  localStorage.removeItem('deck_received_' + deckId);
-  receiveDeck(deckId);
-}
-
-  function receiveDeck(deckId) {
-  var deck = OFFICIAL_DECKS.find(function(d){ return d.id === deckId; });
-  if (!deck) return;
-  // 受取済みでも通常受け取り可能（再度受け取るはrecieveDeckAgain）
-  if (!confirm((deck.title||'デッキ') + '（' + (deck.tasks||[]).length + '枚）を王国に取り込みますか？')) return;
-  var today = getLocalDateStr(new Date());
-  deck.tasks.forEach(function(t) {
-    var newTask = createTask(t.text, today, t.time || null, t.section, 'daily_only');
-    if (t.memo) updateTask(newTask.id, { memo: t.memo });
-    if (t.endTime) updateTask(newTask.id, { endTime: t.endTime });
-    // deckIdをタスクに付与
-    updateTask(newTask.id, { deckId: deck.id });
-  });
-  // deckHistoryに記録
-  addDeckHistory({ deckId: deck.id, title: deck.title, status: 'active', createdBy: 'やることクラフト公式', tasks: deck.tasks });
-  localStorage.setItem('deck_received_' + deckId, '1');
-  saveAllTasks();
-  renderAllSections(today);
-  renderDeckShop();
-  showAdminToast('🛍️ ' + deck.title + 'を受け取った！');
-
-}
 </script>
 
   <!-- タスク編集モーダル -->
@@ -11642,10 +12282,10 @@ var _craftCode = null;
 // 王国データをエンコード（タスクの中身は含まない）
 function buildCraftCode() {
   var stats = getCraftStats();
-  var myName = localStorage.getItem('profileName') || '';
-  var _gender2 = localStorage.getItem('profileGender') || 'king';
+  var myName = allSettings.profile.name || '';
+  var _gender2 = allSettings.profile.gender || 'king';
   if (!myName) myName = _gender2 === 'princess' ? '旅人' : '旅人';
-  var gender = localStorage.getItem('profileGender') || 'king';
+  var gender = allSettings.profile.gender || 'king';
   var payload = JSON.stringify({
     kind: 'craft',
     name: myName,
@@ -11724,10 +12364,8 @@ function visitCraft() {
     try { deck = JSON.parse(raw2); }
     catch(e) { alert('コードの形式が正しくありません'); return; }
     if (deck.kind !== 'deck') { alert('コードの形式が正しくありません'); return; }
-    if (!confirm((deck.title||'デッキ') + ' ' + deck.tasks.length + '枚を受け取りますか？')) return;
+    // confirm省略（アーティファクト環境）
     var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
-    // 🔥 DCK1（外部コード入力）→ 業+1
-    if (typeof addGou === 'function') addGou(1, 'DCK1外部デッキ受取');
     var _visitDeckId = deck.deckId || ('visit_' + Date.now());
     deck.tasks.forEach(function(d) {
       var t = (typeof createTask === 'function') ? createTask(d.text, today, null, d.section||1, 'daily_only') : null;
@@ -12088,6 +12726,7 @@ function drawVisitBuildings(ctx, cfg, scale, W, H, cy) {
 
 
 function updateCraftHUD() {
+
   var s=getCraftStats();
   function set(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
   function setW(id,v){var e=document.getElementById(id);if(e)e.style.width=v;}
@@ -12162,13 +12801,12 @@ function addGou(amount, reason) {
 }
 function applyTokubunEffect() {
   var tokubun = getTokubun();
-  var castle = document.getElementById('craftCanvas') || document.querySelector('#craftView canvas');
   var badge = document.getElementById('craftGDPBadge');
-  // 徳分による演出
+  // バッジ枠色
   if (tokubun >= 100) {
-    if (badge) badge.style.borderColor = 'rgba(248,187,208,0.8)';
+    if (badge) badge.style.borderColor = 'rgba(255,248,200,0.9)';
   } else if (tokubun >= 50) {
-    if (badge) badge.style.borderColor = 'rgba(248,187,208,0.5)';
+    if (badge) badge.style.borderColor = 'rgba(248,187,208,0.7)';
   } else if (tokubun >= 0) {
     if (badge) badge.style.borderColor = 'rgba(76,175,80,0.5)';
   } else if (tokubun >= -10) {
@@ -12176,8 +12814,36 @@ function applyTokubunEffect() {
   } else if (tokubun >= -30) {
     if (badge) badge.style.borderColor = 'rgba(244,67,54,0.7)';
   } else {
-    if (badge) badge.style.borderColor = 'rgba(183,28,28,0.9)';
+    if (badge) badge.style.borderColor = 'rgba(120,0,120,0.9)';
   }
+}
+
+// 業が浄化されたとき（業が減ったとき）に呼ぶ光の演出
+function triggerPurificationEffect() {
+  var canvas = document.getElementById('craftCanvas');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  var W = canvas.width, H = canvas.height;
+  var alpha = 0.7;
+  var duration = 40;
+  var frame = 0;
+  function draw() {
+    if (frame >= duration) return;
+    frame++;
+    alpha = 0.7 * (1 - frame / duration);
+    // 全体に白い光が走る
+    ctx.save();
+    var grad = ctx.createRadialGradient(W/2, H*0.5, 0, W/2, H*0.5, W*0.7);
+    grad.addColorStop(0, 'rgba(255,255,220,' + alpha + ')');
+    grad.addColorStop(1, 'rgba(255,255,220,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+    requestAnimationFrame(draw);
+  }
+  draw();
+  showCraftMessage('✨ 業が浄化された…');
 }
 
 function showCraftMessage(msg) {
@@ -12312,17 +12978,63 @@ function drawFlag(ctx, px, py, t) {
 }
 
 function drawKingdom(ctx, cw, ch, t, stats) {
-  // 背景
-  var sky=ctx.createLinearGradient(0,0,0,ch);
-  sky.addColorStop(0,'#08111f'); sky.addColorStop(1,'#1a3a5c');
-  ctx.fillStyle=sky; ctx.fillRect(0,0,cw,ch);
+  // 徳分による演出パラメータ
+  var tokubun = getTokubun();
+  var purity = Math.max(0, Math.min(1, tokubun / 100)); // 0〜1（純粋さ）
+  var gouLevel = Math.max(0, Math.min(1, -tokubun / 50)); // 0〜1（業の深さ）
 
-  // 星
-  for(var si=0;si<12;si++){
-    var sx=((si*137+50)%cw), sy=((si*97+20)%(ch*0.4));
-    var sr=0.8+Math.sin(t*0.6+si)*0.4;
-    ctx.beginPath(); ctx.arc(sx,sy,sr,0,Math.PI*2);
-    ctx.fillStyle='rgba(255,255,255,0.9)'; ctx.fill();
+  // 背景（徳分で空の色が変わる）
+  var sky = ctx.createLinearGradient(0, 0, 0, ch);
+  if (gouLevel > 0.5) {
+    // 業が深い：どす暗い紫〜黒
+    sky.addColorStop(0, '#0a0510'); sky.addColorStop(1, '#1a0a20');
+  } else if (gouLevel > 0) {
+    // 業あり：暗い藍〜灰
+    var gMix = gouLevel * 2;
+    sky.addColorStop(0, '#0a0f1a'); sky.addColorStop(1, '#1a2030');
+  } else if (purity > 0.8) {
+    // 純粋さ高い：深く澄んだ夜空
+    sky.addColorStop(0, '#04081a'); sky.addColorStop(1, '#0a2040');
+  } else {
+    // 通常
+    sky.addColorStop(0, '#08111f'); sky.addColorStop(1, '#1a3a5c');
+  }
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, cw, ch);
+
+  // 星（純粋さが高いほど多く・明るく輝く）
+  var starCount = 8 + Math.floor(purity * 20);
+  for (var si = 0; si < starCount; si++) {
+    var sx = ((si * 137 + 50) % cw), sy = ((si * 97 + 20) % (ch * 0.45));
+    var baseR = purity > 0.6 ? 1.2 : 0.8;
+    var sr = baseR + Math.sin(t * 0.6 + si) * 0.5;
+    var starAlpha = gouLevel > 0.3 ? 0.3 : (0.6 + purity * 0.4);
+    ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+    // 純粋さ高いと星に暖かみのある白〜金色
+    var starColor = purity > 0.7 ? 'rgba(255,248,220,' + starAlpha + ')' : 'rgba(255,255,255,' + starAlpha + ')';
+    ctx.fillStyle = starColor; ctx.fill();
+  }
+
+  // 純粋さが高いとき：流れ星
+  if (purity > 0.8 && Math.sin(t * 0.13) > 0.97) {
+    var msX = (cw * 0.2 + t * 30) % cw;
+    var msY = ch * 0.1 + Math.sin(t * 0.3) * ch * 0.1;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,220,0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(msX, msY); ctx.lineTo(msX - 40, msY + 15);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // 業が深いとき：稲妻（遠くで光る）
+  if (gouLevel > 0.6 && Math.sin(t * 2.3 + 1.7) > 0.98) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(200,180,255,0.6)';
+    ctx.lineWidth = 1;
+    var lx = cw * 0.15 + Math.random() * cw * 0.7;
+    ctx.beginPath(); ctx.moveTo(lx, 0); ctx.lineTo(lx - 10, ch * 0.15); ctx.lineTo(lx + 5, ch * 0.25); ctx.lineTo(lx - 5, ch * 0.4);
+    ctx.stroke();
+    ctx.restore();
   }
 
   // アイソメパラメータ
@@ -12343,9 +13055,52 @@ function drawKingdom(ctx, cw, ch, t, stats) {
     for(var gz2=-grid;gz2<=grid;gz2++){
       var d=Math.sqrt(gx2*gx2+gz2*gz2);
       if(d>grid) continue;
-      var g = d<3?'#2a5820': d<5?'#234e1c': '#1c4016';
+      // 徳分で地面の色が変わる
+      var g;
+      if (gouLevel > 0.5) {
+        // 業深い：枯れた土色
+        g = d<3?'#3a2810': d<5?'#2e1e0a': '#221408';
+      } else if (gouLevel > 0) {
+        // 業あり：くすんだ緑
+        g = d<3?'#2a4015': d<5?'#1e3010': '#182808';
+      } else if (purity > 0.7) {
+        // 純粋さ高い：生き生きとした緑、中央に花
+        var flowerGlow = (d < 2 && Math.sin(t*0.5 + gx2*gz2)*0.5+0.5 > 0.7) ? '#3a7a28' : (d<3?'#327028': d<5?'#2a5c1e': '#225016');
+        g = flowerGlow;
+      } else {
+        g = d<3?'#2a5820': d<5?'#234e1c': '#1c4016';
+      }
       drawTile(ctx,gx2,gz2,cx,cy,tW,tH,g,'rgba(0,0,0,0.15)');
     }
+  }
+
+  // 純粋さ高いとき：地面に光の粒（蛍）
+  if (purity > 0.6) {
+    var fireflyCount = Math.floor(purity * 6);
+    for (var fi = 0; fi < fireflyCount; fi++) {
+      var ffp = toScreen(
+        Math.sin(t * 0.3 + fi * 2.1) * 4,
+        Math.cos(t * 0.25 + fi * 1.7) * 4,
+        cx, cy, tW, tH
+      );
+      var ffAlpha = (Math.sin(t * 1.5 + fi * 3) * 0.5 + 0.5) * purity * 0.8;
+      ctx.save();
+      ctx.shadowBlur = 6; ctx.shadowColor = 'rgba(180,255,150,0.8)';
+      ctx.beginPath(); ctx.arc(ffp.x, ffp.y, 1.5, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(180,255,150,' + ffAlpha + ')'; ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // 業霧（業が多いほど濃くなる）
+  if (gouLevel > 0.1) {
+    var fogAlpha = gouLevel * 0.45;
+    var fogGrad = ctx.createRadialGradient(cx*_craftZoom, cy*_craftZoom, 0, cx*_craftZoom, cy*_craftZoom, cw*0.6);
+    fogGrad.addColorStop(0, 'rgba(40,20,60,' + fogAlpha + ')');
+    fogGrad.addColorStop(1, 'rgba(20,10,30,0)');
+    ctx.save(); ctx.setTransform(1,0,0,1,0,0);
+    ctx.fillStyle = fogGrad; ctx.fillRect(0, 0, cw, ch);
+    ctx.restore();
   }
 
   // 木（城の外側）
@@ -12358,12 +13113,63 @@ function drawKingdom(ctx, cw, ch, t, stats) {
   var castleH = 1.2 + lv*0.25;
   var prog = stats.pct || 0; // 0〜100 レベル内進捗
 
+  // 徳分で城の色調が変わる
+  var wallTop, wallLeft, wallRight, bodyTop, bodyLeft, bodyRight, roofColor;
+  if (gouLevel > 0.5) {
+    // 業深い：城が黒ずむ・ひび割れた石
+    wallTop='#5a4830'; wallLeft='#3a2818'; wallRight='#4a3828';
+    bodyTop='#6a5840'; bodyLeft='#4a3828'; bodyRight='#5a4838';
+    roofColor='#2a3050';
+  } else if (gouLevel > 0) {
+    // 業あり：くすんだ色
+    wallTop='#8a7860'; wallLeft='#6a5848'; wallRight='#7a6858';
+    bodyTop='#a09578'; bodyLeft='#807060'; bodyRight='#907870';
+    roofColor='#3a5085';
+  } else if (purity > 0.7) {
+    // 純粋さ高い：白く輝く城
+    var pGlow = 0.9 + Math.sin(t*0.8)*0.1;
+    wallTop='rgba(240,235,220,'+pGlow+')'; wallLeft='#c0b8a8'; wallRight='#d0c8b8';
+    bodyTop='rgba(255,252,240,'+pGlow+')'; bodyLeft='#d0c8b8'; bodyRight='#e0d8c8';
+    roofColor='rgba(100,160,220,'+pGlow+')';
+  } else {
+    wallTop='#b8a88a'; wallLeft='#988870'; wallRight='#a89880';
+    bodyTop='#d4c5a9'; bodyLeft='#b0a090'; bodyRight='#c0b0a0';
+    roofColor='#4a6fa5';
+  }
+
   // 城壁外枠
-  drawBox(ctx,-1.5,-1.5,3,3,castleH*0.6, cx,cy,tW,tH,'#b8a88a','#988870','#a89880');
+  drawBox(ctx,-1.5,-1.5,3,3,castleH*0.6, cx,cy,tW,tH,wallTop,wallLeft,wallRight);
   // 城本体（内側・高く）
-  drawBox(ctx,-0.8,-0.8,1.6,1.6,castleH, cx,cy,tW,tH,'#d4c5a9','#b0a090','#c0b0a0');
+  drawBox(ctx,-0.8,-0.8,1.6,1.6,castleH, cx,cy,tW,tH,bodyTop,bodyLeft,bodyRight);
   // 屋根
-  drawRoof(ctx,-0.8,-0.8,1.6,1.6,castleH,tH*2.5, cx,cy,tW,tH,'#4a6fa5');
+  drawRoof(ctx,-0.8,-0.8,1.6,1.6,castleH,tH*2.5, cx,cy,tW,tH,roofColor);
+
+  // 純粋さ高いとき：城全体がオーラを放つ
+  if (purity > 0.5) {
+    var auraAlpha = (purity - 0.5) * 0.6;
+    var auraPos = toScreen(0, 0, cx, cy, tW, tH);
+    ctx.save();
+    var auraGrad = ctx.createRadialGradient(auraPos.x, auraPos.y - castleH*tH*2, 0, auraPos.x, auraPos.y - castleH*tH*2, tW * 4);
+    auraGrad.addColorStop(0, 'rgba(255,248,200,' + (auraAlpha * (0.8 + Math.sin(t)*0.2)) + ')');
+    auraGrad.addColorStop(1, 'rgba(255,248,200,0)');
+    ctx.fillStyle = auraGrad;
+    ctx.fillRect(auraPos.x - tW*4, auraPos.y - castleH*tH*4, tW*8, castleH*tH*5);
+    ctx.restore();
+  }
+
+  // 業深いとき：城にひびのエフェクト（暗い線）
+  if (gouLevel > 0.4) {
+    var crackPos = toScreen(-0.1, -0.1, cx, cy, tW, tH);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0,0,0,' + (gouLevel * 0.6) + ')';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(crackPos.x - 3, crackPos.y - castleH*tH*0.8);
+    ctx.lineTo(crackPos.x + 1, crackPos.y - castleH*tH*0.5);
+    ctx.lineTo(crackPos.x - 2, crackPos.y - castleH*tH*0.2);
+    ctx.stroke();
+    ctx.restore();
+  }
 
   // 【進捗20%〜】城の窓が光る
   if (prog >= 20) {
@@ -12455,7 +13261,7 @@ function drawKingdom(ctx, cw, ch, t, stats) {
 }
 
 window.initCraftWorld = function initCraftWorld() {
-  var renderMode = (typeof localStorage !== 'undefined' ? localStorage.getItem('craftRenderMode') : null) || '2d';
+  var renderMode = (typeof localStorage !== 'undefined' ? allSettings.ui.craftRenderMode : null) || '2d';
 
   if (_craftInitialized) { updateCraftHUD(); return; }
 
@@ -12483,7 +13289,7 @@ window.initCraftWorld = function initCraftWorld() {
     s.onerror = function(){
       s.removeAttribute('data-threejs-loading');
       _craftInitialized=false;
-      if(typeof localStorage!=='undefined') localStorage.setItem('craftRenderMode','2d');
+      if(typeof localStorage!=='undefined') allSettings.ui.craftRenderMode = '2d'; saveAllSettings();
       var r2=document.getElementById('craftMode2D'); if(r2)r2.checked=true;
       var r3=document.getElementById('craftMode3D'); if(r3)r3.checked=false;
       initCraftWorld();
@@ -12561,7 +13367,7 @@ function _initThreeScene() {
   var glCtx=testC.getContext('webgl')||testC.getContext('experimental-webgl');
   if (!glCtx) {
     _craftInitialized=false;
-    if(typeof localStorage!=='undefined') localStorage.setItem('craftRenderMode','2d');
+    if(typeof localStorage!=='undefined') allSettings.ui.craftRenderMode = '2d'; saveAllSettings();
     if(typeof window.initCraftWorld==='function')window.initCraftWorld(); return;
   }
   // canvasを作り直す（2D→WebGL切替時のコンテキスト競合を回避）
@@ -12581,7 +13387,7 @@ function _initThreeScene() {
   var W=canvas.width, H=canvas.height;
   var renderer;
   try { renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true}); }
-  catch(e){ _craftInitialized=false; localStorage.setItem('craftRenderMode','2d'); if(typeof window.initCraftWorld==='function')window.initCraftWorld(); return; }
+  catch(e){ _craftInitialized=false; allSettings.ui.craftRenderMode = '2d'; saveAllSettings(); if(typeof window.initCraftWorld==='function')window.initCraftWorld(); return; }
   renderer.setSize(W,H); renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
   var _skyCol = getSkyColor();
   var _seasCol = getSeasonColors();
@@ -12589,12 +13395,14 @@ function _initThreeScene() {
   var scene=new THREE.Scene();
   scene.fog=new THREE.Fog(_skyCol.fog,25,70);
   addSkyDome(scene, _skyCol.type);
-  var camera=new THREE.PerspectiveCamera(35,W/H,0.1,200);
-  var theta=Math.PI/4, phi=0.45, radius=22;
+  var camera=new THREE.PerspectiveCamera(_isMobile?42:35,W/H,0.1,200);
+  // スマホ判定
+  var _isMobile = window.innerWidth < 768;
+  var theta=Math.PI/4, phi=_isMobile?0.52:0.48, radius=_isMobile?18:22;
   function setCam(){camera.position.set(radius*Math.sin(theta)*Math.cos(phi),radius*Math.sin(phi),radius*Math.cos(theta)*Math.cos(phi));camera.lookAt(0,1,0);}
   setCam();
   var stats=getCraftStats();
-  var gender3d = localStorage.getItem('profileGender') || 'king';
+  var gender3d = allSettings.profile.gender || 'king';
   var _flagRef = {};
   var _kResult = buildKingdomScene({
     scene:scene, level:stats.level, ng:stats.ng,
@@ -12622,8 +13430,336 @@ function _initThreeScene() {
     drag.lx=e.touches[0].clientX;drag.ly=e.touches[0].clientY; setCam();
   },{passive:false});
   window.addEventListener('resize',function(){var cw=canvas.clientWidth,ch=canvas.clientHeight;renderer.setSize(cw,ch);camera.aspect=cw/ch;camera.updateProjectionMatrix();});
+  // ===== 徳分エフェクト =====
+  var _tb3dFx = 0;
+  try { if (typeof getToku === 'function') _tb3dFx = getToku(); } catch(e){}
+  // 徳が1でも積まれていればエフェクト開始（閾値を低く設定）
+  var _pur3dFx = _tb3dFx > 0 ? Math.max(0.35, Math.min(1, _tb3dFx / 500)) : 0;
+  var _h3d = new Date().getHours();
+  var _isDay3d   = _h3d >= 7 && _h3d < 17;
+  var _isSunset3d = _h3d >= 17 && _h3d < 20;
+  var _isNight3d  = !_isDay3d && !_isSunset3d;
+
+  // ===== 昼：鳩（純粋さ>0.3）=====
+  // 鳩らしい形：胴体(楕円)+頭+くちばし+翼2枚+尾
+  var _doves = [];
+  if (_pur3dFx > 0.3 && (_isDay3d || _isSunset3d)) {
+    var _doveCount = 2 + Math.floor(_pur3dFx * 3); // 2〜5羽
+    for (var _di = 0; _di < _doveCount; _di++) {
+      var _dg = new THREE.Group();
+      var _white = new THREE.MeshLambertMaterial({color: 0xf5f5f0});
+      var _gray  = new THREE.MeshLambertMaterial({color: 0xcccccc});
+      var _beak  = new THREE.MeshLambertMaterial({color: 0xffcc88});
+      // 胴体（横長楕円）
+      var _body = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6), _white);
+      _body.scale.set(1.5, 0.9, 1.0);
+      _dg.add(_body);
+      // 頭
+      var _head = new THREE.Mesh(new THREE.SphereGeometry(0.13, 7, 5), _white);
+      _head.position.set(0.3, 0.15, 0);
+      _dg.add(_head);
+      // くちばし
+      var _bk = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.14, 4), _beak);
+      _bk.rotation.z = -Math.PI / 2;
+      _bk.position.set(0.44, 0.13, 0);
+      _dg.add(_bk);
+      // 翼（平たい三角形ぽい形）
+      var _wShape = new THREE.Shape();
+      _wShape.moveTo(0, 0); _wShape.lineTo(-0.5, 0.1); _wShape.lineTo(-0.15, 0.35); _wShape.lineTo(0, 0);
+      var _wGeo = new THREE.ShapeGeometry(_wShape);
+      var _wL = new THREE.Mesh(_wGeo, _white);
+      var _wR = new THREE.Mesh(_wGeo, _white);
+      _wL.position.set(0, 0.05, 0.22);
+      _wR.position.set(0, 0.05, -0.22);
+      _wR.scale.z = -1;
+      _dg.add(_wL); _dg.add(_wR);
+      // 尾
+      var _tail = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.28, 4), _gray);
+      _tail.rotation.z = Math.PI / 2;
+      _tail.position.set(-0.4, 0, 0);
+      _dg.add(_tail);
+      _dg.userData = {
+        phase: _di * 1.4 + Math.random(),
+        speed: 0.5 + Math.random() * 0.3,
+        radius: 5 + _di * 2.5,
+        height: 5 + Math.random() * 3,
+        wL: _wL, wR: _wR
+      };
+      scene.add(_dg);
+      _doves.push(_dg);
+    }
+  }
+
+  // ===== 昼：虹（純粋さ>0.6）=====
+  var _rainbow = null;
+  if (_pur3dFx > 0.6 && _isDay3d) {
+    var _rbGroup = new THREE.Group();
+    var _rbColors = [0xff3333, 0xff8800, 0xffee00, 0x33cc44, 0x3388ff, 0x8833ff];
+    for (var _ri = 0; _ri < _rbColors.length; _ri++) {
+      var _rbGeo = new THREE.TorusGeometry(11 + _ri * 0.7, 0.22, 6, 48, Math.PI);
+      var _rbMat = new THREE.MeshBasicMaterial({color:_rbColors[_ri], transparent:true, opacity:0.0, side:THREE.DoubleSide});
+      var _rbM = new THREE.Mesh(_rbGeo, _rbMat);
+      _rbM.rotation.x = Math.PI / 2;
+      _rbGroup.add(_rbM);
+    }
+    _rbGroup.position.set(0, 0.5, -20);
+    scene.add(_rbGroup);
+    _rainbow = _rbGroup;
+  }
+
+  // ===== 夕方：渡り鳥のV字編隊（純粋さ>0.5）=====
+  var _migBirds = [];
+  if (_pur3dFx > 0.5 && _isSunset3d) {
+    var _vPositions = [];
+    for (var _vi = 0; _vi < 7; _vi++) {
+      var _vx = (_vi % 2 === 0 ? 1 : -1) * Math.floor((_vi + 1) / 2) * 1.2;
+      var _vy = Math.abs(Math.floor((_vi + 1) / 2)) * 0.5;
+      _vPositions.push([_vx, _vy]);
+    }
+    _vPositions.forEach(function(vp, vi) {
+      var _bg = new THREE.Group();
+      var _bMat = new THREE.MeshLambertMaterial({color: 0x222222});
+      var _bb = new THREE.Mesh(new THREE.SphereGeometry(0.12, 5, 4), _bMat);
+      _bb.scale.set(1.4, 0.7, 1.0);
+      var _bwL = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.04, 0.1), _bMat);
+      var _bwR = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.04, 0.1), _bMat);
+      _bwL.position.set(0, 0, 0.3); _bwR.position.set(0, 0, -0.3);
+      _bg.add(_bb); _bg.add(_bwL); _bg.add(_bwR);
+      _bg.userData = { offsetX: vp[0], offsetY: vp[1], phase: vi * 0.15, wL: _bwL, wR: _bwR };
+      scene.add(_bg);
+      _migBirds.push(_bg);
+    });
+  }
+
+  // ===== 夜：満天の星（純粋さ>0.4）=====
+  var _nightStars = [];
+  if (_pur3dFx > 0 && _isNight3d) {
+    for (var _nsi = 0; _nsi < 200; _nsi++) {
+      var _br = Math.random();
+      var _nsCol = _br > 0.8 ? 0xfff8e8 : (_br > 0.5 ? 0xeeeeff : 0xccddff);
+      var _nsMat = new THREE.MeshBasicMaterial({color: _nsCol, transparent: true, opacity: 0.0});
+      var _nsMesh = new THREE.Mesh(new THREE.SphereGeometry(0.03 + _br * 0.1, 4, 4), _nsMat);
+      var _nsTheta = Math.random() * Math.PI * 2;
+      var _nsPhi = Math.random() * Math.PI * 0.75;
+      var _nsR = 42 + Math.random() * 8;
+      _nsMesh.position.set(
+        _nsR * Math.sin(_nsPhi) * Math.cos(_nsTheta),
+        _nsR * Math.cos(_nsPhi) + 1,
+        _nsR * Math.sin(_nsPhi) * Math.sin(_nsTheta)
+      );
+      _nsMesh.userData = { phase: _nsi * 0.17, baseOpacity: 0.55 + _br * 0.45 };
+      scene.add(_nsMesh);
+      _nightStars.push(_nsMesh);
+    }
+  }
+
+  // ===== 夜：お月様（純粋さ>0.3）=====
+  var _moon = null;
+  if (_pur3dFx > 0 && _isNight3d) {
+    // 月専用シーン＋固定カメラ（ライティング完全独立）
+    var _moonG = new THREE.Group();
+    // 本体：depthTest:false+renderOrder:999で必ず前面に描画
+    var _mBodyM = new THREE.Mesh(new THREE.SphereGeometry(4.5,32,24),
+      new THREE.MeshBasicMaterial({color:0xfffde8, depthTest:false}));
+    _mBodyM.renderOrder = 999;
+    _moonG.add(_mBodyM);
+    // クレーター
+    [[-1.4,1.5,4.3,0.55],[1.2,1.0,4.3,0.38],[0.4,-0.8,4.3,0.28]].forEach(function(c){
+      var cr=new THREE.Mesh(new THREE.SphereGeometry(c[3],8,6),
+        new THREE.MeshBasicMaterial({color:0xe8ddb8,depthTest:false}));
+      cr.position.set(c[0],c[1],c[2]); cr.renderOrder=1000; _moonG.add(cr);
+    });
+    // ハロー：AdditiveBlending（加算合成→絶対に黒くならない）
+    [[6.0,0xffe566,0.30],[9.0,0xffc820,0.14],[13.5,0xffaa00,0.06]].forEach(function(h,i){
+      var hm=new THREE.Mesh(new THREE.SphereGeometry(h[0],16,12),
+        new THREE.MeshBasicMaterial({color:h[1],transparent:true,opacity:h[2],
+          side:THREE.BackSide,depthWrite:false,depthTest:false,
+          blending:THREE.AdditiveBlending}));
+      hm.renderOrder=998-i; _moonG.add(hm);
+    });
+    _moonG.position.set(-38, 20, -28);
+    scene.add(_moonG);
+    _moon = _moonG;
+  }
+
+  // ===== 夜：流れ星（純粋さ>0.7）=====
+  var _shootingStars = [];
+  if (_pur3dFx > 0 && _isNight3d) {
+    for (var _ssi = 0; _ssi < 5; _ssi++) {
+      var _ssG = new THREE.Group();
+      // 頭（明るい白）
+      var _ssMesh = new THREE.Mesh(new THREE.SphereGeometry(0.22, 6, 6),
+        new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0.0}));
+      // 尾1（太・白）
+      var _ssTail1 = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.0, 5.0, 6),
+        new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0.0}));
+      // 尾2（細・黄色・長い）
+      var _ssTail2 = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.0, 8.0, 4),
+        new THREE.MeshBasicMaterial({color:0xfffacc, transparent:true, opacity:0.0, blending:THREE.AdditiveBlending}));
+      _ssG.add(_ssMesh); _ssG.add(_ssTail1); _ssG.add(_ssTail2);
+      _ssG.userData = { phase: _ssi * 1.3 + Math.random(), active:false, sx:0, sy:0, sz:0 };
+      scene.add(_ssG);
+      _shootingStars.push(_ssG);
+    }
+  }
+
   (function animate(){
     _craftAnimFrame=requestAnimationFrame(animate);
+    var _tNow = Date.now() * 0.001;
+
+    // 鳩アニメーション（昼・夕方）
+    _doves.forEach(function(d) {
+      var ud = d.userData;
+      var _angle = _tNow * ud.speed + ud.phase;
+      d.position.x = Math.cos(_angle) * ud.radius;
+      d.position.z = Math.sin(_angle * 0.7) * ud.radius * 0.55;
+      d.position.y = ud.height + Math.sin(_tNow * 1.8 + ud.phase) * 0.8;
+      d.rotation.y = -_angle + Math.PI / 2;
+      // 翼ばたき（上下に自然に動く）
+      var _flap = Math.sin(_tNow * 5.5 + ud.phase) * 0.6;
+      ud.wL.rotation.x = _flap;
+      ud.wR.rotation.x = _flap;
+    });
+
+    // 虹フェードイン（ゆっくり）
+    if (_rainbow) {
+      var _rbAlpha = Math.min(0.38 * _pur3dFx, (_tNow % 100) * 0.005);
+      _rainbow.children.forEach(function(m, i) {
+        m.material.opacity = _rbAlpha * (0.8 + Math.sin(_tNow * 0.3 + i * 0.5) * 0.2);
+      });
+    }
+
+    // 渡り鳥V字編隊（夕方）
+    if (_migBirds.length > 0) {
+      var _vLeadX = (_tNow * 4) % 80 - 40;
+      var _vLeadY = 12 + Math.sin(_tNow * 0.4) * 1.5;
+      _migBirds.forEach(function(b) {
+        var ud = b.userData;
+        b.position.set(_vLeadX + ud.offsetX, _vLeadY + ud.offsetY, -8 + ud.offsetX * 0.3);
+        b.rotation.y = -Math.PI / 2;
+        var _bFlap = Math.sin(_tNow * 4 + ud.phase) * 0.5;
+        ud.wL.rotation.x = _bFlap; ud.wR.rotation.x = _bFlap;
+      });
+    }
+
+    // 満天の星：未生成なら遅延生成
+    var _h3dNow = new Date().getHours();
+    var _isNightNow = !(_h3dNow >= 7 && _h3dNow < 20);
+    var _tokuNow = 0;
+    try { if (typeof getToku === 'function') _tokuNow = getToku(); } catch(e){}
+    if (_nightStars.length === 0 && _isNightNow && _tokuNow > 0) {
+      // 満天の星：200個、全天球に均等配置
+      for (var _nsi2 = 0; _nsi2 < 200; _nsi2++) {
+        var _brightness = Math.random();
+        var _starCol = _brightness > 0.8 ? 0xfff8e8 : (_brightness > 0.5 ? 0xeeeeff : 0xccddff);
+        var _ns2Mat = new THREE.MeshBasicMaterial({color: _starCol, transparent: true, opacity: 0.0});
+        var _ns2Size = 0.03 + _brightness * 0.1;
+        var _ns2Mesh = new THREE.Mesh(new THREE.SphereGeometry(_ns2Size, 4, 4), _ns2Mat);
+        // 全天球（360度）に配置
+        var _nsT2 = Math.random() * Math.PI * 2;
+        var _nsP2 = Math.random() * Math.PI * 0.75; // 上3/4の天球
+        var _nsR2 = 42 + Math.random() * 8;
+        _ns2Mesh.position.set(
+          _nsR2 * Math.sin(_nsP2) * Math.cos(_nsT2),
+          _nsR2 * Math.cos(_nsP2) + 1,
+          _nsR2 * Math.sin(_nsP2) * Math.sin(_nsT2)
+        );
+        _ns2Mesh.userData = { phase: _nsi2 * 0.17, baseOpacity: 0.55 + _brightness * 0.45 };
+        scene.add(_ns2Mesh);
+        _nightStars.push(_ns2Mesh);
+      }
+    }
+    if (_moon === null && _isNightNow && _tokuNow > 0) {
+      var _mG2 = new THREE.Group();
+      var _mB2 = new THREE.Mesh(new THREE.SphereGeometry(4.5,32,24),
+        new THREE.MeshBasicMaterial({color:0xfffde8,depthTest:false}));
+      _mB2.renderOrder=999; _mG2.add(_mB2);
+      [[-1.4,1.5,4.3,0.55],[1.2,1.0,4.3,0.38],[0.4,-0.8,4.3,0.28]].forEach(function(c){
+        var cr=new THREE.Mesh(new THREE.SphereGeometry(c[3],8,6),
+          new THREE.MeshBasicMaterial({color:0xe8ddb8,depthTest:false}));
+        cr.position.set(c[0],c[1],c[2]); cr.renderOrder=1000; _mG2.add(cr);
+      });
+      [[6.0,0xffe566,0.30],[9.0,0xffc820,0.14],[13.5,0xffaa00,0.06]].forEach(function(h,i){
+        var hm=new THREE.Mesh(new THREE.SphereGeometry(h[0],16,12),
+          new THREE.MeshBasicMaterial({color:h[1],transparent:true,opacity:h[2],
+            side:THREE.BackSide,depthWrite:false,depthTest:false,
+            blending:THREE.AdditiveBlending}));
+        hm.renderOrder=998-i; _mG2.add(hm);
+      });
+      _mG2.position.set(-38, 20, -28);
+      scene.add(_mG2);
+      _moon = _mG2;
+    }
+    // 満天の星（夜：きらめき）
+    _nightStars.forEach(function(s) {
+      var ud = s.userData;
+      s.material.opacity = ud.baseOpacity * (0.6 + Math.sin(_tNow * 1.5 + ud.phase) * 0.4);
+    });
+    // シェーダー星のきらめき（addSkyDomeで生成）
+    if (window._starPoints && window._starPoints.geometry) {
+      var _sBrAttr = window._starPoints.geometry.attributes.aBright;
+      var _sSzAttr = window._starPoints.geometry.attributes.aSize;
+      if (_sBrAttr) {
+        for (var _ski = 0; _ski < _sBrAttr.count; _ski++) {
+          var _orig = 0.35 + (_ski % 10) * 0.065;
+          // ランダムにちかちか瞬く
+          var _twinkle = Math.sin(_tNow * (1.5 + (_ski % 5) * 0.4) + _ski * 0.61);
+          _sBrAttr.array[_ski] = Math.max(0.05, _orig * (0.4 + _twinkle * 0.6));
+          // 明るいときに少し大きくなる
+          if (_sSzAttr) {
+            var _baseSize = 2.0 + (_orig - 0.35) * 5;
+            _sSzAttr.array[_ski] = _baseSize * (0.7 + (_twinkle + 1) * 0.3);
+          }
+        }
+        _sBrAttr.needsUpdate = true;
+        if (_sSzAttr) _sSzAttr.needsUpdate = true;
+      }
+    }
+
+    // 月：呼吸アニメ（本体scale＋ハローopacity）
+    if (_moon && _moon.children.length > 0) {
+      var _breath = 1.0 + Math.sin(_tNow * 0.45) * 0.018;
+      _moon.children[0].scale.setScalar(_breath);
+      // クレーター2個はインデックス1,2 → ハローは3,4,5
+      if (_moon.children[3]) _moon.children[3].material.opacity = 0.24 + Math.sin(_tNow * 0.6) * 0.08;
+      if (_moon.children[4]) _moon.children[4].material.opacity = 0.10 + Math.sin(_tNow * 0.4) * 0.04;
+      if (_moon.children[5]) _moon.children[5].material.opacity = 0.04 + Math.sin(_tNow * 0.3) * 0.02;
+    }
+
+    // 流れ星（夜）
+    _shootingStars.forEach(function(sg) {
+      var ud = sg.userData;
+      var _cycle = (_tNow * 0.35 + ud.phase) % 4; // 速めに・頻繁に
+      if (_cycle < 0.6) {
+        if (!ud.active) {
+          ud.active = true;
+          ud.sx = (Math.random() - 0.5) * 50;
+          ud.sy = 20 + Math.random() * 12;
+          ud.sz = (Math.random() - 0.5) * 20 - 5;
+        }
+        var _prog = _cycle / 0.6;
+        // フェード：ぱっと光ってすーっと消える
+        var _fade = _prog < 0.15 ? _prog / 0.15 : 1.0 - (_prog - 0.15) / 0.85;
+        sg.children[0].material.opacity = _fade * 1.0;   // 頭
+        sg.children[1].material.opacity = _fade * 0.75;  // 太尾
+        sg.children[2].material.opacity = _fade * 0.5;   // 細尾
+        var _spd = 20;
+        sg.position.set(
+          ud.sx - _cycle * _spd,
+          ud.sy - _cycle * _spd * 0.45,
+          ud.sz
+        );
+        sg.rotation.z = Math.atan2(_spd * 0.45, _spd); // 斜め角度
+        // 尾を後方に伸ばす
+        sg.children[1].position.set(2.0, 0.3, 0);
+        sg.children[2].position.set(3.5, 0.5, 0);
+        sg.visible = true;
+      } else {
+        ud.active = false;
+        sg.visible = false;
+      }
+    });
+
     // 旗はためきアニメーション
     if(window._flagMesh && window._flagBaseX){
       var _t=Date.now()*0.003;
@@ -12644,7 +13780,15 @@ function _initThreeScene() {
       }
       _fp.needsUpdate=true;
     }
-    renderer.render(scene,camera);
+    // 徳分によるfog動的更新（毎フレーム）
+    var _skyNow2 = getSkyColor();
+    scene.fog.color.setHex(_skyNow2.fog);
+    var _tokubunNow = (typeof getTokubun === 'function') ? getTokubun() : 0;
+    var _purityNow = Math.max(0, Math.min(1, _tokubunNow / 100));
+    scene.fog.far = 70 + _purityNow * 60;
+    // メインシーン描画
+    renderer.render(scene, camera);
+
   })();
   updateCraftHUD();
   var _3c=LEVEL_CONFIG[Math.min(getCraftStats().level-1,LEVEL_CONFIG.length-1)]; showCraftMessage('🏰 3D: '+(_3c?_3c.name:'アリアハン')+'王国へ！');
@@ -12683,10 +13827,26 @@ function _showEnding() {
 // 時刻・季節で色を返すユーティリティ
 function getSkyColor() {
   var h = new Date().getHours();
-  if (h >= 5 && h < 8)  return {sky:0x5080c0, fog:0x90b8e0, ground:0x3a5a2a, type:'dawn'};   // 夜明け：澄んだ青
-  if (h >= 8 && h < 17) return {sky:0x4488cc, fog:0x88bbdd, ground:0x4a7a3a, type:'day'};    // 昼：水色
-  if (h >= 17 && h < 20) return {sky:0xc05830, fog:0xd07840, ground:0x3a4a2a, type:'sunset'}; // 夕焼け：落ち着いたサーモン
-  return {sky:0x0e1e30, fog:0x152535, ground:0x2a3a2a, type:'night'};                         // 夜：深い青
+  var tokubun = (typeof getTokubun === 'function') ? getTokubun() : 0;
+  var purity = Math.max(0, Math.min(1, tokubun / 100));
+  var gouLevel = Math.max(0, Math.min(1, -tokubun / 50));
+
+  // 業が深い：空全体が暗く濁る
+  if (gouLevel > 0.5) return {sky:0x0a0510, fog:0x150a20, ground:0x1a0808, type:'night'};
+  if (gouLevel > 0.1) return {sky:0x0a0f1a, fog:0x1a2030, ground:0x1a1a1a, type:'night'};
+
+  // 純粋さ高い：時間帯の色がより鮮やかに澄む
+  if (purity > 0.8) {
+    if (h >= 5 && h < 8)  return {sky:0x4070c8, fog:0x80b8f0, ground:0x3a6a2a, type:'dawn'};
+    if (h >= 8 && h < 17) return {sky:0x2266cc, fog:0x66aaee, ground:0x4a8a3a, type:'day'};
+    if (h >= 17 && h < 20) return {sky:0xd06828, fog:0xe08848, ground:0x3a4a2a, type:'sunset'};
+    return {sky:0x040e28, fog:0x0a1a40, ground:0x1a2a2a, type:'night'};  // 純粋な夜：深い群青
+  }
+
+  if (h >= 5 && h < 8)  return {sky:0x5080c0, fog:0x90b8e0, ground:0x3a5a2a, type:'dawn'};
+  if (h >= 8 && h < 17) return {sky:0x4488cc, fog:0x88bbdd, ground:0x4a7a3a, type:'day'};
+  if (h >= 17 && h < 20) return {sky:0xc05830, fog:0xd07840, ground:0x3a4a2a, type:'sunset'};
+  return {sky:0x0e1e30, fog:0x152535, ground:0x2a3a2a, type:'night'};
 }
 function getSeasonColors() {
   var m = new Date().getMonth(); // 0-11
@@ -12709,8 +13869,16 @@ function buildKingdomScene(params) {
   var pct      = params.pct      || 0;
 
   // ライト
-  scene.add(new THREE.AmbientLight(0x334466, 0.8));
-  var dl = new THREE.DirectionalLight(0xffeedd, 1.4); dl.position.set(10,20,10); dl.castShadow=true; scene.add(dl);
+  var _tb3d = (typeof getTokubun === 'function') ? getTokubun() : 0;
+  var _pur3d = Math.max(0, Math.min(1, _tb3d / 100));
+  var _gou3d = Math.max(0, Math.min(1, -_tb3d / 50));
+  // 徳分でambient光の色と強度が変わる
+  var _ambCol = _gou3d > 0.3 ? 0x220a33 : (_pur3d > 0.7 ? 0x6688cc : 0x334466);
+  var _ambInt = _gou3d > 0.3 ? 0.4 : (_pur3d > 0.7 ? 1.2 : 0.8);
+  scene.add(new THREE.AmbientLight(_ambCol, _ambInt));
+  var _dlCol = _gou3d > 0.3 ? 0xaa8866 : (_pur3d > 0.7 ? 0xfff8e0 : 0xffeedd);
+  var _dlInt = _gou3d > 0.3 ? 0.8 : (_pur3d > 0.7 ? 2.0 : 1.4);
+  var dl = new THREE.DirectionalLight(_dlCol, _dlInt); dl.position.set(10,20,10); dl.castShadow=true; scene.add(dl);
   var fl2=new THREE.DirectionalLight(0x4466aa, 0.4); fl2.position.set(-10,5,-10); scene.add(fl2);
 
   // 地面
@@ -12937,35 +14105,63 @@ function addSkyDome(scene, skyCol) {
   if (skyCol === 'dawn')        { topHex='#d8b88c'; botHex='#4070b8'; }
   else if (skyCol === 'day')    { topHex='#99d0ff'; botHex='#2255aa'; }
   else if (skyCol === 'sunset') { topHex='#f28830'; botHex='#4a1040'; }
-  else                          { topHex='#1a2e48'; botHex='#060c18'; }
-
-  function hexToVec(h) {
-    var r=parseInt(h.slice(1,3),16)/255;
-    var g=parseInt(h.slice(3,5),16)/255;
-    var b=parseInt(h.slice(5,7),16)/255;
-    return r+','+g+','+b;
-  }
+  else                          { topHex='#0a1828'; botHex='#040810'; }
 
   var _vS = 'varying float vY; void main(){vY=position.y;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}';
   var _fS = 'uniform vec3 topColor; uniform vec3 botColor; varying float vY; void main(){float t=clamp((vY+90.0)/180.0,0.0,1.0);gl_FragColor=vec4(mix(botColor,topColor,t),1.0);}';
   var mat = new THREE.ShaderMaterial({
     uniforms:{topColor:{value:new THREE.Color(topHex)},botColor:{value:new THREE.Color(botHex)}},
-    vertexShader:_vS, fragmentShader:_fS, side:THREE.BackSide
+    vertexShader:_vS, fragmentShader:_fS, side:THREE.BackSide, depthWrite:false
   });
-  var sky = new THREE.Mesh(new THREE.SphereGeometry(85,32,32), mat);
+  var sky = new THREE.Mesh(new THREE.SphereGeometry(90,32,32), mat);
+  sky.renderOrder = -2;
   scene.add(sky);
+
+  // 夜・夜明け：スカイドーム内側に星をテクスチャで直接描画
+  if (skyCol === 'night' || skyCol === 'dawn') {
+    var _starVS = 'attribute float aSize; attribute float aBright; varying float vBright; void main(){vBright=aBright;vec4 mv=modelViewMatrix*vec4(position,1.0);gl_PointSize=aSize*(300.0/-mv.z);gl_Position=projectionMatrix*mv;}';
+    var _starFS = 'varying float vBright; void main(){float d=length(gl_PointCoord-0.5)*2.0;if(d>1.0)discard;float a=vBright*(1.0-d*d);gl_FragColor=vec4(1.0,0.97,0.88,a);}';
+    var _sCnt = 800;
+    var _sPos = new Float32Array(_sCnt * 3);
+    var _sSz  = new Float32Array(_sCnt);
+    var _sBr  = new Float32Array(_sCnt);
+    for (var _si = 0; _si < _sCnt; _si++) {
+      var _st = Math.random() * Math.PI * 2;
+      var _sp = Math.acos(2 * Math.random() - 1);
+      var _sr = 75 + Math.random() * 5;
+      _sPos[_si*3]   = _sr * Math.sin(_sp) * Math.cos(_st);
+      _sPos[_si*3+1] = Math.abs(_sr * Math.cos(_sp)) + 2;
+      _sPos[_si*3+2] = _sr * Math.sin(_sp) * Math.sin(_st);
+      var _br = 0.2 + Math.random() * 0.8;
+      // 明るい星は大きく、暗い星は小さく
+      _sSz[_si]  = _br > 0.7 ? 4.5 + _br * 2.5 : 2.0 + _br * 2.0;
+      _sBr[_si]  = _br;
+    }
+    var _sGeo = new THREE.BufferGeometry();
+    _sGeo.setAttribute('position', new THREE.BufferAttribute(_sPos, 3));
+    _sGeo.setAttribute('aSize',    new THREE.BufferAttribute(_sSz,  1));
+    _sGeo.setAttribute('aBright',  new THREE.BufferAttribute(_sBr,  1));
+    var _sMat2 = new THREE.ShaderMaterial({
+      vertexShader: _starVS, fragmentShader: _starFS,
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
+    });
+    var _sPoints = new THREE.Points(_sGeo, _sMat2);
+    _sPoints.renderOrder = -1;
+    scene.add(_sPoints);
+    window._starPoints = _sPoints;
+  }
 }
 
 function _getHotokuMessage(task) {
   var hour = new Date().getHours();
-  var total = parseInt(localStorage.getItem('taskCompletedTotal') || '0') + 1;
-  localStorage.setItem('taskCompletedTotal', total);
+  var total = parseInt(allSettings.craft.completedTotal || '0') + 1;
+  allSettings.craft.completedTotal = total; saveAllSettings();
 
   // 連続完了カウント
-  var streak = parseInt(localStorage.getItem('taskCompletedStreak') || '0') + 1;
-  localStorage.setItem('taskCompletedStreak', streak);
+  var streak = parseInt(allSettings.craft.completedStreak || '0') + 1;
+  allSettings.craft.completedStreak = streak; saveAllSettings();
   clearTimeout(window._streakResetTimer);
-  window._streakResetTimer = setTimeout(function(){ localStorage.setItem('taskCompletedStreak','0'); }, 10000);
+  window._streakResetTimer = setTimeout(function(){ allSettings.craft.completedStreak = 0; saveAllSettings(); }, 10000);
 
   // 特別メッセージ：連続
   if (streak === 3)  return '🔥 止まらないね。';
@@ -13008,16 +14204,16 @@ function _getHotokuMessage(task) {
   ];
 
   // 直前と同じものを除外
-  var lastIdx = parseInt(localStorage.getItem('lastHotokuIdx') || '-1');
+  var lastIdx = parseInt(allSettings.craft.lastHotokuIdx || '-1');
   var candidates = pool.map(function(m,i){return i;}).filter(function(i){return i !== lastIdx;});
   var idx = candidates[Math.floor(Math.random() * candidates.length)];
-  localStorage.setItem('lastHotokuIdx', idx);
+  allSettings.craft.lastHotokuIdx = idx; saveAllSettings();
   return pool[idx];
 }
 
 function onTaskCompleted(task) {
   // 報徳トーストはクラフトモードON時のみ
-  var _craftOn = (typeof localStorage!=='undefined' ? localStorage.getItem('craftModeEnabled') : null) === 'true';
+  var _craftOn = (allSettings && allSettings.ui && allSettings.ui.craftModeEnabled) ? true : false;
   var _hmsg = _craftOn ? _getHotokuMessage(task) : null;
   if (_hmsg) {
     var _ht = document.getElementById('hotokuToast');
@@ -13044,7 +14240,7 @@ function onTaskCompleted(task) {
   }
 
   // クラフトモード専用処理
-  if ((typeof localStorage!=='undefined' ? localStorage.getItem('craftModeEnabled') : null) !== 'true') return;
+  if (!(allSettings && allSettings.ui && allSettings.ui.craftModeEnabled)) return;
   // ① 旗を一時的に激しくはためかせる
   window._flagBurst = Date.now() + 2000; // 2秒間バースト
   var emo={1:'💎',2:'🥇',3:'🥈',4:'🥉'}[task.section||4]||'🥉';
@@ -13158,7 +14354,7 @@ function copyApplyCodeFromModal() {
 }
 function closeDeckQR() { var o=document.getElementById("deckQROverlay"); if(o) o.style.display="none"; }
 function showDeckQR(code, deckTitle) {
-  var isAdmin = localStorage.getItem('adminMode') === '1';
+  var isAdmin = allSettings.flags.adminMode === '1';
   var url = 'https://kikumon-dev.github.io?deck=' + encodeURIComponent(code);
   // カラーテーマ
   var accent   = isAdmin ? '#ffd700' : '#64dcb4';
@@ -13217,7 +14413,7 @@ function showDeckQR(code, deckTitle) {
   }, 80);
 }
 function switchDeckTab(tab) {
-  var isAdmin = localStorage.getItem('adminMode') === '1';
+  var isAdmin = allSettings.flags.adminMode === '1';
   var accent = isAdmin ? '#ffd700' : '#64dcb4';
   var activeColor = isAdmin ? '#0d0d00' : '#0d1b2e';
   var panelCopy = document.getElementById('panelCopy');
@@ -13396,7 +14592,7 @@ function receiveDeckByCode(code) {
   if (deck.kind !== 'deck') { showToast('⚠️ デッキコードではありません'); return; }
   // カメラを先に閉じてからconfirm（モバイルでの二重オーバーレイ防止）
   if (typeof closeQRScanner === 'function') closeQRScanner();
-  if (!confirm((deck.title||'デッキ') + '（' + (deck.tasks||[]).length + '枚）を王国に取り込みますか？')) return;
+  // confirm省略（アーティファクト環境）
   var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
   var _deckId = deck.deckId || ('qrscan_' + Date.now());
   deck.tasks.forEach(function(d) {
@@ -13409,7 +14605,6 @@ function receiveDeckByCode(code) {
   if (typeof addDeckHistory === 'function') addDeckHistory(deck);
   if (typeof saveAllTasks === 'function') saveAllTasks();
   if (typeof renderAllSections === 'function') renderAllSections(today);
-  if (typeof addGou === 'function') addGou(1, 'QRデッキ受取');
   // 受け取り完了トースト
   var title = deck.title || 'デッキ';
   var count = deck.tasks ? deck.tasks.length : 0;
@@ -13449,8 +14644,8 @@ function openDeckQRScanner() {
       +     '<span style="color:#ffd700;">④ </span>アプリでデッキを受け取る<br><br>'
       +     '<span style="color:#aaa;font-size:0.9em;">※うまくいかない場合はコード入力欄をお使いください</span>'
       +   '</div>'
-      +   '<button onclick="document.getElementById('iosQRGuideOverlay').remove();openQRScanner(window._deckQRCallback);" style="width:100%;padding:11px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:10px;color:#aaa;font-size:0.88em;cursor:pointer;margin-bottom:10px;">このまま試す</button>'
-      +   '<button onclick="document.getElementById('iosQRGuideOverlay').remove();" style="width:100%;padding:11px;background:transparent;border:1px solid #444;border-radius:10px;color:#666;font-size:0.85em;cursor:pointer;">閉じる</button>'
+      +   '<button onclick="document.getElementById(&quot;iosQRGuideOverlay&quot;).remove();openQRScanner(window._deckQRCallback);" style="width:100%;padding:11px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:10px;color:#aaa;font-size:0.88em;cursor:pointer;margin-bottom:10px;">このまま試す</button>'
+      +   '<button onclick="document.getElementById(&quot;iosQRGuideOverlay&quot;).remove();" style="width:100%;padding:11px;background:transparent;border:1px solid #444;border-radius:10px;color:#666;font-size:0.85em;cursor:pointer;">閉じる</button>'
       + '</div>';
     document.body.appendChild(guide);
     // コールバックを一時保存
@@ -13496,8 +14691,9 @@ function copyDeckCodeFromModal() {
 </script>
 
 <!-- ===== チュートリアルモーダル ===== -->
-<div id="tutorialOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;overflow:hidden;">
-  <div style="background:#1a1a2e;border:1px solid #4facfe;border-radius:16px;padding:28px 24px;max-width:380px;width:92%;color:#fff;position:relative;box-shadow:0 0 40px rgba(79,172,254,0.3);max-height:90vh;overflow-y:auto;overflow-x:hidden;">
+<div id="tutorialOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;">
+  <div style="background:#1a1a2e;border:1px solid #4facfe;border-radius:20px;max-width:380px;width:92%;color:#fff;position:relative;box-shadow:0 0 40px rgba(79,172,254,0.3);max-height:90vh;overflow:hidden;display:flex;flex-direction:column;">
+  <div style="overflow-y:auto;overflow-x:hidden;padding:28px 24px;-webkit-overflow-scrolling:touch;flex:1;">
     <div style="font-size:2em;text-align:center;margin-bottom:4px;">🏰</div>
     <h2 style="text-align:center;color:#ffd700;font-size:1.1em;margin:0 0 20px 0;letter-spacing:0.05em;">はじめての方へ</h2>
 
@@ -13660,6 +14856,7 @@ function copyDeckCodeFromModal() {
 
     <button id="tutorialClose" style="width:100%;padding:12px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:8px;color:#fff;font-size:1em;font-weight:bold;cursor:pointer;margin-top:12px;">さあ、冒険へ旅立とう！ ✨</button>
   </div>
+  </div>
 </div>
 
 
@@ -13677,7 +14874,7 @@ function copyDeckCodeFromModal() {
 // ===== チュートリアル =====
 // ===== 王国スタートデッキ =====
 function receiveStarterDeck() {
-  if (localStorage.getItem('starterDeckReceived')) return;
+  if (allSettings.deck.starterDone) return;
   var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
   var deck = [
     // 第1象限：本質的・緊急
@@ -13698,7 +14895,7 @@ function receiveStarterDeck() {
   });
   if (typeof saveAllTasks === 'function') saveAllTasks();
   if (typeof renderAllSections === 'function') renderAllSections(today);
-  localStorage.setItem('starterDeckReceived', '1');
+  allSettings.deck.starterDone = true; saveAllSettings();
   if (typeof showCraftMessage === 'function') showCraftMessage('👑 王国スタートデッキを受け取った！');
 }
 
@@ -13761,7 +14958,7 @@ function checkAdminPw() {
   var input = document.getElementById('adminPwInput');
   if (!input) return;
   if (input.value === ADMIN_PW) {
-    localStorage.setItem('adminMode', '1');
+    allSettings.flags.adminMode = true; saveAllSettings();
     _adminModeActive = true;
     var extra = document.getElementById('adminBadgeExtra');
     if (extra) extra.setAttribute('style', 'display:block !important');
@@ -13801,7 +14998,7 @@ function initAdminMode() {
 function hideTutorial() {
   var el = document.getElementById('tutorialOverlay');
   if (el) { el.style.display = 'none'; }
-  localStorage.setItem('tutorialSeen', '1');
+  allSettings.flags.tutorialSeen = true; saveAllSettings();
 }
 document.addEventListener('DOMContentLoaded', function() {
   // 最優先で業・徳分を強制非表示
@@ -13814,7 +15011,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (btn) btn.addEventListener('click', hideTutorial);
   var overlay = document.getElementById('tutorialOverlay');
   if (overlay) overlay.addEventListener('click', function(e){ if(e.target===overlay) hideTutorial(); });
-  if (!localStorage.getItem('tutorialSeen')) {
+  if (!allSettings.flags.tutorialSeen) {
     setTimeout(showTutorial, 800);
   }
 });
@@ -13965,12 +15162,12 @@ function renderMemoWithLinks(el, memoText) {
 
 function toggleAdminMode() {
   var el = document.getElementById('adminMenuSection');
-  if (localStorage.getItem('adminMode')) {
-    localStorage.removeItem('adminMode');
+  if (allSettings.flags.adminMode) {
+    allSettings.flags.adminMode = false; saveAllSettings();
     if (el) el.style.display = 'none';
     showAdminToast('\u{1F512} \u89E3\u9664\u3057\u307E\u3057\u305F');
   } else {
-    localStorage.setItem('adminMode', '1');
+    allSettings.flags.adminMode = true; saveAllSettings();
     _adminModeActive = true;
     if (el) el.style.display = 'block';
     showAdminToast('\u{1F451} \u30E2\u30FC\u30C9\uFF1AON');
@@ -14034,7 +15231,7 @@ function applyGuildLicense() {
 }
 
 function buildGuildLicenseCode() {
-  var myName = localStorage.getItem('profileName') || 'admin';
+  var myName = allSettings.profile.name || 'admin';
   var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
   var payload = JSON.stringify({
     kind: 'guildLicense',
@@ -14087,7 +15284,7 @@ function deckBuilderSave() {
   if (!title) { alert('デッキ名を入力してください'); return; }
   if (_deckBuilderTasks.length === 0) { alert('タスクを1枚以上追加してください'); return; }
   var desc = (document.getElementById('deckBuilderDesc') ? document.getElementById('deckBuilderDesc').value : '') || '';
-  var myName = localStorage.getItem('profileName') || '名無し';
+  var myName = allSettings.profile.name || '名無し';
   var customCreatedBy = (document.getElementById('deckBuilderCreatedBy') ? document.getElementById('deckBuilderCreatedBy').value.trim() : '');
   if (customCreatedBy && _adminModeActive) myName = customCreatedBy;
   var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
@@ -14292,7 +15489,7 @@ function deckBuilderPublish() {
   var title = (document.getElementById('deckBuilderTitle').value || '').trim();
   if (!title) { alert('デッキ名を入力してください'); return; }
   if (_deckBuilderTasks.length === 0) { alert('タスクを1枚以上追加してください'); return; }
-  var myName = localStorage.getItem('profileName') || 'admin';
+  var myName = allSettings.profile.name || 'admin';
   var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
   var deckId = (typeof generateTaskId === 'function') ? generateTaskId() : crypto.randomUUID();
   var descVal = (document.getElementById('deckBuilderDesc') ? document.getElementById('deckBuilderDesc').value : '') || '';
@@ -14379,7 +15576,7 @@ function deckBuilderApply() {
   var title = (document.getElementById('deckBuilderTitle').value || '').trim();
   if (!title) { alert('デッキ名を入力してください'); return; }
   if (_deckBuilderTasks.length === 0) { alert('タスクを1枚以上追加してください'); return; }
-  var myName = localStorage.getItem('profileName') || '名無し';
+  var myName = allSettings.profile.name || '名無し';
   var customCreatedBy = (document.getElementById('deckBuilderCreatedBy') ? document.getElementById('deckBuilderCreatedBy').value.trim() : '');
   if (customCreatedBy && _adminModeActive) myName = customCreatedBy;
   var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
@@ -14439,21 +15636,19 @@ function importDeckFromSettings() {
   try { deck = JSON.parse(raw); }
   catch(e) { alert('コードの形式が正しくありません'); return; }
   if (deck.kind !== 'deck') { alert('コードの形式が正しくありません'); return; }
-  if (!confirm((deck.title||'デッキ') + '（' + deck.tasks.length + '枚）を王国に取り込みますか？')) return;
-  var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
-  var _deckId = deck.deckId || ('manual_' + Date.now());
-  deck.tasks.forEach(function(d) {
-    var t = (typeof createTask === 'function') ? createTask(d.text, today, null, d.section||1, 'both') : null;
-    if (t) {
-      if (d.memo && typeof updateTask === 'function') updateTask(t.id, { memo: d.memo });
-      // deckIdをタスクに付与
-      if (typeof updateTask === 'function') updateTask(t.id, { deckId: _deckId });
-    }
-  });
-  // deckHistoryに記録
-  if (typeof addDeckHistory === 'function') addDeckHistory(deck);
-  if (typeof saveAllTasks === 'function') saveAllTasks();
-  if (typeof renderAllSections === 'function') renderAllSections(today);
+  showConfirm((deck.title||'デッキ') + '（' + deck.tasks.length + '枚）を王国に取り込みますか？', '受け取る', false, function() {
+    var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
+    var _deckId = deck.deckId || ('manual_' + Date.now());
+    deck.tasks.forEach(function(d) {
+      var t = (typeof createTask === 'function') ? createTask(d.text, today, null, d.section||1, 'both') : null;
+      if (t) {
+        if (d.memo && typeof updateTask === 'function') updateTask(t.id, { memo: d.memo });
+        if (typeof updateTask === 'function') updateTask(t.id, { deckId: _deckId });
+      }
+    });
+    if (typeof addDeckHistory === 'function') addDeckHistory(deck);
+    if (typeof saveAllTasks === 'function') saveAllTasks();
+    if (typeof renderAllSections === 'function') renderAllSections(today);
   // 入力欄をクリア
   document.getElementById('deckImportInput').value = '';
   // トースト「あ、王国が動いた！」
@@ -14469,11 +15664,12 @@ function importDeckFromSettings() {
   toast.style.display = 'block';
   clearTimeout(toast._t);
   toast._t = setTimeout(function(){ toast.style.display = 'none'; }, 3500);
+  }); // showConfirm end
 }
 
 function buildStarterDeckCode() {
   var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
-  var myName = localStorage.getItem('profileName') || 'admin';
+  var myName = allSettings.profile.name || 'admin';
   var deck = [
     { text: '\u2705 \u3053\u306E\u30BF\u30B9\u30AF\u3092\u5B8C\u4E86\u3057\u3066\u307F\u3088\u3046\uFF08\u30BF\u30C3\u30D7\u3067\u5B8C\u4E86\uFF01\uFF09', section: 1, memo: '\u30BF\u30C3\u30D7\u3059\u308B\u3068\u53D6\u308A\u6D88\u3057\u7DDA\u3067\u5B8C\u4E86\uFF01\u5B8C\u4E86\u3059\u308B\u3068\u738B\u56FD\u306E\u5EFA\u6750\u304C\u8C4A\u307E\u308B\u3088\u3002\u2698\uFE0F\u9577\u62BC\u3057\u2192\u7DE8\u96C6\u3067\u30BF\u30B9\u30AF\u306E\u8A73\u7D30\u3092\u898B\u308C\u308B\uFF01' },
     { text: '\u{1F3F0} \u57CE\u30A2\u30A4\u30B3\u30F3\u3092\u30BF\u30C3\u30D7\u3057\u3066\u738B\u56FD\u3092\u773A\u3081\u3088\u3046', section: 1, memo: '\u4E0A\u306E\u30CA\u30D3\u304B\u3089\u57CE\u30A2\u30A4\u30B3\u30F3\u3092\u30BF\u30C3\u30D7\uFF01\u30BF\u30B9\u30AF\u3092\u3053\u306A\u3059\u307B\u3069\u738B\u56FD\u304C\u5EFA\u3066\u5BC4\u3089\u308C\u308B\u3002\u5B63\u7BC0\u3084\u591C\u3082\u5909\u308F\u308B\u3088\u3002' },
@@ -14523,7 +15719,7 @@ function copyStarterDeckCode() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  if (localStorage.getItem('adminMode')) {
+  if (allSettings.flags.adminMode) {
     var el = document.getElementById('adminMenuSection');
     if (el) el.style.display = 'block';
   }
