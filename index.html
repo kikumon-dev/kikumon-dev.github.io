@@ -11514,12 +11514,12 @@ function loadSettingsUI() {
     }
 
     // グローバルmouse/touchイベント
-    document.addEventListener('mousemove', function(e) {
+    window.addEventListener('mousemove', function(e) {
       if (window._stampDrag.active) { e.preventDefault(); _stampDragMove(e.clientX, e.clientY); }
-    }, { capture: true });
-    document.addEventListener('mouseup', function(e) {
+    });
+    window.addEventListener('mouseup', function(e) {
       if (window._stampDrag.active) { _stampDragEnd(e.clientX, e.clientY); }
-    }, { capture: true });
+    });
     document.addEventListener('touchmove', function(e) {
       if (window._stampDrag.active) { e.preventDefault(); _stampDragMove(e.touches[0].clientX, e.touches[0].clientY); }
     }, { passive: false, capture: true });
@@ -11551,24 +11551,25 @@ function loadSettingsUI() {
         // === マウス ===
         let msx = 0, msy = 0, mdrag = false;
         btn.addEventListener('mousedown', function(e) {
-          if (e.button !== 0) return; // 左クリックのみ
+          if (e.button !== 0) return;
           e.preventDefault();
           e.stopPropagation();
           msx = e.clientX; msy = e.clientY; mdrag = false;
-          
+
           function mm(ev) {
-            if (!mdrag && (Math.abs(ev.clientX - msx) > 4 || Math.abs(ev.clientY - msy) > 4)) {
+            if (!mdrag && (Math.abs(ev.clientX - msx) > 2 || Math.abs(ev.clientY - msy) > 2)) {
               mdrag = true;
+              window.removeEventListener('mousemove', mm);
               _initStampDrag(stamp, ev.clientX, ev.clientY, btn);
             }
           }
           function mu(ev) {
-            document.removeEventListener('mousemove', mm, true);
-            document.removeEventListener('mouseup', mu, true);
+            window.removeEventListener('mousemove', mm);
+            window.removeEventListener('mouseup', mu);
             if (!mdrag) selectStamp(stamp);
           }
-          document.addEventListener('mousemove', mm, true);
-          document.addEventListener('mouseup', mu, true);
+          window.addEventListener('mousemove', mm);
+          window.addEventListener('mouseup', mu);
         });
         
         // === タッチ ===
@@ -11674,11 +11675,11 @@ function loadSettingsUI() {
       stamps.forEach(function(stamp) {
         const row = document.createElement('div');
         row.dataset.stampId = stamp.id;
-        row.draggable = false; // ハンドルのmousedown時のみtrueにする
+        row.draggable = true;
         row.style.cssText = [
           'display:flex;align-items:center;gap:6px;margin-bottom:6px;',
           'padding:6px 8px;background:#fafafa;border:1.5px solid #e8e8e8;',
-          'border-radius:10px;flex-wrap:wrap;',
+          'border-radius:10px;cursor:grab;flex-wrap:wrap;',
           'transition:background 0.15s;touch-action:none;'
         ].join('');
 
@@ -11690,14 +11691,7 @@ function loadSettingsUI() {
           'padding:4px 8px 4px 4px;touch-action:none;',
           '-webkit-user-select:none;user-select:none;'
         ].join('');
-        // PC: ハンドルを掴んだ時だけrow全体をdraggable=trueにする
-        handle.addEventListener('mousedown', function() {
-          row.draggable = true;
-        });
-        document.addEventListener('mouseup', function _mu() {
-          row.draggable = false;
-          document.removeEventListener('mouseup', _mu);
-        });
+
 
         // プレビュー（背景色＋文字色）
         const preview = document.createElement('span');
