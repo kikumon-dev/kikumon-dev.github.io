@@ -13673,26 +13673,6 @@ function toggleAbout(id) {
 }
 
 
-function openLpModal(type) {
-  var urls = {
-    women: 'https://kikumon-dev.github.io/lp-women/',
-    men:   'https://kikumon-dev.github.io/lp-men/'
-  };
-  var titles = {
-    women: '🌸 女性向け — やることクラフト',
-    men:   '🌿 男性向け — やることクラフト'
-  };
-  document.getElementById('lpModalFrame').src = urls[type];
-  document.getElementById('lpModalTitle').textContent = titles[type];
-  document.getElementById('lpModal').style.display = 'block';
-  document.body.style.overflow = 'hidden';
-}
-
-function closeLpModal() {
-  document.getElementById('lpModal').style.display = 'none';
-  document.getElementById('lpModalFrame').src = '';
-  document.body.style.overflow = '';
-}
 // ===== 管理者モード =====
 var _adminTapCount = 0;
 var _adminTapTimer = null;
@@ -13798,7 +13778,6 @@ function openLpModal(type) {
     men:   '🌿 男性向け — やることクラフト'
   };
   document.getElementById('lpModalFrame').src = urls[type];
-  document.getElementById('lpModalTitle').textContent = titles[type];
   document.getElementById('lpModal').style.display = 'block';
   document.body.style.overflow = 'hidden';
 }
