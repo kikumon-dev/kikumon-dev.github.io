@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.30.7';
+    const APP_VERSION = 'v0.30.8';
 
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
@@ -124,7 +124,8 @@
       }
     });
     // ===== v0.29.17: deckHistory / myDecks / guildLicense → allTasks 移行 =====
-  (function migrateToAllTasks() {
+  // ※ allTasks初期化後に呼ぶ（DOMContentLoaded内に移動済み）
+  function migrateToAllTasks() {
     var changed = false;
 
     // deckHistory移行
@@ -187,7 +188,7 @@
       localStorage.setItem('allTasks', JSON.stringify(allTasks));
       console.log('[migrate v0.29.17] allTasks保存完了');
     }
-  })();
+  }
 
     // ===== iOS viewport高さ対策（キーボード表示時のモーダル拡大バグ防止） =====
     function setVhVar() {
@@ -8954,6 +8955,7 @@ function getDeckGDP() {
     // マスターデータをロード
     loadAllSettings(); // allSettings SSOT（v0.29.19）
     loadAllTasks();
+    migrateToAllTasks(); // v0.29.17移行（allTasks読み込み後）
     initStampDefs(); // kind:'stamp' 初期化・マイグレーション（v0.29.19）
     migrateToDisplayScope();
     
