@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.30.0';
+    const APP_VERSION = 'v0.30.1';
 
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
@@ -10036,7 +10036,7 @@ function getDeckGDP() {
         box.innerHTML =
           '<button class="nb-back-btn" onclick="nbShareImportStep1()">‹ 戻る</button>'+
           '<div class="nb-share-modal-title">📁 ファイルから受け取る</div>'+
-          '<div class="nb-share-modal-desc">やることくらふとで出力したJSONファイルを選んでください。</div>'+
+          '<div class="nb-share-modal-desc">やることクラフトで出力したJSONファイルを選んでください。</div>'+
           '<div id="nbImportFileEncWrap" style="display:none;" class="nb-share-section">'+
             '<div class="nb-share-section-label">🔑 パスワード（暗号化ファイルの場合）</div>'+
             nbPwWidget('nbImportPwFile','送った相手に確認してください')+
@@ -10060,7 +10060,7 @@ function getDeckGDP() {
                 document.getElementById('nbImportFileEncWrap').style.display='block';
                 document.getElementById('nbImportFileBtn').textContent='📂 別のファイルを選択';
               } else { nbDoImport(p); }
-            } catch(err){ nbShowImportWarn('ファイルの読み込みに失敗しました。やることくらふとで出力したファイルか確認してください。'); }
+            } catch(err){ nbShowImportWarn('ファイルの読み込みに失敗しました。やることクラフトで出力したファイルか確認してください。'); }
           };
           r.readAsText(file);
         });
@@ -14765,7 +14765,7 @@ function copyDeckCodeFromModal() {
 
     <!-- アバウト：アコーディオン -->
     <div style="border-top:1px solid rgba(255,255,255,0.15);margin:16px 0 12px;"></div>
-    <div style="font-size:0.78em;color:#aaa;margin-bottom:10px;text-align:center;">📖 やることくらふとについて</div>
+    <div style="font-size:0.78em;color:#aaa;margin-bottom:10px;text-align:center;">📖 やることクラフトについて</div>
 
     <div id="aboutAccordion">
       <!-- GDP -->
