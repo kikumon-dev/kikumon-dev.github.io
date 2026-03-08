@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.30.9';
+    const APP_VERSION = 'v0.30.11';
 
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
@@ -14765,7 +14765,6 @@ function copyDeckCodeFromModal() {
       </div>
     </div>
 
-    <!-- 王国の図書館：折りたたみ1個 -->
     <div style="border-top:1px solid rgba(255,255,255,0.15);margin:16px 0 12px;"></div>
 
     <div id="librarySection">
@@ -14774,136 +14773,124 @@ function copyDeckCodeFromModal() {
         🏰 王国の図書館 ▼
       </button>
       <div id="libraryContent" style="display:none;margin-top:8px;">
+        <div id="aboutAccordion">
 
-    <div id="aboutAccordion">
-      <!-- やることクラフトが大切にしていること -->
-      <div style="margin-bottom:6px;">
-        <button onclick="toggleAbout('aboutPhilosophy')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#81c784;font-size:0.85em;font-weight:bold;cursor:pointer;">🌿 やることクラフトが大切にしていること</button>
-        <div id="aboutPhilosophy" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:14px 12px;font-size:0.82em;color:#ccc;line-height:1.7;">
-          <div style="color:#ffd700;font-weight:bold;margin-bottom:10px;font-size:0.9em;">🏰 王国の心得</div>
-
-          <div style="margin-bottom:12px;">
-            <div style="color:#4facfe;font-weight:bold;margin-bottom:3px;">🌾 動いていると、楽しくなっていく</div>
-            <div>小さな一歩。まずは楽しく。<br>動き出せば、次が見えてくる。</div>
+          <!-- やることクラフトが大切にしていること -->
+          <div style="margin-bottom:6px;">
+            <button onclick="toggleAbout('aboutPhilosophy')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#81c784;font-size:0.85em;font-weight:bold;cursor:pointer;">🌿 やることクラフトが大切にしていること</button>
+            <div id="aboutPhilosophy" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:14px 12px;font-size:0.82em;color:#ccc;line-height:1.7;">
+              <div style="color:#ffd700;font-weight:bold;margin-bottom:10px;font-size:0.9em;">🏰 王国の心得</div>
+              <div style="margin-bottom:12px;">
+                <div style="color:#4facfe;font-weight:bold;margin-bottom:3px;">🌾 動いていると、楽しくなっていく</div>
+                <div>小さな一歩。まずは楽しく。<br>動き出せば、次が見えてくる。</div>
+              </div>
+              <div style="margin-bottom:12px;">
+                <div style="color:#a78bfa;font-weight:bold;margin-bottom:3px;">🪣 自分の分を、決めて守る</div>
+                <div>詰め込みすぎない。全部やろうとしない。<br>今日の自分にできることだけを、丁寧に。<br>それが長く続く王国の秘訣です。</div>
+              </div>
+              <div style="margin-bottom:12px;">
+                <div style="color:#f8bbd0;font-weight:bold;margin-bottom:3px;">🎁 余ったら、誰かに渡す</div>
+                <div>うまくいったやり方、続けられたルーティン。<br>デッキにして誰かに贈ってみてください。<br>渡したとき、あなたの王国はもっと豊かになります。</div>
+              </div>
+              <div style="margin-bottom:4px;">
+                <div style="color:#ffd700;font-weight:bold;margin-bottom:3px;">🕯️ 在るも、接するも、まごころで</div>
+                <div>単なる「正直」ではなく、まごころ。<br>頭で考えるだけでなく、行動で示す誠実さ。<br>影日向なく、見ていなくても出来ることをやろう。<br>自分自身への誠実さも含まれるよ！<br>まずは楽しく、まごころで！</div>
+              </div>
+            </div>
           </div>
 
-          <div style="margin-bottom:12px;">
-            <div style="color:#a78bfa;font-weight:bold;margin-bottom:3px;">🪣 自分の分を、決めて守る</div>
-            <div>詰め込みすぎない。全部やろうとしない。<br>今日の自分にできることだけを、丁寧に。<br>それが長く続く王国の秘訣です。</div>
+          <!-- やることクラフトを紹介する -->
+          <div style="margin-bottom:6px;">
+            <button onclick="toggleAbout('aboutIntro')" style="width:100%;text-align:left;background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.25);border-radius:8px;padding:8px 12px;color:#ffd700;font-size:0.85em;font-weight:bold;cursor:pointer;">🏰 やることクラフトを紹介する</button>
+            <div id="aboutIntro" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,215,0,0.15);border-radius:0 0 8px 8px;padding:16px 12px;font-size:0.82em;color:#ccc;line-height:1.7;">
+              <div style="color:#ffd700;font-size:0.88em;margin-bottom:16px;line-height:1.7;">
+                やることクラフトを紹介してくれた方に、<br>
+                <strong style="color:#fff;">デッキをプレゼントします。</strong><br>
+                <span style="color:#aaa;font-size:0.9em;">紹介後、Discordでお知らせください。</span>
+              </div>
+              <div style="margin-bottom:20px;">
+                <div style="font-size:0.78em;color:#aaa;margin-bottom:10px;">📖 紹介ページを読む</div>
+                <div style="display:flex;gap:10px;">
+                  <button onclick="openLpModal('women')" style="flex:1;padding:10px 8px;background:rgba(248,187,208,0.12);border:1px solid rgba(248,187,208,0.3);border-radius:8px;color:#f8bbd0;font-size:0.82em;font-weight:bold;cursor:pointer;">🌸 女性向けを読む</button>
+                  <button onclick="openLpModal('men')" style="flex:1;padding:10px 8px;background:rgba(129,199,132,0.12);border:1px solid rgba(129,199,132,0.3);border-radius:8px;color:#81c784;font-size:0.82em;font-weight:bold;cursor:pointer;">🌿 男性向けを読む</button>
+                </div>
+              </div>
+              <div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:16px;margin-bottom:4px;">
+                <div style="font-size:0.78em;color:#aaa;margin-bottom:12px;">📲 QRコードで共有する</div>
+                <div style="display:flex;gap:16px;flex-wrap:wrap;">
+                  <div style="text-align:center;">
+                    <div style="font-size:0.75em;color:#f8bbd0;font-weight:bold;margin-bottom:6px;">🌸 女性向け</div>
+                    <div style="background:white;border-radius:6px;padding:6px;display:inline-block;">
+                      <img id="qrWomen" src="" alt="女性向けLP QR" style="width:100px;height:100px;display:block;">
+                    </div>
+                  </div>
+                  <div style="text-align:center;">
+                    <div style="font-size:0.75em;color:#81c784;font-weight:bold;margin-bottom:6px;">🌿 男性向け</div>
+                    <div style="background:white;border-radius:6px;padding:6px;display:inline-block;">
+                      <img id="qrMen" src="" alt="男性向けLP QR" style="width:100px;height:100px;display:block;">
+                    </div>
+                  </div>
+                  <div style="text-align:center;">
+                    <div style="font-size:0.75em;color:#a78bfa;font-weight:bold;margin-bottom:6px;">💬 Discord</div>
+                    <div style="background:white;border-radius:6px;padding:6px;display:inline-block;">
+                      <img id="qrDiscord" src="" alt="Discord QR" style="width:100px;height:100px;display:block;">
+                    </div>
+                  </div>
+                  <div style="text-align:center;">
+                    <div style="font-size:0.75em;color:#4caf50;font-weight:bold;margin-bottom:6px;">💚 LINE</div>
+                    <div style="background:white;border-radius:6px;padding:6px;display:inline-block;width:112px;height:112px;display:flex;align-items:center;justify-content:center;">
+                      <img id="qrLine" src="" alt="LINE QR" style="width:100px;height:100px;display:none;">
+                      <div id="qrLinePlaceholder" style="width:100px;height:100px;display:flex;align-items:center;justify-content:center;font-size:0.7em;color:#aaa;text-align:center;line-height:1.5;">準備中</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div style="margin-bottom:12px;">
-            <div style="color:#f8bbd0;font-weight:bold;margin-bottom:3px;">🎁 余ったら、誰かに渡す</div>
-            <div>うまくいったやり方、続けられたルーティン。<br>デッキにして誰かに贈ってみてください。<br>渡したとき、あなたの王国はもっと豊かになります。</div>
+          <!-- 王国について -->
+          <div style="margin-bottom:6px;">
+            <button onclick="toggleAbout('aboutKingdom')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#a78bfa;font-size:0.85em;font-weight:bold;cursor:pointer;">🏰 王国について</button>
+            <div id="aboutKingdom" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:10px 12px;font-size:0.82em;color:#ccc;line-height:1.6;">
+              あなたのやることが王国を動かします。与え、動き、継続する。それが栄える王国の姿です。
+            </div>
           </div>
 
-          <div style="margin-bottom:4px;">
-            <div style="color:#ffd700;font-weight:bold;margin-bottom:3px;">🕯️ 在るも、接するも、まごころで</div>
-            <div>単なる「正直」ではなく、まごころ。<br>頭で考えるだけでなく、行動で示す誠実さ。<br>影日向なく、見ていなくても出来ることをやろう。<br>自分自身への誠実さも含まれるよ！<br>まずは楽しく、まごころで！</div>
+          <!-- GDP -->
+          <div style="margin-bottom:6px;">
+            <button onclick="toggleAbout('aboutGDP')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#ffd700;font-size:0.85em;font-weight:bold;cursor:pointer;">💰 GDPとは？</button>
+            <div id="aboutGDP" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:10px 12px;font-size:0.82em;color:#ccc;line-height:1.6;">
+              論語とそろばん。動いた分だけ王国は豊かになります。タスクを完了するたびにGDPが積み上がります。
+            </div>
           </div>
-        </div>
-      </div>
 
-      <!-- やることクラフトを紹介する -->
-      <div style="margin-bottom:6px;">
-        <button onclick="toggleAbout('aboutIntro')" style="width:100%;text-align:left;background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.25);border-radius:8px;padding:8px 12px;color:#ffd700;font-size:0.85em;font-weight:bold;cursor:pointer;">🏰 やることクラフトを紹介する</button>
-        <div id="aboutIntro" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,215,0,0.15);border-top:none;border-radius:0 0 8px 8px;padding:16px 12px;font-size:0.82em;color:#ccc;line-height:1.7;">
+          <!-- 徳 -->
+          <div style="margin-bottom:6px;">
+            <button onclick="toggleAbout('aboutToku')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#f8bbd0;font-size:0.85em;font-weight:bold;cursor:pointer;">🌸 徳とは？</button>
+            <div id="aboutToku" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:10px 12px;font-size:0.82em;color:#ccc;line-height:1.6;">
+              与えることで積まれます。デッキを配布したり、タスクを家族と共有すると徳が積まれます。一度積まれた徳は消えません。<br><br>
+              徳と業の分かれ目は「人に喜んでもらえるかどうか」。喜んでもらえるように工夫した行動が、徳を積みます。
+            </div>
+          </div>
 
-          <div style="color:#ffd700;font-size:0.88em;margin-bottom:16px;line-height:1.7;">
-            やることクラフトを紹介してくれた方に、<br>
-            <strong style="color:#fff;">デッキをプレゼントします。</strong><br>
-            <span style="color:#aaa;font-size:0.9em;">紹介後、Discordでお知らせください。</span>
-      
+          <!-- 業 -->
+          <div style="margin-bottom:6px;">
+            <button onclick="toggleAbout('aboutGou')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#ffb74d;font-size:0.85em;font-weight:bold;cursor:pointer;">🌙 業とは？</button>
+            <div id="aboutGou" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:10px 12px;font-size:0.82em;color:#ccc;line-height:1.6;">
+              王国には、与える力と受け取る力のバランスがあります。受け取るだけでは、少しずつ王国に影が差してくることも。<br><br>
+              公式デッキ（ショップ内のデッキ）はそのまま受け取って大丈夫です。安心して使ってください。
+            </div>
+          </div>
 
-          <!-- LP閲覧ボタン -->
-          <div style="margin-bottom:20px;">
-            <div style="font-size:0.78em;color:#aaa;margin-bottom:10px;">📖 紹介ページを読む</div>
-            <div style="display:flex;gap:10px;">
-              <button onclick="openLpModal('women')" style="flex:1;padding:10px 8px;background:rgba(248,187,208,0.12);border:1px solid rgba(248,187,208,0.3);border-radius:8px;color:#f8bbd0;font-size:0.82em;font-weight:bold;cursor:pointer;">🌸 女性向けを読む</button>
-              <button onclick="openLpModal('men')" style="flex:1;padding:10px 8px;background:rgba(129,199,132,0.12);border:1px solid rgba(129,199,132,0.3);border-radius:8px;color:#81c784;font-size:0.82em;font-weight:bold;cursor:pointer;">🌿 男性向けを読む</button>
-        
-      
+          <!-- 徳分 -->
+          <div style="margin-bottom:6px;">
+            <button onclick="toggleAbout('aboutTokubun')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#e0e0e0;font-size:0.85em;font-weight:bold;cursor:pointer;">⚖️ 徳分とは？</button>
+            <div id="aboutTokubun" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:10px 12px;font-size:0.82em;color:#ccc;line-height:1.6;">
+              徳と業のバランスを示す値です。与えることを大切にしている王国ほど、徳分が高くなります。気にしすぎなくて大丈夫。与えることを楽しんでいれば、自然とプラスになっていきます。
+            </div>
+          </div>
 
-          <!-- QRコード -->
-          <div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:16px;margin-bottom:4px;">
-            <div style="font-size:0.78em;color:#aaa;margin-bottom:12px;">📲 QRコードで共有する</div>
-
-            <div style="display:flex;gap:16px;flex-wrap:wrap;">
-              <!-- 女性向け -->
-              <div style="text-align:center;">
-                <div style="font-size:0.75em;color:#f8bbd0;font-weight:bold;margin-bottom:6px;">🌸 女性向け</div>
-                <div style="background:white;border-radius:6px;padding:6px;display:inline-block;">
-                  <img id="qrWomen" src="" alt="女性向けLP QR" style="width:100px;height:100px;display:block;">
-            
-          
-              <!-- 男性向け -->
-              <div style="text-align:center;">
-                <div style="font-size:0.75em;color:#81c784;font-weight:bold;margin-bottom:6px;">🌿 男性向け</div>
-                <div style="background:white;border-radius:6px;padding:6px;display:inline-block;">
-                  <img id="qrMen" src="" alt="男性向けLP QR" style="width:100px;height:100px;display:block;">
-            
-          
-              <!-- Discord -->
-              <div style="text-align:center;">
-                <div style="font-size:0.75em;color:#a78bfa;font-weight:bold;margin-bottom:6px;">💬 Discord</div>
-                <div style="background:white;border-radius:6px;padding:6px;display:inline-block;">
-                  <img id="qrDiscord" src="" alt="Discord QR" style="width:100px;height:100px;display:block;">
-            
-          
-              <!-- LINE -->
-              <div style="text-align:center;">
-                <div style="font-size:0.75em;color:#4caf50;font-weight:bold;margin-bottom:6px;">💚 LINE</div>
-                <div style="background:white;border-radius:6px;padding:6px;display:inline-block;width:112px;height:112px;display:flex;align-items:center;justify-content:center;">
-                  <img id="qrLine" src="" alt="LINE QR" style="width:100px;height:100px;display:none;">
-                  <div id="qrLinePlaceholder" style="width:100px;height:100px;display:flex;align-items:center;justify-content:center;font-size:0.7em;color:#aaa;text-align:center;line-height:1.5;">準備中</div>
-            
-          
-        
-      
-
-    
-  
-
-
-      <!-- GDP -->
-      <div style="margin-bottom:6px;">
-        <button onclick="toggleAbout('aboutGDP')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#ffd700;font-size:0.85em;font-weight:bold;cursor:pointer;">💰 GDPとは？</button>
-        <div id="aboutGDP" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:10px 12px;font-size:0.82em;color:#ccc;line-height:1.6;">
-          論語とそろばん。動いた分だけ王国は豊かになります。タスクを完了するたびにGDPが積み上がります。
-        </div>
-      </div>
-      <!-- 徳 -->
-      <div style="margin-bottom:6px;">
-        <button onclick="toggleAbout('aboutToku')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#f8bbd0;font-size:0.85em;font-weight:bold;cursor:pointer;">🌸 徳とは？</button>
-        <div id="aboutToku" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:10px 12px;font-size:0.82em;color:#ccc;line-height:1.6;">
-          与えることで積まれます。デッキを配布したり、タスクを家族と共有すると徳が積まれます。一度積まれた徳は消えません。<br><br>
-          徳と業の分かれ目は「人に喜んでもらえるかどうか」。喜んでもらえるように工夫した行動が、徳を積みます。
-        </div>
-      </div>
-      <!-- 業 -->
-      <div style="margin-bottom:6px;">
-        <button onclick="toggleAbout('aboutGou')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#ffb74d;font-size:0.85em;font-weight:bold;cursor:pointer;">🌙 業とは？</button>
-        <div id="aboutGou" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:10px 12px;font-size:0.82em;color:#ccc;line-height:1.6;">
-          王国には、与える力と受け取る力のバランスがあります。受け取るだけでは、少しずつ王国に影が差してくることも。<br><br>
-          公式デッキ（ショップ内のデッキ）はそのまま受け取って大丈夫です。安心して使ってください。
-        </div>
-      </div>
-      <!-- 徳分 -->
-      <div style="margin-bottom:6px;">
-        <button onclick="toggleAbout('aboutTokubun')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#e0e0e0;font-size:0.85em;font-weight:bold;cursor:pointer;">⚖️ 徳分とは？</button>
-        <div id="aboutTokubun" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:10px 12px;font-size:0.82em;color:#ccc;line-height:1.6;">
-          徳と業のバランスを示す値です。与えることを大切にしている王国ほど、徳分が高くなります。気にしすぎなくて大丈夫。与えることを楽しんでいれば、自然とプラスになっていきます。
-        </div>
-      </div>
-      <!-- 王国 -->
-      <div style="margin-bottom:6px;">
-        <button onclick="toggleAbout('aboutKingdom')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#a78bfa;font-size:0.85em;font-weight:bold;cursor:pointer;">🏰 王国について</button>
-        <div id="aboutKingdom" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:10px 12px;font-size:0.82em;color:#ccc;line-height:1.6;">
-          あなたのやることが王国を動かします。与え、動き、継続する。それが栄える王国の姿です。
-        </div>
-      </div>
-
-    </div>
+        </div><!-- /aboutAccordion -->
       </div><!-- /libraryContent -->
     </div><!-- /librarySection -->
 
