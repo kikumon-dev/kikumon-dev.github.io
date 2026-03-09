@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.30.20';
+    const APP_VERSION = 'v0.30.21';
 
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
@@ -12557,6 +12557,11 @@ window.addEventListener('beforeprint', function() {
     if (el) el.dataset.printHidden = el.style.display;
     if (el) el.style.setProperty('display','none','important');
   });
+  // エクスポート・インポートボタンも非表示
+  document.querySelectorAll('.data-btn').forEach(el => {
+    el.dataset.printHidden = el.style.display;
+    el.style.setProperty('display','none','important');
+  });
   // containerを強制表示・サイズ固定
   const c = document.querySelector('.container');
   if (c) {
@@ -12579,6 +12584,12 @@ window.addEventListener('afterprint', function() {
   hideIds.forEach(id => {
     const el = document.getElementById(id);
     if (el && el.dataset.printHidden !== undefined) {
+      el.style.display = el.dataset.printHidden;
+      delete el.dataset.printHidden;
+    }
+  });
+  document.querySelectorAll('.data-btn').forEach(el => {
+    if (el.dataset.printHidden !== undefined) {
       el.style.display = el.dataset.printHidden;
       delete el.dataset.printHidden;
     }
