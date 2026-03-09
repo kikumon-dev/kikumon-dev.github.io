@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.30.14';
+    const APP_VERSION = 'v0.30.16';
 
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
@@ -2271,6 +2271,23 @@
       /* スクロールバーを印刷時に非表示 */
       .section::-webkit-scrollbar {
         display: none;
+      }
+      /* 日次内タブバーを印刷時に非表示 */
+      #dailyInnerTabBar {
+        display: none !important;
+      }
+      /* 雑記帳・タイムラインビューを印刷時に非表示 */
+      #scratchView, #timelineView {
+        display: none !important;
+      }
+      /* containerをA4横 */
+      .container {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        height: 190mm;
+        width: 277mm;
+        gap: 0;
       }
     }
 
