@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.30.11';
+    const APP_VERSION = 'v0.30.14';
 
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
@@ -332,8 +332,8 @@
       position: relative;
       height: calc(var(--vh, 1vh) * 100 - 90px);
     }
-    /* 罫線背景 - 行高48pxに合わせる */
-    #scratchView::before {
+    /* 罫線背景 - scratch-body基準で48px間隔 */
+    .scratch-body::before {
       content: '';
       position: absolute;
       inset: 0;
@@ -350,7 +350,7 @@
     .scratch-body {
       flex: 1;
       overflow-y: auto;
-      padding: 8px 16px 80px 16px;
+      padding: 0 16px 80px 16px;
       position: relative;
       z-index: 1;
     }
@@ -460,11 +460,12 @@
       font-family: inherit;
       font-size: 0.9em;
       color: #2d2416;
-      line-height: 1;
+      line-height: 48px;
       resize: none;
       height: 48px;
       padding: 0;
       caret-color: #4facfe;
+      overflow: hidden;
     }
     .scratch-input::placeholder { color: #ccc; font-weight: 300; }
     .scratch-filter-bar {
