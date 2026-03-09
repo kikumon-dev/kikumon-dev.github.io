@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.30.16';
+    const APP_VERSION = 'v0.30.17';
 
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
@@ -2266,6 +2266,10 @@
         display: none !important;
       }
       .delete-btn {
+        display: none !important;
+      }
+      /* ?ボタンを印刷時に非表示 */
+      #tutorialHelpBtn {
         display: none !important;
       }
       /* スクロールバーを印刷時に非表示 */
