@@ -298,6 +298,200 @@
       gap: 0;
     }
 
+    /* ===== 日次内タブバー ===== */
+    #dailyInnerTabBar {
+      display: none;
+      flex-shrink: 0;
+      background: #fff;
+      border-bottom: 1px solid #ececec;
+      padding: 0 12px;
+    }
+    .daily-inner-tab {
+      padding: 8px 14px;
+      font-size: 0.72em;
+      color: #aaa;
+      border: none;
+      background: none;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+    .daily-inner-tab.active {
+      color: #333;
+      border-bottom-color: #333;
+      font-weight: 600;
+    }
+
+    /* ===== 雑記帳ビュー ===== */
+    #scratchView {
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      background: #faf8f3;
+      position: relative;
+      height: calc(var(--vh, 1vh) * 100 - 90px);
+    }
+    /* 罫線背景 */
+    #scratchView::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 39px,
+        #e6e0d4 39px,
+        #e6e0d4 40px
+      );
+      pointer-events: none;
+      z-index: 0;
+    }
+    .scratch-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 20px 100px 20px;
+      position: relative;
+      z-index: 1;
+    }
+    .scratch-body::-webkit-scrollbar { width: 3px; }
+    .scratch-body::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
+    .scratch-date-label {
+      font-size: 0.7em;
+      color: #bbb;
+      margin-bottom: 12px;
+      letter-spacing: 0.04em;
+    }
+    .scratch-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      min-height: 40px;
+      position: relative;
+    }
+    .scratch-item-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #ccc;
+      flex-shrink: 0;
+      margin-top: 17px;
+      transition: background 0.2s;
+    }
+    .scratch-item.promoted .scratch-item-dot { background: #4facfe; }
+    .scratch-item-text {
+      flex: 1;
+      font-size: 0.92em;
+      color: #2d2416;
+      line-height: 2.5;
+      word-break: break-all;
+      min-height: 40px;
+    }
+    .scratch-item.promoted .scratch-item-text {
+      color: #bbb;
+      text-decoration: line-through;
+      text-decoration-thickness: 1px;
+      text-decoration-color: #aaa;
+    }
+    .scratch-task-label {
+      font-size: 0.62em;
+      color: #4facfe;
+      flex-shrink: 0;
+      margin-top: 14px;
+      opacity: 0.8;
+    }
+    .scratch-item-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+      opacity: 0;
+      transition: opacity 0.15s;
+      padding-top: 10px;
+    }
+    .scratch-item:hover .scratch-item-actions { opacity: 1; }
+    .scratch-btn-promote {
+      padding: 2px 8px;
+      background: transparent;
+      border: 1px solid #4facfe;
+      border-radius: 10px;
+      color: #4facfe;
+      font-size: 0.65em;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .scratch-btn-delete {
+      width: 20px;
+      height: 20px;
+      background: none;
+      border: none;
+      color: #ccc;
+      font-size: 1em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+    }
+    .scratch-btn-delete:hover { color: #f66; }
+    .scratch-input-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      min-height: 40px;
+    }
+    .scratch-input-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #ddd;
+      flex-shrink: 0;
+      margin-top: 17px;
+    }
+    .scratch-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-family: inherit;
+      font-size: 0.92em;
+      color: #2d2416;
+      line-height: 2.5;
+      resize: none;
+      min-height: 40px;
+      padding: 0;
+      caret-color: #4facfe;
+    }
+    .scratch-input::placeholder { color: #ccc; font-weight: 300; }
+    .scratch-filter-bar {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 10px 20px 18px;
+      background: linear-gradient(to top, #faf8f3 65%, transparent);
+      display: flex;
+      gap: 6px;
+      z-index: 2;
+      align-items: center;
+    }
+    .scratch-filter-label { font-size: 0.65em; color: #bbb; margin-right: 2px; }
+    .scratch-filter-chip {
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.68em;
+      border: 1px solid #ddd;
+      background: #fff;
+      color: #999;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .scratch-filter-chip.active {
+      background: #2d2416;
+      color: #fff;
+      border-color: #2d2416;
+    }
+
     .section {
       border: 1px solid #000;
       padding: 15px;
@@ -3006,6 +3200,31 @@
     </button>
   </div>
 
+  <!-- 日次内タブバー（マトリクス/タイムライン/雑記帳） -->
+  <div id="dailyInnerTabBar" style="display:flex;">
+    <button class="daily-inner-tab active" id="dailyTabMatrix" onclick="switchDailyTab('matrix')">📊 マトリクス</button>
+    <button class="daily-inner-tab" id="dailyTabTimeline" onclick="switchDailyTab('timeline')">🕐 タイムライン</button>
+    <button class="daily-inner-tab" id="dailyTabScratch" onclick="switchDailyTab('scratch')">✏️ 雑記帳</button>
+  </div>
+
+  <!-- 雑記帳ビュー -->
+  <div id="scratchView" style="display:none; flex-direction:column;">
+    <div class="scratch-body" id="scratchBody">
+      <div class="scratch-date-label" id="scratchDateLabel"></div>
+      <div id="scratchList"></div>
+      <div class="scratch-input-row">
+        <div class="scratch-input-dot"></div>
+        <textarea class="scratch-input" id="scratchInput" placeholder="なんでも…" rows="1"></textarea>
+      </div>
+    </div>
+    <div class="scratch-filter-bar">
+      <span class="scratch-filter-label">表示：</span>
+      <button class="scratch-filter-chip active" onclick="setScratchFilter(this,'today')">今日</button>
+      <button class="scratch-filter-chip" onclick="setScratchFilter(this,'week')">今週</button>
+      <button class="scratch-filter-chip" onclick="setScratchFilter(this,'all')">全期間</button>
+    </div>
+  </div>
+
   <div class="container">
     <!-- 左上: 緊急かつ重要 -->
     <div class="section" id="section1">
@@ -3791,7 +4010,7 @@
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">日次ビュー</h3>
         <div>
           <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #262626; font-size: 0.9em;">表示形式</label>
-          <p style="font-size: 0.8em; color: #8e8e8e; margin: 0 0 10px 0;">マトリクス（4象限）またはタイムラインを選択</p>
+          <p style="font-size: 0.8em; color: #8e8e8e; margin: 0 0 10px 0;">日次を開いたときのデフォルト表示を選択</p>
           <div class="settings-radio-group" id="dailyViewModeGroup">
             <label class="settings-radio-label">
               <input type="radio" name="dailyViewMode" value="matrix" checked>
@@ -3802,6 +4021,11 @@
               <input type="radio" name="dailyViewMode" value="timeline">
               <span>🕐 タイムライン</span>
               <span style="font-size: 0.75em; color: #8e8e8e; margin-left: 8px;">時間軸でスケジュール確認</span>
+            </label>
+            <label class="settings-radio-label">
+              <input type="radio" name="dailyViewMode" value="scratch">
+              <span>✏️ 雑記帳</span>
+              <span style="font-size: 0.75em; color: #8e8e8e; margin-left: 8px;">朝イチの書き出しに</span>
             </label>
           </div>
         </div>
@@ -4400,7 +4624,7 @@
       },
       ui: {
         initialView:      'daily',
-        dailyViewMode:    'list',
+        dailyViewMode:    'matrix',
         simpleMode:       'off',
         monthlyMode:      'fixed',
         weeklyDays:       '7',
@@ -4896,7 +5120,7 @@
       if (!q) { container.innerHTML = ''; document.getElementById('searchCount').textContent = '0件'; return; }
 
       // タスク検索（kindが'note'以外 または 未設定の古いタスクも対象）
-      const taskHits = allTasks.filter(t => t.kind !== 'note' && t.kind !== 'deckHistory' && t.kind !== 'myDeck' && t.kind !== 'guildLicense' &&
+      const taskHits = allTasks.filter(t => t.kind !== 'note' && t.kind !== 'scratch' && t.kind !== 'deckHistory' && t.kind !== 'myDeck' && t.kind !== 'guildLicense' &&
         ((t.text || '').toLowerCase().includes(q) || (t.memo || '').toLowerCase().includes(q))
       ).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
@@ -5777,7 +6001,7 @@ function getDeckGDP() {
 
         body.appendChild(col);
         const tasksOnDay = allTasks.filter(t =>
-          t.kind !== 'note' && t.kind !== 'deckHistory' && t.kind !== 'myDeck' && t.kind !== 'guildLicense' && t.date === dateStr && t.time && isCalendarVisible(t.calendarId)
+          t.kind !== 'note' && t.kind !== 'scratch' && t.kind !== 'deckHistory' && t.kind !== 'myDeck' && t.kind !== 'guildLicense' && t.date === dateStr && t.time && isCalendarVisible(t.calendarId)
         );
 
         // 重なり解消: 列割り当て（タイムラインと同ロジック）
@@ -8342,6 +8566,200 @@ function getDeckGDP() {
       return document.getElementById('weeklyView').style.display === 'block';
     }
 
+    // ===== 日次内タブ切り替え =====
+    let scratchFilter = 'today'; // 'today' | 'week' | 'all'
+
+    function switchDailyTab(mode) {
+      const dailyView = document.querySelector('.container');
+      const timelineView = document.getElementById('timelineView');
+      const scratchView = document.getElementById('scratchView');
+
+      // 全て非表示
+      dailyView.style.display = 'none';
+      timelineView.style.display = 'none';
+      scratchView.style.display = 'none';
+
+      // タブのactive更新
+      document.querySelectorAll('.daily-inner-tab').forEach(t => t.classList.remove('active'));
+
+      if (mode === 'scratch') {
+        scratchView.style.display = 'flex';
+        scratchView.style.flexDirection = 'column';
+        document.getElementById('dailyTabScratch').classList.add('active');
+        renderScratchView();
+      } else if (mode === 'timeline') {
+        timelineView.style.display = 'flex';
+        timelineView.style.flexDirection = 'column';
+        document.getElementById('dailyTabTimeline').classList.add('active');
+        if (!currentTimelineDate) currentTimelineDate = new Date();
+        renderTimelineView();
+      } else {
+        // matrix（デフォルト）
+        dailyView.style.display = 'grid';
+        document.getElementById('dailyTabMatrix').classList.add('active');
+        currentDailyDate = null;
+        updateDate();
+        renderAllSections();
+      }
+
+      // 設定のdailyViewModeも更新
+      allSettings.ui.dailyViewMode = mode;
+      saveAllSettings();
+    }
+
+    // ===== 雑記帳 CRUD =====
+
+    function getScratchItems(filter) {
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      return allTasks.filter(t => {
+        if (t.kind !== 'scratch') return false;
+        if (filter === 'today') {
+          return t.date === getLocalDateStr(today);
+        } else if (filter === 'week') {
+          const d = new Date(t.date);
+          const diff = (today - d) / 86400000;
+          return diff >= 0 && diff < 7;
+        }
+        return true; // all
+      }).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    }
+
+    function renderScratchView() {
+      const today = new Date();
+      const label = document.getElementById('scratchDateLabel');
+      if (label) {
+        const w = ['日','月','火','水','木','金','土'][today.getDay()];
+        label.textContent = `${today.getMonth()+1}月${today.getDate()}日（${w}）`;
+      }
+
+      const list = document.getElementById('scratchList');
+      if (!list) return;
+      list.innerHTML = '';
+
+      const items = getScratchItems(scratchFilter);
+      items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'scratch-item' + (item.kind === 'task' ? ' promoted' : '');
+        div.dataset.id = item.id;
+        if (item.kind === 'task') {
+          div.innerHTML = `
+            <div class="scratch-item-dot"></div>
+            <div class="scratch-item-text">${escapeHtml(item.text)}</div>
+            <div class="scratch-task-label">タスク↗</div>
+          `;
+        } else {
+          div.innerHTML = `
+            <div class="scratch-item-dot"></div>
+            <div class="scratch-item-text">${escapeHtml(item.text)}</div>
+            <div class="scratch-item-actions">
+              <button class="scratch-btn-promote">→タスク化</button>
+              <button class="scratch-btn-delete">×</button>
+            </div>
+          `;
+          // ホバーボタンのイベント
+          div.querySelector('.scratch-btn-promote').addEventListener('click', (e) => {
+            e.stopPropagation();
+            promoteScratchItem(item.id, div);
+          });
+          div.querySelector('.scratch-btn-delete').addEventListener('click', (e) => {
+            e.stopPropagation();
+            deleteScratchItem(item.id, div);
+          });
+          // 長押しでもタスク化（スマホ用）
+          let pressTimer;
+          const startPress = () => { pressTimer = setTimeout(() => promoteScratchItem(item.id, div), 700); };
+          const endPress = () => clearTimeout(pressTimer);
+          div.addEventListener('touchstart', startPress, {passive:true});
+          div.addEventListener('touchend', endPress);
+        }
+        list.appendChild(div);
+      });
+
+      // 入力欄の初期化
+      const input = document.getElementById('scratchInput');
+      if (input) {
+        input.value = '';
+        input.style.height = '';
+        input.oninput = function() {
+          this.style.height = 'auto';
+          this.style.height = this.scrollHeight + 'px';
+        };
+        input.onkeydown = function(e) {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            addScratchItem(this.value.trim());
+          }
+        };
+      }
+    }
+
+    function addScratchItem(text) {
+      if (!text) return;
+      const today = getLocalDateStr(new Date());
+      const newItem = {
+        id: generateTaskId(),
+        kind: 'scratch',
+        text: text,
+        date: today,
+        createdAt: new Date().toISOString()
+      };
+      allTasks.push(newItem);
+      saveAllTasks();
+      renderScratchView();
+      // 入力欄にフォーカス維持
+      setTimeout(() => {
+        const input = document.getElementById('scratchInput');
+        if (input) input.focus();
+      }, 50);
+    }
+
+    function promoteScratchItem(id, divEl) {
+      const idx = allTasks.findIndex(t => t.id === id);
+      if (idx === -1) return;
+      allTasks[idx].kind = 'task';
+      allTasks[idx].section = 1;
+      allTasks[idx].completed = false;
+      allTasks[idx].displayScope = allTasks[idx].displayScope || 'daily_only';
+      allTasks[idx].calendarId = allTasks[idx].calendarId || (allSettings.calendar.mainId || 'default');
+      saveAllTasks();
+      if (divEl) {
+        divEl.classList.add('promoted');
+        const dot = divEl.querySelector('.scratch-item-dot');
+        if (dot) dot.style.background = '#4facfe';
+        // ボタン → タスクラベルに差し替え
+        const actions = divEl.querySelector('.scratch-item-actions');
+        if (actions) {
+          const lbl = document.createElement('div');
+          lbl.className = 'scratch-task-label';
+          lbl.textContent = 'タスク↗';
+          actions.replaceWith(lbl);
+        }
+      }
+    }
+
+    function deleteScratchItem(id, divEl) {
+      allTasks = allTasks.filter(t => t.id !== id);
+      saveAllTasks();
+      if (divEl) {
+        divEl.style.opacity = '0';
+        divEl.style.transform = 'translateX(10px)';
+        divEl.style.transition = 'all 0.18s';
+        setTimeout(() => divEl.remove(), 180);
+      }
+    }
+
+    function setScratchFilter(el, filter) {
+      scratchFilter = filter;
+      document.querySelectorAll('.scratch-filter-chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      renderScratchView();
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
     // 全象限を再描画するヘルパー
     function renderAllSections(dateStr = null) {
       for (let sec = 1; sec <= 4; sec++) renderTasks(sec, dateStr);
@@ -9015,22 +9433,17 @@ function getDeckGDP() {
       notebookView.style.display = 'none';
       if (craftView) craftView.style.display = 'none';
       document.getElementById('timelineView').style.display = 'none';
+      document.getElementById('scratchView').style.display = 'none';
+      document.getElementById('dailyInnerTabBar').style.display = 'none';
       
       // タブのアクティブ状態を更新
       document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
       
       if (view === 'daily') {
-        const dailyMode = allSettings.ui.dailyViewMode || 'matrix';
-        if (dailyMode === 'timeline') {
-          document.getElementById('timelineView').style.display = 'flex'; document.getElementById('timelineView').style.flexDirection = 'column';
-          if (!currentTimelineDate) currentTimelineDate = new Date();
-          renderTimelineView();
-        } else {
-          dailyView.style.display = 'grid';
-          currentDailyDate = null;
-          updateDate();
-          renderAllSections();
-        }
+        document.getElementById('dailyInnerTabBar').style.display = 'flex';
+        const _dm = allSettings.ui.dailyViewMode;
+        const dailyMode = (_dm === 'matrix' || _dm === 'timeline' || _dm === 'scratch') ? _dm : 'matrix';
+        switchDailyTab(dailyMode);
         document.getElementById('navDaily').classList.add('active');
       } else if (view === 'weekly') {
         weeklyView.style.display = 'flex';
@@ -9463,7 +9876,7 @@ function getDeckGDP() {
       const today = new Date(); today.setHours(0,0,0,0);
       const rangeEnd = rangeDays > 0 ? new Date(today.getTime() + rangeDays * 86400000) : null;
       return allTasks.filter(t => {
-        if (t.kind === 'note' || t.kind === 'deckHistory' || t.kind === 'myDeck' || t.kind === 'guildLicense') return false;
+        if (t.kind === 'note' || t.kind === 'scratch' || t.kind === 'deckHistory' || t.kind === 'myDeck' || t.kind === 'guildLicense') return false;
         const cal = getCalendar(t.calendarId);
         if (cal && !cal.shareable) return false;
         if (targetCalendarIds && !targetCalendarIds.includes(t.calendarId || 'default')) return false;
