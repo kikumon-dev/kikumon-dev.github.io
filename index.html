@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.30.18';
+    const APP_VERSION = 'v0.30.19';
 
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
@@ -2160,7 +2160,7 @@
     }
     @page {
       size: A4 landscape;
-      margin: 8mm;
+      margin: 0;
     }
     @media print {
       * { box-sizing: border-box; }
@@ -2184,15 +2184,15 @@
         display: grid !important;
         grid-template-columns: 1fr 1fr;
         grid-template-rows: 1fr 1fr;
-        height: 194mm;
-        width: 281mm;
+        height: 210mm;
+        width: 297mm;
         gap: 0;
         margin: 0;
         position: static !important;
         left: 0 !important;
       }
       .section {
-        height: calc(194mm / 2);
+        height: calc(210mm / 2);
         min-height: unset;
         overflow: hidden;
         page-break-inside: avoid;
