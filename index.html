@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.32.19';
+    const APP_VERSION = 'v0.32.21';
 
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
@@ -4797,7 +4797,7 @@
         craftModeEnabled: false,
         craftRenderMode:  '3d',
         gantEnabled:      true,
-        gantTimeScale:    'month',
+        gantTimeScale:    'day',
         gantShowCompleted: true
       },
       calendar: {
@@ -8004,7 +8004,7 @@ function getDeckGDP() {
       // 設定UI同期
       const scaleCheck = document.getElementById('gantShowCompletedCheck');
       if (scaleCheck) scaleCheck.checked = allSettings.ui.gantShowCompleted !== false;
-      const scale = allSettings.ui.gantTimeScale || 'month';
+      const scale = allSettings.ui.gantTimeScale || 'day';
       ['day','week','month'].forEach(s => {
         const btn = document.getElementById('gantScale' + s.charAt(0).toUpperCase() + s.slice(1));
         if (btn) {
@@ -8063,7 +8063,7 @@ function getDeckGDP() {
       if (!area) return;
 
       const showCompleted = allSettings.ui.gantShowCompleted !== false;
-      const scale = allSettings.ui.gantTimeScale || 'month';
+      const scale = allSettings.ui.gantTimeScale || 'day';
 
       let gants = [];
       if (_gantSelectedBlueprintId) {
@@ -8107,36 +8107,78 @@ function getDeckGDP() {
         maxDate.setDate(maxDate.getDate() + 3);
       }
 
-      const dayW = scale === 'day' ? 24 : scale === 'week' ? 16 : 8;
+      const dayW = scale === 'day' ? 32 : scale === 'week' ? 16 : 8;
       const totalDays = Math.ceil((maxDate - minDate) / 86400000);
       const chartW = totalDays * dayW;
       const todayX = Math.round((today - minDate) / 86400000) * dayW;
       const labelW = 100;
 
+      const DOW_JA = ['\u65e5','\u6708','\u706b','\u6c34','\u6728','\u91d1','\u571f'];
       let headerCols = '';
+      // 上段：月ラベル（全スケール共通）
+      let monthHeaderCols = '';
+      const cur2 = new Date(minDate);
+      let lastMonth = -1;
+      while (cur2 <= maxDate) {
+        const x2 = Math.round((cur2 - minDate) / 86400000) * dayW;
+        if (cur2.getMonth() !== lastMonth) {
+          lastMonth = cur2.getMonth();
+          monthHeaderCols += '<div style="position:absolute;left:'+x2+'px;top:1px;font-size:10px;font-weight:700;color:#555;white-space:nowrap;padding-left:4px;">'+(cur2.getMonth()+1)+'\u6708</div>'
+            + '<div style="position:absolute;left:'+x2+'px;top:0;bottom:0;width:1px;background:#c8c8c8;"></div>';
+        }
+        cur2.setDate(cur2.getDate() + 1);
+      }
+
+      // 下段：日/週ラベル
       const cur = new Date(minDate);
       while (cur <= maxDate) {
         const x = Math.round((cur - minDate) / 86400000) * dayW;
-        if (scale === 'month' && cur.getDate() === 1) {
-          headerCols += '<div style="position:absolute;left:'+x+'px;top:6px;font-size:10px;color:#888;white-space:nowrap;padding-left:4px;">'+(cur.getMonth()+1)+'\u6708</div>'
-            + '<div style="position:absolute;left:'+x+'px;top:0;bottom:0;width:1px;background:#e8e8e8;"></div>';
-        } else if (scale === 'week' && cur.getDay() === 1) {
-          headerCols += '<div style="position:absolute;left:'+x+'px;top:6px;font-size:10px;color:#aaa;white-space:nowrap;">'+cur.getDate()+'</div>'
-            + '<div style="position:absolute;left:'+x+'px;top:0;bottom:0;width:1px;background:#efefef;"></div>';
-        } else if (scale === 'day') {
-          headerCols += '<div style="position:absolute;left:'+x+'px;top:6px;font-size:9px;color:#ccc;">'+cur.getDate()+'</div>';
+        const dow = cur.getDay();
+        const isWeekend = dow === 0 || dow === 6;
+        const isToday2 = cur.toDateString() === new Date().toDateString();
+
+        if (scale === 'day') {
+          // 日スケール：毎日表示、週末色付き、今日ハイライト
+          const bgCol = isToday2 ? 'rgba(255,59,48,0.12)' : isWeekend ? 'rgba(0,0,0,0.03)' : 'transparent';
+          const textCol = isToday2 ? '#ff3b30' : isWeekend ? (dow===0?'#e74c3c':'#3498db') : '#888';
+          const fontW = isToday2 ? '700' : '400';
+          headerCols += '<div style="position:absolute;left:'+x+'px;top:0;width:'+dayW+'px;bottom:0;background:'+bgCol+';"></div>'
+            + '<div style="position:absolute;left:'+x+'px;top:14px;width:'+dayW+'px;text-align:center;font-size:9px;color:'+textCol+';font-weight:'+fontW+';line-height:1.2;">'
+            + cur.getDate()+'<br><span style="font-size:8px;">'+DOW_JA[dow]+'</span></div>'
+            + (dow===1||isToday2?'<div style="position:absolute;left:'+x+'px;top:0;bottom:0;width:1px;background:'+(isToday2?'rgba(255,59,48,0.3)':'#e8e8e8')+';"></div>':'');
+        } else if (scale === 'week') {
+          if (dow === 1) {
+            // 週スケール：月曜日に週番号+日付
+            const wNum = Math.ceil(cur.getDate()/7);
+            headerCols += '<div style="position:absolute;left:'+x+'px;top:0;bottom:0;width:1px;background:#ddd;"></div>'
+              + '<div style="position:absolute;left:'+(x+2)+'px;top:13px;font-size:10px;color:#666;white-space:nowrap;">'
+              + cur.getMonth()+'/'+(cur.getDate())+'</div>';
+          }
+          if (isWeekend) {
+            headerCols += '<div style="position:absolute;left:'+x+'px;top:0;width:'+dayW+'px;bottom:0;background:rgba(0,0,0,0.025);"></div>';
+          }
+        } else if (scale === 'month') {
+          // 月スケール：5の倍数日のみ表示
+          if (cur.getDate() % 5 === 0 || cur.getDate() === 1) {
+            headerCols += '<div style="position:absolute;left:'+x+'px;top:14px;width:'+dayW*5+'px;text-align:left;font-size:9px;color:#aaa;padding-left:2px;">'+cur.getDate()+'</div>';
+          }
+          if (cur.getDate() === 1) {
+            headerCols += '<div style="position:absolute;left:'+x+'px;top:0;bottom:0;width:1px;background:#ddd;"></div>';
+          }
         }
         cur.setDate(cur.getDate() + 1);
       }
 
-      const rows = gants.map(function(gantt, i) {
+const rows = gants.map(function(gantt, i) {
         const progress = getGanttProgress(gantt);
         const bp = allTasks.find(t => t.id === gantt.blueprintId);
         const color = (bp && bp.color) ? bp.color : '#3498db';
         const barColor = gantt.achieved ? '#f39c12' : color;
-        const taskCount = (gantt.taskIds||[]).length;
-        const doneCount = (gantt.taskIds||[]).filter(function(id){ const t = allTasks.find(x=>x.id===id); return t&&t.done; }).length;
+        const taskIds = gantt.taskIds || [];
+        const taskCount = taskIds.length;
+        const doneCount = taskIds.filter(function(id){ const t = allTasks.find(x=>x.id===id); return t&&t.done; }).length;
         const bg = i % 2 === 0 ? '#fafafa' : '#fff';
+        const expandId = 'ganttExpand_' + gantt.id;
 
         let barHtml = '';
         if (gantt.startDate && gantt.endDate) {
@@ -8151,30 +8193,57 @@ function getDeckGDP() {
           barHtml = '<div style="position:absolute;left:4px;top:11px;font-size:10px;color:#ddd;">\u671f\u9593\u3092\u8a2d\u5b9a\u3057\u3066\u304f\u3060\u3055\u3044</div>';
         }
 
-        return '<div style="display:flex;border-bottom:1px solid #efefef;background:'+bg+';min-height:36px;align-items:center;">'
-          + '<button onclick="openGanttEditor(\'' + gantt.id + '\')" style="'
-          + 'width:'+labelW+'px;min-width:'+labelW+'px;height:36px;'
-          + 'background:none;border:none;border-right:1px solid #e8e8e8;'
-          + 'text-align:left;padding:0 6px;cursor:pointer;'
-          + 'display:flex;flex-direction:column;justify-content:center;">'
-          + '<div style="font-size:11px;color:#262626;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:94px;">'+gantt.title+'</div>'
+        // 紐づきタスク行
+        let taskRows = '';
+        if (taskCount > 0) {
+          taskRows = '<div id="'+expandId+'" style="display:none;background:#f5f5f5;border-bottom:1px solid #e8e8e8;">'
+            + taskIds.map(function(tid) {
+              const t = allTasks.find(x => x.id === tid);
+              if (!t) return '';
+              const done = t.done;
+              return '<div style="display:flex;align-items:center;min-height:28px;border-bottom:1px solid #efefef;">'
+                + '<div style="width:'+labelW+'px;min-width:'+labelW+'px;padding:0 6px 0 18px;border-right:1px solid #e8e8e8;display:flex;align-items:center;gap:6px;">'
+                + '<span style="font-size:12px;">'+(done?'✅':'⬜')+'</span>'
+                + '<span style="font-size:10px;color:'+(done?'#aaa':'#444')+';text-decoration:'+(done?'line-through':'none')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70px;">'+t.text+'</span>'
+                + '</div>'
+                + '<div style="flex:1;min-width:'+chartW+'px;padding:0 8px;display:flex;align-items:center;">'
+                + '<span style="font-size:9px;color:#bbb;">'+(t.date||'')+'</span>'
+                + '</div>'
+                + '</div>';
+            }).join('')
+            + '</div>';
+        }
+
+        const expandBtn = taskCount > 0
+          ? '<button onclick="(function(){var el=document.getElementById(\''+expandId+'\');if(el)el.style.display=el.style.display===\'none\'?\'block\':\'none\';})()" style="background:none;border:none;font-size:10px;color:#aaa;cursor:pointer;padding:2px 4px;flex-shrink:0;">▶</button>'
+          : '';
+
+        return '<div>'
+          + '<div style="display:flex;border-bottom:1px solid #efefef;background:'+bg+';min-height:36px;align-items:center;">'
+          + '<div style="width:'+labelW+'px;min-width:'+labelW+'px;height:36px;border-right:1px solid #e8e8e8;display:flex;align-items:center;padding:0 2px 0 4px;gap:2px;">'
+          + expandBtn
+          + '<button onclick="openGanttEditor(\''+gantt.id+'\')" style="flex:1;height:36px;background:none;border:none;text-align:left;padding:0 4px;cursor:pointer;display:flex;flex-direction:column;justify-content:center;min-width:0;">'
+          + '<div style="font-size:11px;color:#262626;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + gantt.title + '</div>'
           + '<div style="font-size:9px;color:#aaa;">'+(taskCount>0?doneCount+'/'+taskCount+'\u4ef6':'\u30bf\u30b9\u30af\u306a\u3057')+'</div>'
           + '</button>'
+          + '</div>'
           + '<div style="flex:1;position:relative;height:36px;overflow:hidden;min-width:'+chartW+'px;">'
           + '<div style="position:absolute;left:'+todayX+'px;top:0;bottom:0;width:2px;background:#ff3b30;opacity:0.5;"></div>'
           + barHtml
           + '</div>'
+          + '</div>'
+          + taskRows
           + '</div>';
       }).join('');
 
       htmlChart.innerHTML =
-        '<div style="display:flex;border-bottom:2px solid #e0e0e0;height:28px;background:#fff;position:sticky;top:0;z-index:1;">'
-        + '<div style="width:'+labelW+'px;min-width:'+labelW+'px;border-right:1px solid #e8e8e8;display:flex;align-items:center;padding:0 6px;">'
+        '<div style="display:flex;border-bottom:2px solid #d0d0d0;height:40px;background:#fff;position:sticky;top:0;z-index:2;">'
+        + '<div style="width:'+labelW+'px;min-width:'+labelW+'px;border-right:1px solid #e0e0e0;display:flex;align-items:center;padding:0 6px;background:#fff;">'
         + '<span style="font-size:10px;color:#aaa;">\u5de5\u7a0b</span></div>'
-        + '<div style="flex:1;position:relative;height:28px;min-width:'+chartW+'px;overflow:hidden;">'
+        + '<div style="flex:1;position:relative;height:40px;min-width:'+chartW+'px;overflow:hidden;background:#fafafa;">'
+        + monthHeaderCols
         + headerCols
-        + '<div style="position:absolute;left:'+todayX+'px;top:0;bottom:0;width:2px;background:#ff3b30;opacity:0.5;"></div>'
-        + '<div style="position:absolute;left:'+(todayX+3)+'px;top:4px;font-size:9px;color:#ff3b30;">\u4eca\u65e5</div>'
+        + '<div style="position:absolute;left:'+todayX+'px;top:0;bottom:0;width:2px;background:#ff3b30;opacity:0.6;z-index:1;"></div>'
         + '</div></div>'
         + rows;
     }
@@ -10578,6 +10647,9 @@ function getDeckGDP() {
       'mig_ids_to_uuid_v7', 'mig_show_in_daily_to_display_scope_v1',
       'mig_category_to_calendar_v170', 'mig_death_ghost_flags_v0_24_59',
       'mig_gant_enabled_default_v0_32',
+      // 旧バージョン互換キー（削除済みだが残存する場合あり）
+      'tokuLog', 'taskCompletedTotal', 'taskCompletedStreak',
+      'migration_calendarId_v1', 'extendedvaluekey',
     ]);
 
     // 起動時スキャン
