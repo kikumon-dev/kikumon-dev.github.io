@@ -12,7 +12,7 @@
   </script>
   <script>
     // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.30.21';
+    const APP_VERSION = 'v0.31.0';
 
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
@@ -115,7 +115,7 @@
           console.log('[migrate] guildLicense type→kind OK');
         }
       } catch(e) { console.warn('[migrate] guildLicense失敗', e); }
-      localStorage.setItem('dataVersion', '1');
+      // dataVersionはallSettings.meta.dataVersionで管理（独立キー廃止）
     }
   })();
       if ((allSettings.ui.craftModeEnabled === true || allSettings.ui.craftModeEnabled === 'true')) {
@@ -332,7 +332,35 @@
       position: relative;
       height: calc(var(--vh, 1vh) * 100 - 90px);
     }
-    /* 罫線背景 - scratch-body基準で48px間隔 */
+    /* ヘッダー（日付＋フィルター） */
+    .scratch-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 16px;
+      height: 40px;
+      flex-shrink: 0;
+      border-bottom: 1px solid #ede8e0;
+      background: #faf8f3;
+    }
+    .scratch-date-label {
+      font-size: 0.7em;
+      color: #bbb;
+      letter-spacing: 0.04em;
+    }
+
+    /* リスト本体 */
+    .scratch-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 16px;
+      position: relative;
+      z-index: 1;
+      min-height: 0;
+    }
+    .scratch-body::-webkit-scrollbar { width: 3px; }
+    .scratch-body::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
+    /* 罫線背景 */
     .scratch-body::before {
       content: '';
       position: absolute;
@@ -347,23 +375,112 @@
       pointer-events: none;
       z-index: 0;
     }
-    .scratch-body {
-      flex: 1;
-      overflow-y: auto;
-      padding: 0 16px 80px 16px;
-      position: relative;
-      z-index: 1;
-    }
-    .scratch-body::-webkit-scrollbar { width: 3px; }
-    .scratch-body::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
-    .scratch-date-label {
-      font-size: 0.7em;
-      color: #bbb;
+    /* アイテム */
+    .scratch-item {
+      display: flex;
+      align-items: center;
       height: 48px;
-      line-height: 48px;
-      letter-spacing: 0.04em;
-      margin: 0;
+      position: relative;
+      gap: 10px;
+      cursor: pointer;
     }
+    .scratch-item-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #ccc;
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+    .scratch-item.promoted .scratch-item-dot { background: #4facfe; }
+    .scratch-item-text {
+      flex: 1;
+      font-size: 0.9em;
+      color: #2d2416;
+      line-height: 1;
+      word-break: break-all;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .scratch-item.promoted .scratch-item-text {
+      color: #bbb;
+      text-decoration: line-through;
+      text-decoration-thickness: 1px;
+      text-decoration-color: #aaa;
+    }
+    /* タップで選択中 */
+    .scratch-item.selected .scratch-item-dot { background: #4facfe; }
+    .scratch-item.selected .scratch-item-text { color: #4facfe; }
+    .scratch-task-label {
+      font-size: 0.62em;
+      color: #4facfe;
+      flex-shrink: 0;
+      opacity: 0.8;
+    }
+    /* 入力欄 */
+    .scratch-input-row {
+      display: flex;
+      align-items: center;
+      min-height: 48px;
+      padding: 0;
+      gap: 10px;
+    }
+    .scratch-input-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #ddd;
+      flex-shrink: 0;
+    }
+    .scratch-input-dot.editing { background: #4facfe; }
+    .scratch-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-family: inherit;
+      font-size: 0.9em;
+      color: #2d2416;
+      line-height: 52px;
+      resize: none;
+      height: 52px;
+      padding: 0;
+      caret-color: #4facfe;
+      overflow: hidden;
+    }
+    .scratch-input::placeholder { color: #ccc; font-weight: 300; }
+    .scratch-save-btn {
+      padding: 5px 14px;
+      background: #2d2416;
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      font-size: 0.75em;
+      font-family: inherit;
+      cursor: pointer;
+      flex-shrink: 0;
+
+    }
+    .scratch-delete-btn {
+      padding: 5px 12px;
+      background: transparent;
+      color: #f66;
+      border: 1px solid #f66;
+      border-radius: 14px;
+      font-size: 0.75em;
+      font-family: inherit;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .section {
+      border: 1px solid #000;
+      padding: 15px;
+      overflow-y: auto;
+      background-color: #ffffff;
+    }
+    
+
     .scratch-item {
       display: flex;
       align-items: center;
@@ -402,99 +519,7 @@
       flex-shrink: 0;
       opacity: 0.8;
     }
-    .scratch-item-actions {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-shrink: 0;
-      opacity: 0;
-      transition: opacity 0.15s;
-    }
-    .scratch-item:hover .scratch-item-actions { opacity: 1; }
-    .scratch-btn-promote {
-      padding: 3px 10px;
-      background: transparent;
-      border: 1px solid #4facfe;
-      border-radius: 10px;
-      color: #4facfe;
-      font-size: 0.65em;
-      font-weight: 700;
-      cursor: pointer;
-      white-space: nowrap;
-      font-family: inherit;
-    }
-    .scratch-btn-promote:hover { background: #eaf5ff; }
-    .scratch-btn-delete {
-      width: 22px;
-      height: 22px;
-      background: none;
-      border: none;
-      color: #ccc;
-      font-size: 1.1em;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      font-family: inherit;
-    }
-    .scratch-btn-delete:hover { color: #f66; background: #fff0f0; }
-    .scratch-input-row {
-      display: flex;
-      align-items: center;
-      height: 48px;
-      gap: 10px;
-    }
-    .scratch-input-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #ddd;
-      flex-shrink: 0;
-    }
-    .scratch-input {
-      flex: 1;
-      background: transparent;
-      border: none;
-      outline: none;
-      font-family: inherit;
-      font-size: 0.9em;
-      color: #2d2416;
-      line-height: 48px;
-      resize: none;
-      height: 48px;
-      padding: 0;
-      caret-color: #4facfe;
-      overflow: hidden;
-    }
-    .scratch-input::placeholder { color: #ccc; font-weight: 300; }
-    .scratch-filter-bar {
-      position: absolute;
-      bottom: 0; left: 0; right: 0;
-      padding: 8px 16px 14px;
-      background: linear-gradient(to top, #faf8f3 70%, transparent);
-      display: flex;
-      gap: 6px;
-      z-index: 2;
-      align-items: center;
-    }
-    .scratch-filter-label { font-size: 0.65em; color: #bbb; margin-right: 2px; }
-    .scratch-filter-chip {
-      padding: 3px 12px;
-      border-radius: 12px;
-      font-size: 0.68em;
-      border: 1px solid #ddd;
-      background: #fff;
-      color: #999;
-      cursor: pointer;
-      font-family: inherit;
-      transition: all 0.15s;
-    }
-    .scratch-filter-chip.active {
-      background: #2d2416;
-      color: #fff;
-      border-color: #2d2416;
-    }
+
 
     .section {
       border: 1px solid #000;
@@ -3167,10 +3192,6 @@
       document.write('<style>.section:nth-child(1){background-color:#ffe6e6 !important;}.section:nth-child(2){background-color:#e8f5e9 !important;}.section:nth-child(3){background-color:#fffef5 !important;}.section:nth-child(4){background-color:#f0f0f0 !important;}</style>');
     }
   </script>
-  <!-- qrcode-generator: QRコード生成（Canvas・外部API不要・オフライン動作） -->
-  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-  <!-- jsQR: QRコードスキャン用ライブラリ -->
-  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 </head>
 <body>
 <div id="modal-root"></div>
@@ -3243,26 +3264,26 @@
 
   <!-- 日次内タブバー（マトリクス/タイムライン/雑記帳） -->
   <div id="dailyInnerTabBar" style="display:flex;">
-    <button class="daily-inner-tab active" id="dailyTabMatrix" onclick="switchDailyTab('matrix')">📊 マトリクス</button>
-    <button class="daily-inner-tab" id="dailyTabTimeline" onclick="switchDailyTab('timeline')">🕐 タイムライン</button>
     <button class="daily-inner-tab" id="dailyTabScratch" onclick="switchDailyTab('scratch')">✏️ 雑記帳</button>
+    <button class="daily-inner-tab" id="dailyTabMatrix" onclick="switchDailyTab('matrix')">📊 マトリクス</button>
+    <button class="daily-inner-tab" id="dailyTabTimeline" onclick="switchDailyTab('timeline')">🕐 タイムライン</button>
   </div>
 
   <!-- 雑記帳ビュー -->
   <div id="scratchView" style="display:none; flex-direction:column;">
-    <div class="scratch-body" id="scratchBody">
-      <div class="scratch-date-label" id="scratchDateLabel"></div>
-      <div id="scratchList"></div>
-      <div class="scratch-input-row">
-        <div class="scratch-input-dot"></div>
-        <textarea class="scratch-input" id="scratchInput" placeholder="なんでも…" rows="1"></textarea>
-      </div>
+    <!-- ヘッダー：日付のみ -->
+    <div class="scratch-header">
+      <span class="scratch-date-label" id="scratchDateLabel"></span>
     </div>
-    <div class="scratch-filter-bar">
-      <span class="scratch-filter-label">表示：</span>
-      <button class="scratch-filter-chip active" onclick="setScratchFilter(this,'today')">今日</button>
-      <button class="scratch-filter-chip" onclick="setScratchFilter(this,'week')">今週</button>
-      <button class="scratch-filter-chip" onclick="setScratchFilter(this,'all')">全期間</button>
+    <!-- リスト＋入力欄 -->
+    <div class="scratch-body" id="scratchBody">
+      <div id="scratchList"></div>
+      <div class="scratch-input-row" id="scratchInputRow">
+        <div class="scratch-input-dot" id="scratchInputDot"></div>
+        <textarea class="scratch-input" id="scratchInput" placeholder="なんでも…" rows="1"></textarea>
+        <button class="scratch-delete-btn" id="scratchDeleteBtn" style="display:none;" onclick="deleteScratchEditing()">削除</button>
+        <button class="scratch-save-btn" id="scratchSaveBtn" style="display:none;" onclick="commitScratchEdit()">完了</button>
+      </div>
     </div>
   </div>
 
@@ -3888,6 +3909,7 @@
         <button onclick="copyStarterDeckCode()" style="width:100%;padding:11px;background:linear-gradient(135deg,#ffd700,#ff8800);border:none;border-radius:10px;color:#7a4800;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(255,150,0,0.3);margin-bottom:8px;">📋 スタートデッキコードをコピー</button>
         <button onclick="issueGuildLicense()" style="width:100%;padding:11px;background:linear-gradient(135deg,#ffd700,#c8a200);border:none;border-radius:10px;color:#3a2800;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(200,162,0,0.3);margin-bottom:8px;">⚓ 行動貿易ライセンスを発行する</button>
         <button onclick="openDeckBuilder()" style="width:100%;padding:11px;background:linear-gradient(135deg,#a855f7,#6366f1);border:none;border-radius:10px;color:#fff;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(168,85,247,0.3);margin-bottom:8px;">⚔️ 新しいデッキを仕込む</button>
+        <button onclick="showDebugLog()" style="width:100%;padding:9px;background:transparent;border:1px solid #4facfe;border-radius:8px;color:#4facfe;font-size:0.82em;cursor:pointer;margin-bottom:6px;">🔍 デバッグパネルを開く</button>
         <button onclick="toggleAdminMode()" style="width:100%;padding:9px;background:transparent;border:1px solid #555;border-radius:8px;color:#888;font-size:0.82em;cursor:pointer;">🔒 管理者モードを解除する</button>
         <!-- 申請承認パネル -->
         <div style="margin-top:16px;border-top:1px solid #333;padding-top:14px;">
@@ -4054,7 +4076,12 @@
           <p style="font-size: 0.8em; color: #8e8e8e; margin: 0 0 10px 0;">日次を開いたときのデフォルト表示を選択</p>
           <div class="settings-radio-group" id="dailyViewModeGroup">
             <label class="settings-radio-label">
-              <input type="radio" name="dailyViewMode" value="matrix" checked>
+              <input type="radio" name="dailyViewMode" value="scratch" checked>
+              <span>✏️ 雑記帳</span>
+              <span style="font-size: 0.75em; color: #8e8e8e; margin-left: 8px;">朝イチの書き出しに</span>
+            </label>
+            <label class="settings-radio-label">
+              <input type="radio" name="dailyViewMode" value="matrix">
               <span>📊 マトリクス</span>
               <span style="font-size: 0.75em; color: #8e8e8e; margin-left: 8px;">4象限で優先度管理</span>
             </label>
@@ -4062,11 +4089,6 @@
               <input type="radio" name="dailyViewMode" value="timeline">
               <span>🕐 タイムライン</span>
               <span style="font-size: 0.75em; color: #8e8e8e; margin-left: 8px;">時間軸でスケジュール確認</span>
-            </label>
-            <label class="settings-radio-label">
-              <input type="radio" name="dailyViewMode" value="scratch">
-              <span>✏️ 雑記帳</span>
-              <span style="font-size: 0.75em; color: #8e8e8e; margin-left: 8px;">朝イチの書き出しに</span>
             </label>
           </div>
         </div>
@@ -4494,6 +4516,21 @@
       const day = String(date.getDate()).padStart(2, '0');
       return `${year}-${month}-${day}`;
     }
+    // ローカル時間のISO形式文字列（タイムゾーンオフセット付き）
+    function getLocalISOString(date) {
+      const y = date.getFullYear();
+      const mo = String(date.getMonth()+1).padStart(2,'0');
+      const d = String(date.getDate()).padStart(2,'0');
+      const h = String(date.getHours()).padStart(2,'0');
+      const mi = String(date.getMinutes()).padStart(2,'0');
+      const s = String(date.getSeconds()).padStart(2,'0');
+      const ms = String(date.getMilliseconds()).padStart(3,'0');
+      const off = -date.getTimezoneOffset();
+      const sign = off >= 0 ? '+' : '-';
+      const oh = String(Math.floor(Math.abs(off)/60)).padStart(2,'0');
+      const om = String(Math.abs(off)%60).padStart(2,'0');
+      return `${y}-${mo}-${d}T${h}:${mi}:${s}.${ms}${sign}${oh}:${om}`;
+    }
     let tasks = {
       1: [],
       2: [],
@@ -4665,7 +4702,7 @@
       },
       ui: {
         initialView:      'daily',
-        dailyViewMode:    'matrix',
+        dailyViewMode:    'scratch',
         simpleMode:       'off',
         monthlyMode:      'fixed',
         weeklyDays:       '7',
@@ -4705,7 +4742,8 @@
         stopConditionSaved: false
       },
       meta: {
-        dataVersion: 1
+        dataVersion: 1,
+        phaseBDone: false
       }
     };
 
@@ -4729,6 +4767,12 @@
           // weeklyCellScale: 旧形式（≦3）→100単位に変換
           if (allSettings.ui.weeklyCellScale !== undefined && allSettings.ui.weeklyCellScale <= 3) {
             allSettings.ui.weeklyCellScale = Math.round(allSettings.ui.weeklyCellScale * 100) || 100;
+            saveAllSettings();
+          }
+          // Phase B: 旧キー掃除（未実施の場合のみ）
+          if (!allSettings.meta.phaseBDone) {
+            cleanupOldKeys();
+            allSettings.meta.phaseBDone = true;
             saveAllSettings();
           }
         } else {
@@ -4757,6 +4801,38 @@
         if (base[k] === undefined) base[k] = override[k];
       });
       return base;
+    }
+
+    // Phase B: 旧キー削除のみ（allSettingsが存在する環境向け）
+    function cleanupOldKeys() {
+      var OLD_KEYS = [
+        'profileName', 'profileGender', 'profileAvatar', 'senderName',
+        'simpleMode', 'craftModeEnabled', 'craftRenderMode',
+        'dailyViewMode', 'initialView', 'monthlyMode',
+        'weeklyDays', 'weeklyRowH', 'weeklyCellScale', 'weeklyTimeBar',
+        'tlScrollMode', 'tlRowHeights', 'wgScrollMode', 'useColors',
+        'calendars', 'mainCalendarId', 'autoMainCalendar',
+        'okaeriDate', 'lastHotokuIdx',
+        'starterDeckReceived',
+        'tutorialSeen', 'adminMode', 'inspectionMode',
+        'purpose', 'stopCondition', 'purposeConfirmed', 'stopConditionSaved',
+        'dataVersion',
+        'tasks', 'weeklyTasks', 'extendedvaluekey',
+        'stampData', 'simpleMemos', 'nbPages',
+        'taskIdCounter',
+        'memoMigrationDone_v97', 'orderMigrationDone_v96', 'showInDailyMigrationDone_v1'
+      ];
+      OLD_KEYS.forEach(function(k){ localStorage.removeItem(k); });
+      // deck_received_* 一括削除
+      try {
+        var keysToDelete = [];
+        for (var i = 0; i < localStorage.length; i++) {
+          var k = localStorage.key(i);
+          if (k && k.startsWith('deck_received_')) keysToDelete.push(k);
+        }
+        keysToDelete.forEach(function(k){ localStorage.removeItem(k); });
+      } catch(e) {}
+      console.log('[PhaseB] 旧キー削除完了');
     }
 
     function migrateOldKeysToAllSettings() {
@@ -4827,7 +4903,46 @@
         s.ui.weeklyCellScale = Math.round(s.ui.weeklyCellScale * 100);
       }
       saveAllSettings();
-      console.log('[allSettings] 旧キーからマイグレーション完了');
+
+      // ===== 旧キー削除（移行完了後の掃除）=====
+      // 【削除対象】allSettingsに吸収済みの旧キー
+      var OLD_KEYS = [
+        // profile系
+        'profileName', 'profileGender', 'profileAvatar', 'senderName',
+        // ui系
+        'simpleMode', 'craftModeEnabled', 'craftRenderMode',
+        'dailyViewMode', 'initialView', 'monthlyMode',
+        'weeklyDays', 'weeklyRowH', 'weeklyCellScale', 'weeklyTimeBar',
+        'tlScrollMode', 'tlRowHeights', 'wgScrollMode', 'useColors',
+        // calendar系（_calIdMigMapは削除禁止→除外）
+        'calendars', 'mainCalendarId', 'autoMainCalendar',
+        // craft系
+        'okaeriDate', 'lastHotokuIdx',
+        // deck系
+        'starterDeckReceived',
+        // flags系
+        'tutorialSeen', 'adminMode', 'inspectionMode',
+        'purpose', 'stopCondition', 'purposeConfirmed', 'stopConditionSaved',
+        // meta系
+        'dataVersion',
+        // 完全残骸
+        'tasks', 'weeklyTasks', 'extendedvaluekey',
+        'stampData', 'simpleMemos', 'nbPages',
+        'taskIdCounter'
+      ];
+      OLD_KEYS.forEach(function(k){ localStorage.removeItem(k); });
+
+      // deck_received_* を一括削除
+      try {
+        var keysToDelete = [];
+        for (var i = 0; i < localStorage.length; i++) {
+          var k = localStorage.key(i);
+          if (k && k.startsWith('deck_received_')) keysToDelete.push(k);
+        }
+        keysToDelete.forEach(function(k){ localStorage.removeItem(k); });
+      } catch(e) {}
+
+      console.log('[allSettings] 旧キーからマイグレーション完了・旧キー削除済み');
     }
 
     // allSettingsのゲッター（コード各所で使いやすく）
@@ -4853,10 +4968,20 @@
     let calendars = [];
 
     function saveCalendars() {
+      // allSettings.calendar.listに一本化（Phase B）
+      allSettings.calendar.list = calendars;
+      saveAllSettings();
+      // 後方互換：旧キーにも書いておく（古い環境のテスター保護）
+      // ※ migrateOldKeysToAllSettings完了後はremoveItemされる
       localStorage.setItem('calendars', JSON.stringify(calendars));
     }
 
     function loadCalendars() {
+      // allSettings.calendar.listが存在すればそちらを優先（Phase B以降）
+      if (allSettings && allSettings.calendar && allSettings.calendar.list && allSettings.calendar.list.length > 0) {
+        calendars = allSettings.calendar.list;
+        return;
+      }
       const saved = localStorage.getItem('calendars');
       if (saved) {
         try {
@@ -4965,9 +5090,9 @@
     let taskIdCounter = 1; // 互換性のため保持（実際はUUIDを使用）
 
     // 初期データ（テストデータ54件 - 大学3年生・マックバイト・彼氏あり）
-    const INITIAL_DATA = [{"id":"t001","text":"薬飲む（朝）","date":"2026-02-27","time":"08:00","section":2,"order":0,"completed":false,"displayScope":"daily_only","calendarId":"private"},{"id":"t002","text":"卒論 最終確認","date":"2026-02-27","time":"10:00","endTime":"12:00","section":1,"order":0,"completed":false,"displayScope":"both","calendarId":"study"},{"id":"t003","text":"麻辣湯 行く（ランチ）","date":"2026-02-27","time":"12:30","section":4,"order":0,"completed":false,"displayScope":"both","calendarId":"private"},{"id":"t004","text":"研究室 ゼミ発表","date":"2026-02-27","time":"14:00","endTime":"16:00","section":1,"order":1,"completed":false,"displayScope":"both","calendarId":"study"},{"id":"t005","text":"おばあちゃん誕生日 電話する","date":"2026-02-27","time":"19:00","section":1,"order":2,"completed":false,"displayScope":"both","calendarId":"private"},{"id":"note-001","kind":"note","title":"卒論メモ","textL":"テーマ: 都市型水害における排水システムの最適化\n\n提出期限: 3/5（木）\nページ数: 残り8ページ\n\n修正点\n→ 境界条件の根拠を追記\n→ 図3のキャプション直す\n→ 参考文献の体裁統一","dateL":"卒論\nメモ","textR":"","dateR":"","createdAt":"2026-02-20T10:00:00.000Z","updatedAt":"2026-02-27T09:00:00.000Z"}];
-    const INITIAL_PURPOSE = "熱力学レポート提出する";
-    const INITIAL_STOP_CONDITION = "終わるまで寝ない。ただし2時で強制終了。";
+    const INITIAL_DATA = [];
+    const INITIAL_PURPOSE = '';
+    const INITIAL_STOP_CONDITION = '';
 
     /**
      * ID生成関数（UUID v4）
@@ -5161,7 +5286,7 @@
       if (!q) { container.innerHTML = ''; document.getElementById('searchCount').textContent = '0件'; return; }
 
       // タスク検索（kindが'note'以外 または 未設定の古いタスクも対象）
-      const taskHits = allTasks.filter(t => t.kind !== 'note' && t.kind !== 'scratch' && t.kind !== 'deckHistory' && t.kind !== 'myDeck' && t.kind !== 'guildLicense' &&
+      const taskHits = allTasks.filter(t => t.kind !== 'note' && t.kind !== 'deckHistory' && t.kind !== 'myDeck' && t.kind !== 'guildLicense' &&
         ((t.text || '').toLowerCase().includes(q) || (t.memo || '').toLowerCase().includes(q))
       ).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
@@ -5338,8 +5463,12 @@
 
     // マスターデータ保存
     function saveAllTasks() {
-      localStorage.setItem('allTasks', JSON.stringify(allTasks));
-      localStorage.setItem('taskIdCounter', taskIdCounter.toString());
+      try {
+        localStorage.setItem('allTasks', JSON.stringify(allTasks));
+        // taskIdCounter: UUID移行済みのため書き込み不要
+      } catch(e) {
+        console.error('[saveAllTasks] save失敗', e);
+      }
       window.allTasks = allTasks; // クラフトモードと同期
     }
 
@@ -5610,8 +5739,45 @@ function getDeckGDP() {
       if (savedEscapeLog) {
         try {
           escapeLog = JSON.parse(savedEscapeLog);
+          // マイグレーション: 旧フォーマット('2026/3/9 23:51') → ISOString
+          let migrated = false;
+          escapeLog = escapeLog.map(function(e) {
+            // UTC(Zで終わる)または旧フォーマット(Tなし) → ローカル時間ISOStringに変換
+            if (e.date && (!e.date.includes('T') || e.date.endsWith('Z'))) {
+              // UTC ISOString または旧フォーマット '2026/3/9 23:51' → ローカル時間ISOStringに変換
+              try {
+                var d;
+                if (e.date.includes('T')) {
+                  // UTCのISOString（Zで終わる）→ new Date()でパース
+                  d = new Date(e.date);
+                } else {
+                  // 旧フォーマット '2026/3/9 23:51'
+                  var parts = e.date.split(' ');
+                  var dateParts = parts[0].split('/');
+                  var timeParts = (parts[1] || '00:00').split(':');
+                  d = new Date(
+                    parseInt(dateParts[0]),
+                    parseInt(dateParts[1]) - 1,
+                    parseInt(dateParts[2]),
+                    parseInt(timeParts[0]),
+                    parseInt(timeParts[1])
+                  );
+                }
+                migrated = true;
+                return Object.assign({}, e, { date: getLocalISOString(d) });
+              } catch(ex) { return e; }
+            }
+            return e;
+          });
+          // 上限100件
+          if (escapeLog.length > 100) escapeLog = escapeLog.slice(-100);
+          if (migrated) {
+            localStorage.setItem('escapeLog', JSON.stringify(escapeLog));
+            console.log('[migrate] escapeLog ISOString化完了');
+          }
         } catch (e) {
           console.error('逃げログの読み込みに失敗しました', e);
+          escapeLog = [];
         }
       }
 
@@ -8539,28 +8705,16 @@ function getDeckGDP() {
     // タスクから逃げる
     // ログ記録関数
     function logAction(type, taskText = '') {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = now.getMonth() + 1; // 0-indexed
-      const day = now.getDate();
-      const hours = now.getHours().toString().padStart(2, '0');
-      const minutes = now.getMinutes().toString().padStart(2, '0');
-      
-      const dateStr = `${year}/${month}/${day}`;
-      const timeStr = `${hours}:${minutes}`;
-      
       const logEntry = {
-        date: `${dateStr} ${timeStr}`,
+        date: getLocalISOString(new Date()), // ローカル時間ISO形式（v0.30.46〜）
         type: type, // 'open', 'inspect', 'escape'
       };
-      
       if (type === 'escape') {
         logEntry.task = taskText;
       }
-      
       escapeLog.push(logEntry);
-      
-      // LocalStorageに保存
+      // 上限100件（FIFO）
+      if (escapeLog.length > 100) escapeLog = escapeLog.slice(-100);
       localStorage.setItem('escapeLog', JSON.stringify(escapeLog));
     }
 
@@ -8608,7 +8762,7 @@ function getDeckGDP() {
     }
 
     // ===== 日次内タブ切り替え =====
-    let scratchFilter = 'today'; // 'today' | 'week' | 'all'
+    let scratchEditingId = null; // 編集中アイテムのID
 
     function switchDailyTab(mode) {
       const dailyView = document.querySelector('.container');
@@ -8622,6 +8776,9 @@ function getDeckGDP() {
 
       // タブのactive更新
       document.querySelectorAll('.daily-inner-tab').forEach(t => t.classList.remove('active'));
+
+      var helpBtn = document.getElementById('tutorialHelpBtn');
+      if (helpBtn) helpBtn.style.display = (mode === 'scratch') ? 'none' : '';
 
       if (mode === 'scratch') {
         scratchView.style.display = 'flex';
@@ -8650,20 +8807,9 @@ function getDeckGDP() {
 
     // ===== 雑記帳 CRUD =====
 
-    function getScratchItems(filter) {
-      const today = new Date();
-      today.setHours(0,0,0,0);
-      return allTasks.filter(t => {
-        if (t.kind !== 'scratch') return false;
-        if (filter === 'today') {
-          return t.date === getLocalDateStr(today);
-        } else if (filter === 'week') {
-          const d = new Date(t.date);
-          const diff = (today - d) / 86400000;
-          return diff >= 0 && diff < 7;
-        }
-        return true; // all
-      }).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    function getScratchItems() {
+      return allTasks.filter(t => t.kind === 'scratch')
+        .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
     }
 
     function renderScratchView() {
@@ -8678,7 +8824,7 @@ function getDeckGDP() {
       if (!list) return;
       list.innerHTML = '';
 
-      const items = getScratchItems(scratchFilter);
+      const items = getScratchItems();
       items.forEach(item => {
         const div = document.createElement('div');
         div.className = 'scratch-item' + (item.kind === 'task' ? ' promoted' : '');
@@ -8693,26 +8839,32 @@ function getDeckGDP() {
           div.innerHTML = `
             <div class="scratch-item-dot"></div>
             <div class="scratch-item-text">${escapeHtml(item.text)}</div>
-            <div class="scratch-item-actions">
-              <button class="scratch-btn-promote">→タスク化</button>
-              <button class="scratch-btn-delete">×</button>
-            </div>
           `;
-          // ホバーボタンのイベント
-          div.querySelector('.scratch-btn-promote').addEventListener('click', (e) => {
-            e.stopPropagation();
-            promoteScratchItem(item.id, div);
+          // タップで入力欄にテキストを投入（案B）
+          div.addEventListener('click', () => {
+            scratchEditingId = item.id;
+            const input = document.getElementById('scratchInput');
+            const dot = document.getElementById('scratchInputDot');
+            const saveBtn = document.getElementById('scratchSaveBtn');
+            if (!input) return;
+            input.value = item.text;
+            input.style.height = 'auto';
+            input.style.height = input.scrollHeight + 'px';
+            const delBtn = document.getElementById('scratchDeleteBtn');
+            if (dot) dot.classList.add('editing');
+            if (saveBtn) saveBtn.style.display = 'block';
+            if (delBtn) delBtn.style.display = 'block';
+            input.focus();
+            input.setSelectionRange(input.value.length, input.value.length);
+            // 選択中ハイライト
+            document.querySelectorAll('.scratch-item.selected').forEach(el => el.classList.remove('selected'));
+            div.classList.add('selected');
+            // スクロールで入力欄を見えるように
+            setTimeout(() => {
+              const sb = document.getElementById('scratchBody');
+              if (sb) sb.scrollTop = sb.scrollHeight;
+            }, 300);
           });
-          div.querySelector('.scratch-btn-delete').addEventListener('click', (e) => {
-            e.stopPropagation();
-            deleteScratchItem(item.id, div);
-          });
-          // 長押しでもタスク化（スマホ用）
-          let pressTimer;
-          const startPress = () => { pressTimer = setTimeout(() => promoteScratchItem(item.id, div), 700); };
-          const endPress = () => clearTimeout(pressTimer);
-          div.addEventListener('touchstart', startPress, {passive:true});
-          div.addEventListener('touchend', endPress);
         }
         list.appendChild(div);
       });
@@ -8729,8 +8881,15 @@ function getDeckGDP() {
         input.onkeydown = function(e) {
           if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            addScratchItem(this.value.trim());
+            commitScratchEdit();
           }
+        };
+        // iOSキーボード表示時に入力欄を見えるようにスクロール
+        input.onfocus = function() {
+          setTimeout(function() {
+            var sb = document.getElementById('scratchBody');
+            if (sb) sb.scrollTop = sb.scrollHeight;
+          }, 300);
         };
       }
     }
@@ -8747,8 +8906,14 @@ function getDeckGDP() {
       };
       allTasks.push(newItem);
       saveAllTasks();
+      scratchEditingId = null;
+      const dot = document.getElementById('scratchInputDot');
+      const saveBtn = document.getElementById('scratchSaveBtn');
+      const delBtn2 = document.getElementById('scratchDeleteBtn');
+      if (dot) dot.classList.remove('editing');
+      if (saveBtn) saveBtn.style.display = 'none';
+      if (delBtn2) delBtn2.style.display = 'none';
       renderScratchView();
-      // 入力欄にフォーカス維持
       setTimeout(() => {
         const input = document.getElementById('scratchInput');
         if (input) input.focus();
@@ -8764,19 +8929,7 @@ function getDeckGDP() {
       allTasks[idx].displayScope = allTasks[idx].displayScope || 'daily_only';
       allTasks[idx].calendarId = allTasks[idx].calendarId || (allSettings.calendar.mainId || 'default');
       saveAllTasks();
-      if (divEl) {
-        divEl.classList.add('promoted');
-        const dot = divEl.querySelector('.scratch-item-dot');
-        if (dot) dot.style.background = '#4facfe';
-        // ボタン → タスクラベルに差し替え
-        const actions = divEl.querySelector('.scratch-item-actions');
-        if (actions) {
-          const lbl = document.createElement('div');
-          lbl.className = 'scratch-task-label';
-          lbl.textContent = 'タスク↗';
-          actions.replaceWith(lbl);
-        }
-      }
+      renderScratchView();
     }
 
     function deleteScratchItem(id, divEl) {
@@ -8790,12 +8943,48 @@ function getDeckGDP() {
       }
     }
 
-    function setScratchFilter(el, filter) {
-      scratchFilter = filter;
-      document.querySelectorAll('.scratch-filter-chip').forEach(c => c.classList.remove('active'));
-      el.classList.add('active');
+    function deleteScratchEditing() {
+      if (!scratchEditingId) return;
+      const idx = allTasks.findIndex(t => t.id === scratchEditingId);
+      if (idx !== -1) { allTasks.splice(idx, 1); saveAllTasks(); }
+      scratchEditingId = null;
+      const input = document.getElementById('scratchInput');
+      const dot = document.getElementById('scratchInputDot');
+      const saveBtn = document.getElementById('scratchSaveBtn');
+      const delBtn = document.getElementById('scratchDeleteBtn');
+      if (input) { input.value = ''; input.style.height = ''; }
+      if (dot) dot.classList.remove('editing');
+      if (saveBtn) saveBtn.style.display = 'none';
+      if (delBtn) delBtn.style.display = 'none';
       renderScratchView();
     }
+
+    function commitScratchEdit() {
+      const input = document.getElementById('scratchInput');
+      const dot = document.getElementById('scratchInputDot');
+      const saveBtn = document.getElementById('scratchSaveBtn');
+      if (!input) return;
+      const text = input.value.trim();
+      if (!text) return;
+      if (scratchEditingId) {
+        // 既存アイテムの更新
+        const idx = allTasks.findIndex(t => t.id === scratchEditingId);
+        if (idx !== -1) { allTasks[idx].text = text; saveAllTasks(); }
+        scratchEditingId = null;
+      } else {
+        addScratchItem(text);
+        return; // addScratchItemがrenderするのでここで終了
+      }
+      input.value = '';
+      input.style.height = '';
+      const delBtn2 = document.getElementById('scratchDeleteBtn');
+      if (dot) dot.classList.remove('editing');
+      if (saveBtn) saveBtn.style.display = 'none';
+      if (delBtn2) delBtn2.style.display = 'none';
+      renderScratchView();
+    }
+
+
 
     function escapeHtml(str) {
       return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -9412,14 +9601,45 @@ function getDeckGDP() {
     updateDate();
     
     // マスターデータをロード
+    // ===== デバッグ基盤（?ボタン6秒長押しで表示） =====
+    (function() {
+      localStorage.removeItem('_dbg_errors');
+      var _dbgErrors = [];
+      var _origOnError = window.onerror;
+      window.onerror = function(msg, src, line, col, err) {
+        _dbgErrors.push({ msg: msg, src: src, line: line, col: col, stack: err ? err.stack : '' });
+        try { localStorage.setItem('_dbg_errors', JSON.stringify(_dbgErrors)); } catch(e) {}
+        if (_origOnError) return _origOnError(msg, src, line, col, err);
+        return false;
+      };
+      window.addEventListener('unhandledrejection', function(e) {
+        _dbgErrors.push({ msg: 'UnhandledRejection: ' + (e.reason || ''), src: '', line: 0, col: 0, stack: '' });
+        try { localStorage.setItem('_dbg_errors', JSON.stringify(_dbgErrors)); } catch(e) {}
+      });
+      window._dbgLog = function(label) {
+        try {
+          var logs = JSON.parse(localStorage.getItem('_dbg_log') || '[]');
+          logs.push(label + ' @ ' + Date.now());
+          localStorage.setItem('_dbg_log', JSON.stringify(logs));
+        } catch(e) {}
+      };
+      localStorage.removeItem('_dbg_log');
+    })();
+
     loadAllSettings(); // allSettings SSOT（v0.29.19）
+    window._dbgLog('loadAllSettings done. craftMode=' + allSettings.ui.craftModeEnabled + ' renderMode=' + allSettings.ui.craftRenderMode + ' savedView=' + localStorage.getItem('currentView'));
     loadAllTasks();
+    window._dbgLog('loadAllTasks done. tasks=' + allTasks.length);
     migrateToAllTasks(); // v0.29.17移行（allTasks読み込み後）
+    window._dbgLog('migrateToAllTasks done');
     initStampDefs(); // kind:'stamp' 初期化・マイグレーション（v0.29.19）
+    window._dbgLog('initStampDefs done');
     migrateToDisplayScope();
-    
+    window._dbgLog('migrateToDisplayScope done');
+
     // 日次ビューを初期描画
     renderAllSections();
+    window._dbgLog('renderAllSections done');
     
     setupAllSectionDrops();
     setupDayButtons();
@@ -9444,16 +9664,11 @@ function getDeckGDP() {
     // 点検状態（日次ビュー内での表示モード）
     let inspectionMode = 0; // 0: 通常, 1: 8つの問い表示, 2: 履歴表示, 3: プレーン表示
 
-    // 起動時の初期ビューを適用
-    (function() {
-      const initialView = allSettings.ui.initialView || 'monthly';
-      setTimeout(() => {
-        switchView(initialView);
-      }, 100);
-    })();
+    // 起動時ビュー適用はL11641のswitchView(startView)で一元管理
 
     // ビュー切り替え関数
     function switchView(view) {
+      window._dbgLog && window._dbgLog('switchView: ' + view);
       currentView = view;
       
       const dailyView = document.querySelector('.container');
@@ -9476,6 +9691,8 @@ function getDeckGDP() {
       document.getElementById('timelineView').style.display = 'none';
       document.getElementById('scratchView').style.display = 'none';
       document.getElementById('dailyInnerTabBar').style.display = 'none';
+      var _hb = document.getElementById('tutorialHelpBtn');
+      if (_hb) _hb.style.display = '';
       
       // タブのアクティブ状態を更新
       document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
@@ -9486,6 +9703,12 @@ function getDeckGDP() {
         const dailyMode = (_dm === 'matrix' || _dm === 'timeline' || _dm === 'scratch') ? _dm : 'matrix';
         switchDailyTab(dailyMode);
         document.getElementById('navDaily').classList.add('active');
+        // inspectionModeをDOMに反映（起動時はDOMがなくてスキップしてるため）
+        if (inspectionMode > 0) {
+          var _im = inspectionMode;
+          inspectionMode = 0; // 0からtoggleDeepDiveをim回呼ぶ
+          for (var _i = 0; _i < _im; _i++) toggleDeepDive();
+        }
       } else if (view === 'weekly') {
         weeklyView.style.display = 'flex';
         document.getElementById('navWeekly').classList.add('active');
@@ -10911,8 +11134,8 @@ function loadSettingsUI() {
       const r3d = document.getElementById('craftMode3D');
       if (r2d) r2d.checked = renderMode === '2d';
       if (r3d) r3d.checked = renderMode === '3d';
-      if (r2d) // 描画モード切替：canvasを作り直してから再起動
-      function _switchRenderMode(mode) {
+      // 描画モード切替：canvasを作り直してから再起動
+      var _switchRenderMode = function(mode) {
         allSettings.ui.craftRenderMode = mode; saveAllSettings();
         // アニメ停止
         if (typeof _craftAnimFrame !== 'undefined' && _craftAnimFrame) {
@@ -10941,7 +11164,7 @@ function loadSettingsUI() {
         }
         // 非表示の場合は_craftInitialized=falseのままにしておく→タブ開時に自動初期化
       }
-      r2d.onchange = function(){ if(this.checked) _switchRenderMode('2d'); };
+      if (r2d) r2d.onchange = function(){ if(this.checked) _switchRenderMode('2d'); };
       if (r3d) r3d.onchange = function(){ if(this.checked) _switchRenderMode('3d'); };
       loadCalendarSettingsUI();
       // 初期ビュー
@@ -10990,9 +11213,10 @@ function loadSettingsUI() {
       // シンプルモード
       const simpleMode = allSettings.ui.simpleMode === 'on';
       const simpleToggle = document.getElementById('simpleModeToggle');
-      simpleToggle.checked = simpleMode;
+      if (simpleToggle) simpleToggle.checked = simpleMode;
       updateSimpleToggleUI(simpleMode);
-      document.getElementById('stampSettingsArea').style.display = simpleMode ? 'block' : 'none';
+      const stampArea = document.getElementById('stampSettingsArea');
+      if (stampArea) stampArea.style.display = simpleMode ? 'block' : 'none';
       if (simpleMode) loadStampSettingsUI();
       
       // プロフィール
@@ -11002,17 +11226,20 @@ function loadSettingsUI() {
       updateGenderUI(savedGender);
       const savedAvatar = allSettings.profile.avatar || '';
       
-      document.getElementById('profileNameInput').value = savedName;
+      const _nameInput = document.getElementById('profileNameInput');
+      if (_nameInput) _nameInput.value = savedName;
       
+      const _avatarPreview = document.getElementById('profileAvatarPreview');
+      const _avatarPlaceholder = document.getElementById('profileAvatarPlaceholder');
+      const _avatarRemoveBtn = document.getElementById('avatarRemoveBtn');
       if (savedAvatar) {
-        document.getElementById('profileAvatarPreview').src = savedAvatar;
-        document.getElementById('profileAvatarPreview').style.display = 'block';
-        document.getElementById('profileAvatarPlaceholder').style.display = 'none';
-        document.getElementById('avatarRemoveBtn').style.display = 'block';
+        if (_avatarPreview) { _avatarPreview.src = savedAvatar; _avatarPreview.style.display = 'block'; }
+        if (_avatarPlaceholder) _avatarPlaceholder.style.display = 'none';
+        if (_avatarRemoveBtn) _avatarRemoveBtn.style.display = 'block';
       } else {
-        document.getElementById('profileAvatarPreview').style.display = 'none';
-        document.getElementById('profileAvatarPlaceholder').style.display = 'flex';
-        document.getElementById('avatarRemoveBtn').style.display = 'none';
+        if (_avatarPreview) _avatarPreview.style.display = 'none';
+        if (_avatarPlaceholder) _avatarPlaceholder.style.display = 'flex';
+        if (_avatarRemoveBtn) _avatarRemoveBtn.style.display = 'none';
       }
     }
     
@@ -11535,6 +11762,12 @@ function loadSettingsUI() {
       const purposeGroup = document.getElementById('purposeGroup');
       const stopConditionGroup = document.getElementById('stopConditionGroup');
       
+      // DOM未存在時はinspectionModeだけ更新して終了（起動時など）
+      if (!questionsDiv || !input1) {
+        inspectionMode = (inspectionMode + 1) % 4;
+        return;
+      }
+      
       inspectionMode = (inspectionMode + 1) % 4;
       
       if (inspectionMode === 0) {
@@ -11589,8 +11822,17 @@ function loadSettingsUI() {
         } else {
           let html = '';
           logs.forEach(log => {
-            const time = log.date.split(' ')[1] || '';
-            const dateStr = log.date.split(' ')[0];
+            // ISOStringと旧フォーマット両対応
+            let dateStr = '', time = '';
+            if (log.date && log.date.includes('T')) {
+              const d = new Date(log.date);
+              dateStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+              time = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+            } else {
+              const parts = (log.date || '').split(' ');
+              dateStr = parts[0] || '';
+              time = parts[1] || '';
+            }
             if (log.type === 'open') {
               html += `<div style="padding: 8px 0; border-bottom: 1px solid #eee; font-size: 0.9em;">${dateStr} ${time} 開く</div>`;
             } else if (log.type === 'inspect') {
@@ -11619,14 +11861,15 @@ function loadSettingsUI() {
 
     // 状態の復元（ページロード時）
     const savedView = localStorage.getItem('currentView');
-    // デフォルトは月間ビュー（全体を俯瞰できる）
-    switchView(savedView || 'monthly');
+    // craftは起動時に即Three.jsロードが走るためmonthlyにフォールバック
+    const startView = (savedView && savedView !== 'craft') ? savedView : (allSettings.ui.initialView || 'monthly');
+    switchView(startView);
     
     const savedInspectionMode = allSettings.flags.inspectionMode;
-    if (savedInspectionMode !== null) {
-      const targetMode = parseInt(savedInspectionMode);
-      inspectionMode = (targetMode - 1 + 4) % 4;
-      toggleDeepDive();
+    if (savedInspectionMode !== null && savedInspectionMode !== undefined) {
+      inspectionMode = parseInt(savedInspectionMode) || 0;
+      // toggleDeepDiveは日次ビューのDOM必要のため起動時は呼ばない
+      // 日次ビューを開いたときに applyInspectionMode() で反映
     }
 
     // ===== シンプルモード =====
@@ -11634,15 +11877,8 @@ function loadSettingsUI() {
     var eraserMode = false;
 
     // ===== kind:'stamp' SSOT（v0.29.19） =====
-    // デフォルトスタンプ定義（初回起動時にallTasksへ投入）
-    const DEFAULT_STAMP_DEFS = [
-      { name: '日勤',  color: '#ffcdd2', textColor: '#c62828', startTime: '08:30', endTime: '17:00', order: 0 },
-      { name: '長日勤', color: '#f8bbd0', textColor: '#ad1457', startTime: '08:30', endTime: '20:00', order: 1 },
-      { name: '入り',  color: '#e1bee7', textColor: '#6a1b9a', startTime: '16:30', endTime: '01:00', order: 2 },
-      { name: '明け',  color: '#c5cae9', textColor: '#283593', startTime: '00:00', endTime: '09:00', order: 3 },
-      { name: '休み',  color: '#b2dfdb', textColor: '#00695c', startTime: '',      endTime: '',       order: 4 },
-      { name: '有給',  color: '#fff9c4', textColor: '#f57f17', startTime: '',      endTime: '',       order: 5 }
-    ];
+    // ※ デフォルトスタンプ定義はinitStampDefs内にインライン化
+    // ※ スタンプの実体はallTasks内のkind:'stamp'。初回投入専用。
 
     // kind:'stamp' の一覧取得（order順）
     function getStamps() {
@@ -11658,6 +11894,7 @@ function loadSettingsUI() {
 
     // kind:'stamp' 初期化（初回 or マイグレーション）
     function initStampDefs() {
+      try {
       // ① 旧simpleStamps（localStorage）→ kind:'stamp' へ移行
       const legacySimple = localStorage.getItem('simpleStamps');
       if (legacySimple) {
@@ -11687,9 +11924,17 @@ function loadSettingsUI() {
         } catch(e) { console.warn('[migrate] simpleStamps失敗', e); }
       }
 
-      // ② kind:'stamp' が0件 → デフォルト投入
+      // ② kind:'stamp' が0件 → デフォルト投入（定義をここにインライン）
       if (getStamps().length === 0) {
-        DEFAULT_STAMP_DEFS.forEach(function(def, i) {
+        var _defaultStamps = [
+          { name: '日勤',  color: '#ffcdd2', textColor: '#c62828', startTime: '08:30', endTime: '17:00', order: 0 },
+          { name: '長日勤', color: '#f8bbd0', textColor: '#ad1457', startTime: '08:30', endTime: '20:00', order: 1 },
+          { name: '入り',  color: '#e1bee7', textColor: '#6a1b9a', startTime: '16:30', endTime: '01:00', order: 2 },
+          { name: '明け',  color: '#c5cae9', textColor: '#283593', startTime: '00:00', endTime: '09:00', order: 3 },
+          { name: '休み',  color: '#b2dfdb', textColor: '#00695c', startTime: '',      endTime: '',       order: 4 },
+          { name: '有給',  color: '#fff9c4', textColor: '#f57f17', startTime: '',      endTime: '',       order: 5 }
+        ];
+        _defaultStamps.forEach(function(def, i) {
           allTasks.push(Object.assign({ id: generateTaskId(), kind: 'stamp', createdAt: new Date().toISOString() }, def));
         });
         console.log('[init] デフォルトkind:stamp 投入');
@@ -11709,6 +11954,9 @@ function loadSettingsUI() {
       if (migCount > 0) console.log('[migrate] dailyStatus.stampId → stampIds[] ' + migCount + '件');
 
       saveAllTasks();
+      } catch(e) {
+        console.warn('[initStampDefs] error', e);
+      }
     }
 
     // ===== dailyStatus CRUD（allTasksに統合・複数スタンプ対応） =====
@@ -12595,7 +12843,7 @@ window.addEventListener('afterprint', function() {
     }
   });
   // containerを元に戻す（再描画）
-  if (typeof switchView === 'function') switchView(currentView || 'daily');
+  if (typeof switchView === 'function') switchView(localStorage.getItem('currentView') || 'daily');
 });
 
 
@@ -12632,15 +12880,14 @@ window.addEventListener('afterprint', function() {
         <textarea id="taskEditMemo" rows="3" placeholder="詳細や持ち物など..." oninput="updateMemoPreview('taskEditMemo','taskEditMemoPreview')"></textarea>
         <div id="taskEditMemoPreview" style="display:none; margin-top:6px; padding:8px; background:#f8f8f8; border-radius:4px; font-size:0.9em; color:#333; word-break:break-all;"></div>
       </div>
-      <div class="task-edit-datetime" style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; align-items: flex-start;">
-        <div style="flex: 1 1 120px; min-width: 0;">
-          <label>日付</label>
-          <input type="date" id="taskEditDate">
-        </div>
-        <div style="flex: 1 1 160px; min-width: 0; max-width: 200px;">
-          <label>開始時間（任意）</label>
-          <input type="hidden" id="taskEditTime">
-          <div class="custom-time-picker" id="taskEditTimePicker">
+      <div style="margin-bottom: 18px;">
+        <label>日付</label>
+        <input type="date" id="taskEditDate">
+      </div>
+      <div style="margin-bottom: 18px;">
+        <label>開始時間（任意）</label>
+        <input type="hidden" id="taskEditTime">
+        <div class="custom-time-picker" id="taskEditTimePicker">
             <div class="time-select-wrapper">
               <select class="time-select" id="taskEditHourSelect">
                 <option value="">--</option>
@@ -12665,10 +12912,10 @@ window.addEventListener('afterprint', function() {
             </div>
             <button type="button" class="time-clear-btn" onclick="clearTimeSelect('taskEdit')" title="時間をクリア">✕</button>
           </div>
-        </div>
-        <div style="flex: 1 1 160px; min-width: 0; max-width: 200px;">
-          <label>終了時間（任意）</label>
-          <div class="custom-time-picker" id="taskEditEndTimePicker">
+      </div>
+      <div style="margin-bottom: 18px;">
+        <label>終了時間（任意）</label>
+        <div class="custom-time-picker" id="taskEditEndTimePicker">
             <div class="time-select-wrapper">
               <select class="time-select" id="taskEditEndHourSelect">
                 <option value="">--</option>
@@ -12693,7 +12940,6 @@ window.addEventListener('afterprint', function() {
             </div>
             <button type="button" class="time-clear-btn" onclick="clearTimeSelect('taskEditEnd')" title="終了時間をクリア">✕</button>
           </div>
-        </div>
       </div>
 
       <!-- 繰り返し設定 -->
@@ -13831,7 +14077,6 @@ window.initCraftWorld = function initCraftWorld() {
     _craftInitialized = true;
     var s = document.createElement('script');
     s.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
-    s.crossOrigin = 'anonymous';
     s.setAttribute('data-threejs-loading', '1');
     s.onload = function(){
       s.removeAttribute('data-threejs-loading');
@@ -13839,10 +14084,12 @@ window.initCraftWorld = function initCraftWorld() {
     };
     s.onerror = function(){
       s.removeAttribute('data-threejs-loading');
-      _craftInitialized=false;
-      if(typeof localStorage!=='undefined') allSettings.ui.craftRenderMode = '2d'; saveAllSettings();
-      var r2=document.getElementById('craftMode2D'); if(r2)r2.checked=true;
-      var r3=document.getElementById('craftMode3D'); if(r3)r3.checked=false;
+      _craftInitialized = false;
+      allSettings.ui.craftRenderMode = '2d';
+      saveAllSettings();
+      var r2 = document.getElementById('craftMode2D'); if (r2) r2.checked = true;
+      var r3 = document.getElementById('craftMode3D'); if (r3) r3.checked = false;
+      // 2Dで再起動（renderMode='2d'になってるので無限ループしない）
       initCraftWorld();
     };
     document.head.appendChild(s);
@@ -13913,6 +14160,7 @@ window.initCraftWorld = function initCraftWorld() {
 
 // Three.js 3D初期化
 function _initThreeScene() {
+  try {
   if (!window.THREE) { _craftInitialized=false; if(typeof window.initCraftWorld==='function')window.initCraftWorld(); return; }
   var testC=document.createElement('canvas');
   var glCtx=testC.getContext('webgl')||testC.getContext('experimental-webgl');
@@ -13946,9 +14194,8 @@ function _initThreeScene() {
   var scene=new THREE.Scene();
   scene.fog=new THREE.Fog(_skyCol.fog,25,70);
   addSkyDome(scene, _skyCol.type);
-  var camera=new THREE.PerspectiveCamera(_isMobile?42:35,W/H,0.1,200);
-  // スマホ判定
   var _isMobile = window.innerWidth < 768;
+  var camera=new THREE.PerspectiveCamera(_isMobile?42:35,W/H,0.1,200);
   var theta=Math.PI/4, phi=_isMobile?0.52:0.48, radius=_isMobile?18:22;
   function setCam(){camera.position.set(radius*Math.sin(theta)*Math.cos(phi),radius*Math.sin(phi),radius*Math.cos(theta)*Math.cos(phi));camera.lookAt(0,1,0);}
   setCam();
@@ -14343,6 +14590,13 @@ function _initThreeScene() {
   })();
   updateCraftHUD();
   var _3c=LEVEL_CONFIG[Math.min(getCraftStats().level-1,LEVEL_CONFIG.length-1)]; showCraftMessage('🏰 3D: '+(_3c?_3c.name:'アリアハン')+'王国へ！');
+  } catch(e) {
+    console.warn('[3D init error]', e.message);
+    _craftInitialized = false;
+    allSettings.ui.craftRenderMode = '2d';
+    saveAllSettings();
+    if (typeof window.initCraftWorld === 'function') window.initCraftWorld();
+  }
 }
 
 function _showEnding() {
@@ -14989,36 +15243,16 @@ function switchDeckTab(tab) {
 function renderQRToImg(el, text) {
   el.innerHTML = '';
   try {
-    // qrcode-generator でQRデータ生成
-    var qr = qrcode(0, 'M');
-    qr.addData(text);
-    qr.make();
-    var size = 220;
-    var canvas = document.createElement('canvas');
-    canvas.width = size;
-    canvas.height = size;
-    var ctx = canvas.getContext('2d');
-    var count = qr.getModuleCount();
-    var cellSize = size / count;
-    // 白背景
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, size, size);
-    // 黒セル
-    ctx.fillStyle = '#000000';
-    for (var row = 0; row < count; row++) {
-      for (var col = 0; col < count; col++) {
-        if (qr.isDark(row, col)) {
-          ctx.fillRect(
-            Math.floor(col * cellSize),
-            Math.floor(row * cellSize),
-            Math.ceil(cellSize),
-            Math.ceil(cellSize)
-          );
-        }
-      }
-    }
-    canvas.style.cssText = 'display:block;border-radius:10px;';
-    el.appendChild(canvas);
+    var encoded = encodeURIComponent(text);
+    var url = 'https://chart.googleapis.com/chart?cht=qr&chs=220x220&chl=' + encoded + '&choe=UTF-8';
+    var img = document.createElement('img');
+    img.src = url;
+    img.width = 220; img.height = 220;
+    img.style.cssText = 'display:block;border-radius:10px;';
+    img.onerror = function() {
+      el.innerHTML = '<div style="color:#aaa;font-size:0.75em;padding:20px;">QR生成に失敗しました</div>';
+    };
+    el.appendChild(img);
   } catch(e) {
     el.innerHTML = '<div style="color:#aaa;font-size:0.75em;padding:20px;">QR生成に失敗しました</div>';
   }
@@ -15527,6 +15761,151 @@ function checkAdminPw() {
     showAdminToast('❌ コードが違います');
     input.value = '';
   }
+}
+
+
+
+function showDebugLog() {
+  var logArr = [], errArr = [];
+  try { logArr = JSON.parse(localStorage.getItem('_dbg_log') || '[]'); } catch(e) {}
+  try { errArr = JSON.parse(localStorage.getItem('_dbg_errors') || '[]'); } catch(e) {}
+
+  var lsInfo = [];
+  try {
+    var at = localStorage.getItem('allTasks');
+    var atArr = at ? JSON.parse(at) : [];
+    var kc = {};
+    atArr.forEach(function(t){ kc[t.kind||'?'] = (kc[t.kind||'?']||0)+1; });
+    lsInfo.push('allTasks: ' + atArr.length + '件 ' + JSON.stringify(kc));
+    var as = localStorage.getItem('allSettings');
+    var asObj = as ? JSON.parse(as) : null;
+    if (asObj) {
+      lsInfo.push('simpleMode: ' + (asObj.ui&&asObj.ui.simpleMode));
+      lsInfo.push('craftMode: ' + (asObj.ui&&asObj.ui.craftModeEnabled));
+      lsInfo.push('dataVersion: ' + (asObj.meta&&asObj.meta.dataVersion));
+      lsInfo.push('profile.name: ' + ((asObj.profile&&asObj.profile.name)||'(未設定)'));
+    } else { lsInfo.push('allSettings: なし'); }
+    var dt = localStorage.getItem('deletedTaskIds');
+    lsInfo.push('deletedTaskIds: ' + (dt ? JSON.parse(dt).length : 0) + '件');
+    lsInfo.push('tokuPoints: ' + (localStorage.getItem('tokuPoints')||'0'));
+    lsInfo.push('gouPoints: ' + (localStorage.getItem('gouPoints')||'0'));
+    lsInfo.push('currentView: ' + (localStorage.getItem('currentView')||'null'));
+    var allKeys = [];
+    for (var i = 0; i < localStorage.length; i++) allKeys.push(localStorage.key(i));
+    allKeys.sort();
+    lsInfo.push('--- 全キー(' + allKeys.length + '個) ---');
+    lsInfo.push('taskIdCounter: ' + (localStorage.getItem('taskIdCounter')||'なし'));
+    allKeys.forEach(function(k){
+      var v = localStorage.getItem(k)||'';
+      // allTasks/allSettings/tokuLogは長すぎるので件数のみ
+      if (k === 'allTasks' || k === 'allSettings' || k === 'tokuLog') return; // 上で処理済み
+      lsInfo.push(k + ': ' + (v.length > 120 ? v.slice(0,120)+'…' : v));
+    });
+  } catch(e) { lsInfo.push('LS取得エラー: ' + e.message); }
+
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:99999;overflow-y:auto;padding:16px;box-sizing:border-box;';
+  wrap.addEventListener('click', function(e){ if(e.target===wrap) wrap.remove(); });
+
+  var box = document.createElement('div');
+  box.style.cssText = 'background:#0d1117;border:1px solid #30363d;border-radius:12px;padding:18px;max-width:640px;margin:auto;color:#e6edf3;font-family:monospace;font-size:0.75em;';
+
+  var v = (typeof APP_VERSION !== 'undefined') ? APP_VERSION : '';
+  var rows = [];
+  rows.push('<h3 style="color:#4facfe;margin:0 0 10px 0;">🔍 デバッグパネル ' + v + '</h3>');
+  rows.push('<h4 style="color:#ffd700;margin:8px 0 4px;">📋 起動マイルストーン (' + logArr.length + '件)</h4>');
+  if (logArr.length === 0) {
+    rows.push('<div style="color:#8b949e;">なし</div>');
+  } else {
+    logArr.forEach(function(l){ rows.push('<div style="padding:1px 0;border-bottom:1px solid #21262d;">' + l + '</div>'); });
+  }
+  rows.push('<h4 style="color:#ff6b6b;margin:8px 0 4px;">❌ エラー(' + errArr.length + '件)</h4>');
+  if (errArr.length === 0) {
+    rows.push('<div style="color:#3fb950;">エラーなし</div>');
+  } else {
+    errArr.forEach(function(e){
+      rows.push('<div style="padding:3px 0;border-bottom:1px solid #21262d;word-break:break-all;">'
+        + '<span style="color:#ff6b6b;">' + e.msg + '</span><br>'
+        + '<span style="color:#8b949e;">src:' + (e.src||'?') + ' L' + (e.line||'?') + ':' + (e.col||'?') + '</span>'
+        + (e.stack ? '<br><span style="color:#6e7681;">' + e.stack.slice(0,300) + '</span>' : '')
+        + '</div>');
+    });
+  }
+  rows.push('<h4 style="color:#56d364;margin:8px 0 4px;">💾 localStorage状態</h4>');
+  lsInfo.forEach(function(l){ rows.push('<div style="padding:1px 0;border-bottom:1px solid #161b22;word-break:break-all;">' + l + '</div>'); });
+
+  box.innerHTML = rows.join('');
+
+  // コピーボタン
+  var btnCopy = document.createElement('button');
+  btnCopy.textContent = '📋 全文コピー';
+  btnCopy.style.cssText = 'width:100%;padding:10px;background:#238636;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer;margin-top:14px;margin-bottom:6px;';
+  btnCopy.onclick = function(){
+    var text = [
+      '=== デバッグパネル ' + v + ' ===',
+      '',
+      '--- 起動マイルストーン ---',
+      logArr.join('\n'),
+      '',
+      '--- エラー(' + errArr.length + '件) ---',
+      errArr.map(function(e){ return e.msg + ' src:' + (e.src||'?') + ' L' + (e.line||'?') + (e.stack ? '\n' + e.stack.slice(0,300) : ''); }).join('\n'),
+      '',
+      '--- localStorage ---',
+      lsInfo.join('\n')
+    ].join('\n');
+    // iOS Safari対応コピー処理
+    function doFallbackCopy() {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      // iOSはposition:fixedとreadOnly+contentEditable=trueが必要
+      ta.style.cssText = 'position:fixed;top:0;left:0;width:2em;height:2em;opacity:0;border:none;outline:none;';
+      ta.readOnly = false;
+      document.body.appendChild(ta);
+      // iOS Safari: setSelectionRangeで全選択
+      ta.focus();
+      ta.setSelectionRange(0, ta.value.length);
+      try {
+        var ok = document.execCommand('copy');
+        btnCopy.textContent = ok ? '✅ コピー完了' : '❌ コピー失敗';
+        if (ok) setTimeout(function(){ btnCopy.textContent = '📋 全文コピー'; }, 2000);
+      } catch(e) {
+        btnCopy.textContent = '❌ コピー失敗';
+      }
+      document.body.removeChild(ta);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function(){
+        btnCopy.textContent = '✅ コピー完了';
+        setTimeout(function(){ btnCopy.textContent = '📋 全文コピー'; }, 2000);
+      }).catch(function(){
+        // clipboard API失敗 → fallbackへ
+        doFallbackCopy();
+      });
+    } else {
+      doFallbackCopy();
+    }
+  };
+  box.appendChild(btnCopy);
+
+  var btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex;gap:8px;margin-top:6px;';
+  var btnClear = document.createElement('button');
+  btnClear.textContent = 'ログ消去';
+  btnClear.style.cssText = 'flex:1;padding:10px;background:#21262d;border:1px solid #30363d;border-radius:8px;color:#8b949e;cursor:pointer;';
+  btnClear.onclick = function(){
+    localStorage.removeItem('_dbg_log');
+    localStorage.removeItem('_dbg_errors');
+    wrap.remove();
+  };
+  var btnClose = document.createElement('button');
+  btnClose.textContent = '閉じる';
+  btnClose.style.cssText = 'flex:2;padding:10px;background:#4facfe;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer;';
+  btnClose.onclick = function(){ wrap.remove(); };
+  btnRow.appendChild(btnClear);
+  btnRow.appendChild(btnClose);
+  box.appendChild(btnRow);
+  wrap.appendChild(box);
+  document.body.appendChild(wrap);
 }
 
 function showAdminToast(msg) {
@@ -16545,6 +16924,9 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 
 <!-- 右下？ボタン -->
-<button id="tutorialHelpBtn" onclick="showTutorial()" style="position:fixed;bottom:24px;right:20px;width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;color:#fff;font-size:1.3em;font-weight:bold;cursor:pointer;box-shadow:0 4px 15px rgba(79,172,254,0.5);z-index:99990;line-height:42px;text-align:center;">?</button>
+<button id="tutorialHelpBtn" onclick="showTutorial()" style="position:fixed;bottom:24px;right:20px;width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;color:#fff;font-size:1.3em;font-weight:bold;cursor:pointer;box-shadow:0 4px 15px rgba(79,172,254,0.5);z-index:99990;line-height:42px;text-align:center;"
+  ontouchstart="this._t=setTimeout(function(){showDebugLog();},2000)"
+  ontouchend="clearTimeout(this._t)"
+  ontouchcancel="clearTimeout(this._t)">?</button>
 </body>
 </html>
