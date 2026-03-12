@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.32.41';
+    const APP_VERSION = 'v0.32.42';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -4448,6 +4448,7 @@
       },
       flags: {
         tutorialSeen:       false,
+        gantTourSeen:       false,
         adminMode:          false,
         inspectionMode:     false,
         purpose:            '',
@@ -7375,6 +7376,50 @@ function getDeckGDP() {
       renderGantBlueprints();
       renderGantChart();
     }
+    // ===== 造営ビュー 初回案内 =====
+    function showGantTour() {
+      const m = document.createElement('div');
+      m.id = 'gantTourModal';
+      m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:3000;display:flex;align-items:center;justify-content:center;padding:16px;';
+      m.innerHTML = `
+        <div style="background:#fff;border-radius:20px;padding:28px 24px;width:100%;max-width:400px;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+          <div style="font-size:1.4em;margin-bottom:4px;">🏯 造営ビューの使い方</div>
+          <div style="font-size:0.8em;color:#aaa;margin-bottom:20px;">3ステップで王国を動かす</div>
+
+          <div style="display:flex;flex-direction:column;gap:16px;margin-bottom:24px;">
+            <div style="display:flex;gap:12px;align-items:flex-start;">
+              <div style="width:28px;height:28px;border-radius:50%;background:#262626;color:#fff;font-size:0.85em;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</div>
+              <div>
+                <div style="font-size:0.9em;font-weight:600;color:#262626;margin-bottom:2px;">「＋ 造営計画」で志を作る</div>
+                <div style="font-size:0.8em;color:#888;">夢・目標・プロジェクト。なんでもいい。</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-start;">
+              <div style="width:28px;height:28px;border-radius:50%;background:#262626;color:#fff;font-size:0.85em;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</div>
+              <div>
+                <div style="font-size:0.9em;font-weight:600;color:#262626;margin-bottom:2px;">「工程を刻む」でステップを作る</div>
+                <div style="font-size:0.8em;color:#888;">志の中の段階・フェーズ。例：基礎固め、仕上げ。</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-start;">
+              <div style="width:28px;height:28px;border-radius:50%;background:#262626;color:#fff;font-size:0.85em;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</div>
+              <div>
+                <div style="font-size:0.9em;font-weight:600;color:#262626;margin-bottom:2px;">ステップの「› N件」を押す</div>
+                <div style="font-size:0.8em;color:#888;">紐づいたタスクが展開される。タスクに日付・時刻を入れるとバーが現れる。</div>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="document.getElementById('gantTourModal').remove()" style="width:100%;padding:12px;background:#262626;color:#fff;border:none;border-radius:10px;font-size:0.95em;cursor:pointer;font-weight:600;">
+            わかった、始める 🏯
+          </button>
+        </div>`;
+      document.body.appendChild(m);
+      m.addEventListener('click', function(e) {
+        if (e.target === m) m.remove();
+      });
+    }
+
     // ===== ガントチャート描画 =====
     // ctx = { scale, colW, dayW, minDate, chartW, nowLine, labelW, rowH }
     // ---- 共通：タスクバーHTML生成 ----
@@ -7457,8 +7502,8 @@ function getDeckGDP() {
 
       // 展開ボタン（シェブロン、アニメーション）
       const _expandToggle = "(function(){var el=document.getElementById('" + expandId + "');var btn=document.getElementById('" + expandId + "_btn');if(el){var open=el.style.display!=='none';el.style.display=open?'none':'block';if(btn)btn.style.transform=open?'rotate(0deg)':'rotate(90deg)';}})()";      const expandBtn = taskCount > 0
-        ? '<button id="' + expandId + '_btn" onclick="' + _expandToggle + '" style="background:none;border:none;font-size:12px;color:#bbb;cursor:pointer;padding:2px 4px;flex-shrink:0;transition:transform 0.15s;">›</button>'
-        : '<span style="width:20px;display:inline-block;"></span>';
+        ? '<button id="' + expandId + '_btn" onclick="' + _expandToggle + '" style="background:none;border:none;font-size:11px;color:#888;cursor:pointer;padding:2px 4px;flex-shrink:0;transition:transform 0.15s;display:flex;align-items:center;gap:2px;white-space:nowrap;"><span style="display:inline-block;transition:transform 0.15s;">›</span><span style="font-size:10px;color:#aaa;">' + taskCount + '件</span></button>'
+        : '<span style="font-size:10px;color:#ccc;padding:2px 4px;">タスクなし</span>';
 
       // タスク展開行
       let taskRows = '';
@@ -10116,6 +10161,12 @@ function getDeckGDP() {
         const ng = document.getElementById('navGant');
         if (ng) ng.classList.add('active');
         renderGantView();
+        // 初回のみ案内ポップアップ
+        if (!allSettings.flags.gantTourSeen) {
+          allSettings.flags.gantTourSeen = true;
+          saveAllSettings();
+          setTimeout(showGantTour, 400);
+        }
       } else if (view === 'craft') {
         if (craftView) craftView.style.display = 'block';
         document.getElementById('navCraft').classList.add('active');
