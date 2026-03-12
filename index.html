@@ -7619,8 +7619,10 @@ function myDeckApply(idx) {
         if (st && et) {
           const [sh, sm] = st.split(':').map(Number);
           const [eh, em] = et.split(':').map(Number);
-          const sx = Math.round((sh * 60 + sm) / 60 * ctx.colW);
-          const bw = Math.max(Math.round((eh * 60 + em - sh * 60 - sm) / 60 * ctx.colW), 4);
+          const _startH = ctx.startH || 0;
+          const sx = Math.max(0, Math.round(((sh * 60 + sm) - _startH * 60) / 60 * ctx.colW));
+          const ex = Math.round(((eh * 60 + em) - _startH * 60) / 60 * ctx.colW);
+          const bw = Math.max(ex - sx, 4);
           const prog = getGanttProgress(gantt);
           const pw   = Math.round(bw * prog / 100);
           stepBarHtml = '<div style="position:absolute;left:' + sx + 'px;top:8px;width:' + bw + 'px;height:24px;background:' + ctx.barColor + '22;border-radius:6px;"></div>'
