@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.32.64';
+    const APP_VERSION = 'v0.32.65';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -3778,6 +3778,15 @@
           </label>
           <p style="margin:6px 0 0 28px;font-size:0.8em;color:#888;">チェックすると、操作後に現在時刻へ自動スクロールしなくなります。</p>
         </div>
+        <div class="settings-item" style="margin-bottom:16px;">
+          <label style="font-size:0.8em;color:#666;display:block;margin-bottom:8px;font-weight:600;">⏰ 日次ビューの表示時間帯</label>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <select id="gantDayStartH" onchange="saveGantDayRange()" style="padding:6px 10px;border:1px solid #ddd;border-radius:8px;font-size:0.88em;"><option value="0">0時</option><option value="1">1時</option><option value="2">2時</option><option value="3">3時</option><option value="4">4時</option><option value="5">5時</option><option value="6">6時</option><option value="7">7時</option><option value="8">8時</option><option value="9">9時</option><option value="10">10時</option><option value="11">11時</option><option value="12">12時</option><option value="13">13時</option><option value="14">14時</option><option value="15">15時</option><option value="16">16時</option><option value="17">17時</option><option value="18">18時</option><option value="19">19時</option><option value="20">20時</option><option value="21">21時</option></select>
+            <span style="color:#888;font-size:0.9em;">〜</span>
+            <select id="gantDayEndH" onchange="saveGantDayRange()" style="padding:6px 10px;border:1px solid #ddd;border-radius:8px;font-size:0.88em;"><option value="2">2時</option><option value="3">3時</option><option value="4">4時</option><option value="5">5時</option><option value="6">6時</option><option value="7">7時</option><option value="8">8時</option><option value="9">9時</option><option value="10">10時</option><option value="11">11時</option><option value="12">12時</option><option value="13">13時</option><option value="14">14時</option><option value="15">15時</option><option value="16">16時</option><option value="17">17時</option><option value="18">18時</option><option value="19">19時</option><option value="20">20時</option><option value="21">21時</option><option value="22">22時</option><option value="23">23時</option><option value="24">24時</option></select>
+          </div>
+          <p style="margin:6px 0 0 0;font-size:0.8em;color:#888;">この時間帯だけ表示されます。寝てる時間を非表示にできます。</p>
+        </div>
       </div>
       <div class="settings-section">
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">🏰 王国を訪問する</h3>
@@ -4446,6 +4455,8 @@
         craftRenderMode:  '3d',
         gantEnabled:      true,
         gantDisableAutoScroll: false,
+        gantDayStartH: 0,
+        gantDayEndH: 24,
         gantTimeScale:    'day',
         gantShowCompleted: true
       },
@@ -5716,6 +5727,10 @@ function myDeckApply(idx) {
       // 行高スライダーの初期値を復元
       const _gantAutoScroll = document.getElementById('gantAutoScrollNow');
       if (_gantAutoScroll) _gantAutoScroll.checked = allSettings.ui.gantDisableAutoScroll === true;
+      const _startH = document.getElementById('gantDayStartH');
+      const _endH   = document.getElementById('gantDayEndH');
+      if (_startH) _startH.value = allSettings.ui.gantDayStartH || 0;
+      if (_endH)   _endH.value   = allSettings.ui.gantDayEndH   || 24;
       const _rowHSlider = document.getElementById('weeklyRowHSlider');
       if (_rowHSlider) _rowHSlider.value = allSettings.ui.weeklyRowH || '80';
       var _rowHSliderSp = document.getElementById('weeklyRowHSliderSp');
@@ -7294,6 +7309,17 @@ function myDeckApply(idx) {
       });
       renderGantChart();
     }
+    function saveGantDayRange() {
+      const s = document.getElementById('gantDayStartH');
+      const e = document.getElementById('gantDayEndH');
+      if (!s || !e) return;
+      const sv = parseInt(s.value), ev = parseInt(e.value);
+      if (ev <= sv) { showToast('終了時刻は開始より後にしてください', {type:'warn'}); return; }
+      allSettings.ui.gantDayStartH = sv;
+      allSettings.ui.gantDayEndH   = ev;
+      saveAllSettings();
+      renderGantChart();
+    }
     function toggleGantAutoScrollNow(checked) {
       allSettings.ui.gantDisableAutoScroll = checked;
       saveAllSettings();
@@ -7423,12 +7449,12 @@ function myDeckApply(idx) {
       if (ctx.scale === 'day') {
         if (!t.time) return '<div style="position:absolute;left:6px;top:50%;transform:translateY(-50%);font-size:9px;color:#bbb;white-space:nowrap;">時刻未定</div>';
         const [sh, sm] = t.time.split(':').map(Number);
-        const sx = Math.round((sh * 60 + sm) / 60 * ctx.colW);
+        const sx = Math.round(((sh * 60 + sm) - (ctx.startH || 0) * 60) / 60 * ctx.colW);
         // endTimeで幅決定、なければ colW（1時間幅）をデフォルト
         let bw = ctx.colW;
         if (t.endTime) {
           const [eh, em] = t.endTime.split(':').map(Number);
-          bw = Math.max(Math.round((eh * 60 + em - sh * 60 - sm) / 60 * ctx.colW), ctx.colW);
+          bw = Math.max(Math.round((eh * 60 + em - sh * 60 - sm) / 60 * ctx.colW), ctx.colW / 2);
         }
         const barBg   = done ? 'rgba(200,200,200,0.5)' : ctx.barColor;
         const textCol = done ? '#aaa' : (ctx.textColor || '#1a1a2e');
@@ -7557,30 +7583,40 @@ function myDeckApply(idx) {
 
     // ---- 日スケール描画 ----
     function _renderGantDay(htmlChart, gants) {
-      const HOURS = 24, colW = 44, labelW = 130, rowH = 72;
-      const area = htmlChart.closest('#gantChartArea') || htmlChart.parentElement;
-      const areaW = area ? Math.max(area.clientWidth - labelW - 4, 0) : 0;
-      const chartW = Math.max(HOURS * colW, areaW);
-      const now = new Date();
-      const nowX = Math.round((now.getHours() * 60 + now.getMinutes()) / 60 * colW);
+      const colW = 44, labelW = 130, rowH = 72;
+      // 表示時間帯（設定から）
+      const startH = (allSettings.ui.gantDayStartH !== undefined) ? allSettings.ui.gantDayStartH : 0;
+      const endH   = (allSettings.ui.gantDayEndH   !== undefined) ? allSettings.ui.gantDayEndH   : 24;
+      const SPAN   = endH - startH;
+      const area   = htmlChart.closest('#gantChartArea') || htmlChart.parentElement;
+      const areaW  = area ? Math.max(area.clientWidth - labelW - 4, 0) : 0;
+      const chartW = Math.max(SPAN * colW, areaW);
+      // colWを引き伸ばして右端を埋める
+      const colWe  = Math.max(colW, Math.floor(areaW / SPAN));
+      const now    = new Date();
+      const nowMin = now.getHours() * 60 + now.getMinutes();
+      const nowX   = Math.round((nowMin - startH * 60) / 60 * colWe);
       const DOW_JA = ['日','月','火','水','木','金','土'];
       const todayLabel = now.getFullYear() + '/' + (now.getMonth()+1) + '/' + now.getDate() + ' (' + DOW_JA[now.getDay()] + ')';
       let headerCols = '';
-      for (let h = 0; h <= HOURS; h++) {
-        const x = h * colW;
+      for (let h = startH; h <= endH; h++) {
+        const x = (h - startH) * colWe;
         const col = h === 12 ? '#f39c12' : '#999';
-        const isNight = h < 6 || h >= 21;
-        headerCols += '<div style="position:absolute;left:' + x + 'px;top:0;bottom:0;width:1px;background:' + (h % 6 === 0 ? '#d0d0d0' : 'rgba(0,0,0,0.04)') + ';pointer-events:none;"></div>'
-          + (h < HOURS ? '<div style="position:absolute;left:' + (x+2) + 'px;top:18px;font-size:9px;color:' + col + ';white-space:nowrap;font-weight:' + (h%6===0?'700':'400') + ';pointer-events:none;">'
+        headerCols += '<div style="position:absolute;left:' + x + 'px;top:0;bottom:0;width:1px;background:' + (h % 3 === 0 ? '#d0d0d0' : 'rgba(0,0,0,0.04)') + ';pointer-events:none;"></div>'
+          + (h < endH ? '<div style="position:absolute;left:' + (x+2) + 'px;top:18px;font-size:9px;color:' + col + ';white-space:nowrap;font-weight:' + (h%6===0?'700':'400') + ';pointer-events:none;">'
             + (h === 0 ? '0時' : h === 12 ? '正午' : h%3===0 ? h+'時' : '') + '</div>' : '');
       }
-      const nowLine = '<div style="position:absolute;left:' + nowX + 'px;top:0;bottom:0;width:2px;background:#ff3b30;opacity:0.85;z-index:2;pointer-events:none;"></div>'
-        + '<div style="position:absolute;left:' + (nowX+3) + 'px;top:2px;font-size:9px;color:#ff3b30;font-weight:700;z-index:2;white-space:nowrap;pointer-events:none;">'
-        + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + '</div>';
-      const timeBg = '<div style="position:absolute;left:0;top:0;width:' + (6*colW) + 'px;bottom:0;background:rgba(30,30,80,0.04);pointer-events:none;"></div>'
-        + '<div style="position:absolute;left:' + (21*colW) + 'px;top:0;width:' + (3*colW) + 'px;bottom:0;background:rgba(30,30,80,0.04);pointer-events:none;"></div>';
+      // 夜間帯ハイライト（表示範囲内のみ）
+      let nightBg = '';
+      if (startH < 6) nightBg += '<div style="position:absolute;left:0;top:0;width:' + ((Math.min(6,endH)-startH)*colWe) + 'px;bottom:0;background:rgba(30,30,80,0.05);pointer-events:none;"></div>';
+      if (endH > 21)  nightBg += '<div style="position:absolute;left:' + ((21-startH)*colWe) + 'px;top:0;width:' + ((endH-21)*colWe) + 'px;bottom:0;background:rgba(30,30,80,0.05);pointer-events:none;"></div>';
+      const nowLine = (nowMin >= startH*60 && nowMin <= endH*60)
+        ? '<div style="position:absolute;left:' + nowX + 'px;top:0;bottom:0;width:2px;background:#ff3b30;opacity:0.85;z-index:2;pointer-events:none;"></div>'
+          + '<div style="position:absolute;left:' + (nowX+3) + 'px;top:2px;font-size:9px;color:#ff3b30;font-weight:700;z-index:2;white-space:nowrap;pointer-events:none;">'
+          + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + '</div>'
+        : '';
       const rows = gants.map(function(gantt, i) {
-        const ctx = { scale:'day', colW, labelW, rowH, chartW, nowLine, rowBg: i%2===0?'#fafafa':'#fff' };
+        const ctx = { scale:'day', colW:colWe, labelW, rowH, chartW:Math.max(SPAN*colWe, areaW), nowLine, rowBg: i%2===0?'#fafafa':'#fff', startH };
         return buildGanttRow(gantt, ctx);
       }).join('');
       htmlChart.innerHTML =
@@ -7589,13 +7625,11 @@ function myDeckApply(idx) {
         + '<span style="font-size:9px;color:#aaa;">工程</span>'
         + '<span style="font-size:9px;color:#888;font-weight:600;">' + todayLabel + '</span>'
         + '</div>'
-        + '<div style="flex:1;position:relative;height:56px;min-width:' + chartW + 'px;overflow:hidden;background:#fafafa;border-right:1px solid #ccc;">'
-        + '<div style="position:absolute;left:0;top:0;width:' + (6*colW) + 'px;bottom:0;background:rgba(30,30,80,0.05);"></div>'
-        + '<div style="position:absolute;left:' + (21*colW) + 'px;top:0;width:' + (3*colW) + 'px;bottom:0;background:rgba(30,30,80,0.05);"></div>'
-        + headerCols + nowLine + '</div></div>' + rows;
+        + '<div style="flex:1;position:relative;height:56px;overflow:hidden;background:#fafafa;border-right:1px solid #ccc;">'
+        + nightBg + headerCols + nowLine + '</div></div>' + rows;
       requestAnimationFrame(function() {
-        const area = htmlChart.closest('#gantChartArea') || htmlChart.parentElement;
-        if (area && !allSettings.ui.gantDisableAutoScroll) area.scrollLeft = Math.max(0, nowX - Math.floor((area.clientWidth - labelW) / 2));
+        const area2 = htmlChart.closest('#gantChartArea') || htmlChart.parentElement;
+        if (area2 && !allSettings.ui.gantDisableAutoScroll) area2.scrollLeft = Math.max(0, nowX - Math.floor((area2.clientWidth - labelW) / 2));
       });
     }
 
