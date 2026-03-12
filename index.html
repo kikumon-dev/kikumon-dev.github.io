@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.32.46';
+    const APP_VERSION = 'v0.32.47';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -8375,14 +8375,20 @@ function myDeckApply(idx) {
     function deleteMonthlyTask() {
       const taskId = document.getElementById('monthlyTaskId').value;
       if (!taskId) return;
-      showConfirm('このやることを王国から消しますか？', function() {
-        deleteTaskById(taskId);
-        closeMonthlyTaskModal();
-        renderMonthlyView();
-        if (document.getElementById('timelineView').style.display !== 'none') {
-          renderTimelineView();
-        }
-        renderAllSections();
+      showChoiceModal({
+        title: 'やることを王国から消す',
+        desc: 'この操作は取り消せません。',
+        buttons: [
+          { label: '消す', style: 'danger', onClick: function() {
+            deleteTaskById(taskId);
+            closeMonthlyTaskModal();
+            renderMonthlyView();
+            const tlv = document.getElementById('timelineView');
+            if (tlv && tlv.style.display !== 'none') renderTimelineView();
+            renderAllSections();
+          }},
+          { label: 'キャンセル', style: 'cancel' },
+        ],
       });
     }
     // 週間タスク作成モーダルを開く
@@ -9012,25 +9018,30 @@ function myDeckApply(idx) {
       const gantWarn = linkedGants.length > 0
         ? `\n⚠️ このタスクは${linkedGants.length}件の工程に紐づいています。削除すると紐づきも解除されます。`
         : '';
-      showConfirm(`「${task.text}」を王国から消しますか？${gantWarn}`, function() {
-        // 造営工程のtaskIdsから削除 → 各ステップ・志を再計算
-        const affectedGanttIds = [];
-        allTasks.forEach(t => {
-          if (t.kind === 'gantt' && t.taskIds && t.taskIds.includes(taskId)) {
-            t.taskIds = t.taskIds.filter(id => id !== taskId);
-            affectedGanttIds.push(t.id);
-          }
-        });
-        affectedGanttIds.forEach(gid => recalcAllFromGantt(gid));
-        removeTaskFromMaster(taskId);
-        closeTaskEditModal();
-        const dateStr = currentDailyDate || getLocalDateStr(new Date());
-        renderAllSections(dateStr);
-        renderWeeklyView();
-        renderGantView && renderGantView();
-        if (document.getElementById('monthlyView').style.display === 'block') {
-          renderMonthlyView();
-        }
+      showChoiceModal({
+        title: `「${task.text}」を王国から消す`,
+        desc: 'この操作は取り消せません。' + (gantWarn ? '<br><span style="color:#ffb74d;">⚠️ ' + linkedGants.length + '件の工程への紐づきも解除されます。</span>' : ''),
+        buttons: [
+          { label: '消す', style: 'danger', onClick: function() {
+            const affectedGanttIds = [];
+            allTasks.forEach(t => {
+              if (t.kind === 'gantt' && t.taskIds && t.taskIds.includes(taskId)) {
+                t.taskIds = t.taskIds.filter(id => id !== taskId);
+                affectedGanttIds.push(t.id);
+              }
+            });
+            affectedGanttIds.forEach(gid => recalcAllFromGantt(gid));
+            removeTaskFromMaster(taskId);
+            closeTaskEditModal();
+            const dateStr = currentDailyDate || getLocalDateStr(new Date());
+            renderAllSections(dateStr);
+            renderWeeklyView();
+            renderGantView && renderGantView();
+            const mv = document.getElementById('monthlyView');
+            if (mv && mv.style.display === 'block') renderMonthlyView();
+          }},
+          { label: 'キャンセル', style: 'cancel' },
+        ],
       });
     }
     // ID版：タスク削除
@@ -9533,8 +9544,13 @@ function myDeckApply(idx) {
     }
     // 全データクリア - showConfirm経由
     function clearAllData() {
-      showConfirm('本当に全データをクリアしますか？\nこの操作は取り消せません。', function() {
-        executeDataReset();
+      showChoiceModal({
+        title: '⚠️ 全データをクリアする',
+        desc: '王国のすべてのデータが消えます。<br><strong style="color:#ff3b30;">この操作は取り消せません。</strong>',
+        buttons: [
+          { label: '全部消す', style: 'danger', onClick: function() { executeDataReset(); }},
+          { label: 'キャンセル', style: 'cancel' },
+        ],
       });
     }
     // モーダルを閉じる
@@ -12728,7 +12744,7 @@ function loadSettingsUI() {
     function addStampSetting() {
       const stamps = getStamps();
       if (stamps.length >= 20) {
-        showConfirm('スタンプは最大20個までです。', 'OK', false, null);
+        showToast('スタンプは最大20個までです。', {type:'warn', duration:3000});
         return;
       }
       const newStamp = {
@@ -12821,20 +12837,27 @@ function renderDeckHistory() {
 function receiveDeck(deckId) {
   var deck = OFFICIAL_DECKS.find(function(d){ return d.id === deckId; });
   if (!deck) return;
-  showConfirm((deck.title||'デッキ') + '（' + (deck.tasks||[]).length + '枚）を王国に取り込みますか？', '受け取る', false, function() {
-    var today = getLocalDateStr(new Date());
-    deck.tasks.forEach(function(t) {
-      var newTask = createTask(t.text, today, t.time || null, t.section, 'daily_only');
-      if (t.memo) updateTask(newTask.id, { memo: t.memo });
-      if (t.endTime) updateTask(newTask.id, { endTime: t.endTime });
-      updateTask(newTask.id, { deckId: deck.id });
-    });
-    addDeckHistory({ deckId: deck.id, title: deck.title, status: 'active', createdBy: 'やることクラフト公式', tasks: deck.tasks });
-    allSettings.deck.received[deckId] = true; saveAllSettings();
-    saveAllTasks();
-    renderAllSections(today);
-    renderDeckShop();
-    showAdminToast('🛍️ ' + deck.title + 'を受け取った！');
+  showChoiceModal({
+    title: '🎁 ' + (deck.title||'デッキ') + 'を受け取る',
+    desc: (deck.tasks||[]).length + '枚のやることが王国に加わります。',
+    buttons: [
+      { label: '受け取る', style: 'primary', onClick: function() {
+        var today = getLocalDateStr(new Date());
+        deck.tasks.forEach(function(t) {
+          var newTask = createTask(t.text, today, t.time || null, t.section, 'daily_only');
+          if (t.memo) updateTask(newTask.id, { memo: t.memo });
+          if (t.endTime) updateTask(newTask.id, { endTime: t.endTime });
+          updateTask(newTask.id, { deckId: deck.id });
+        });
+        addDeckHistory({ deckId: deck.id, title: deck.title, status: 'active', createdBy: 'やることクラフト公式', tasks: deck.tasks });
+        allSettings.deck.received[deckId] = true; saveAllSettings();
+        saveAllTasks();
+        renderAllSections(today);
+        renderDeckShop();
+        showAdminToast('🛍️ ' + deck.title + 'を受け取った！');
+      }},
+      { label: 'キャンセル', style: 'cancel' },
+    ],
   });
 }
 function receiveDeckAgain(deckId) {
@@ -15965,15 +15988,19 @@ function applyRepeatSave(taskId, task, repeat, repeatEnd, date) {
       return t.repeatGroupId === groupId && t.date >= date && t.id !== taskId;
     }).length;
     if (count > 0) {
-      showConfirm(
-        '繰り返しを解除すると将来の' + count + '件のタスクが削除されます。よろしいですか？',
-        function() {
-          deleteRepeatFutureTasks(groupId, date);
-          updateTask(taskId, { repeat: null, repeatEnd: null, repeatGroupId: null });
-          saveAllTasks();
-          renderAllSections(); renderWeeklyView(); renderMonthlyView();
-        }
-      );
+      showChoiceModal({
+        title: '繰り返しを解除する',
+        desc: '将来の <b>' + count + '件</b> のタスクが削除されます。',
+        buttons: [
+          { label: '解除する', style: 'danger', onClick: function() {
+            deleteRepeatFutureTasks(groupId, date);
+            updateTask(taskId, { repeat: null, repeatEnd: null, repeatGroupId: null });
+            saveAllTasks();
+            renderAllSections(); renderWeeklyView(); renderMonthlyView();
+          }},
+          { label: 'キャンセル', style: 'cancel' },
+        ],
+      });
       return false; // 通常の保存フローを中断
     } else {
       deleteRepeatFutureTasks(groupId, date);
@@ -16474,35 +16501,43 @@ function importDeckFromSettings() {
   try { deck = JSON.parse(raw); }
   catch(e) { alert('コードの形式が正しくありません'); return; }
   if (deck.kind !== 'deck') { alert('コードの形式が正しくありません'); return; }
-  showConfirm((deck.title||'デッキ') + '（' + deck.tasks.length + '枚）を王国に取り込みますか？', '受け取る', false, function() {
-    var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
-    var _deckId = deck.deckId || ('manual_' + Date.now());
-    deck.tasks.forEach(function(d) {
-      var t = (typeof createTask === 'function') ? createTask(d.text, today, null, d.section||1, 'both') : null;
-      if (t) {
-        if (d.memo && typeof updateTask === 'function') updateTask(t.id, { memo: d.memo });
-        if (typeof updateTask === 'function') updateTask(t.id, { deckId: _deckId });
-      }
-    });
-    if (typeof addDeckHistory === 'function') addDeckHistory(deck);
-    if (typeof saveAllTasks === 'function') saveAllTasks();
-    if (typeof renderAllSections === 'function') renderAllSections(today);
-  // 入力欄をクリア
-  document.getElementById('deckImportInput').value = '';
-  // トースト「あ、王国が動いた！」
-  var toast = document.getElementById('settingsSaveToast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'settingsSaveToast';
-    toast.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.88);color:#ffd700;padding:18px 32px;border-radius:16px;font-size:1.05em;font-weight:bold;z-index:99999;text-align:center;pointer-events:none;border:1.5px solid rgba(255,215,0,0.5);box-shadow:0 0 24px rgba(255,215,0,0.2);';
-    document.body.appendChild(toast);
-  }
-  var _author = deck.createdBy ? '<br><span style="font-size:0.72em;color:#aaa;">by ' + deck.createdBy + '</span>' : '';
-  toast.innerHTML = '✨ あ、王国が動いた！<br><span style="font-size:0.82em;color:#ffcc66;">' + (deck.title||'デッキ') + 'を取り込んだ！</span>' + _author;
-  toast.style.display = 'block';
-  clearTimeout(toast._t);
-  toast._t = setTimeout(function(){ toast.style.display = 'none'; }, 3500);
-  }); // showConfirm end
+  showChoiceModal({
+    title: '🎁 ' + (deck.title||'デッキ') + 'を受け取る',
+    desc: deck.tasks.length + '枚のやることが王国に加わります。',
+    buttons: [
+      { label: '受け取る', style: 'primary', onClick: function() {
+        var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
+        var _deckId = deck.deckId || ('manual_' + Date.now());
+        deck.tasks.forEach(function(d) {
+          var t = (typeof createTask === 'function') ? createTask(d.text, today, null, d.section||1, 'both') : null;
+          if (t) {
+            if (d.memo && typeof updateTask === 'function') updateTask(t.id, { memo: d.memo });
+            if (typeof updateTask === 'function') updateTask(t.id, { deckId: _deckId });
+          }
+        });
+        if (typeof addDeckHistory === 'function') addDeckHistory(deck);
+        if (typeof saveAllTasks === 'function') saveAllTasks();
+        if (typeof renderAllSections === 'function') renderAllSections(today);
+        // 入力欄をクリア
+        const inp = document.getElementById('deckImportInput');
+        if (inp) inp.value = '';
+        // トースト「あ、王国が動いた！」
+        var toast = document.getElementById('settingsSaveToast');
+        if (!toast) {
+          toast = document.createElement('div');
+          toast.id = 'settingsSaveToast';
+          toast.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.88);color:#ffd700;padding:18px 32px;border-radius:16px;font-size:1.05em;font-weight:bold;z-index:99999;text-align:center;pointer-events:none;border:1.5px solid rgba(255,215,0,0.5);box-shadow:0 0 24px rgba(255,215,0,0.2);';
+          document.body.appendChild(toast);
+        }
+        var _author = deck.createdBy ? '<br><span style="font-size:0.72em;color:#aaa;">by ' + deck.createdBy + '</span>' : '';
+        toast.innerHTML = '✨ あ、王国が動いた！<br><span style="font-size:0.82em;color:#ffcc66;">' + (deck.title||'デッキ') + 'を取り込んだ！</span>' + _author;
+        toast.style.display = 'block';
+        clearTimeout(toast._t);
+        toast._t = setTimeout(function(){ toast.style.display = 'none'; }, 3500);
+      }},
+      { label: 'キャンセル', style: 'cancel' },
+    ],
+  });
 }
 function buildStarterDeckCode() {
   var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
