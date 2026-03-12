@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.32.48';
+    const APP_VERSION = 'v0.32.63';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -3431,6 +3431,22 @@
         📅 期間・時刻はタスクから自動計算されます
       </div>
       <textarea id="ganttMemoInput" placeholder="自分への引き継ぎメモ（任意）" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:0.9em; box-sizing:border-box; margin-bottom:12px; height:80px; resize:none;"></textarea>
+      <!-- バーカラー設定 -->
+      <div style="margin-bottom:16px;">
+        <label style="font-size:0.8em;color:#666;display:block;margin-bottom:8px;font-weight:600;">🎨 バーの色</label>
+        <div id="ganttPastelPalette" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;"></div>
+        <div style="display:flex;gap:12px;align-items:center;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:0.75em;color:#888;">背景</span>
+            <input id="ganttBgPicker" type="color" value="#f48fb1" style="width:32px;height:24px;border:none;cursor:pointer;border-radius:4px;padding:0;">
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:0.75em;color:#888;">文字</span>
+            <input id="ganttTextPicker" type="color" value="#333333" style="width:32px;height:24px;border:none;cursor:pointer;border-radius:4px;padding:0;">
+          </div>
+          <div id="ganttColorPreview" style="flex:1;height:28px;border-radius:8px;border:1px solid #e0e0e0;display:flex;align-items:center;padding:0 10px;font-size:0.82em;font-weight:700;transition:all 0.2s;">プレビュー</div>
+        </div>
+      </div>
       <!-- タスク紐づけ -->
       <div style="margin-bottom:16px;">
         <label style="font-size:0.8em; color:#666; display:block; margin-bottom:6px; font-weight:600;">紐づくタスク</label>
@@ -3754,6 +3770,13 @@
             <span style="font-size:0.9em;color:#333;font-weight:600;">造営タブを表示する</span>
           </label>
           <p style="margin:6px 0 0 28px;font-size:0.8em;color:#888;">大きな目標をガントチャートで管理します。ナビに「造営」タブが追加されます。</p>
+        </div>
+        <div class="settings-item" style="margin-bottom: 16px;">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="gantAutoScrollNow" onchange="toggleGantAutoScrollNow(this.checked)" style="width:18px;height:18px;accent-color:#4facfe;cursor:pointer;">
+            <span style="font-size:0.9em;color:#333;font-weight:600;">日次ビューで現在時刻への自動スクロールを無効にする</span>
+          </label>
+          <p style="margin:6px 0 0 28px;font-size:0.8em;color:#888;">チェックすると、操作後に現在時刻へ自動スクロールしなくなります。</p>
         </div>
       </div>
       <div class="settings-section">
@@ -4422,6 +4445,7 @@
         craftModeEnabled: false,
         craftRenderMode:  '3d',
         gantEnabled:      true,
+        gantDisableAutoScroll: false,
         gantTimeScale:    'day',
         gantShowCompleted: true
       },
@@ -5690,6 +5714,8 @@ function myDeckApply(idx) {
       // スライダー倍率（100〜300%）を反映
       const cellScale = parseFloat(allSettings.ui.weeklyCellScale || '100') / 100;
       // 行高スライダーの初期値を復元
+      const _gantAutoScroll = document.getElementById('gantAutoScrollNow');
+      if (_gantAutoScroll) _gantAutoScroll.checked = allSettings.ui.gantDisableAutoScroll === true;
       const _rowHSlider = document.getElementById('weeklyRowHSlider');
       if (_rowHSlider) _rowHSlider.value = allSettings.ui.weeklyRowH || '80';
       var _rowHSliderSp = document.getElementById('weeklyRowHSliderSp');
@@ -7268,6 +7294,10 @@ function myDeckApply(idx) {
       });
       renderGantChart();
     }
+    function toggleGantAutoScrollNow(checked) {
+      allSettings.ui.gantDisableAutoScroll = checked;
+      saveAllSettings();
+    }
     function toggleGantShowCompleted(checked) {
       allSettings.ui.gantShowCompleted = checked;
       saveAllSettings();
@@ -7388,32 +7418,41 @@ function myDeckApply(idx) {
     // ctx = { scale, colW, dayW, minDate, chartW, nowLine, labelW, rowH }
     // ---- 共通：タスクバーHTML生成 ----
     function _buildTaskBar(t, ctx) {
-      const color = ctx.barColor || '#3498db';
+      const color = ctx.barColor || '#c5cae9';
       const done  = !!t.done;
-      const alpha = done ? '44' : '99';
       if (ctx.scale === 'day') {
-        if (!t.time) return '<div style="position:absolute;left:4px;top:10px;font-size:9px;color:#ffaa44;white-space:nowrap;">時刻未定</div>';
+        if (!t.time) return '<div style="position:absolute;left:6px;top:50%;transform:translateY(-50%);font-size:9px;color:#bbb;white-space:nowrap;">時刻未定</div>';
         const [sh, sm] = t.time.split(':').map(Number);
         const sx = Math.round((sh * 60 + sm) / 60 * ctx.colW);
+        // endTimeで幅決定、なければ colW（1時間幅）をデフォルト
         let bw = ctx.colW;
         if (t.endTime) {
           const [eh, em] = t.endTime.split(':').map(Number);
-          bw = Math.max(Math.round((eh * 60 + em - sh * 60 - sm) / 60 * ctx.colW), 8);
+          bw = Math.max(Math.round((eh * 60 + em - sh * 60 - sm) / 60 * ctx.colW), ctx.colW);
         }
-        const label = (done ? '✓ ' : '') + t.time + (t.endTime ? '〜' + t.endTime : '');
-        const barBg = done ? '#ccc' : color + alpha;
-        return '<div style="position:absolute;left:' + sx + 'px;top:5px;width:' + bw + 'px;height:22px;'
-          + 'background:' + barBg + ';border-radius:4px;' + (done ? 'opacity:0.5;' : '') + '"></div>'
-          + (bw > 40 ? '<div style="position:absolute;left:' + (sx + 4) + 'px;top:8px;font-size:11px;color:' + (done ? '#999' : '#fff') + ';white-space:nowrap;overflow:hidden;pointer-events:none;' + (done ? 'text-decoration:line-through;' : '') + '">' + label + '</div>' : '');
+        const barBg   = done ? 'rgba(200,200,200,0.5)' : ctx.barColor;
+        const textCol = done ? '#aaa' : (ctx.textColor || '#1a1a2e');
+        const border = done ? 'none' : '3px solid ' + ctx.barColor + 'ff';
+        const taskName = (t.text || '').slice(0, 18);
+        const timeTxt  = t.time + (t.endTime ? '〜' + t.endTime : '');
+        // バー本体
+        const bar = '<div style="position:absolute;left:' + sx + 'px;top:0;width:' + bw + 'px;height:100%;'
+          + 'background:' + barBg + ';border-radius:6px;border-left:' + border + ';box-sizing:border-box;overflow:hidden;pointer-events:none;">'
+          // バー内：タスク名
+          + '<div style="padding:3px 5px;font-size:10px;font-weight:700;color:' + textCol + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;' + (done ? 'text-decoration:line-through;' : '') + '">' + taskName + '</div>'
+          // バー内：時刻
+          + (ctx.rowH > 48 ? '<div style="padding:0 5px;font-size:8px;color:' + (done ? '#bbb' : textCol.replace(')',',0.75)').replace('rgb','rgba')) + ';white-space:nowrap;">' + timeTxt + '</div>' : '')
+          + '</div>';
+        return bar;
       } else {
         if (!t.date || !ctx.minDate || isNaN(new Date(t.date).getTime())) return '<div style="position:absolute;left:4px;top:10px;font-size:9px;color:#ffaa44;white-space:nowrap;">日付未定</div>';
         const _taskDate = new Date(t.date); _taskDate.setHours(0,0,0,0);
         const sx = Math.round((_taskDate - ctx.minDate) / 86400000) * ctx.dayW;
         const bw = Math.max(ctx.dayW, 6);
-        const _barBg2 = done ? '#ccc' : color + alpha;
+        const _barBg2 = done ? '#ccc' : color + '99';
         return '<div style="position:absolute;left:' + sx + 'px;top:5px;width:' + bw + 'px;height:22px;'
           + 'background:' + _barBg2 + ';border-radius:4px;' + (done ? 'opacity:0.5;' : '') + '"></div>'
-          + (bw > 14 ? '<div style="position:absolute;left:' + (sx + 2) + 'px;top:8px;font-size:10px;color:' + (done ? '#999' : '#fff') + ';white-space:nowrap;overflow:hidden;pointer-events:none;">' + (done ? '✓' : (t.time || '')) + '</div>' : '');
+          + (bw > 14 ? '<div style="position:absolute;left:' + (sx+2) + 'px;top:8px;font-size:10px;color:' + (done ? '#999' : '#fff') + ';white-space:nowrap;overflow:hidden;pointer-events:none;">' + (done ? '✓' : (t.time || '')) + '</div>' : '');
       }
     }
 
@@ -7427,7 +7466,8 @@ function myDeckApply(idx) {
       const expandId = 'ganttExpand_' + gantt.id;
       const bp       = _tasks.find(t => t.id === gantt.blueprintId);
       const color    = (bp && bp.color) ? bp.color : '#3498db';
-      ctx.barColor   = gantt.achieved ? '#f39c12' : color;
+      ctx.barColor   = gantt.achieved ? '#f39c12' : (gantt.color || '#c5cae9');
+      ctx.textColor  = gantt.textColor || '#1a1a2e';
 
       // ステップ行のバー（ステップ全体の塊）
       let stepBarHtml = '';
@@ -7503,21 +7543,21 @@ function myDeckApply(idx) {
       }
 
       return '<div>'
-        + '<div style="display:flex;border-bottom:1px solid #efefef;background:' + bg + ';min-height:' + ctx.rowH + 'px;align-items:center;border-left:3px solid ' + ctx.barColor + '33;">'
-        + '<div style="width:' + (ctx.labelW-3) + 'px;min-width:' + (ctx.labelW-3) + 'px;height:' + ctx.rowH + 'px;border-right:1px solid #e0e0e0;display:flex;align-items:center;padding:0 2px 0 4px;gap:2px;">'
+        + '<div style="display:flex;border-bottom:1px solid #efefef;background:' + bg + ';min-height:' + ctx.rowH + 'px;align-items:stretch;border-left:3px solid ' + ctx.barColor + '33;">'
+        + '<div style="width:' + (ctx.labelW-3) + 'px;min-width:' + (ctx.labelW-3) + 'px;min-height:' + ctx.rowH + 'px;border-right:1px solid #e0e0e0;display:flex;align-items:center;padding:0 2px 0 4px;gap:2px;">'
         + expandBtn
         + '<button onclick="openGanttEditor(\'' + gantt.id + '\')" style="flex:1;height:' + ctx.rowH + 'px;background:none;border:none;text-align:left;padding:0 4px;cursor:pointer;display:flex;flex-direction:column;justify-content:center;min-width:0;">'
-        + '<div style="font-size:11px;color:#262626;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (gantt.title || '') + '</div>'
+        + '<div style="font-size:11px;color:#262626;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3;word-break:break-all;">' + (gantt.title || '') + '</div>'
         + '<div style="font-size:9px;color:#aaa;">' + (taskCount > 0 ? doneCount + '/' + taskCount + '件' : 'まだ何も決まっていない') + '</div>'
         + '</button></div>'
-        + '<div style="flex:1;position:relative;height:' + ctx.rowH + 'px;overflow:hidden;min-width:' + ctx.chartW + 'px;">'
+        + '<div style="flex:1;position:relative;height:' + ctx.rowH + 'px;overflow:hidden;min-width:' + ctx.chartW + 'px;border-right:1px solid #e0e0e0;padding:3px 0;box-sizing:border-box;">'
         + stepBarHtml + '</div></div>'
         + taskRows + '</div>';
     }
 
     // ---- 日スケール描画 ----
     function _renderGantDay(htmlChart, gants) {
-      const HOURS = 24, colW = 36, labelW = 100, rowH = 40;
+      const HOURS = 24, colW = 44, labelW = 130, rowH = 72;
       const chartW = HOURS * colW;
       const now = new Date();
       const nowX = Math.round((now.getHours() * 60 + now.getMinutes()) / 60 * colW);
@@ -7527,9 +7567,10 @@ function myDeckApply(idx) {
       for (let h = 0; h <= HOURS; h++) {
         const x = h * colW;
         const col = h === 12 ? '#f39c12' : '#999';
-        headerCols += '<div style="position:absolute;left:' + x + 'px;top:0;bottom:0;width:1px;background:' + (h % 6 === 0 ? '#ccc' : '#efefef') + ';pointer-events:none;"></div>'
-          + (h < HOURS ? '<div style="position:absolute;left:' + (x+2) + 'px;top:14px;font-size:9px;color:' + col + ';white-space:nowrap;font-weight:' + (h%6===0?'600':'400') + ';pointer-events:none;">'
-            + (h === 0 ? '0時' : h === 12 ? '正午' : h%6===0 ? h+'時' : h%3===0 ? String(h) : '') + '</div>' : '');
+        const isNight = h < 6 || h >= 21;
+        headerCols += '<div style="position:absolute;left:' + x + 'px;top:0;bottom:0;width:1px;background:' + (h % 6 === 0 ? '#d0d0d0' : 'rgba(0,0,0,0.04)') + ';pointer-events:none;"></div>'
+          + (h < HOURS ? '<div style="position:absolute;left:' + (x+2) + 'px;top:18px;font-size:9px;color:' + col + ';white-space:nowrap;font-weight:' + (h%6===0?'700':'400') + ';pointer-events:none;">'
+            + (h === 0 ? '0時' : h === 12 ? '正午' : h%3===0 ? h+'時' : '') + '</div>' : '');
       }
       const nowLine = '<div style="position:absolute;left:' + nowX + 'px;top:0;bottom:0;width:2px;background:#ff3b30;opacity:0.85;z-index:2;pointer-events:none;"></div>'
         + '<div style="position:absolute;left:' + (nowX+3) + 'px;top:2px;font-size:9px;color:#ff3b30;font-weight:700;z-index:2;white-space:nowrap;pointer-events:none;">'
@@ -7546,13 +7587,13 @@ function myDeckApply(idx) {
         + '<span style="font-size:9px;color:#aaa;">工程</span>'
         + '<span style="font-size:9px;color:#888;font-weight:600;">' + todayLabel + '</span>'
         + '</div>'
-        + '<div style="flex:1;position:relative;height:44px;min-width:' + chartW + 'px;overflow:hidden;background:#fafafa;">'
+        + '<div style="flex:1;position:relative;height:56px;min-width:' + chartW + 'px;overflow:hidden;background:#fafafa;border-right:1px solid #ccc;">'
         + '<div style="position:absolute;left:0;top:0;width:' + (6*colW) + 'px;bottom:0;background:rgba(30,30,80,0.05);"></div>'
         + '<div style="position:absolute;left:' + (21*colW) + 'px;top:0;width:' + (3*colW) + 'px;bottom:0;background:rgba(30,30,80,0.05);"></div>'
         + headerCols + nowLine + '</div></div>' + rows;
       requestAnimationFrame(function() {
         const area = htmlChart.closest('#gantChartArea') || htmlChart.parentElement;
-        if (area) area.scrollLeft = Math.max(0, nowX - Math.floor((area.clientWidth - labelW) / 2));
+        if (area && !allSettings.ui.gantDisableAutoScroll) area.scrollLeft = Math.max(0, nowX - Math.floor((area.clientWidth - labelW) / 2));
       });
     }
 
@@ -7617,7 +7658,7 @@ function myDeckApply(idx) {
         '<div style="display:flex;border-bottom:2px solid #d0d0d0;background:#fff;position:sticky;top:0;z-index:3;">'
         + '<div style="width:' + labelW + 'px;min-width:' + labelW + 'px;border-right:1px solid #e0e0e0;display:flex;align-items:center;padding:0 6px;">'
         + '<span style="font-size:10px;color:#aaa;">工程</span></div>'
-        + '<div style="flex:1;position:relative;height:44px;min-width:' + chartW + 'px;overflow:hidden;background:#fafafa;">'
+        + '<div style="flex:1;position:relative;height:44px;min-width:' + chartW + 'px;overflow:hidden;background:#fafafa;border-right:1px solid #ccc;">'
         + monthHeader + dayHeader + nowLine2 + '</div></div>' + rows;
     }
 
@@ -7807,6 +7848,40 @@ function myDeckApply(idx) {
       const initialTaskIds = gantt ? (gantt.taskIds || []) : [];
       renderGanttLinkedTasks(initialTaskIds);
       _updateGanttAutoDateInfo(initialTaskIds);
+      // カラー初期化
+      const _ganttPastels = [
+        {bg:'#ffcdd2',text:'#c62828'},{bg:'#f8bbd0',text:'#ad1457'},{bg:'#e1bee7',text:'#6a1b9a'},
+        {bg:'#c5cae9',text:'#283593'},{bg:'#bbdefb',text:'#1565c0'},{bg:'#b2dfdb',text:'#00695c'},
+        {bg:'#c8e6c9',text:'#2e7d32'},{bg:'#fff9c4',text:'#f57f17'},{bg:'#ffe0b2',text:'#e65100'},
+        {bg:'#fce4ec',text:'#c62828'},{bg:'#f3e5f5',text:'#6a1b9a'},{bg:'#e3f2fd',text:'#1565c0'},
+        {bg:'#e8f5e9',text:'#2e7d32'},{bg:'#fff3e0',text:'#e65100'},{bg:'#efebe9',text:'#4e342e'},
+        {bg:'#eceff1',text:'#37474f'}
+      ];
+      const _bgPicker = document.getElementById('ganttBgPicker');
+      const _textPicker = document.getElementById('ganttTextPicker');
+      const _preview = document.getElementById('ganttColorPreview');
+      const _palette = document.getElementById('ganttPastelPalette');
+      const _initBg   = (gantt && gantt.color)     || '#c5cae9';
+      const _initText = (gantt && gantt.textColor)  || '#1565c0';
+      if (_bgPicker)   _bgPicker.value   = _initBg;
+      if (_textPicker) _textPicker.value = _initText;
+      function _updateGanttPreview() {
+        const bg = _bgPicker ? _bgPicker.value : _initBg;
+        const tx = _textPicker ? _textPicker.value : _initText;
+        if (_preview) { _preview.style.background = bg; _preview.style.color = tx; }
+      }
+      _updateGanttPreview();
+      if (_bgPicker)   _bgPicker.addEventListener('input',   _updateGanttPreview);
+      if (_textPicker) _textPicker.addEventListener('input', _updateGanttPreview);
+      if (_palette) {
+        _palette.innerHTML = _ganttPastels.map(function(p, i) {
+          return '<div style="width:22px;height:22px;border-radius:50%;background:' + p.bg + ';border:2px solid ' + p.text + ';cursor:pointer;flex-shrink:0;" '
+            + 'onclick="(function(){var b=document.getElementById(\'ganttBgPicker\');var t=document.getElementById(\'ganttTextPicker\');'
+            + 'if(b)b.value=\'' + p.bg + '\';if(t)t.value=\'' + p.text + '\';'
+            + 'var pv=document.getElementById(\'ganttColorPreview\');if(pv){pv.style.background=\'' + p.bg + '\';pv.style.color=\'' + p.text + '\';}})();" '
+            + 'title="' + p.bg + '"></div>';
+        }).join('');
+      }
       modal.style.display = 'flex';
     }
     function renderGanttLinkedTasks(taskIds) {
@@ -8036,6 +8111,10 @@ function myDeckApply(idx) {
         if (gantt) {
           gantt.title = titleVal;
           gantt.memo = memo ? memo.value.trim() : '';
+          const _sv_bg = document.getElementById('ganttBgPicker');
+          const _sv_tx = document.getElementById('ganttTextPicker');
+          if (_sv_bg)   gantt.color     = _sv_bg.value;
+          if (_sv_tx)   gantt.textColor = _sv_tx.value;
           savedGanttId = gantt.id;
         }
       } else {
@@ -8055,6 +8134,8 @@ function myDeckApply(idx) {
           progressManual: null,
           progressAuto: 0,
           memo: memo ? memo.value.trim() : '',
+          color: (function(){ const e=document.getElementById('ganttBgPicker'); return e?e.value:'#bbdefb'; })(),
+          textColor: (function(){ const e=document.getElementById('ganttTextPicker'); return e?e.value:'#1565c0'; })(),
           achieveMode: 'both',
           achieved: false,
           achievedAt: null
