@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.32.39';
+    const APP_VERSION = 'v0.32.40';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -7466,7 +7466,20 @@ function getDeckGDP() {
         const taskHtml = taskIds.map(function(tid) {
           const t = _tasks.find(x => x.id === tid);
           if (!t) return '';
-          const toggleFn = "(function(){var t=allTasks.find(function(x){return x.id==='" + tid + "';});if(t){t.done=!t.done;saveAllTasks();if(typeof recalcAll==='function')recalcAll('" + tid + "');renderGantView();}})()";
+          const toggleFn = "(function(){" +
+            "var t=allTasks.find(function(x){return x.id==='" + tid + "';});" +
+            "if(t){" +
+            "t.done=!t.done;" +
+            "saveAllTasks();" +
+            "if(typeof recalcAll==='function')recalcAll('" + tid + "');" +
+            // 展開状態を保存してから再描画
+            "var openIds=[];" +
+            "document.querySelectorAll('[id^=ganttExpand_]').forEach(function(el){if(el.style.display!=='none')openIds.push(el.id);});" +
+            "renderGantView();" +
+            // 再描画後に展開状態を復元
+            "setTimeout(function(){openIds.forEach(function(id){var el=document.getElementById(id);var btn=document.getElementById(id+'_btn');if(el){el.style.display='block';if(btn)btn.style.transform='rotate(90deg)';}});},0);" +
+            "}" +
+            "})()";
           const tBar = _buildTaskBar(t, ctx) + (ctx.scale === 'day' ? (ctx.nowLine || '') : (ctx.nowLine2 || ''));
           return '<div style="display:flex;align-items:stretch;border-bottom:1px solid #efefef;">'
             + '<div style="width:' + ctx.labelW + 'px;min-width:' + ctx.labelW + 'px;padding:0 4px 0 20px;border-right:1px solid #e0e0e0;display:flex;align-items:center;gap:3px;overflow:hidden;">'
