@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.33.19';
+    const APP_VERSION = 'v0.33.28';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -3398,7 +3398,8 @@
   </div>
   <!-- blueprintエディタモーダル -->
   <div id="blueprintEditorModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
-    <div style="background:#fff; border-radius:16px; padding:24px; width:90%; max-width:480px; max-height:85vh; overflow-y:auto;">
+    <div style="background:#fff; border-radius:16px; width:90%; max-width:480px; max-height:85vh; overflow:hidden; display:flex; flex-direction:column;">
+      <div style="overflow-y:auto; padding:24px; flex:1;">
       <h3 style="margin:0 0 16px 0; font-size:1.1em; font-weight:700;">志（こころざし）<span style="font-size:0.72em;color:#aaa;font-weight:400;margin-left:6px;">造営計画</span></h3>
       <input id="blueprintTitleInput" type="text" placeholder="計画名（例：英語上達、体を鍛える）" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:0.95em; box-sizing:border-box; margin-bottom:12px;">
       <textarea id="blueprintVisionInput" placeholder="ビジョン（任意）" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:0.9em; box-sizing:border-box; margin-bottom:12px; height:60px; resize:none;"></textarea>
@@ -3414,7 +3415,7 @@
       </div>
       <div style="margin-bottom:16px;">
         <label style="font-size:0.8em;color:#666;display:block;margin-bottom:8px;font-weight:600;">🎨 カードの色</label>
-        <div id="blueprintPastelPalette" style="display:flex;flex-wrap:nowrap;gap:5px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;scrollbar-width:none;-webkit-overflow-scrolling:touch;"></div>
+        <div id="blueprintPastelPalette" style="display:flex;flex-wrap:nowrap;gap:4px;overflow-x:auto;padding:3px 3px 6px;margin-bottom:10px;scrollbar-width:none;-webkit-overflow-scrolling:touch;align-items:center;"></div>
         <div style="display:flex;gap:12px;align-items:center;">
           <div style="display:flex;align-items:center;gap:6px;">
             <span style="font-size:0.75em;color:#888;">背景</span>
@@ -3427,19 +3428,21 @@
           <div id="blueprintColorPreview" style="flex:1;height:28px;border-radius:8px;border:1px solid #e0e0e0;display:flex;align-items:center;padding:0 10px;font-size:0.82em;font-weight:700;transition:all 0.2s;">プレビュー</div>
         </div>
       </div>
-      <div style="display:flex; gap:8px;">
-        <button onclick="saveBlueprintEditor()" style="flex:1; padding:10px; background:#262626; color:#fff; border:none; border-radius:8px; font-size:0.9em; cursor:pointer; font-weight:600;">保存</button>
-        <button onclick="closeBlueprintEditor()" style="padding:10px 16px; background:#f5f5f5; border:none; border-radius:8px; font-size:0.9em; cursor:pointer;">キャンセル</button>
-        <button id="blueprintDeleteBtn" onclick="deleteBlueprint()" style="padding:10px 16px; background:#fff; border:1px solid #ff3b30; color:#ff3b30; border-radius:8px; font-size:0.9em; cursor:pointer; display:none;">削除</button>
+      </div>
+      <div style="display:flex;gap:8px;padding:12px 24px 20px;border-top:1px solid #f0f0f0;border-radius:0 0 16px 16px;background:#fff;flex-shrink:0;">
+        <button onclick="saveBlueprintEditor()" style="flex:1;padding:10px;background:#262626;color:#fff;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;font-weight:600;">保存</button>
+        <button onclick="closeBlueprintEditor()" style="padding:10px 16px;background:#f5f5f5;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;">キャンセル</button>
+        <button id="blueprintDeleteBtn" onclick="deleteBlueprint()" style="padding:10px 16px;background:#fff;border:1px solid #ff3b30;color:#ff3b30;border-radius:8px;font-size:0.9em;cursor:pointer;display:none;">削除</button>
       </div>
     </div>
   </div>
   <!-- ganttエディタモーダル -->
   <div id="ganttEditorModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
-    <div style="background:#fff; border-radius:16px; padding:24px; width:90%; max-width:480px; max-height:85vh; overflow-y:auto;">
+    <div style="background:#fff; border-radius:16px; width:90%; max-width:480px; max-height:85vh; overflow:hidden; display:flex; flex-direction:column;">
+      <div style="overflow-y:auto; padding:24px; flex:1;">
       <h3 style="margin:0 0 16px 0; font-size:1.1em; font-weight:700;">手立て（てだて）<span style="font-size:0.72em;color:#aaa;font-weight:400;margin-left:6px;">ステップ</span></h3>
       <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;">
-        <button id="ganttEmojiBtn" onclick="toggleGanttEmojiPicker()" style="font-size:1.6em;width:44px;height:44px;border:1px solid #ddd;border-radius:8px;background:#fafafa;cursor:pointer;flex-shrink:0;">🏗</button>
+        <button id="ganttEmojiBtn" onclick="toggleGanttEmojiPicker()" title="紋章を変える" style="font-size:1.6em;width:44px;height:44px;border:1px solid #ddd;border-radius:8px;background:#fafafa;cursor:pointer;flex-shrink:0;position:relative;transition:transform 0.15s,box-shadow 0.15s;" onmouseenter="this.style.transform='scale(1.15)';this.style.boxShadow='0 4px 12px rgba(92,107,192,0.3)';this._tip=Object.assign(document.createElement('div'),{textContent:'🏰 紋章を変える',style:'position:absolute;bottom:-30px;left:50%;transform:translateX(-50%);background:#3c3c5c;color:#fff;font-size:10px;padding:3px 8px;border-radius:6px;white-space:nowrap;pointer-events:none;z-index:99;font-family:sans-serif;'});this.appendChild(this._tip);" onmouseleave="this.style.transform='';this.style.boxShadow='';if(this._tip)this._tip.remove();">🏗</button>
         <input id="ganttTitleInput" type="text" placeholder="工程名（例：基礎固め、仕上げ）" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:0.95em;box-sizing:border-box;">
       </div>
       <div id="ganttEmojiPicker" style="display:none;margin-bottom:12px;background:#f9f9f9;border:1px solid #e0e0e0;border-radius:10px;padding:10px;">
@@ -3453,7 +3456,7 @@
       <!-- バーカラー設定 -->
       <div style="margin-bottom:16px;">
         <label style="font-size:0.8em;color:#666;display:block;margin-bottom:8px;font-weight:600;">🎨 バーの色</label>
-        <div id="ganttPastelPalette" style="display:flex;flex-wrap:nowrap;gap:5px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;scrollbar-width:none;-webkit-overflow-scrolling:touch;"></div>
+        <div id="ganttPastelPalette" style="display:flex;flex-wrap:nowrap;gap:4px;overflow-x:auto;padding:3px 3px 6px;margin-bottom:10px;scrollbar-width:none;-webkit-overflow-scrolling:touch;align-items:center;"></div>
         <div style="display:flex;gap:12px;align-items:center;">
           <div style="display:flex;align-items:center;gap:6px;">
             <span style="font-size:0.75em;color:#888;">背景</span>
@@ -3478,10 +3481,11 @@
           <!-- 検索結果がJSで挿入される -->
         </div>
       </div>
-      <div style="display:flex; gap:8px;">
-        <button onclick="saveGanttEditor()" style="flex:1; padding:10px; background:#262626; color:#fff; border:none; border-radius:8px; font-size:0.9em; cursor:pointer; font-weight:600;">保存</button>
-        <button onclick="closeGanttEditor()" style="padding:10px 16px; background:#f5f5f5; border:none; border-radius:8px; font-size:0.9em; cursor:pointer;">キャンセル</button>
-        <button id="ganttDeleteBtn" onclick="deleteGantt()" style="padding:10px 16px; background:#fff; border:1px solid #ff3b30; color:#ff3b30; border-radius:8px; font-size:0.9em; cursor:pointer; display:none;">削除</button>
+      </div>
+      <div style="display:flex;gap:8px;padding:12px 24px 20px;border-top:1px solid #f0f0f0;border-radius:0 0 16px 16px;background:#fff;flex-shrink:0;">
+        <button onclick="saveGanttEditor()" style="flex:1;padding:10px;background:#262626;color:#fff;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;font-weight:600;">保存</button>
+        <button onclick="closeGanttEditor()" style="padding:10px 16px;background:#f5f5f5;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;">キャンセル</button>
+        <button id="ganttDeleteBtn" onclick="deleteGantt()" style="padding:10px 16px;background:#fff;border:1px solid #ff3b30;color:#ff3b30;border-radius:8px;font-size:0.9em;cursor:pointer;display:none;">削除</button>
       </div>
     </div>
   </div>
@@ -7284,7 +7288,8 @@ function myDeckApply(idx) {
       {bg:'#ffe0b2',text:'#e65100'},{bg:'#fce4ec',text:'#880e4f'},
       {bg:'#f3e5f5',text:'#6a1b9a'},{bg:'#e3f2fd',text:'#0d47a1'},
       {bg:'#e8f5e9',text:'#1b5e20'},{bg:'#fff3e0',text:'#bf360c'},
-      {bg:'#efebe9',text:'#3e2723'},{bg:'#eceff1',text:'#263238'}
+      {bg:'#efebe9',text:'#3e2723'},{bg:'#eceff1',text:'#263238'},
+      {bg:'#e0f7fa',text:'#006064'}
     ];
     function getBlueprints() {
       return allTasks.filter(t => t.kind === 'blueprint').sort((a,b) => (a.order||0)-(b.order||0));
@@ -7400,9 +7405,11 @@ function myDeckApply(idx) {
         el.style.cssText = 'display:none;position:absolute;z-index:9999;border-radius:10px;padding:10px 14px;font-size:11px;line-height:1.7;font-weight:600;pointer-events:none;white-space:pre;box-shadow:0 4px 16px rgba(0,0,0,0.18);';
         document.body.appendChild(el);
       }
+      const textColor = card.getAttribute('data-bp-textcolor') || '#fff';
       el.textContent = msg.replace(/\|/g, '\n');
-      el.style.background = color + 'ee';
-      el.style.color = '#fff';
+      el.style.background = color + '22';
+      el.style.color = textColor;
+      el.style.border = '1.5px solid ' + color + '88';
       el.style.display = 'block';
       // カード直下に表示
       const rect = card.getBoundingClientRect();
@@ -7570,7 +7577,7 @@ function myDeckApply(idx) {
         " onclick="selectGantBlueprint('${bp.id}')"
            onmouseenter="_showBlueprintTip(this)"
            onmouseleave="_hideBlueprintTip()"
-           data-bp-msg="${_bpMsg}" data-bp-color="${color}">
+           data-bp-msg="${_bpMsg}" data-bp-color="${color}" data-bp-textcolor="${bp.textColor||'#1a237e'}">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
             <div style="font-size:0.85em;font-weight:600;color:#262626;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;">${bp.title}</div>
             <button onclick="event.stopPropagation();openBlueprintEditor('${bp.id}')" style="background:none;border:none;font-size:0.75em;color:#aaa;cursor:pointer;padding:2px;">✏️</button>
@@ -7581,7 +7588,7 @@ function myDeckApply(idx) {
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
             <div style="font-size:0.75em;color:#888;">${progress}% · ${ganttCount}工程 ${bp.achieved ? '✅' : ''}</div>
             <button onclick="event.stopPropagation();_gantSelectedBlueprintId='${bp.id}';openGanttEditor(null);" style="
-              background:${color}; color:#fff; border:none; border-radius:8px;
+              background:${color}; color:${bp.textColor||'#fff'}; border:none; border-radius:8px;
               font-size:0.75em; padding:3px 8px; cursor:pointer; white-space:nowrap;
             ">＋工程</button>
           </div>
@@ -7932,11 +7939,22 @@ function myDeckApply(idx) {
       for (let h = startH; h <= endH; h++) {
         const x = (h - startH) * colWe;
         const isMajor = h % 3 === 0;
-        headerCols += '<div style="position:absolute;left:' + x + 'px;top:0;bottom:0;width:1px;background:' + (isMajor ? '#b0b8c8' : 'rgba(0,0,0,0.06)') + ';pointer-events:none;"></div>';
-        if (h < endH && isMajor) {
+        // 1時間区切り線
+        headerCols += '<div style="position:absolute;left:' + x + 'px;top:0;bottom:0;width:1px;background:' + (isMajor ? '#b0b8c8' : 'rgba(0,0,0,0.10)') + ';pointer-events:none;"></div>';
+        // 15分・30分・45分のサブ目盛り線
+        if (h < endH) {
+          [1,2,3].forEach(function(q) {
+            const qx = x + Math.round(colWe * q / 4);
+            const isHalf = q === 2;
+            headerCols += '<div style="position:absolute;left:' + qx + 'px;top:' + (isHalf ? '30%' : '45%') + ';bottom:0;width:1px;background:rgba(0,0,0,' + (isHalf ? '0.08' : '0.04') + ');pointer-events:none;"></div>';
+          });
+        }
+        if (h < endH) {
           const label = h === 0 ? '0時' : h === 12 ? '正午' : h + '時';
-          const col   = h === 12 ? '#f39c12' : '#555';
-          headerCols += '<div style="position:absolute;left:' + (x + 4) + 'px;top:50%;transform:translateY(-50%);font-size:12px;font-weight:700;color:' + col + ';white-space:nowrap;pointer-events:none;">' + label + '</div>';
+          const col   = h === 12 ? '#f39c12' : (isMajor ? '#444' : '#888');
+          const fw    = isMajor ? '700' : '500';
+          const fs    = isMajor ? '12px' : '10px';
+          headerCols += '<div style="position:absolute;left:' + (x + 3) + 'px;top:50%;transform:translateY(-50%);font-size:' + fs + ';font-weight:' + fw + ';color:' + col + ';white-space:nowrap;pointer-events:none;">' + label + '</div>';
         }
       }
 
@@ -7990,14 +8008,17 @@ function myDeckApply(idx) {
           ? '<button data-eid="' + eid + '" onclick="_gantToggle(this)" style="background:none;border:none;font-size:13px;color:#888;cursor:pointer;padding:2px 2px;flex-shrink:0;transition:transform 0.15s;width:18px;">›</button>'
           : '<span style="display:inline-block;width:18px;"></span>';
         const labelCell = '<td style="position:sticky;left:0;z-index:2;background:' + bg + ';border-right:1px solid #d0d8e8;border-bottom:1px solid #efefef;border-left:3px solid ' + barColor + '55;padding:0;width:' + labelW + 'px;min-width:' + labelW + 'px;max-width:' + labelW + 'px;vertical-align:middle;">'
-          + '<div style="display:flex;align-items:center;padding:0 2px;min-height:' + rowH + 'px;">'
+          + '<div style="display:flex;align-items:center;padding:0 2px;min-height:' + rowH + 'px;overflow:visible;">'
           + expandBtn
+          + '<div style="flex:1;min-width:0;overflow:hidden;display:flex;align-items:center;">'
           + '<button data-gid="' + gantt.id + '" onclick="_gantEdit(this)" style="flex:1;background:none;border:none;text-align:left;padding:4px 2px;cursor:pointer;display:flex;align-items:center;gap:4px;min-width:0;overflow:hidden;min-height:' + rowH + 'px;">'
           + '<div style="font-size:1.1em;flex-shrink:0;width:20px;text-align:center;">' + (gantt.emoji||'🏰') + '</div>'
           + '<div style="flex:1;min-width:0;overflow:hidden;">'
           + '<div style="font-size:10px;color:#262626;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;">' + (gantt.title||'') + '</div>'
           + '<div style="font-size:9px;color:#aaa;margin-top:1px;">' + (tc>0 ? dc+'/'+tc+'件' : '未定') + '</div>'
           + '</div></button>'
+          + '</div>'
+          + '<button data-gid="' + gantt.id + '" onclick="_gantEdit(this)" style="background:none;border:none;font-size:13px;cursor:pointer;padding:0 2px;flex-shrink:0;opacity:0.5;line-height:1;">✏️</button>'
           + '<button data-gid="' + gantt.id + '" onclick="_gantAddTask(this)" style="background:' + barColor + '44;border:none;border-radius:50%;font-size:13px;font-weight:700;cursor:pointer;width:22px;height:22px;flex-shrink:0;line-height:22px;text-align:center;padding:0;margin-right:3px;">+</button>'
           + '</div></td>';
 
@@ -8199,7 +8220,9 @@ function myDeckApply(idx) {
       const _bpPastels = GANT_PASTELS;
       if (_bpPalette) {
         _bpPalette.innerHTML = _bpPastels.map(function(p) {
-          return '<div style="width:22px;height:22px;border-radius:50%;background:' + p.bg + ';border:2px solid ' + p.text + ';cursor:pointer;flex-shrink:0;" '
+          return '<div style="width:20px;height:20px;border-radius:4px;background:' + p.bg + ';box-shadow:inset 0 0 0 1.5px ' + p.text + '44;cursor:pointer;flex-shrink:0;transition:transform 0.1s,box-shadow 0.1s;" '
+            + 'onmouseenter="this.style.transform=\'scale(1.25)\';this.style.boxShadow=\'inset 0 0 0 1.5px ' + p.text + ',0 2px 6px rgba(0,0,0,0.15)\';" '
+            + 'onmouseleave="this.style.transform=\'\';this.style.boxShadow=\'inset 0 0 0 1.5px ' + p.text + '44\';" '
             + 'onclick="(function(){var b=document.getElementById(\'blueprintBgPicker\');var t=document.getElementById(\'blueprintTextPicker\');'
             + 'if(b)b.value=\'' + p.bg + '\';if(t)t.value=\'' + p.text + '\';'
             + 'var pv=document.getElementById(\'blueprintColorPreview\');if(pv){pv.style.background=\'' + p.bg + '\';pv.style.color=\'' + p.text + '\';}'
@@ -8359,7 +8382,9 @@ function myDeckApply(idx) {
       if (_textPicker) _textPicker.addEventListener('input', _updateGanttPreview);
       if (_palette) {
         _palette.innerHTML = _ganttPastels.map(function(p, i) {
-          return '<div style="width:22px;height:22px;border-radius:50%;background:' + p.bg + ';border:2px solid ' + p.text + ';cursor:pointer;flex-shrink:0;" '
+          return '<div style="width:20px;height:20px;border-radius:4px;background:' + p.bg + ';box-shadow:inset 0 0 0 1.5px ' + p.text + '44;cursor:pointer;flex-shrink:0;transition:transform 0.1s,box-shadow 0.1s;" '
+            + 'onmouseenter="this.style.transform=\'scale(1.25)\';this.style.boxShadow=\'inset 0 0 0 1.5px ' + p.text + ',0 2px 6px rgba(0,0,0,0.15)\';" '
+            + 'onmouseleave="this.style.transform=\'\';this.style.boxShadow=\'inset 0 0 0 1.5px ' + p.text + '44\';" '
             + 'onclick="(function(){var b=document.getElementById(\'ganttBgPicker\');var t=document.getElementById(\'ganttTextPicker\');'
             + 'if(b)b.value=\'' + p.bg + '\';if(t)t.value=\'' + p.text + '\';'
             + 'var pv=document.getElementById(\'ganttColorPreview\');if(pv){pv.style.background=\'' + p.bg + '\';pv.style.color=\'' + p.text + '\';}})();" '
