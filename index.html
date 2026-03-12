@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.32.65';
+    const APP_VERSION = 'v0.32.67';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -3426,7 +3426,14 @@
   <div id="ganttEditorModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
     <div style="background:#fff; border-radius:16px; padding:24px; width:90%; max-width:480px; max-height:85vh; overflow-y:auto;">
       <h3 style="margin:0 0 16px 0; font-size:1.1em; font-weight:700;">手立て（てだて）<span style="font-size:0.72em;color:#aaa;font-weight:400;margin-left:6px;">ステップ</span></h3>
-      <input id="ganttTitleInput" type="text" placeholder="工程名（例：基礎固め、仕上げ）" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:0.95em; box-sizing:border-box; margin-bottom:12px;">
+      <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;">
+        <button id="ganttEmojiBtn" onclick="toggleGanttEmojiPicker()" style="font-size:1.6em;width:44px;height:44px;border:1px solid #ddd;border-radius:8px;background:#fafafa;cursor:pointer;flex-shrink:0;">🏗</button>
+        <input id="ganttTitleInput" type="text" placeholder="工程名（例：基礎固め、仕上げ）" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:0.95em;box-sizing:border-box;">
+      </div>
+      <div id="ganttEmojiPicker" style="display:none;margin-bottom:12px;background:#f9f9f9;border:1px solid #e0e0e0;border-radius:10px;padding:10px;">
+        <div style="font-size:0.75em;color:#888;margin-bottom:8px;font-weight:600;">絵文字を選ぶ</div>
+        <div id="ganttEmojiGrid" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
+      </div>
       <div id="ganttAutoDateInfo" style="font-size:0.8em;color:#888;background:#f5f5f5;border-radius:8px;padding:8px 12px;margin-bottom:12px;">
         📅 期間・時刻はタスクから自動計算されます
       </div>
@@ -4478,7 +4485,6 @@
       },
       flags: {
         tutorialSeen:       false,
-        gantTourSeen:       false,
         gantTourSeen:       false,
         adminMode:          false,
         inspectionMode:     false,
@@ -7309,6 +7315,10 @@ function myDeckApply(idx) {
       });
       renderGantChart();
     }
+    function toggleGanttEmojiPicker() {
+      const p = document.getElementById('ganttEmojiPicker');
+      if (p) p.style.display = p.style.display === 'none' ? 'block' : 'none';
+    }
     function saveGantDayRange() {
       const s = document.getElementById('gantDayStartH');
       const e = document.getElementById('gantDayEndH');
@@ -7475,10 +7485,12 @@ function myDeckApply(idx) {
         const _taskDate = new Date(t.date); _taskDate.setHours(0,0,0,0);
         const sx = Math.round((_taskDate - ctx.minDate) / 86400000) * ctx.dayW;
         const bw = Math.max(ctx.dayW, 6);
-        const _barBg2 = done ? '#ccc' : color + '99';
-        return '<div style="position:absolute;left:' + sx + 'px;top:5px;width:' + bw + 'px;height:22px;'
-          + 'background:' + _barBg2 + ';border-radius:4px;' + (done ? 'opacity:0.5;' : '') + '"></div>'
-          + (bw > 14 ? '<div style="position:absolute;left:' + (sx+2) + 'px;top:8px;font-size:10px;color:' + (done ? '#999' : '#fff') + ';white-space:nowrap;overflow:hidden;pointer-events:none;">' + (done ? '✓' : (t.time || '')) + '</div>' : '');
+        const _barBg2  = done ? 'rgba(200,200,200,0.5)' : (ctx.barColor || color);
+        const _textCol2 = done ? '#aaa' : (ctx.textColor || '#1a1a2e');
+        const _border2 = done ? 'none' : '2px solid ' + (ctx.barColor || color);
+        return '<div style="position:absolute;left:' + sx + 'px;top:3px;width:' + bw + 'px;height:' + (ctx.rowH ? ctx.rowH-6 : 22) + 'px;'
+          + 'background:' + _barBg2 + ';border-radius:4px;border-left:' + _border2 + ';box-sizing:border-box;overflow:hidden;' + (done ? 'opacity:0.5;' : '') + '"></div>'
+          + (bw > 14 ? '<div style="position:absolute;left:' + (sx+4) + 'px;top:6px;font-size:9px;font-weight:700;color:' + _textCol2 + ';white-space:nowrap;overflow:hidden;pointer-events:none;">' + (done ? '✓' : (t.time || '')) + '</div>' : '');
       }
     }
 
@@ -7573,7 +7585,7 @@ function myDeckApply(idx) {
         + '<div style="width:' + (ctx.labelW-3) + 'px;min-width:' + (ctx.labelW-3) + 'px;min-height:' + ctx.rowH + 'px;border-right:1px solid #e0e0e0;display:flex;align-items:center;padding:0 2px 0 4px;gap:2px;">'
         + expandBtn
         + '<button onclick="openGanttEditor(\'' + gantt.id + '\')" style="flex:1;height:' + ctx.rowH + 'px;background:none;border:none;text-align:left;padding:0 4px;cursor:pointer;display:flex;flex-direction:column;justify-content:center;min-width:0;">'
-        + '<div style="font-size:11px;color:#262626;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3;word-break:break-all;">' + (gantt.title || '') + '</div>'
+        + '<div style="font-size:11px;color:#262626;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3;word-break:break-all;">' + (gantt.emoji ? gantt.emoji + ' ' : '') + (gantt.title || '') + '</div>'
         + '<div style="font-size:9px;color:#aaa;">' + (taskCount > 0 ? doneCount + '/' + taskCount + '件' : 'まだ何も決まっていない') + '</div>'
         + '</button></div>'
         + '<div style="flex:1;position:relative;height:' + ctx.rowH + 'px;overflow:hidden;min-width:' + ctx.chartW + 'px;border-right:1px solid #e0e0e0;padding:3px 0;box-sizing:border-box;">'
@@ -7884,6 +7896,19 @@ function myDeckApply(idx) {
       const initialTaskIds = gantt ? (gantt.taskIds || []) : [];
       renderGanttLinkedTasks(initialTaskIds);
       _updateGanttAutoDateInfo(initialTaskIds);
+      // 絵文字初期化
+      const _GANTT_EMOJIS = ['🏗','🏰','⚔️','🗡️','🛡️','👑','🌟','💎','🔥','⚡','🌸','🌿','📚','✏️','🎯','🎨','🏆','🚀','💪','🧩','🌙','☀️','🌊','🗺️','⛩️','🎭','🎵','💡','🔑','🌈'];
+      const _emojiBtn = document.getElementById('ganttEmojiBtn');
+      const _emojiGrid = document.getElementById('ganttEmojiGrid');
+      const _emojiPicker = document.getElementById('ganttEmojiPicker');
+      if (_emojiBtn) _emojiBtn.textContent = (gantt && gantt.emoji) || '🏰';
+      if (_emojiGrid) {
+        _emojiGrid.innerHTML = _GANTT_EMOJIS.map(function(e) {
+          return '<button onclick="(function(){var b=document.getElementById(\'ganttEmojiBtn\');if(b)b.textContent=\'' + e + '\';document.getElementById(\'ganttEmojiPicker\').style.display=\'none\';})()" '
+            + 'style="font-size:1.4em;width:36px;height:36px;border:none;background:none;cursor:pointer;border-radius:6px;" '
+            + 'onmouseover="this.style.background=\'#e8e8e8\'" onmouseout="this.style.background=\'none\'">' + e + '</button>';
+        }).join('');
+      }
       // カラー初期化
       const _ganttPastels = [
         {bg:'#ffcdd2',text:'#c62828'},{bg:'#f8bbd0',text:'#ad1457'},{bg:'#e1bee7',text:'#6a1b9a'},
@@ -8151,6 +8176,8 @@ function myDeckApply(idx) {
           const _sv_tx = document.getElementById('ganttTextPicker');
           if (_sv_bg)   gantt.color     = _sv_bg.value;
           if (_sv_tx)   gantt.textColor = _sv_tx.value;
+          const _sv_em = document.getElementById('ganttEmojiBtn');
+          if (_sv_em)   gantt.emoji = _sv_em.textContent.trim();
           savedGanttId = gantt.id;
         }
       } else {
@@ -8170,6 +8197,7 @@ function myDeckApply(idx) {
           progressManual: null,
           progressAuto: 0,
           memo: memo ? memo.value.trim() : '',
+          emoji: (function(){ const e=document.getElementById('ganttEmojiBtn'); return e?e.textContent.trim():'🏰'; })(),
           color: (function(){ const e=document.getElementById('ganttBgPicker'); return e?e.value:'#bbdefb'; })(),
           textColor: (function(){ const e=document.getElementById('ganttTextPicker'); return e?e.value:'#1565c0'; })(),
           achieveMode: 'both',
@@ -9724,29 +9752,7 @@ function myDeckApply(idx) {
         setTimeout(() => { if (el.parentNode) el.style.display = 'none'; }, 300);
       }, duration);
     }
-    function showConfirm(message, okLabel, isDanger, onOk) {
-      // 後方互換：第2引数がfunctionの場合は旧形式(message, onOk)
-      if (typeof okLabel === 'function') { onOk = okLabel; okLabel = null; isDanger = true; }
-      document.getElementById('modal-message').innerHTML = message.replace(/\n/g, '<br>');
-      _confirmCallback = onOk;
-      const cancelBtn = document.getElementById('modal-cancel-btn');
-      const confirmBtn = document.getElementById('modal-confirm-btn');
-      const newCancel = cancelBtn.cloneNode(true);
-      const newConfirm = confirmBtn.cloneNode(true);
-      cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
-      confirmBtn.parentNode.replaceChild(newConfirm, confirmBtn);
-      newConfirm.textContent = okLabel || '削除';
-      if (isDanger === false) {
-        newConfirm.style.background = 'linear-gradient(135deg,#ffd700,#ff8800)';
-        newConfirm.style.color = '#7a4800';
-      } else {
-        newConfirm.style.background = '';
-        newConfirm.style.color = '';
-      }
-      newCancel.addEventListener('click', function() { closeModal(); });
-      newConfirm.addEventListener('click', function() { executeDelete(); });
-      document.getElementById('customModal').classList.add('show');
-    }
+
     function executeDelete() {
       const cb = _confirmCallback;
       _confirmCallback = null;
