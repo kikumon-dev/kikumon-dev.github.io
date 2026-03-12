@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.32.67';
+    const APP_VERSION = 'v0.32.90';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -7358,6 +7358,68 @@ function myDeckApply(idx) {
       const p = document.getElementById('ganttEmojiPicker');
       if (p) p.style.display = p.style.display === 'none' ? 'block' : 'none';
     }
+    // 志カードのホバーメッセージ生成
+    function _getBlueprintHoverMsg(bp, progress, ganttCount) {
+      if (ganttCount === 0) return '工程をまだ刻んでいない。\n最初の一歩を、ここに。';
+      if (progress === 0) return '王国の礎は整った。\nあとは、動くだけ。';
+      if (progress < 30) return '歩み始めた。\n焦らずに、一歩ずつ。';
+      if (progress < 60) return '着実に前へ進んでいる。\n積み重ねが、王国を育てる。';
+      if (progress < 90) return 'もう少しで完成する。\nここまで来た自分を信じろ。';
+      if (progress < 100) return '仕上げの時。\n最後まで、丁寧に。';
+      return 'この志は、成し遂げられた。\n次の王国を、描こう。';
+    }
+    function _showBlueprintTip(card) {
+      const msg   = card.getAttribute('data-bp-msg') || '';
+      const color = card.getAttribute('data-bp-color') || '#333';
+      let el = document.getElementById('_bpTipSingleton');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = '_bpTipSingleton';
+        el.style.cssText = 'display:none;position:absolute;z-index:9999;border-radius:10px;padding:10px 14px;font-size:11px;line-height:1.7;font-weight:600;pointer-events:none;white-space:pre;box-shadow:0 4px 16px rgba(0,0,0,0.18);';
+        document.body.appendChild(el);
+      }
+      el.textContent = msg.replace(/\\n/g, '\n');
+      el.style.background = color + 'ee';
+      el.style.color = '#fff';
+      el.style.display = 'block';
+      // カード直下に表示
+      const rect = card.getBoundingClientRect();
+      el.style.left = rect.left + 'px';
+      el.style.top  = (rect.bottom + 6) + 'px';
+      card.style.boxShadow = '0 4px 16px ' + color + '55';
+    }
+    function _hideBlueprintTip() {
+      const el = document.getElementById('_bpTipSingleton');
+      if (el) el.style.display = 'none';
+      // カードのboxShadowをリセット
+      document.querySelectorAll('#gantBlueprintArea > div').forEach(function(c) {
+        c.style.boxShadow = '';
+      });
+    }
+    function _showStepTip(bar, e) {
+      const txt = bar ? bar.getAttribute('data-tip') : '';
+      if (!txt) return;
+      let el = document.getElementById('_stepTipSingleton');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = '_stepTipSingleton';
+        el.style.cssText = 'display:none;position:fixed;background:#1a1a2e;color:#fff;font-size:10px;font-weight:700;padding:4px 10px;border-radius:7px;pointer-events:none;z-index:9999;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,0.3);';
+        document.body.appendChild(el);
+        el._mv = function(ev) {
+          el.style.left = (ev.clientX + 12) + 'px';
+          el.style.top  = (ev.clientY - 32) + 'px';
+        };
+        document.addEventListener('mousemove', el._mv);
+      }
+      el.textContent = txt;
+      el.style.display = 'block';
+      el.style.left = (e.clientX + 12) + 'px';
+      el.style.top  = (e.clientY - 32) + 'px';
+    }
+    function _hideStepTip() {
+      const el = document.getElementById('_stepTipSingleton');
+      if (el) el.style.display = 'none';
+    }
     function _gantResizerHover(on) {
       const bar = document.getElementById('gantResizerBar');
       if (!bar) return;
@@ -7473,14 +7535,19 @@ function myDeckApply(idx) {
         const isSelected = _gantSelectedBlueprintId === bp.id;
         const color = bp.color || '#3498db';
         const ganttCount = getGantsByBlueprint(bp.id).length;
+        const _bpMsg = _getBlueprintHoverMsg(bp, progress, ganttCount);
         return `<div style="
-          min-width:150px; max-width:190px; padding:10px 12px;
+          min-width:170px; max-width:220px; padding:10px 14px;
           border-radius:12px; border:2px solid ${isSelected ? color : '#e8e8e8'};
           background:${isSelected ? color + '15' : '#fff'};
           cursor:pointer; flex-shrink:0; position:relative;
-        " onclick="selectGantBlueprint('${bp.id}')">
+          transition:box-shadow 0.2s;
+        " onclick="selectGantBlueprint('${bp.id}')"
+           onmouseenter="_showBlueprintTip(this)"
+           onmouseleave="_hideBlueprintTip()"
+           data-bp-msg="${_bpMsg}" data-bp-color="${color}">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-            <div style="font-size:0.85em;font-weight:600;color:#262626;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100px;">${bp.title}</div>
+            <div style="font-size:0.85em;font-weight:600;color:#262626;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;">${bp.title}</div>
             <button onclick="event.stopPropagation();openBlueprintEditor('${bp.id}')" style="background:none;border:none;font-size:0.75em;color:#aaa;cursor:pointer;padding:2px;">✏️</button>
           </div>
           <div style="height:4px;background:#f0f0f0;border-radius:2px;margin-bottom:6px;">
@@ -7562,7 +7629,7 @@ function myDeckApply(idx) {
       const color = ctx.barColor || '#c5cae9';
       const done  = !!t.done;
       if (ctx.scale === 'day') {
-        if (!t.time) return '<div style="position:absolute;left:6px;top:50%;transform:translateY(-50%);font-size:9px;color:#bbb;white-space:nowrap;">時刻未定</div>';
+        if (!t.time) return '<div style="position:absolute;left:6px;top:50%;transform:translateY(-50%);font-size:9px;color:#bbb;white-space:nowrap;">まだ、時を刻んでいない</div>';
         const [sh, sm] = t.time.split(':').map(Number);
         const sx = Math.round(((sh * 60 + sm) - (ctx.startH || 0) * 60) / 60 * ctx.colW);
         // endTimeで幅決定、なければ colW（1時間幅）をデフォルト
@@ -7624,11 +7691,14 @@ function myDeckApply(idx) {
           const ex = Math.round(((eh * 60 + em) - _startH * 60) / 60 * ctx.colW);
           const bw = Math.max(ex - sx, 4);
           const prog = getGanttProgress(gantt);
-          const pw   = Math.round(bw * prog / 100);
-          stepBarHtml = '<div style="position:absolute;left:' + sx + 'px;top:8px;width:' + bw + 'px;height:24px;background:' + ctx.barColor + '22;border-radius:6px;"></div>'
-            + '<div style="position:absolute;left:' + sx + 'px;top:8px;width:' + pw + 'px;height:24px;background:' + ctx.barColor + '66;border-radius:6px;"></div>';
+          const _tipTxt = st + '〜' + et + ' ' + prog + '%';
+          stepBarHtml = '<div style="position:absolute;left:' + sx + 'px;top:4px;width:' + bw + 'px;height:32px;background:' + ctx.barColor + '88;border-radius:6px;border-left:4px solid ' + ctx.barColor + ';box-sizing:border-box;cursor:default;"'
+            + ' onmouseenter="_showStepTip(this,event)"'
+            + ' onmouseleave="_hideStepTip()"'
+            + ' data-tip="' + _tipTxt + '"></div>'
+            + (bw > 60 ? '<div style="position:absolute;left:' + (sx+8) + 'px;top:11px;font-size:9px;color:#1a1a2e;font-weight:700;white-space:nowrap;pointer-events:none;">' + st + '〜' + et + '&nbsp;' + prog + '%</div>' : bw > 24 ? '<div style="position:absolute;left:' + (sx+6) + 'px;top:11px;font-size:9px;color:#1a1a2e;font-weight:700;pointer-events:none;">' + prog + '%</div>' : '');
         } else {
-          const msg = taskIds.length === 0 ? 'やることを決めると、バーが現れます' : '時刻を刻むと、バーが現れます';
+          const msg = taskIds.length === 0 ? 'やることを決めると、バーが現れます' : 'タスクに時を刻むと、バーが育ちます';
           stepBarHtml = '<div style="position:absolute;left:4px;top:11px;font-size:9px;color:#ffaa44;white-space:nowrap;">' + msg + '</div>';
         }
         stepBarHtml += ctx.nowLine || '';
@@ -7638,10 +7708,8 @@ function myDeckApply(idx) {
           const ex = Math.round((new Date(gantt.endDate)   - ctx.minDate) / 86400000) * ctx.dayW + ctx.dayW;
           const bw = Math.max(ex - sx, 6);
           const prog = getGanttProgress(gantt);
-          const pw   = Math.round(bw * prog / 100);
-          stepBarHtml = '<div style="position:absolute;left:' + sx + 'px;top:8px;width:' + bw + 'px;height:24px;background:' + ctx.barColor + '22;border-radius:6px;"></div>'
-            + '<div style="position:absolute;left:' + sx + 'px;top:8px;width:' + pw + 'px;height:24px;background:' + ctx.barColor + '66;border-radius:6px;"></div>'
-            + (bw > 40 ? '<div style="position:absolute;left:' + (sx + 6) + 'px;top:11px;font-size:10px;color:' + (prog > 50 ? '#fff' : '#555') + ';">' + prog + '%</div>' : '');
+          stepBarHtml = '<div style="position:absolute;left:' + sx + 'px;top:4px;width:' + bw + 'px;height:32px;background:' + ctx.barColor + '88;border-radius:6px;border-left:4px solid ' + ctx.barColor + ';box-sizing:border-box;"></div>'
+            + (bw > 30 ? '<div style="position:absolute;left:' + (sx+6) + 'px;top:11px;font-size:9px;color:#1a1a2e;font-weight:700;">' + prog + '%</div>' : '');
         } else {
           const msg = taskIds.length === 0 ? 'やることを決めると、バーが現れます' : '日付を刻むと、バーが現れます';
           stepBarHtml = '<div style="position:absolute;left:4px;top:11px;font-size:9px;color:#ffaa44;white-space:nowrap;">' + msg + '</div>';
@@ -7739,13 +7807,16 @@ function myDeckApply(idx) {
       let nightBg = '';
       if (startH < 6) nightBg += '<div style="position:absolute;left:0;top:0;width:' + ((Math.min(6,endH)-startH)*colWe) + 'px;bottom:0;background:rgba(30,30,80,0.05);pointer-events:none;"></div>';
       if (endH > 21)  nightBg += '<div style="position:absolute;left:' + ((21-startH)*colWe) + 'px;top:0;width:' + ((endH-21)*colWe) + 'px;bottom:0;background:rgba(30,30,80,0.05);pointer-events:none;"></div>';
+      const _nowLineBar = (nowMin >= startH*60 && nowMin <= endH*60)
+        ? '<div style="position:absolute;left:' + nowX + 'px;top:0;bottom:0;width:2px;background:#ff3b30;opacity:0.75;z-index:2;pointer-events:none;"></div>'
+        : '';
       const nowLine = (nowMin >= startH*60 && nowMin <= endH*60)
-        ? '<div style="position:absolute;left:' + nowX + 'px;top:0;bottom:0;width:2px;background:#ff3b30;opacity:0.85;z-index:2;pointer-events:none;"></div>'
+        ? _nowLineBar
           + '<div style="position:absolute;left:' + (nowX+3) + 'px;top:2px;font-size:9px;color:#ff3b30;font-weight:700;z-index:2;white-space:nowrap;pointer-events:none;">'
           + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + '</div>'
         : '';
       const rows = gants.map(function(gantt, i) {
-        const ctx = { scale:'day', colW:colWe, labelW, rowH, chartW:Math.max(SPAN*colWe, areaW), nowLine, rowBg: i%2===0?'#fafafa':'#fff', startH };
+        const ctx = { scale:'day', colW:colWe, labelW, rowH, chartW:Math.max(SPAN*colWe, areaW), nowLine: _nowLineBar, rowBg: i%2===0?'#fafafa':'#fff', startH };
         return buildGanttRow(gantt, ctx);
       }).join('');
       htmlChart.innerHTML =
@@ -8105,7 +8176,7 @@ function myDeckApply(idx) {
       }
       const tasks = taskIds.map(id => allTasks.find(t => t.id === id)).filter(Boolean);
       const dates = tasks.map(t => t.date).filter(Boolean).sort();
-      const times = tasks.map(t => t.time).filter(Boolean).sort();
+      const times = tasks.map(t => t.time).filter(Boolean);
       const noDateCount = tasks.filter(t => !t.date && !t.time).length;
       if (dates.length === 0 && times.length === 0) {
         info.style.cssText = 'font-size:0.8em;background:#fff3e0;border-radius:8px;padding:10px 12px;margin-bottom:12px;color:#e65100;border:1px solid #ffcc80;';
@@ -8209,9 +8280,13 @@ function myDeckApply(idx) {
       }
       // 時刻：開始時刻の最早 〜 終了時刻(endTime優先)の最遅
       // startTime だけでなく endTime も含めて最遅を取る
-      const allEndTimes = tasks.map(t => t.endTime || t.time).filter(Boolean).sort();
+      // 時刻を分単位に変換してソート（文字列ソートだと9:00 > 18:00になるバグを防ぐ）
+      const _toMin = s => { const [h,m] = s.split(':').map(Number); return h*60+m; };
+      const allEndTimes = tasks.map(t => t.endTime || t.time).filter(Boolean)
+        .sort((a,b) => _toMin(a) - _toMin(b));
+      const sortedTimes = [...times].sort((a,b) => _toMin(a) - _toMin(b));
       if (times.length > 0) {
-        gantt.startTime = times[0]; // 最早の開始時刻
+        gantt.startTime = sortedTimes[0]; // 最早の開始時刻（数値ソート）
         // 最遅の終了時刻（endTimeがあればendTime、なければtime）
         gantt.endTime = allEndTimes[allEndTimes.length - 1];
         // 同じ時刻になってしまったら終了を1時間後に
