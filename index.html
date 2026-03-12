@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.32.40';
+    const APP_VERSION = 'v0.32.41';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -3402,7 +3402,7 @@
   <div id="blueprintEditorModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
     <div style="background:#fff; border-radius:16px; padding:24px; width:90%; max-width:480px; max-height:85vh; overflow-y:auto;">
       <h3 style="margin:0 0 16px 0; font-size:1.1em; font-weight:700;">志（こころざし）<span style="font-size:0.72em;color:#aaa;font-weight:400;margin-left:6px;">造営計画</span></h3>
-      <input id="blueprintTitleInput" type="text" placeholder="計画名（例：司法書士試験合格）" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:0.95em; box-sizing:border-box; margin-bottom:12px;">
+      <input id="blueprintTitleInput" type="text" placeholder="計画名（例：英語上達、体を鍛える）" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:0.95em; box-sizing:border-box; margin-bottom:12px;">
       <textarea id="blueprintVisionInput" placeholder="ビジョン（任意）" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:0.9em; box-sizing:border-box; margin-bottom:12px; height:60px; resize:none;"></textarea>
       <div style="display:flex; gap:8px; margin-bottom:12px;">
         <div style="flex:1;">
@@ -3431,7 +3431,7 @@
   <div id="ganttEditorModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
     <div style="background:#fff; border-radius:16px; padding:24px; width:90%; max-width:480px; max-height:85vh; overflow-y:auto;">
       <h3 style="margin:0 0 16px 0; font-size:1.1em; font-weight:700;">手立て（てだて）<span style="font-size:0.72em;color:#aaa;font-weight:400;margin-left:6px;">ステップ</span></h3>
-      <input id="ganttTitleInput" type="text" placeholder="工程名（例：民法完成）" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:0.95em; box-sizing:border-box; margin-bottom:12px;">
+      <input id="ganttTitleInput" type="text" placeholder="工程名（例：基礎固め、仕上げ）" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:0.95em; box-sizing:border-box; margin-bottom:12px;">
       <div id="ganttAutoDateInfo" style="font-size:0.8em;color:#888;background:#f5f5f5;border-radius:8px;padding:8px 12px;margin-bottom:12px;">
         📅 期間・時刻はタスクから自動計算されます
       </div>
@@ -4034,7 +4034,7 @@
         <div id="familySenderNameArea" style="display:none;background:#fff3e0;border-radius:8px;padding:10px;margin-bottom:12px;">
           <label style="font-size:0.83em;font-weight:600;color:#e65100;display:block;margin-bottom:6px;">👤 あなたの名前（受け取る相手に表示されます）</label>
           <div style="display:flex;gap:6px;">
-            <input id="familySenderNameInput" type="text" placeholder="例：きくモン" maxlength="20"
+            <input id="familySenderNameInput" type="text" placeholder="例：王国の民" maxlength="20"
               style="flex:1;padding:8px 10px;border:1.5px solid #ffb74d;border-radius:8px;font-size:0.88em;">
             <button onclick="saveSenderName()"
               style="padding:8px 14px;border:none;border-radius:8px;background:#ff8f00;color:#fff;font-weight:700;cursor:pointer;font-size:0.85em;">保存</button>
