@@ -7274,9 +7274,9 @@ function myDeckApply(idx) {
     function getBlueprintProgress(bp) {
       const gants = getGantsByBlueprint(bp.id);
       if (gants.length === 0) return 0;
-      const total = gants.length;
-      const done = gants.filter(g => g.achieved).length;
-      return Math.round(done / total * 100);
+      // 各工程のタスク進捗を平均する（タスクdoneをリアルタイム反映）
+      const progresses = gants.map(function(g) { return getGanttProgress(g); });
+      return Math.round(progresses.reduce(function(a,b){return a+b;},0) / progresses.length);
     }
     function getGanttProgress(gantt) {
       if (gantt.progressMode === 'manual' && gantt.progressManual !== null) return gantt.progressManual;
