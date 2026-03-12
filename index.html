@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.32.63';
+    const APP_VERSION = 'v0.32.64';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -7558,7 +7558,9 @@ function myDeckApply(idx) {
     // ---- 日スケール描画 ----
     function _renderGantDay(htmlChart, gants) {
       const HOURS = 24, colW = 44, labelW = 130, rowH = 72;
-      const chartW = HOURS * colW;
+      const area = htmlChart.closest('#gantChartArea') || htmlChart.parentElement;
+      const areaW = area ? Math.max(area.clientWidth - labelW - 4, 0) : 0;
+      const chartW = Math.max(HOURS * colW, areaW);
       const now = new Date();
       const nowX = Math.round((now.getHours() * 60 + now.getMinutes()) / 60 * colW);
       const DOW_JA = ['日','月','火','水','木','金','土'];
