@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.32.29';
+    const APP_VERSION = 'v0.32.39';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -3393,7 +3393,7 @@
     <!-- 下部70%：ガントチャート -->
     <div id="gantChartArea" style="flex:1; overflow:auto; -webkit-overflow-scrolling:touch; position:relative;">
       <div id="gantAddGanttBtn" style="display:none; padding:10px 16px;">
-        <button onclick="openGanttEditor(null)" style="width:100%;padding:10px;background:#f5f5f5;border:1px dashed #ccc;border-radius:8px;font-size:0.9em;color:#666;cursor:pointer;">＋ 工程を追加</button>
+        <button onclick="openGanttEditor(null)" style="width:100%;padding:10px;background:#f5f5f5;border:1px dashed #ccc;border-radius:8px;font-size:0.9em;color:#666;cursor:pointer;">工程を刻む</button>
       </div>
       <div class="gant-html-chart"></div>
     </div>
@@ -3435,7 +3435,6 @@
       <div id="ganttAutoDateInfo" style="font-size:0.8em;color:#888;background:#f5f5f5;border-radius:8px;padding:8px 12px;margin-bottom:12px;">
         📅 期間・時刻はタスクから自動計算されます
       </div>
-      <div id="ganttDateHint" style="font-size:0.75em; color:#aaa; margin-bottom:12px;">※ 時刻は HH:MM 形式（例：09:00）</div>
       <textarea id="ganttMemoInput" placeholder="自分への引き継ぎメモ（任意）" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:0.9em; box-sizing:border-box; margin-bottom:12px; height:80px; resize:none;"></textarea>
       <!-- タスク紐づけ -->
       <div style="margin-bottom:16px;">
@@ -4949,6 +4948,10 @@
         Object.assign(task, updates, {
           updatedAt: new Date().toISOString()
         });
+        // 時刻・日付変更時：紐づくステップ→志を連鎖再計算（タスク優先原則）
+        if ('time' in updates || 'date' in updates || 'endTime' in updates) {
+          recalcAll(id);
+        }
         saveAllTasks();
         return task;
       }
@@ -7279,15 +7282,13 @@ function getDeckGDP() {
       return Math.round(done / tasks.length * 100);
     }
     function getBlueprintDateRange(bp) {
-      let start = bp.startDate || null;
-      let end = bp.endDate || null;
-      if (!start || !end) {
-        const gants = getGantsByBlueprint(bp.id);
-        const starts = gants.map(g => g.startDate).filter(Boolean).sort();
-        const ends = gants.map(g => g.endDate).filter(Boolean).sort();
-        if (!start && starts.length) start = starts[0];
-        if (!end && ends.length) end = ends[ends.length - 1];
-      }
+      // タスク優先原則：常にステップから計算した期間を返す
+      const gants = getGantsByBlueprint(bp.id);
+      const starts = gants.map(g => g.startDate).filter(Boolean).sort();
+      const ends = gants.map(g => g.endDate).filter(Boolean).sort();
+      // ステップに期間がなければ志の手動設定にフォールバック
+      const start = starts.length ? starts[0] : (bp.startDate || null);
+      const end = ends.length ? ends[ends.length - 1] : (bp.endDate || null);
       return { start, end };
     }
     function toggleGantEnabled(checked) {
@@ -7356,12 +7357,15 @@ function getDeckGDP() {
           <div style="height:4px;background:#f0f0f0;border-radius:2px;margin-bottom:6px;">
             <div style="height:4px;background:${color};border-radius:2px;width:${progress}%;transition:width 0.3s;"></div>
           </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
             <div style="font-size:0.75em;color:#888;">${progress}% · ${ganttCount}工程 ${bp.achieved ? '✅' : ''}</div>
             <button onclick="event.stopPropagation();_gantSelectedBlueprintId='${bp.id}';openGanttEditor(null);" style="
               background:${color}; color:#fff; border:none; border-radius:8px;
               font-size:0.75em; padding:3px 8px; cursor:pointer; white-space:nowrap;
             ">＋工程</button>
+          </div>
+          <div style="font-size:0.72em;color:${start ? '#1565c0' : '#ffaa44'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            ${start ? '📅 ' + start + (end && end !== start ? ' 〜 ' + end : '') : '⚠️ タスクに日付を入れると期間が決まります'}
           </div>
         </div>`;
       }).join('');
@@ -7371,6 +7375,231 @@ function getDeckGDP() {
       renderGantBlueprints();
       renderGantChart();
     }
+    // ===== ガントチャート描画 =====
+    // ctx = { scale, colW, dayW, minDate, chartW, nowLine, labelW, rowH }
+    // ---- 共通：タスクバーHTML生成 ----
+    function _buildTaskBar(t, ctx) {
+      const color = ctx.barColor || '#3498db';
+      const done  = !!t.done;
+      const alpha = done ? '44' : '99';
+      if (ctx.scale === 'day') {
+        if (!t.time) return '<div style="position:absolute;left:4px;top:10px;font-size:9px;color:#ffaa44;white-space:nowrap;">時刻未定</div>';
+        const [sh, sm] = t.time.split(':').map(Number);
+        const sx = Math.round((sh * 60 + sm) / 60 * ctx.colW);
+        let bw = ctx.colW;
+        if (t.endTime) {
+          const [eh, em] = t.endTime.split(':').map(Number);
+          bw = Math.max(Math.round((eh * 60 + em - sh * 60 - sm) / 60 * ctx.colW), 8);
+        }
+        const label = (done ? '✓ ' : '') + t.time + (t.endTime ? '〜' + t.endTime : '');
+        const barBg = done ? '#ccc' : color + alpha;
+        return '<div style="position:absolute;left:' + sx + 'px;top:5px;width:' + bw + 'px;height:22px;'
+          + 'background:' + barBg + ';border-radius:4px;' + (done ? 'opacity:0.5;' : '') + '"></div>'
+          + (bw > 40 ? '<div style="position:absolute;left:' + (sx + 4) + 'px;top:8px;font-size:11px;color:' + (done ? '#999' : '#fff') + ';white-space:nowrap;overflow:hidden;pointer-events:none;' + (done ? 'text-decoration:line-through;' : '') + '">' + label + '</div>' : '');
+      } else {
+        if (!t.date || !ctx.minDate || isNaN(new Date(t.date).getTime())) return '<div style="position:absolute;left:4px;top:10px;font-size:9px;color:#ffaa44;white-space:nowrap;">日付未定</div>';
+        const _taskDate = new Date(t.date); _taskDate.setHours(0,0,0,0);
+        const sx = Math.round((_taskDate - ctx.minDate) / 86400000) * ctx.dayW;
+        const bw = Math.max(ctx.dayW, 6);
+        const _barBg2 = done ? '#ccc' : color + alpha;
+        return '<div style="position:absolute;left:' + sx + 'px;top:5px;width:' + bw + 'px;height:22px;'
+          + 'background:' + _barBg2 + ';border-radius:4px;' + (done ? 'opacity:0.5;' : '') + '"></div>'
+          + (bw > 14 ? '<div style="position:absolute;left:' + (sx + 2) + 'px;top:8px;font-size:10px;color:' + (done ? '#999' : '#fff') + ';white-space:nowrap;overflow:hidden;pointer-events:none;">' + (done ? '✓' : (t.time || '')) + '</div>' : '');
+      }
+    }
+
+    // ---- 共通：ステップ行＋タスク展開HTML生成 ----
+    function buildGanttRow(gantt, ctx) {
+      const _tasks   = allTasks;
+      const taskIds  = gantt.taskIds || [];
+      const taskCount = taskIds.length;
+      const doneCount = taskIds.filter(id => { const t = _tasks.find(x => x.id === id); return t && t.done; }).length;
+      const bg       = ctx.rowBg || '#fff';
+      const expandId = 'ganttExpand_' + gantt.id;
+      const bp       = _tasks.find(t => t.id === gantt.blueprintId);
+      const color    = (bp && bp.color) ? bp.color : '#3498db';
+      ctx.barColor   = gantt.achieved ? '#f39c12' : color;
+
+      // ステップ行のバー（ステップ全体の塊）
+      let stepBarHtml = '';
+      if (ctx.scale === 'day') {
+        const st = gantt.startTime, et = gantt.endTime;
+        if (st && et) {
+          const [sh, sm] = st.split(':').map(Number);
+          const [eh, em] = et.split(':').map(Number);
+          const sx = Math.round((sh * 60 + sm) / 60 * ctx.colW);
+          const bw = Math.max(Math.round((eh * 60 + em - sh * 60 - sm) / 60 * ctx.colW), 4);
+          const prog = getGanttProgress(gantt);
+          const pw   = Math.round(bw * prog / 100);
+          stepBarHtml = '<div style="position:absolute;left:' + sx + 'px;top:8px;width:' + bw + 'px;height:24px;background:' + ctx.barColor + '22;border-radius:6px;"></div>'
+            + '<div style="position:absolute;left:' + sx + 'px;top:8px;width:' + pw + 'px;height:24px;background:' + ctx.barColor + '66;border-radius:6px;"></div>';
+        } else {
+          const msg = taskIds.length === 0 ? 'やることを決めると、バーが現れます' : '時刻を刻むと、バーが現れます';
+          stepBarHtml = '<div style="position:absolute;left:4px;top:11px;font-size:9px;color:#ffaa44;white-space:nowrap;">' + msg + '</div>';
+        }
+        stepBarHtml += ctx.nowLine || '';
+      } else {
+        if (gantt.startDate && gantt.endDate && ctx.minDate) {
+          const sx = Math.round((new Date(gantt.startDate) - ctx.minDate) / 86400000) * ctx.dayW;
+          const ex = Math.round((new Date(gantt.endDate)   - ctx.minDate) / 86400000) * ctx.dayW + ctx.dayW;
+          const bw = Math.max(ex - sx, 6);
+          const prog = getGanttProgress(gantt);
+          const pw   = Math.round(bw * prog / 100);
+          stepBarHtml = '<div style="position:absolute;left:' + sx + 'px;top:8px;width:' + bw + 'px;height:24px;background:' + ctx.barColor + '22;border-radius:6px;"></div>'
+            + '<div style="position:absolute;left:' + sx + 'px;top:8px;width:' + pw + 'px;height:24px;background:' + ctx.barColor + '66;border-radius:6px;"></div>'
+            + (bw > 40 ? '<div style="position:absolute;left:' + (sx + 6) + 'px;top:11px;font-size:10px;color:' + (prog > 50 ? '#fff' : '#555') + ';">' + prog + '%</div>' : '');
+        } else {
+          const msg = taskIds.length === 0 ? 'やることを決めると、バーが現れます' : '日付を刻むと、バーが現れます';
+          stepBarHtml = '<div style="position:absolute;left:4px;top:11px;font-size:9px;color:#ffaa44;white-space:nowrap;">' + msg + '</div>';
+        }
+        stepBarHtml += ctx.nowLine2 || '';
+      }
+
+      // 展開ボタン（シェブロン、アニメーション）
+      const _expandToggle = "(function(){var el=document.getElementById('" + expandId + "');var btn=document.getElementById('" + expandId + "_btn');if(el){var open=el.style.display!=='none';el.style.display=open?'none':'block';if(btn)btn.style.transform=open?'rotate(0deg)':'rotate(90deg)';}})()";      const expandBtn = taskCount > 0
+        ? '<button id="' + expandId + '_btn" onclick="' + _expandToggle + '" style="background:none;border:none;font-size:12px;color:#bbb;cursor:pointer;padding:2px 4px;flex-shrink:0;transition:transform 0.15s;">›</button>'
+        : '<span style="width:20px;display:inline-block;"></span>';
+
+      // タスク展開行
+      let taskRows = '';
+      if (taskCount > 0) {
+        const taskHtml = taskIds.map(function(tid) {
+          const t = _tasks.find(x => x.id === tid);
+          if (!t) return '';
+          const toggleFn = "(function(){var t=allTasks.find(function(x){return x.id==='" + tid + "';});if(t){t.done=!t.done;saveAllTasks();if(typeof recalcAll==='function')recalcAll('" + tid + "');renderGantView();}})()";
+          const tBar = _buildTaskBar(t, ctx) + (ctx.scale === 'day' ? (ctx.nowLine || '') : (ctx.nowLine2 || ''));
+          return '<div style="display:flex;align-items:stretch;border-bottom:1px solid #efefef;">'
+            + '<div style="width:' + ctx.labelW + 'px;min-width:' + ctx.labelW + 'px;padding:0 4px 0 20px;border-right:1px solid #e0e0e0;display:flex;align-items:center;gap:3px;overflow:hidden;">'
+            + '<button onclick="' + toggleFn + '" style="background:none;border:none;font-size:12px;cursor:pointer;padding:0;flex-shrink:0;">' + (t.done ? '✅' : '⬜') + '</button>'
+            + '<span style="font-size:10px;color:' + (t.done ? '#aaa' : '#333') + ';text-decoration:' + (t.done ? 'line-through' : 'none') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;">' + (t.text || '') + '</span>'
+            + '<button onclick="openTaskEditModal(\'' + tid + '\')" style="background:none;border:none;font-size:11px;cursor:pointer;padding:0 2px;flex-shrink:0;color:#ccc;">✏️</button>'
+            + '</div>'
+            + '<div style="flex:1;position:relative;height:32px;overflow:hidden;min-width:' + ctx.chartW + 'px;">'
+            + tBar + '</div></div>';
+        }).join('');
+        taskRows = '<div id="' + expandId + '" style="display:none;background:#f9f9f9;border-bottom:1px solid #ddd;">' + taskHtml + '</div>';
+      }
+
+      return '<div>'
+        + '<div style="display:flex;border-bottom:1px solid #efefef;background:' + bg + ';min-height:' + ctx.rowH + 'px;align-items:center;border-left:3px solid ' + ctx.barColor + '33;">'
+        + '<div style="width:' + (ctx.labelW-3) + 'px;min-width:' + (ctx.labelW-3) + 'px;height:' + ctx.rowH + 'px;border-right:1px solid #e0e0e0;display:flex;align-items:center;padding:0 2px 0 4px;gap:2px;">'
+        + expandBtn
+        + '<button onclick="openGanttEditor(\'' + gantt.id + '\')" style="flex:1;height:' + ctx.rowH + 'px;background:none;border:none;text-align:left;padding:0 4px;cursor:pointer;display:flex;flex-direction:column;justify-content:center;min-width:0;">'
+        + '<div style="font-size:11px;color:#262626;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (gantt.title || '') + '</div>'
+        + '<div style="font-size:9px;color:#aaa;">' + (taskCount > 0 ? doneCount + '/' + taskCount + '件' : 'まだ何も決まっていない') + '</div>'
+        + '</button></div>'
+        + '<div style="flex:1;position:relative;height:' + ctx.rowH + 'px;overflow:hidden;min-width:' + ctx.chartW + 'px;">'
+        + stepBarHtml + '</div></div>'
+        + taskRows + '</div>';
+    }
+
+    // ---- 日スケール描画 ----
+    function _renderGantDay(htmlChart, gants) {
+      const HOURS = 24, colW = 36, labelW = 100, rowH = 40;
+      const chartW = HOURS * colW;
+      const now = new Date();
+      const nowX = Math.round((now.getHours() * 60 + now.getMinutes()) / 60 * colW);
+      const DOW_JA = ['日','月','火','水','木','金','土'];
+      const todayLabel = now.getFullYear() + '/' + (now.getMonth()+1) + '/' + now.getDate() + ' (' + DOW_JA[now.getDay()] + ')';
+      let headerCols = '';
+      for (let h = 0; h <= HOURS; h++) {
+        const x = h * colW;
+        const col = h === 12 ? '#f39c12' : '#999';
+        headerCols += '<div style="position:absolute;left:' + x + 'px;top:0;bottom:0;width:1px;background:' + (h % 6 === 0 ? '#ccc' : '#efefef') + ';pointer-events:none;"></div>'
+          + (h < HOURS ? '<div style="position:absolute;left:' + (x+2) + 'px;top:14px;font-size:9px;color:' + col + ';white-space:nowrap;font-weight:' + (h%6===0?'600':'400') + ';pointer-events:none;">'
+            + (h === 0 ? '0時' : h === 12 ? '正午' : h%6===0 ? h+'時' : h%3===0 ? String(h) : '') + '</div>' : '');
+      }
+      const nowLine = '<div style="position:absolute;left:' + nowX + 'px;top:0;bottom:0;width:2px;background:#ff3b30;opacity:0.85;z-index:2;pointer-events:none;"></div>'
+        + '<div style="position:absolute;left:' + (nowX+3) + 'px;top:2px;font-size:9px;color:#ff3b30;font-weight:700;z-index:2;white-space:nowrap;pointer-events:none;">'
+        + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + '</div>';
+      const timeBg = '<div style="position:absolute;left:0;top:0;width:' + (6*colW) + 'px;bottom:0;background:rgba(30,30,80,0.04);pointer-events:none;"></div>'
+        + '<div style="position:absolute;left:' + (21*colW) + 'px;top:0;width:' + (3*colW) + 'px;bottom:0;background:rgba(30,30,80,0.04);pointer-events:none;"></div>';
+      const rows = gants.map(function(gantt, i) {
+        const ctx = { scale:'day', colW, labelW, rowH, chartW, nowLine, rowBg: i%2===0?'#fafafa':'#fff' };
+        return buildGanttRow(gantt, ctx);
+      }).join('');
+      htmlChart.innerHTML =
+        '<div style="display:flex;border-bottom:2px solid #d0d0d0;background:#fff;position:sticky;top:0;z-index:3;">'
+        + '<div style="width:' + labelW + 'px;min-width:' + labelW + 'px;border-right:1px solid #e0e0e0;padding:0 6px;display:flex;flex-direction:column;justify-content:center;">'
+        + '<span style="font-size:9px;color:#aaa;">工程</span>'
+        + '<span style="font-size:9px;color:#888;font-weight:600;">' + todayLabel + '</span>'
+        + '</div>'
+        + '<div style="flex:1;position:relative;height:44px;min-width:' + chartW + 'px;overflow:hidden;background:#fafafa;">'
+        + '<div style="position:absolute;left:0;top:0;width:' + (6*colW) + 'px;bottom:0;background:rgba(30,30,80,0.05);"></div>'
+        + '<div style="position:absolute;left:' + (21*colW) + 'px;top:0;width:' + (3*colW) + 'px;bottom:0;background:rgba(30,30,80,0.05);"></div>'
+        + headerCols + nowLine + '</div></div>' + rows;
+      requestAnimationFrame(function() {
+        const area = htmlChart.closest('#gantChartArea') || htmlChart.parentElement;
+        if (area) area.scrollLeft = Math.max(0, nowX - Math.floor((area.clientWidth - labelW) / 2));
+      });
+    }
+
+    // ---- 週/月スケール描画 ----
+    function _renderGantWeekMonth(htmlChart, gants, scale) {
+      const labelW = 100, rowH = 40;
+      const today = new Date(); today.setHours(0,0,0,0);
+      // minDate/maxDate：タスクの日付範囲 + 今日を中心に常にデフォルト幅を確保
+      const allDates = gants.flatMap(g => (g.taskIds||[]).map(id => {
+        const t = allTasks.find(x => x.id === id); return t ? t.date : null;
+      })).filter(Boolean).sort();
+      // デフォルト範囲：週は-14日〜+60日、月は-30日〜+365日
+      const _defBack = scale === 'week' ? 14 : 30;
+      const _defFwd  = scale === 'week' ? 60 : 365;
+      const defaultMin = new Date(today); defaultMin.setDate(defaultMin.getDate() - _defBack);
+      const defaultMax = new Date(today); defaultMax.setDate(defaultMax.getDate() + _defFwd);
+      let minDate, maxDate;
+      if (allDates.length === 0) {
+        minDate = defaultMin;
+        maxDate = defaultMax;
+      } else {
+        const taskMin = new Date(allDates[0]);
+        const taskMax = new Date(allDates[allDates.length - 1]);
+        taskMin.setDate(taskMin.getDate() - 7);
+        taskMax.setDate(taskMax.getDate() + 14);
+        // タスク範囲とデフォルト範囲の広い方を採用
+        minDate = taskMin < defaultMin ? taskMin : defaultMin;
+        maxDate = taskMax > defaultMax ? taskMax : defaultMax;
+      }
+      const dayW = scale === 'week' ? 16 : 8;
+      const totalDays = Math.ceil((maxDate - minDate) / 86400000);
+      const chartW = totalDays * dayW;
+      const todayX = Math.round((today - minDate) / 86400000) * dayW;
+      const DOW_JA = ['日','月','火','水','木','金','土'];
+      let monthHeader = '', dayHeader = '';
+      const cur = new Date(minDate); let lastMonth = -1;
+      while (cur <= maxDate) {
+        const x = Math.round((cur - minDate) / 86400000) * dayW;
+        const dow = cur.getDay();
+        if (cur.getMonth() !== lastMonth) {
+          lastMonth = cur.getMonth();
+          monthHeader += '<div style="position:absolute;left:' + x + 'px;top:1px;font-size:10px;font-weight:700;color:#555;white-space:nowrap;padding-left:3px;">' + (cur.getMonth()+1) + '月</div>'
+            + '<div style="position:absolute;left:' + x + 'px;top:0;bottom:0;width:1px;background:#bbb;"></div>';
+        }
+        if (scale === 'week') {
+          if (dow === 1) dayHeader += '<div style="position:absolute;left:' + (x+1) + 'px;top:14px;font-size:9px;color:#666;">' + (cur.getMonth()+1) + '/' + cur.getDate() + '</div>'
+            + '<div style="position:absolute;left:' + x + 'px;top:0;bottom:0;width:1px;background:#ddd;"></div>';
+          if (dow === 0 || dow === 6) dayHeader += '<div style="position:absolute;left:' + x + 'px;top:0;width:' + dayW + 'px;bottom:0;background:rgba(0,0,0,0.03);pointer-events:none;"></div>';
+        } else {
+          if (cur.getDate() % 5 === 0 || cur.getDate() === 1) dayHeader += '<div style="position:absolute;left:' + x + 'px;top:14px;font-size:9px;color:#aaa;">' + cur.getDate() + '</div>'
+            + '<div style="position:absolute;left:' + x + 'px;top:0;bottom:0;width:1px;background:#efefef;"></div>';
+        }
+        cur.setDate(cur.getDate() + 1);
+      }
+      const nowLine2 = '<div style="position:absolute;left:' + todayX + 'px;top:0;bottom:0;width:2px;background:#ff3b30;opacity:0.7;pointer-events:none;"></div>'
+        + '<div style="position:absolute;left:' + (todayX+3) + 'px;top:2px;font-size:9px;color:#ff3b30;font-weight:700;pointer-events:none;">今日</div>';
+      const rows = gants.map(function(gantt, i) {
+        const ctx = { scale, dayW, labelW, rowH, chartW, minDate, nowLine2, rowBg: i%2===0?'#fafafa':'#fff' };
+        return buildGanttRow(gantt, ctx);
+      }).join('');
+      htmlChart.innerHTML =
+        '<div style="display:flex;border-bottom:2px solid #d0d0d0;background:#fff;position:sticky;top:0;z-index:3;">'
+        + '<div style="width:' + labelW + 'px;min-width:' + labelW + 'px;border-right:1px solid #e0e0e0;display:flex;align-items:center;padding:0 6px;">'
+        + '<span style="font-size:10px;color:#aaa;">工程</span></div>'
+        + '<div style="flex:1;position:relative;height:44px;min-width:' + chartW + 'px;overflow:hidden;background:#fafafa;">'
+        + monthHeader + dayHeader + nowLine2 + '</div></div>' + rows;
+    }
+
+    // ---- エントリポイント ----
     function renderGantChart() {
       const area = document.getElementById('gantChartArea');
       if (!area) return;
@@ -7391,231 +7620,19 @@ function getDeckGDP() {
         const bp = _gantSelectedBlueprintId ? allTasks.find(t => t.id === _gantSelectedBlueprintId) : null;
         htmlChart.innerHTML = '<div style="padding:32px 24px;text-align:center;">'
           + '<div style="font-size:2em;margin-bottom:8px;">🏗</div>'
-          + '<div style="font-size:0.9em;color:#888;margin-bottom:16px;">' + (bp ? '「'+bp.title+'」に' : '') + '手立て（ステップ）がまだありません</div>'
-          + (bp ? '<button onclick="openGanttEditor(null)" style="padding:10px 20px;background:#262626;color:#fff;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;">＋ 工程を追加する</button>'
-               : '<div style="font-size:0.8em;color:#aaa;">上の造営計画カードの「＋工程」から追加</div>')
+          + '<div style="font-size:0.9em;color:#888;margin-bottom:16px;">' + (bp ? '「' + bp.title + '」に' : '') + 'まだ、何も始まっていない。</div>'
+          + (bp ? '<button onclick="openGanttEditor(null)" style="padding:10px 20px;background:#262626;color:#fff;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;">王国の工程を刻む</button>'
+               : '<div style="font-size:0.8em;color:#aaa;">造営計画を選び、工程を刻んでください</div>')
           + '</div>';
         return;
       }
-      const labelW = 100;
-      const rowH = 40;
-      const DOW_JA = ['日','月','火','水','木','金','土'];
-      // ==== 日スケール：0～24時タイムライン ====
       if (scale === 'day') {
-        const HOURS = 24;
-        const colW = 36;
-        const chartW = HOURS * colW;
-        const now = new Date();
-        const nowX = Math.round((now.getHours() * 60 + now.getMinutes()) / 60 * colW);
-        const todayLabel = now.getFullYear() + '/' + (now.getMonth()+1) + '/' + now.getDate()
-          + ' (' + DOW_JA[now.getDay()] + ')';
-        let headerCols = '';
-        for (let h = 0; h <= HOURS; h++) {
-          const x = h * colW;
-          const col = h === 12 ? '#f39c12' : (h === 0 || h === 24) ? '#aaa' : '#999';
-          headerCols += '<div style="position:absolute;left:'+x+'px;top:0;bottom:0;width:1px;background:'+(h%6===0?'#ccc':'#efefef')+';pointer-events:none;"></div>'
-            + (h < HOURS ? '<div style="position:absolute;left:'+(x+2)+'px;top:14px;font-size:9px;color:'+col+';white-space:nowrap;font-weight:'+(h%6===0?'600':'400')+';pointer-events:none;">'
-              + (h === 0 ? '0時' : h === 12 ? '正午' : h%6===0 ? h+'時' : h%3===0 ? String(h) : '')
-              + '</div>' : '');
-        }
-        const nowLine = '<div style="position:absolute;left:'+nowX+'px;top:0;bottom:0;width:2px;background:#ff3b30;opacity:0.85;z-index:2;pointer-events:none;"></div>'
-          + '<div style="position:absolute;left:'+(nowX+3)+'px;top:2px;font-size:9px;color:#ff3b30;font-weight:700;z-index:2;white-space:nowrap;pointer-events:none;">'
-          + String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+'</div>';
-        const timeBg = '<div style="position:absolute;left:0;top:0;width:'+(6*colW)+'px;bottom:0;background:rgba(30,30,80,0.04);pointer-events:none;"></div>'
-          + '<div style="position:absolute;left:'+(21*colW)+'px;top:0;width:'+(3*colW)+'px;bottom:0;background:rgba(30,30,80,0.04);pointer-events:none;"></div>';
-        const rows = gants.map(function(gantt, i) {
-          const bp = allTasks.find(t => t.id === gantt.blueprintId);
-          const color = (bp && bp.color) ? bp.color : '#3498db';
-          const barColor = gantt.achieved ? '#f39c12' : color;
-          const taskIds = gantt.taskIds || [];
-          const taskCount = taskIds.length;
-          const doneCount = taskIds.filter(function(id){ const t = allTasks.find(x=>x.id===id); return t&&t.done; }).length;
-          const bg = i % 2 === 0 ? '#fafafa' : '#fff';
-          const expandId = 'ganttExpand_' + gantt.id;
-          let barHtml = timeBg;
-          const st = gantt.startTime, et = gantt.endTime;
-          if (st && et) {
-            const [sh,sm] = st.split(':').map(Number);
-            const [eh,em] = et.split(':').map(Number);
-            const sx = Math.round((sh*60+sm)/60*colW);
-            const ex = Math.round((eh*60+em)/60*colW);
-            const bw = Math.max(ex-sx, 4);
-            const progress = getGanttProgress(gantt);
-            const pw = Math.round(bw*progress/100);
-            barHtml += '<div style="position:absolute;left:'+sx+'px;top:8px;width:'+bw+'px;height:24px;background:'+barColor+'33;border-radius:6px;"></div>'
-              + '<div style="position:absolute;left:'+sx+'px;top:8px;width:'+pw+'px;height:24px;background:'+barColor+';border-radius:6px;"></div>'
-              + '<div style="position:absolute;left:'+(sx+6)+'px;top:12px;font-size:10px;color:'+(bw>60?(progress>50?'#fff':barColor):'transparent')+';white-space:nowrap;overflow:hidden;">'+st+'〜'+et+'</div>';
-          } else {
-            barHtml += '<div style="position:absolute;left:4px;top:13px;font-size:10px;color:#ddd;">時刻未設定</div>';
-          }
-          // タスクドット描画（時刻軸）
-          barHtml += renderTaskDotsTime(taskIds, colW);
-          barHtml += nowLine;
-          return buildGanttRow(gantt, bg, barHtml, taskIds, taskCount, doneCount, rowH, labelW, chartW, expandId);
-        }).join('');
-        htmlChart.innerHTML =
-          '<div style="display:flex;border-bottom:2px solid #d0d0d0;background:#fff;position:sticky;top:0;z-index:3;">'
-          + '<div style="width:'+labelW+'px;min-width:'+labelW+'px;border-right:1px solid #e0e0e0;padding:0 6px;display:flex;flex-direction:column;justify-content:center;">'
-          + '<span style="font-size:9px;color:#aaa;">工程</span>'
-          + '<span style="font-size:9px;color:#888;font-weight:600;">'+todayLabel+'</span>'
-          + '</div>'
-          + '<div style="flex:1;position:relative;height:44px;min-width:'+chartW+'px;overflow:hidden;background:#fafafa;">'
-          + '<div style="position:absolute;left:0;top:0;width:'+(6*colW)+'px;bottom:0;background:rgba(30,30,80,0.05);"></div>'
-          + '<div style="position:absolute;left:'+(21*colW)+'px;top:0;width:'+(3*colW)+'px;bottom:0;background:rgba(30,30,80,0.05);"></div>'
-          + headerCols + nowLine
-          + '</div></div>' + rows;
-        return;
-      }
-      // ==== 週・月スケール：日付軸 ====
-      const allDates = gants.flatMap(g => [g.startDate, g.endDate]).filter(Boolean).sort();
-      const today = new Date(); today.setHours(0,0,0,0);
-      let minDate, maxDate;
-      if (allDates.length === 0) {
-        minDate = new Date(today); minDate.setDate(minDate.getDate() - 7);
-        maxDate = new Date(today); maxDate.setDate(maxDate.getDate() + 30);
+        _renderGantDay(htmlChart, gants);
       } else {
-        minDate = new Date(allDates[0]);
-        maxDate = new Date(allDates[allDates.length-1]);
-        minDate.setDate(minDate.getDate() - 3);
-        maxDate.setDate(maxDate.getDate() + 3);
+        _renderGantWeekMonth(htmlChart, gants, scale);
       }
-      const dayW = scale === 'week' ? 16 : 8;
-      const totalDays = Math.ceil((maxDate - minDate) / 86400000);
-      const chartW = totalDays * dayW;
-      const todayX = Math.round((today - minDate) / 86400000) * dayW;
-      let monthHeader = '', dayHeader = '';
-      const cur = new Date(minDate);
-      let lastMonth = -1;
-      while (cur <= maxDate) {
-        const x = Math.round((cur - minDate) / 86400000) * dayW;
-        const dow = cur.getDay();
-        if (cur.getMonth() !== lastMonth) {
-          lastMonth = cur.getMonth();
-          monthHeader += '<div style="position:absolute;left:'+x+'px;top:1px;font-size:10px;font-weight:700;color:#555;white-space:nowrap;padding-left:3px;">'+(cur.getMonth()+1)+'月</div>'
-            + '<div style="position:absolute;left:'+x+'px;top:0;bottom:0;width:1px;background:#bbb;"></div>';
-        }
-        if (scale === 'week') {
-          if (dow === 1) {
-            dayHeader += '<div style="position:absolute;left:'+(x+1)+'px;top:14px;font-size:9px;color:#666;">'+(cur.getMonth()+1)+'/'+cur.getDate()+'</div>'
-              + '<div style="position:absolute;left:'+x+'px;top:0;bottom:0;width:1px;background:#ddd;"></div>';
-          }
-          if (dow === 0 || dow === 6) {
-            dayHeader += '<div style="position:absolute;left:'+x+'px;top:0;width:'+dayW+'px;bottom:0;background:rgba(0,0,0,0.03);pointer-events:none;"></div>';
-          }
-        } else {
-          if (cur.getDate() % 5 === 0 || cur.getDate() === 1) {
-            dayHeader += '<div style="position:absolute;left:'+x+'px;top:14px;font-size:9px;color:#aaa;">'+cur.getDate()+'</div>'
-              + '<div style="position:absolute;left:'+x+'px;top:0;bottom:0;width:1px;background:#efefef;"></div>';
-          }
-        }
-        cur.setDate(cur.getDate() + 1);
-      }
-      const nowLine2 = '<div style="position:absolute;left:'+todayX+'px;top:0;bottom:0;width:2px;background:#ff3b30;opacity:0.7;pointer-events:none;"></div>'
-        + '<div style="position:absolute;left:'+(todayX+3)+'px;top:2px;font-size:9px;color:#ff3b30;font-weight:700;pointer-events:none;">今日</div>';
-      const rows = gants.map(function(gantt, i) {
-        const bp = allTasks.find(t => t.id === gantt.blueprintId);
-        const color = (bp && bp.color) ? bp.color : '#3498db';
-        const barColor = gantt.achieved ? '#f39c12' : color;
-        const taskIds = gantt.taskIds || [];
-        const taskCount = taskIds.length;
-        const doneCount = taskIds.filter(function(id){ const t = allTasks.find(x=>x.id===id); return t&&t.done; }).length;
-        const bg = i % 2 === 0 ? '#fafafa' : '#fff';
-        const expandId = 'ganttExpand_' + gantt.id;
-        let barHtml = '';
-        if (gantt.startDate && gantt.endDate) {
-          const sx = Math.round((new Date(gantt.startDate) - minDate) / 86400000) * dayW;
-          const ex = Math.round((new Date(gantt.endDate) - minDate) / 86400000) * dayW + dayW;
-          const bw = Math.max(ex - sx, 6);
-          const progress = getGanttProgress(gantt);
-          const pw = Math.round(bw * progress / 100);
-          barHtml = '<div style="position:absolute;left:'+sx+'px;top:8px;width:'+bw+'px;height:24px;background:'+barColor+'33;border-radius:6px;"></div>'
-            + '<div style="position:absolute;left:'+sx+'px;top:8px;width:'+pw+'px;height:24px;background:'+barColor+';border-radius:6px;"></div>'
-            + (bw>40 ? '<div style="position:absolute;left:'+(sx+6)+'px;top:12px;font-size:10px;color:'+(progress>50?'#fff':'#555')+';">'+progress+'%</div>' : '');
-        } else {
-          barHtml = '<div style="position:absolute;left:4px;top:13px;font-size:10px;color:#ddd;">期間未設定</div>';
-        }
-        // タスクドット描画（日付軸）
-        barHtml += renderTaskDotsDate(taskIds, minDate, dayW);
-        barHtml += nowLine2;
-        return buildGanttRow(gantt, bg, barHtml, taskIds, taskCount, doneCount, rowH, labelW, chartW, expandId);
-      }).join('');
-      htmlChart.innerHTML =
-        '<div style="display:flex;border-bottom:2px solid #d0d0d0;background:#fff;position:sticky;top:0;z-index:3;">'
-        + '<div style="width:'+labelW+'px;min-width:'+labelW+'px;border-right:1px solid #e0e0e0;display:flex;align-items:center;padding:0 6px;">'
-        + '<span style="font-size:10px;color:#aaa;">工程</span></div>'
-        + '<div style="flex:1;position:relative;height:44px;min-width:'+chartW+'px;overflow:hidden;background:#fafafa;">'
-        + monthHeader + dayHeader + nowLine2
-        + '</div></div>' + rows;
     }
-    // タスクドット描画（日スケール：時刻軸）
-    function renderTaskDotsTime(taskIds, colW) {
-      const tasks = window.allTasks || allTasks;
-      let html = '';
-      (taskIds || []).forEach(function(tid) {
-        const t = tasks.find(x => x.id === tid);
-        if (!t || !t.time) return;
-        const parts = t.time.split(':').map(Number);
-        if (parts.length < 2) return;
-        const tx = Math.round((parts[0]*60 + parts[1]) / 60 * colW);
-        const col = t.done ? '#27ae60' : '#aaa';
-        html += '<div style="position:absolute;left:'+(tx-4)+'px;top:2px;width:8px;height:8px;border-radius:50%;background:'+col+';z-index:3;border:2px solid #fff;" title="'+(t.text||'')+'"></div>';
-      });
-      return html;
-    }
-    // タスクドット描画（週・月スケール：日付軸）
-    function renderTaskDotsDate(taskIds, minDate, dayW) {
-      const tasks = window.allTasks || allTasks;
-      let html = '';
-      (taskIds || []).forEach(function(tid) {
-        const t = tasks.find(x => x.id === tid);
-        if (!t || !t.date) return;
-        const dx = Math.round((new Date(t.date) - minDate) / 86400000) * dayW + Math.floor(dayW/2);
-        const col = t.done ? '#27ae60' : '#aaa';
-        html += '<div style="position:absolute;left:'+(dx-3)+'px;top:2px;width:6px;height:6px;border-radius:50%;background:'+col+';z-index:3;border:1px solid #fff;" title="'+(t.text||'')+'"></div>';
-      });
-      return html;
-    }
-    // 工程行HTML生成（日・週・月共通）
-    function buildGanttRow(gantt, bg, barHtml, taskIds, taskCount, doneCount, rowH, labelW, chartW, expandId) {
-      const _tasks = window.allTasks || allTasks;
-      const expandBtn = taskCount > 0
-        ? '<button onclick="(function(){var el=document.getElementById(\''+expandId+'\');if(el){el.style.display=el.style.display===\'none\'?\'block\':\'none\';}})()" style="background:none;border:none;font-size:11px;color:#aaa;cursor:pointer;padding:2px 4px;flex-shrink:0;">\u25b6</button>'
-        : '<span style="width:20px;display:inline-block;"></span>';
-      let taskRows = '';
-      if (taskCount > 0) {
-        taskRows = '<div id="'+expandId+'" style="display:none;background:#f8f8f8;border-bottom:1px solid #e0e0e0;">'
-          + taskIds.map(function(tid) {
-              const t = _tasks.find(x => x.id === tid);
-              if (!t) return '';
-              const toggleFn = "(function(){var t=allTasks.find(function(x){return x.id==='" + tid + "';});if(t){t.done=!t.done;saveAllTasks();renderGantView();}})()";
-              const delFn = "(function(){var t=allTasks.find(function(x){return x.id==='" + tid + "';});if(!t)return;showConfirm('\u300c'+t.text+'\u300d\u3092\u524a\u9664\u3057\u307e\u3059\u304b\uff1f','\u524a\u9664',true,function(){allTasks=allTasks.filter(function(x){return x.id!=='" + tid + "';});allTasks.filter(function(x){return x.kind==='gantt';}).forEach(function(g){g.taskIds=(g.taskIds||[]).filter(function(id){return id!=='" + tid + "';});});saveAllTasks();renderGantView();});})()";
-              return '<div style="display:flex;align-items:center;min-height:36px;border-bottom:1px solid #efefef;">'
-                + '<div style="width:'+labelW+'px;min-width:'+labelW+'px;padding:0 4px 0 14px;border-right:1px solid #e0e0e0;display:flex;align-items:center;gap:4px;overflow:hidden;">'
-                + '<button onclick="'+toggleFn+'" style="background:none;border:none;font-size:13px;cursor:pointer;padding:0;flex-shrink:0;">'+(t.done?'✅':'⬜')+'</button>'
-                + '<span style="font-size:10px;color:'+(t.done?'#aaa':'#333')+';text-decoration:'+(t.done?'line-through':'none')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;">'+t.text+'</span>'
-                + '</div>'
-                + '<div style="flex:1;min-width:0;padding:0 6px;display:flex;align-items:center;gap:6px;">'
-                + '<span style="font-size:9px;color:#bbb;white-space:nowrap;">'+(t.date||'')+'</span>'
-                + '<div style="margin-left:auto;display:flex;gap:4px;flex-shrink:0;">'
-                + '<button onclick="openTaskEditModal(\''+tid+'\')" style="background:#f0f0f0;border:none;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;color:#555;">✏️ 編集</button>'
-                + '<button onclick="'+delFn+'" style="background:#fff0f0;border:1px solid #ffcdd2;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;color:#e53935;">削除</button>'
-                + '</div></div></div>';
-            }).join('')
-          + '</div>';
-      }
-      return '<div>'
-        + '<div style="display:flex;border-bottom:1px solid #efefef;background:'+bg+';min-height:'+rowH+'px;align-items:center;">'
-        + '<div style="width:'+labelW+'px;min-width:'+labelW+'px;height:'+rowH+'px;border-right:1px solid #e0e0e0;display:flex;align-items:center;padding:0 2px 0 4px;gap:2px;">'
-        + expandBtn
-        + '<button onclick="openGanttEditor(\''+gantt.id+'\')" style="flex:1;height:'+rowH+'px;background:none;border:none;text-align:left;padding:0 4px;cursor:pointer;display:flex;flex-direction:column;justify-content:center;min-width:0;">'
-        + '<div style="font-size:11px;color:#262626;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+gantt.title+'</div>'
-        + '<div style="font-size:9px;color:#aaa;">'+(taskCount>0?doneCount+'/'+taskCount+'件':'タスクなし')+'</div>'
-        + '</button></div>'
-        + '<div style="flex:1;position:relative;height:'+rowH+'px;overflow:hidden;min-width:'+chartW+'px;">'
-        + barHtml
-        + '</div></div>'
-        + taskRows + '</div>';
-    }
+
     // blueprintエディタ
     function openBlueprintEditor(id) {
       _gantEditingBlueprintId = id;
@@ -7693,15 +7710,15 @@ function getDeckGDP() {
       closeBlueprintEditor();
       renderGantView();
       if (!_gantEditingBlueprintId) {
-        showToast('造営計画を作成しました。カードの「＋工程」から工程を追加しましょう', {type:'next', duration:4000});
+        showToast('造営計画が生まれました。工程を刻んでいきましょう 🏯', {type:'next', duration:4000});
       } else {
-        showToast('保存しました', {type:'success'});
+        showToast('王国に刻まれました ✅', {type:'success'});
       }
     }
     function deleteBlueprint() {
       if (!_gantEditingBlueprintId) return;
       const id = _gantEditingBlueprintId;
-      showConfirm('この造営計画と配下の工程を削除しますか？', function() {
+      showConfirm('この造営計画と、配下の工程をすべて消しますか？', function() {
         allTasks = allTasks.filter(t => !(t.kind === 'gantt' && t.blueprintId === id));
         allTasks = allTasks.filter(t => t.id !== id);
         if (_gantSelectedBlueprintId === id) _gantSelectedBlueprintId = null;
@@ -7717,7 +7734,7 @@ function getDeckGDP() {
     }
     function openGanttEditor(id) {
       if (!_gantSelectedBlueprintId && !id) {
-        showToast('上の造営計画カードの「＋工程」ボタンから追加してください', {type:'warn', duration:3000});
+        showToast('造営計画を選んでから、工程を刻んでください', {type:'warn', duration:3000});
         return;
       }
       _gantEditingGanttId = id;
@@ -7725,40 +7742,29 @@ function getDeckGDP() {
       if (!modal) return;
       const gantt = id ? allTasks.find(t => t.id === id) : null;
       const titleInput = document.getElementById('ganttTitleInput');
-      const startInput = document.getElementById('ganttStartInput');
-      const endInput = document.getElementById('ganttEndInput');
       const memoInput = document.getElementById('ganttMemoInput');
       const deleteBtn = document.getElementById('ganttDeleteBtn');
       const searchInput = document.getElementById('ganttTaskSearchInput');
       const searchResults = document.getElementById('ganttTaskSearchResults');
       if (!titleInput) return;
-      const todayStr = getLocalDateStr(new Date());
-      const nowH = String(new Date().getHours()).padStart(2,'0');
-      const nowHE = String(new Date().getHours()+1 < 24 ? new Date().getHours()+1 : 23).padStart(2,'0');
       titleInput.value = gantt ? gantt.title : '';
-      if (startInput) startInput.value = gantt ? (gantt.startDate || todayStr) : todayStr;
-      if (endInput) endInput.value = gantt ? (gantt.endDate || todayStr) : todayStr;
-      const startTimeInput = document.getElementById('ganttStartTimeInput');
-      const endTimeInput = document.getElementById('ganttEndTimeInput');
-      if (startTimeInput) startTimeInput.value = gantt ? (gantt.startTime || nowH+':00') : nowH+':00';
-      if (endTimeInput) endTimeInput.value = gantt ? (gantt.endTime || nowHE+':00') : nowHE+':00';
       if (memoInput) memoInput.value = gantt ? (gantt.memo || '') : '';
       if (deleteBtn) deleteBtn.style.display = id ? '' : 'none';
       if (searchInput) searchInput.value = '';
       if (searchResults) searchResults.style.display = 'none';
-      // 日付フォーマット案内
-      const startLabel = document.querySelector('label[for="ganttStartInput"], #ganttStartInput')?.closest('div')?.querySelector('label');
-      const ganttDateHint = document.getElementById('ganttDateHint');
-      if (ganttDateHint) ganttDateHint.style.display = '';
-      // 紐づきタスク表示
-      renderGanttLinkedTasks(gantt ? (gantt.taskIds || []) : []);
+      // 新規の場合はwindow._newGanttTaskIdsをリセット
+      if (!id) window._newGanttTaskIds = [];
+      // 紐づきタスク表示＋期間プレビュー初期化
+      const initialTaskIds = gantt ? (gantt.taskIds || []) : [];
+      renderGanttLinkedTasks(initialTaskIds);
+      _updateGanttAutoDateInfo(initialTaskIds);
       modal.style.display = 'flex';
     }
     function renderGanttLinkedTasks(taskIds) {
       const area = document.getElementById('ganttLinkedTasks');
       if (!area) return;
       if (taskIds.length === 0) {
-        area.innerHTML = '<span style="font-size:0.8em;color:#aaa;">タスクが紐づいていません</span>';
+        area.innerHTML = '<span style="font-size:0.8em;color:#aaa;">まだ、やることが紐づいていません</span>';
         return;
       }
       area.innerHTML = taskIds.map(tid => {
@@ -7776,6 +7782,38 @@ function getDeckGDP() {
         </span>`;
       }).filter(Boolean).join('');
     }
+    // タスクがゴミなら夢が叶わない — 期間インジケーター
+    function _updateGanttAutoDateInfo(taskIds) {
+      const info = document.getElementById('ganttAutoDateInfo');
+      if (!info) return;
+      if (!taskIds || taskIds.length === 0) {
+        info.style.cssText = 'font-size:0.8em;background:#f5f5f5;border-radius:8px;padding:8px 12px;margin-bottom:12px;color:#aaa;';
+        info.innerHTML = '📅 やることを紐づけると、工程に命が宿ります<br><span style="font-size:0.9em;">空の工程に、バーは現れません</span>';
+        return;
+      }
+      const tasks = taskIds.map(id => allTasks.find(t => t.id === id)).filter(Boolean);
+      const dates = tasks.map(t => t.date).filter(Boolean).sort();
+      const times = tasks.map(t => t.time).filter(Boolean).sort();
+      const noDateCount = tasks.filter(t => !t.date && !t.time).length;
+      if (dates.length === 0 && times.length === 0) {
+        info.style.cssText = 'font-size:0.8em;background:#fff3e0;border-radius:8px;padding:10px 12px;margin-bottom:12px;color:#e65100;border:1px solid #ffcc80;';
+        info.innerHTML = '⚠️ <b>紐づけた' + tasks.length + '件のタスクに日付がありません</b><br>'
+          + '<span style="font-size:0.9em;color:#bf360c;">タスクに日付を入れないとバーは表示されません。<br>いつやるかを決めた瞬間、夢は動き出します。</span>';
+      } else {
+        let preview = '';
+        if (dates.length > 0) preview += '<span style="color:#1565c0;font-weight:600;">' + dates[0] + (dates.length > 1 ? ' 〜 ' + dates[dates.length-1] : '') + '</span>';
+        if (times.length > 0) {
+          if (preview) preview += '　';
+          preview += '<span style="color:#6a1b9a;">' + times[0] + (times.length > 1 ? '〜' + times[times.length-1] : '') + '</span>';
+        }
+        const warnPart = noDateCount > 0
+          ? '<br><span style="color:#e65100;font-size:0.85em;">⚠️ ' + noDateCount + '件は日付なし（バーに反映されません）</span>'
+          : '';
+        info.style.cssText = 'font-size:0.8em;background:#e8f5e9;border-radius:8px;padding:10px 12px;margin-bottom:12px;color:#2e7d32;border:1px solid #a5d6a7;';
+        info.innerHTML = '✅ 保存すると、工程に命が宿ります<br>' + preview + warnPart;
+      }
+    }
+
     function searchGanttTasks(query) {
       const results = document.getElementById('ganttTaskSearchResults');
       if (!results) return;
@@ -7803,17 +7841,17 @@ function getDeckGDP() {
       ).join('');
     }
     function linkGanttTask(taskId) {
-      // エディタ上の一時的な紐づき（保存時にgantt.taskIdsに反映）
       const gantt = _gantEditingGanttId ? allTasks.find(t => t.id === _gantEditingGanttId) : null;
       if (gantt) {
         if (!gantt.taskIds) gantt.taskIds = [];
         if (!gantt.taskIds.includes(taskId)) gantt.taskIds.push(taskId);
         renderGanttLinkedTasks(gantt.taskIds);
+        _updateGanttAutoDateInfo(gantt.taskIds);
       } else {
-        // 新規ganttの場合はウィンドウ変数で一時保持
         if (!window._newGanttTaskIds) window._newGanttTaskIds = [];
         if (!window._newGanttTaskIds.includes(taskId)) window._newGanttTaskIds.push(taskId);
         renderGanttLinkedTasks(window._newGanttTaskIds);
+        _updateGanttAutoDateInfo(window._newGanttTaskIds);
       }
       const searchInput = document.getElementById('ganttTaskSearchInput');
       const searchResults = document.getElementById('ganttTaskSearchResults');
@@ -7825,65 +7863,181 @@ function getDeckGDP() {
       if (gantt) {
         gantt.taskIds = (gantt.taskIds || []).filter(id => id !== taskId);
         renderGanttLinkedTasks(gantt.taskIds);
+        _updateGanttAutoDateInfo(gantt.taskIds);
       } else if (window._newGanttTaskIds) {
         window._newGanttTaskIds = window._newGanttTaskIds.filter(id => id !== taskId);
         renderGanttLinkedTasks(window._newGanttTaskIds);
+        _updateGanttAutoDateInfo(window._newGanttTaskIds);
       }
     }
     // タスク側からganttに紐づける
     // タスクの日付・時刻から手立て（工程）の期間を自動計算
+    // ===== 3階層期間整合性管理 =====
+    // タスク優先原則：タスクの日付・時刻 → ステップ(gantt) → 志(blueprint) に連鎖反映
+
+    // Lv2: ステップの期間をタスクから再計算（タスクが最優先）
     function recalcGanttDateFromTasks(gantt) {
       const taskIds = gantt.taskIds || [];
-      if (taskIds.length === 0) return;
+      if (taskIds.length === 0) {
+        // タスクが0件 → バーをクリア（タスクがなければバーは出ない原則）
+        gantt.startDate = ''; gantt.endDate = '';
+        gantt.startTime = ''; gantt.endTime = '';
+        return;
+      }
       const tasks = taskIds.map(id => allTasks.find(t => t.id === id)).filter(Boolean);
       const dates = tasks.map(t => t.date).filter(Boolean).sort();
       const times = tasks.map(t => t.time).filter(Boolean).sort();
+      // 日付：タスクに日付があれば上書き、なければクリア
       if (dates.length > 0) {
         gantt.startDate = dates[0];
         gantt.endDate = dates[dates.length - 1];
+      } else {
+        gantt.startDate = '';
+        gantt.endDate = '';
       }
+      // 時刻：開始時刻の最早 〜 終了時刻(endTime優先)の最遅
+      // startTime だけでなく endTime も含めて最遅を取る
+      const allEndTimes = tasks.map(t => t.endTime || t.time).filter(Boolean).sort();
       if (times.length > 0) {
-        gantt.startTime = times[0];
-        gantt.endTime = times[times.length - 1];
-        // 同じ時刻なら終了を1時間後に
+        gantt.startTime = times[0]; // 最早の開始時刻
+        // 最遅の終了時刻（endTimeがあればendTime、なければtime）
+        gantt.endTime = allEndTimes[allEndTimes.length - 1];
+        // 同じ時刻になってしまったら終了を1時間後に
         if (gantt.startTime === gantt.endTime) {
           const [h, m] = gantt.startTime.split(':').map(Number);
           const eh = Math.min(h + 1, 23);
           gantt.endTime = String(eh).padStart(2,'0') + ':' + String(m).padStart(2,'0');
         }
+      } else {
+        gantt.startTime = '';
+        gantt.endTime = '';
       }
     }
-    function linkTaskToGantt() {
-      const sel = document.getElementById('taskEditGantSelect');
+
+    // Lv1: 志の期間をステップから再計算
+    function recalcBlueprintFromGants(bp) {
+      if (!bp) return;
+      const gants = getGantsByBlueprint(bp.id);
+      if (gants.length === 0) return;
+      const starts = gants.map(g => g.startDate).filter(Boolean).sort();
+      const ends = gants.map(g => g.endDate).filter(Boolean).sort();
+      if (starts.length > 0) bp.startDate = starts[0];
+      if (ends.length > 0) bp.endDate = ends[ends.length - 1];
+    }
+
+    // 連鎖再計算：タスクIDを受け取り → ステップ → 志 の順に再計算
+    function recalcAll(taskId) {
+      // このタスクに紐づくすべてのステップを再計算
+      const linkedGants = allTasks.filter(t => t.kind === 'gantt' && (t.taskIds || []).includes(taskId));
+      linkedGants.forEach(g => {
+        recalcGanttDateFromTasks(g);
+        // そのステップが属する志も再計算
+        const bp = allTasks.find(t => t.id === g.blueprintId);
+        recalcBlueprintFromGants(bp);
+      });
+    }
+
+    // ステップIDを受け取り志を再計算（ステップ編集時用）
+    function recalcAllFromGantt(ganttId) {
+      const gantt = allTasks.find(t => t.id === ganttId);
+      if (!gantt) return;
+      recalcGanttDateFromTasks(gantt);
+      const bp = allTasks.find(t => t.id === gantt.blueprintId);
+      recalcBlueprintFromGants(bp);
+    }
+    function linkTaskToGantt(ganttId) {
+      // セレクトから呼ばれる場合とID直指定の両方に対応
+      if (!ganttId) {
+        const sel = document.getElementById('taskEditGantSelect');
+        if (sel) ganttId = sel.value;
+      }
       const taskIdInput = document.getElementById('taskEditId');
-      if (!sel || !taskIdInput) return;
-      const ganttId = sel.value;
+      if (!ganttId || !taskIdInput) return;
       const taskId = taskIdInput.value;
-      if (!ganttId || !taskId) return;
+      if (!taskId) return;
       const gantt = allTasks.find(t => t.id === ganttId);
       if (!gantt) return;
       if (!gantt.taskIds) gantt.taskIds = [];
-      if (!gantt.taskIds.includes(taskId)) gantt.taskIds.push(taskId);
-      recalcGanttDateFromTasks(gantt);
-      saveAllTasks();
-      showToast('手立てに紐づけました ✅', {type:'success'});
+      if (!gantt.taskIds.includes(taskId)) {
+        gantt.taskIds.push(taskId);
+        recalcAllFromGantt(ganttId);
+        saveAllTasks();
+        showToast('🏗 ' + gantt.title + ' に刻まれました', {type:'success', duration:2000});
+      }
       openTaskEditModal(taskId);
     }
     function unlinkTaskFromGantt(taskId, ganttId) {
       const gantt = allTasks.find(t => t.id === ganttId);
       if (!gantt) return;
       gantt.taskIds = (gantt.taskIds || []).filter(id => id !== taskId);
-      recalcGanttDateFromTasks(gantt);      saveAllTasks();
+      recalcAllFromGantt(ganttId);  // ステップ→志まで連鎖
+      saveAllTasks();
       openTaskEditModal(taskId);
     }
-    function saveGanttEditor() {      const titleInput = document.getElementById('ganttTitleInput');      if (!titleInput) return;      const titleVal = titleInput.value.trim();      if (!titleVal) { showToast('手立て名を入力してください', {type:'warn'}); return; }      const memo = document.getElementById('ganttMemoInput');      if (_gantEditingGanttId) {        const gantt = allTasks.find(t => t.id === _gantEditingGanttId);        if (gantt) {          gantt.title = titleVal;          gantt.memo = memo ? memo.value.trim() : '';          recalcGanttDateFromTasks(gantt);        }      } else {        const gants = getGantsByBlueprint(_gantSelectedBlueprintId);        const newGantt = {          id: generateTaskId(),          kind: 'gantt',          blueprintId: _gantSelectedBlueprintId,          title: titleVal,          startDate: '', endDate: '',          startTime: '', endTime: '',          order: gants.length,          dependsOn: [],          taskIds: window._newGanttTaskIds || [],          progressMode: 'auto',          progressManual: null,          progressAuto: 0,          memo: memo ? memo.value.trim() : '',          achieveMode: 'both',          achieved: false,          achievedAt: null        };        recalcGanttDateFromTasks(newGantt);        allTasks.push(newGantt);        window._newGanttTaskIds = [];      }      saveAllTasks();      closeGanttEditor();      renderGantView();      if (!_gantEditingGanttId) {        showToast('手立てを追加しました。タスクを紐づけると期間が自動で入ります', {type:'next', duration:4000});      } else {        showToast('保存しました', {type:'success'});      }    }    function deleteGantt() {
+    function saveGanttEditor() {
+      const titleInput = document.getElementById('ganttTitleInput');
+      if (!titleInput) return;
+      const titleVal = titleInput.value.trim();
+      if (!titleVal) { showToast('工程の名を入力してください', {type:'warn'}); return; }
+      const memo = document.getElementById('ganttMemoInput');
+      const isNew = !_gantEditingGanttId;
+      let savedGanttId = null;
+      if (_gantEditingGanttId) {
+        const gantt = allTasks.find(t => t.id === _gantEditingGanttId);
+        if (gantt) {
+          gantt.title = titleVal;
+          gantt.memo = memo ? memo.value.trim() : '';
+          savedGanttId = gantt.id;
+        }
+      } else {
+        const gants = getGantsByBlueprint(_gantSelectedBlueprintId);
+        const resolvedTaskIds = window._newGanttTaskIds || [];
+        const newGantt = {
+          id: generateTaskId(),
+          kind: 'gantt',
+          blueprintId: _gantSelectedBlueprintId,
+          title: titleVal,
+          startDate: '', endDate: '',
+          startTime: '', endTime: '',
+          order: gants.length,
+          dependsOn: [],
+          taskIds: resolvedTaskIds,
+          progressMode: 'auto',
+          progressManual: null,
+          progressAuto: 0,
+          memo: memo ? memo.value.trim() : '',
+          achieveMode: 'both',
+          achieved: false,
+          achievedAt: null
+        };
+        allTasks.push(newGantt);
+        savedGanttId = newGantt.id;
+        window._newGanttTaskIds = [];
+      }
+      // タスク優先原則でステップ→志まで連鎖再計算
+      if (savedGanttId) recalcAllFromGantt(savedGanttId);
+      saveAllTasks();
+      closeGanttEditor();
+      renderGantView();
+      if (isNew) {
+        const g = allTasks.find(t => t.id === savedGanttId);
+        const hasBar = g && (g.startDate || g.startTime);
+        if (hasBar) {
+          showToast('王国に工程が生まれました ✅', {type:'success', duration:3000});
+        } else {
+          showToast('王国に工程が生まれました。やることを紐づけると、バーが現れます 📅', {type:'next', duration:5000});
+        }
+      } else {
+        showToast('王国に刻まれました ✅', {type:'success'});
+      }
+    }    function deleteGantt() {
       if (!_gantEditingGanttId) return;
       const id = _gantEditingGanttId;
       const gantt = allTasks.find(t => t.id === id);
       if (!gantt) return;
       const linkedCount = (gantt.taskIds || []).length;
       const msg = linkedCount > 0
-        ? `「${gantt.title}」を削除しますか？\n\n紐づくタスク${linkedCount}件を：\n・工程から外すだけ（タスクは残す）\n・タスクごと削除する\n\nOK→タスクを残す　キャンセル→中止`
+        ? `「${gantt.title}」を王国から消しますか？\n\n紐づくやること${linkedCount}件はどうしますか？`
         : `「${gantt.title}」を削除しますか？`;
       if (linkedCount > 0) {
         // 3択モーダル
@@ -7891,11 +8045,11 @@ function getDeckGDP() {
         m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;';
         m.innerHTML = `
           <div style="background:#fff;border-radius:16px;padding:24px;width:88%;max-width:360px;">
-            <div style="font-size:0.95em;font-weight:600;margin-bottom:8px;">工程を削除</div>
+            <div style="font-size:0.95em;font-weight:600;margin-bottom:8px;">工程を王国から消す</div>
             <div style="font-size:0.85em;color:#555;margin-bottom:20px;">「${gantt.title}」を削除します。<br>紐づくタスク${linkedCount}件はどうしますか？</div>
             <div style="display:flex;flex-direction:column;gap:8px;">
-              <button id="_dg_keep" style="padding:10px;background:#262626;color:#fff;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;">タスクを残して工程だけ削除</button>
-              <button id="_dg_del" style="padding:10px;background:#fff;color:#ff3b30;border:1px solid #ff3b30;border-radius:8px;font-size:0.9em;cursor:pointer;">タスクごと削除</button>
+              <button id="_dg_keep" style="padding:10px;background:#262626;color:#fff;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;">やることを残して、工程だけ消す</button>
+              <button id="_dg_del" style="padding:10px;background:#fff;color:#ff3b30;border:1px solid #ff3b30;border-radius:8px;font-size:0.9em;cursor:pointer;">やることごと、すべて消す</button>
               <button id="_dg_cancel" style="padding:10px;background:#f5f5f5;color:#333;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;">キャンセル</button>
             </div>
           </div>`;
@@ -7913,7 +8067,7 @@ function getDeckGDP() {
         };
         document.getElementById('_dg_cancel').onclick = function() { m.remove(); };
       } else {
-        showConfirm(`「${gantt.title}」を削除しますか？`, function() {
+        showConfirm(`「${gantt.title}」を王国から消しますか？`, function() {
           allTasks = allTasks.filter(t => t.id !== id);
           saveAllTasks(); closeGanttEditor(); renderGantView();
         });
@@ -8167,7 +8321,7 @@ function getDeckGDP() {
     function deleteMonthlyTask() {
       const taskId = document.getElementById('monthlyTaskId').value;
       if (!taskId) return;
-      showConfirm('このタスクを削除しますか？', function() {
+      showConfirm('このやることを王国から消しますか？', function() {
         deleteTaskById(taskId);
         closeMonthlyTaskModal();
         renderMonthlyView();
@@ -8537,14 +8691,80 @@ function getDeckGDP() {
     // タスク追加
     function addTask(sectionNum) {
       const input = document.getElementById('input' + sectionNum);
+      if (!input) return;
       const text = input.value.trim();
-      if (text) {
-        // currentDailyDateが設定されていればその日付、なければ今日
-        const targetDate = currentDailyDate || getLocalDateStr(new Date());
-        const newTask = createTask(text, targetDate, null, sectionNum, 'daily_only');
-        input.value = '';
-        renderAllSections(targetDate);
+      if (!text) return;
+      const targetDate = currentDailyDate || getLocalDateStr(new Date());
+      const newTask = createTask(text, targetDate, null, sectionNum, 'daily_only');
+      input.value = '';
+      renderAllSections(targetDate);
+      // 工程があれば紐づけスナックバーを表示
+      _showGanttLinkSnackbar(newTask.id);
+    }
+
+    function _showGanttLinkSnackbar(taskId) {
+      const gantOn = allSettings.ui.gantEnabled === true || allSettings.ui.gantEnabled === 'true';
+      const gants = allTasks.filter(t => t.kind === 'gantt');
+      if (!gantOn || gants.length === 0) return;
+      // 既存スナックバーがあれば削除
+      const old = document.getElementById('_ganttLinkSnackbar');
+      if (old) old.remove();
+      // 志でグループ化したオプション生成
+      const blueprints = allTasks.filter(t => t.kind === 'blueprint');
+      let optHtml = '<option value="">工程を選んで紐づけ...</option>';
+      blueprints.forEach(bp => {
+        const children = gants.filter(g => g.blueprintId === bp.id);
+        if (!children.length) return;
+        optHtml += `<optgroup label="${bp.title}">`;
+        children.forEach(g => { optHtml += `<option value="${g.id}">${g.title}</option>`; });
+        optHtml += '</optgroup>';
+      });
+      const orphans = gants.filter(g => !g.blueprintId || !blueprints.find(b => b.id === g.blueprintId));
+      if (orphans.length) {
+        optHtml += '<optgroup label="（志なし）">';
+        orphans.forEach(g => { optHtml += `<option value="${g.id}">${g.title}</option>`; });
+        optHtml += '</optgroup>';
       }
+      const snack = document.createElement('div');
+      snack.id = '_ganttLinkSnackbar';
+      snack.style.cssText = [
+        'position:fixed','bottom:72px','left:50%','transform:translateX(-50%)',
+        'background:#262626','color:#fff','border-radius:12px',
+        'padding:10px 14px','display:flex','align-items:center','gap:8px',
+        'z-index:9999','box-shadow:0 4px 20px rgba(0,0,0,0.3)',
+        'font-size:0.85em','max-width:92vw','width:360px',
+        'animation:_snackIn 0.2s ease'
+      ].join(';');
+      snack.innerHTML = `
+        <span style="white-space:nowrap;color:#aaa;">🏗 工程に追加？</span>
+        <select id="_ganttLinkSnackSel" style="flex:1;padding:5px 8px;border-radius:8px;border:none;background:#444;color:#fff;font-size:0.85em;">${optHtml}</select>
+        <button onclick="document.getElementById('_ganttLinkSnackbar').remove()" style="background:none;border:none;color:#888;font-size:1.1em;cursor:pointer;padding:0 2px;">✕</button>
+      `;
+      // style追加
+      if (!document.getElementById('_snackStyle')) {
+        const st = document.createElement('style');
+        st.id = '_snackStyle';
+        st.textContent = '@keyframes _snackIn{from{opacity:0;transform:translateX(-50%) translateY(12px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}';
+        document.head.appendChild(st);
+      }
+      document.body.appendChild(snack);
+      // セレクト変更で即紐づけ
+      const sel = document.getElementById('_ganttLinkSnackSel');
+      if (sel) sel.onchange = function() {
+        if (!this.value) return;
+        const gantt = allTasks.find(t => t.id === this.value);
+        if (!gantt) return;
+        if (!gantt.taskIds) gantt.taskIds = [];
+        if (!gantt.taskIds.includes(taskId)) {
+          gantt.taskIds.push(taskId);
+          recalcAllFromGantt(this.value);
+          saveAllTasks();
+        }
+        showToast('🏗 ' + gantt.title + ' に刻まれました', {type:'success', duration:2000});
+        snack.remove();
+      };
+      // 5秒で自動消滅
+      setTimeout(() => { if (snack.parentNode) snack.remove(); }, 5000);
     }
     // タスク完了トグル（ID版）
     function toggleTaskById(taskId) {
@@ -8641,7 +8861,7 @@ function getDeckGDP() {
           const linkedDiv = document.getElementById('taskEditGantLinked');
           if (linkedDiv) {
             linkedDiv.innerHTML = linked.length === 0
-              ? '<span style="color:#aaa;">紐づいている工程はありません</span>'
+              ? '<span style="color:#aaa;">まだ、工程に紐づいていません</span>'
               : linked.map(g => {
                   const bp = allTasks.find(b => b.id === g.blueprintId);
                   return `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:#f0f0f0;border-radius:12px;font-size:0.8em;margin:2px;">
@@ -8656,12 +8876,37 @@ function getDeckGDP() {
             const gants = allTasks.filter(t => t.kind === 'gantt');
             if (gants.length === 0) {
               sel.innerHTML = '<option value="">工程がありません（造営タブで追加）</option>';
+              sel.onchange = null;
             } else {
-              sel.innerHTML = '<option value="">工程を選択...</option>' + gants.map(g => {
-                const bp = allTasks.find(b => b.id === g.blueprintId);
-                const already = (g.taskIds||[]).includes(taskId) ? ' ✅' : '';
-                return `<option value="${g.id}">${bp ? bp.title + ' › ' : ''}${g.title}${already}</option>`;
-              }).join('');
+              // 志でグループ分け
+              const blueprints = allTasks.filter(t => t.kind === 'blueprint');
+              let html = '<option value="">▼ 工程を選んで即追加...</option>';
+              // 志あり工程
+              blueprints.forEach(bp => {
+                const children = gants.filter(g => g.blueprintId === bp.id);
+                if (children.length === 0) return;
+                html += `<optgroup label="📋 ${bp.title}">`;
+                children.forEach(g => {
+                  const already = (g.taskIds||[]).includes(taskId);
+                  html += `<option value="${g.id}" ${already ? 'disabled style="color:#aaa"' : ''}>${already ? '✅ ' : ''}${g.title}</option>`;
+                });
+                html += '</optgroup>';
+              });
+              // 志なし工程
+              const orphans = gants.filter(g => !g.blueprintId || !blueprints.find(b => b.id === g.blueprintId));
+              if (orphans.length > 0) {
+                html += '<optgroup label="（志なし）">';
+                orphans.forEach(g => {
+                  const already = (g.taskIds||[]).includes(taskId);
+                  html += `<option value="${g.id}" ${already ? 'disabled style="color:#aaa"' : ''}>${already ? '✅ ' : ''}${g.title}</option>`;
+                });
+                html += '</optgroup>';
+              }
+              sel.innerHTML = html;
+              // 選んだ瞬間に即紐づけ
+              sel.onchange = function() {
+                if (this.value) linkTaskToGantt(this.value);
+              };
             }
           }
         } else {
@@ -8700,16 +8945,9 @@ function getDeckGDP() {
       // 繰り返し処理（共通関数）
       var _repeatContinue = applyRepeatSave(taskId, null, repeat, repeatEnd, date);
       if (!_repeatContinue) return; // 確認ダイアログ待ち
-      // 紐づいているganttを再計算
-      const savedTaskId = document.getElementById('taskEditId') ? document.getElementById('taskEditId').value : null;
-      if (savedTaskId) {
-        allTasks.filter(t => t.kind === 'gantt' && (t.taskIds||[]).includes(savedTaskId))
-          .forEach(g => recalcGanttDateFromTasks(g));
-        saveAllTasks();
-        if (allSettings.ui.currentView === 'gant' || localStorage.getItem('currentView') === 'gant') {
-          renderGantView && renderGantView();
-        }
-      }
+      // recalcAllはupdateTask内で実行済み
+      saveAllTasks();
+      renderGantView && renderGantView();
       closeTaskEditModal();
       const dateStr = currentDailyDate || getLocalDateStr(new Date());
       renderAllSections(dateStr);
@@ -8726,18 +8964,22 @@ function getDeckGDP() {
       const gantWarn = linkedGants.length > 0
         ? `\n⚠️ このタスクは${linkedGants.length}件の工程に紐づいています。削除すると紐づきも解除されます。`
         : '';
-      showConfirm(`「${task.text}」を削除しますか？${gantWarn}`, function() {
-        // 造営工程のtaskIdsからも削除
+      showConfirm(`「${task.text}」を王国から消しますか？${gantWarn}`, function() {
+        // 造営工程のtaskIdsから削除 → 各ステップ・志を再計算
+        const affectedGanttIds = [];
         allTasks.forEach(t => {
-          if (t.kind === 'gantt' && t.taskIds) {
+          if (t.kind === 'gantt' && t.taskIds && t.taskIds.includes(taskId)) {
             t.taskIds = t.taskIds.filter(id => id !== taskId);
+            affectedGanttIds.push(t.id);
           }
         });
+        affectedGanttIds.forEach(gid => recalcAllFromGantt(gid));
         removeTaskFromMaster(taskId);
         closeTaskEditModal();
         const dateStr = currentDailyDate || getLocalDateStr(new Date());
         renderAllSections(dateStr);
         renderWeeklyView();
+        renderGantView && renderGantView();
         if (document.getElementById('monthlyView').style.display === 'block') {
           renderMonthlyView();
         }
@@ -8755,11 +8997,21 @@ function getDeckGDP() {
         console.warn('[deleteTaskById] kind:stamp は設定UIから削除してください');
         return;
       }
+      // 造営工程のtaskIdsから削除 → 再計算
+      const _affectedGids = [];
+      allTasks.forEach(t => {
+        if (t.kind === 'gantt' && t.taskIds && t.taskIds.includes(taskId)) {
+          t.taskIds = t.taskIds.filter(id => id !== taskId);
+          _affectedGids.push(t.id);
+        }
+      });
+      _affectedGids.forEach(gid => recalcAllFromGantt(gid));
       const index = allTasks.findIndex(t => t.id === taskId);
       if (index !== -1) {
         allTasks.splice(index, 1);
         saveAllTasks();
       }
+      renderGantView && renderGantView();
       // 日次ビュー：全象限を再描画
       renderAllSections();
       // 週間ビューが表示されていたら更新
@@ -12798,14 +13050,14 @@ window.addEventListener('afterprint', function() {
       </div>
       <!-- 造営工程への紐づけ（gantEnabledのときのみ表示） -->
       <div id="taskEditGantSection" style="margin-top:16px;padding-top:16px;border-top:1px solid #f0f0f0;display:none;">
-        <label style="font-size:0.8em;color:#666;display:block;margin-bottom:6px;font-weight:600;">🏗 造営工程に紐づける</label>
+        <label style="font-size:0.8em;color:#666;display:block;margin-bottom:6px;font-weight:600;">🏗 工程に刻む</label>
         <div id="taskEditGantLinked" style="margin-bottom:8px;font-size:0.8em;color:#888;">
           <!-- 現在の紐づき工程がJSで挿入される -->
         </div>
-        <select id="taskEditGantSelect" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:0.85em;margin-bottom:6px;">
-          <option value="">工程を選択...</option>
+        <select id="taskEditGantSelect" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:0.85em;margin-bottom:2px;">
+          <option value="">▼ 工程を選んで即追加...</option>
         </select>
-        <button onclick="linkTaskToGantt()" style="width:100%;padding:6px;background:#f5f5f5;border:1px solid #ddd;border-radius:8px;font-size:0.85em;cursor:pointer;">この工程に追加</button>
+        <div style="font-size:0.75em;color:#aaa;margin-bottom:4px;">選んだ瞬間に紐づきます</div>
       </div>
     </div>
   </div>
