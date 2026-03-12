@@ -4463,6 +4463,7 @@
         gantEnabled:      true,
         gantDisableAutoScroll: false,
         gantDayStartH: 0,
+        gantLabelW: 160,
         gantDayEndH: 24,
         gantTimeScale:    'day',
         gantShowCompleted: true
@@ -7315,9 +7316,113 @@ function myDeckApply(idx) {
       });
       renderGantChart();
     }
+    function openGanttQuickTask(ganttId) {
+      // 今日の日付でタスク作成モーダルを開く
+      const today = getLocalDateStr(new Date());
+      const gantt = allTasks.find(t => t.id === ganttId);
+      // 一時的な空タスクを作成してモーダルを開く
+      const tmpTask = createTask('', today, null, 1, 'both');
+      // ganttに紐づけ
+      if (gantt) {
+        if (!gantt.taskIds) gantt.taskIds = [];
+        gantt.taskIds.push(tmpTask.id);
+        recalcGanttDateFromTasks(gantt);
+        recalcBlueprintFromGants(allTasks.find(b => b.id === gantt.blueprintId));
+        saveAllTasks();
+      }
+      // モーダルを開く（タスク名フォーカス）
+      openTaskEditModal(tmpTask.id);
+      // モーダルのタイトルに工程名を表示
+      setTimeout(function() {
+        const modal = document.getElementById('taskEditModal');
+        if (!modal) return;
+        // 工程バッジを挿入
+        const existingBadge = document.getElementById('_ganttQuickBadge');
+        if (existingBadge) existingBadge.remove();
+        if (gantt) {
+          const badge = document.createElement('div');
+          badge.id = '_ganttQuickBadge';
+          badge.style.cssText = 'display:inline-flex;align-items:center;gap:4px;background:' + (gantt.color || '#c5cae9') + ';color:' + (gantt.textColor || '#333') + ';border-radius:12px;padding:3px 10px;font-size:0.78em;font-weight:700;margin-bottom:10px;';
+          badge.textContent = (gantt.emoji || '🏰') + ' ' + gantt.title + ' に追加中';
+          const firstChild = modal.querySelector('.modal-inner, .custom-modal-inner, form, [id^=taskEdit]');
+          const titleEl = document.getElementById('taskEditText');
+          if (titleEl && titleEl.parentNode) {
+            titleEl.parentNode.insertBefore(badge, titleEl);
+          }
+        }
+        const textEl = document.getElementById('taskEditText');
+        if (textEl) { textEl.value = ''; textEl.focus(); }
+      }, 150);
+    }
     function toggleGanttEmojiPicker() {
       const p = document.getElementById('ganttEmojiPicker');
       if (p) p.style.display = p.style.display === 'none' ? 'block' : 'none';
+    }
+    function _gantResizerHover(on) {
+      const bar = document.getElementById('gantResizerBar');
+      if (!bar) return;
+      bar.style.width    = on ? '6px' : '4px';
+      bar.style.background = on ? '#5c6bc0' : 'rgba(180,180,200,0.5)';
+      bar.style.color    = on ? '#5c6bc0' : '';
+    }
+    function _initGantLabelResizer() {
+      const handle = document.getElementById('gantResizerHandle');
+      if (!handle) return;
+      let startX = 0, startW = 0, dragging = false;
+      handle.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        dragging = true;
+        startX = e.clientX;
+        startW = allSettings.ui.gantLabelW || 160;
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+      });
+      document.addEventListener('mousemove', function(e) {
+        if (!dragging) return;
+        const diff = e.clientX - startX;
+        const newW = Math.max(100, Math.min(280, startW + diff));
+        allSettings.ui.gantLabelW = Math.round(newW);
+        // バブル表示
+        let bubble = document.getElementById('_gantResizerBubble');
+        if (!bubble) {
+          bubble = document.createElement('div');
+          bubble.id = '_gantResizerBubble';
+          bubble.style.cssText = 'position:fixed;background:#5c6bc0;color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:8px;pointer-events:none;z-index:99999;white-space:nowrap;box-shadow:0 2px 8px rgba(92,107,192,0.4);';
+          document.body.appendChild(bubble);
+        }
+        bubble.textContent = '◀ ' + Math.round(newW) + 'px ▶';
+        bubble.style.left = (e.clientX - 30) + 'px';
+        bubble.style.top  = (e.clientY - 28) + 'px';
+        renderGantChart();
+        setTimeout(function(){ _initGantLabelResizer(); _gantResizerHover(true); }, 0);
+      });
+      document.addEventListener('mouseup', function() {
+        if (!dragging) return;
+        dragging = false;
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        const bubble = document.getElementById('_gantResizerBubble');
+        if (bubble) bubble.remove();
+        saveAllSettings();
+      });
+      // タッチ対応
+      handle.addEventListener('touchstart', function(e) {
+        startX = e.touches[0].clientX;
+        startW = allSettings.ui.gantLabelW || 160;
+        dragging = true;
+      }, {passive:true});
+      handle.addEventListener('touchmove', function(e) {
+        if (!dragging) return;
+        const diff = e.touches[0].clientX - startX;
+        const newW = Math.max(100, Math.min(280, startW + diff));
+        allSettings.ui.gantLabelW = Math.round(newW);
+        renderGantChart();
+        setTimeout(_initGantLabelResizer, 0);
+      }, {passive:true});
+      handle.addEventListener('touchend', function() {
+        dragging = false;
+        saveAllSettings();
+      }, {passive:true});
     }
     function saveGantDayRange() {
       const s = document.getElementById('gantDayStartH');
@@ -7582,12 +7687,21 @@ function myDeckApply(idx) {
 
       return '<div>'
         + '<div style="display:flex;border-bottom:1px solid #efefef;background:' + bg + ';min-height:' + ctx.rowH + 'px;align-items:stretch;border-left:3px solid ' + ctx.barColor + '33;">'
-        + '<div style="width:' + (ctx.labelW-3) + 'px;min-width:' + (ctx.labelW-3) + 'px;min-height:' + ctx.rowH + 'px;border-right:1px solid #e0e0e0;display:flex;align-items:center;padding:0 2px 0 4px;gap:2px;">'
+        + '<div style="width:' + (ctx.labelW-3) + 'px;min-width:' + (ctx.labelW-3) + 'px;min-height:' + ctx.rowH + 'px;border-right:1px solid #e0e0e0;display:flex;align-items:center;padding:0 3px 0 3px;gap:2px;">'
         + expandBtn
-        + '<button onclick="openGanttEditor(\'' + gantt.id + '\')" style="flex:1;height:' + ctx.rowH + 'px;background:none;border:none;text-align:left;padding:0 4px;cursor:pointer;display:flex;flex-direction:column;justify-content:center;min-width:0;">'
-        + '<div style="font-size:11px;color:#262626;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3;word-break:break-all;">' + (gantt.emoji ? gantt.emoji + ' ' : '') + (gantt.title || '') + '</div>'
-        + '<div style="font-size:9px;color:#aaa;">' + (taskCount > 0 ? doneCount + '/' + taskCount + '件' : 'まだ何も決まっていない') + '</div>'
-        + '</button></div>'
+        + '<button onclick="openGanttEditor(\'' + gantt.id + '\')" style="flex:1;min-height:' + ctx.rowH + 'px;background:none;border:none;text-align:left;padding:4px 2px;cursor:pointer;display:flex;flex-direction:row;align-items:center;gap:4px;min-width:0;position:relative;overflow:hidden;"'
+        + ' onmouseover="this.style.background=\'rgba(0,0,0,0.04)\'" onmouseout="this.style.background=\'none\'">'
+        + (function(){ var _em = gantt.emoji || '🏰'; return '<div style="font-size:1.3em;flex-shrink:0;line-height:1;width:22px;text-align:center;">' + _em + '</div>'; })()
+        + '<div style="flex:1;min-width:0;overflow:hidden;">'
+        + '<div style="font-size:11px;color:#262626;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;line-height:1.3;">' + (gantt.title || '') + '</div>'
+        + '<div style="font-size:9px;color:#aaa;margin-top:1px;white-space:nowrap;">' + (taskCount > 0 ? doneCount + '/' + taskCount + '件' : '未定') + '</div>'
+        + '</div>'
+        + '<div style="font-size:11px;flex-shrink:0;opacity:0.4;">✏️</div>'
+        + '</button>'
+        + '<button onclick="event.stopPropagation();openGanttQuickTask(\'' + gantt.id + '\')" '
+        + 'style="background:' + ctx.barColor + '33;border:none;color:' + (ctx.textColor||'#555') + ';border-radius:50%;font-size:14px;font-weight:700;cursor:pointer;width:22px;height:22px;flex-shrink:0;line-height:22px;text-align:center;padding:0;margin-right:2px;" '
+        + 'title="このステップにタスクを追加">+</button>'
+        + '</div>'
         + '<div style="flex:1;position:relative;height:' + ctx.rowH + 'px;overflow:hidden;min-width:' + ctx.chartW + 'px;border-right:1px solid #e0e0e0;padding:3px 0;box-sizing:border-box;">'
         + stepBarHtml + '</div></div>'
         + taskRows + '</div>';
@@ -7595,7 +7709,8 @@ function myDeckApply(idx) {
 
     // ---- 日スケール描画 ----
     function _renderGantDay(htmlChart, gants) {
-      const colW = 44, labelW = 130, rowH = 72;
+      const colW = 44, rowH = 72;
+      const labelW = (allSettings.ui.gantLabelW !== undefined) ? allSettings.ui.gantLabelW : 160;
       // 表示時間帯（設定から）
       const startH = (allSettings.ui.gantDayStartH !== undefined) ? allSettings.ui.gantDayStartH : 0;
       const endH   = (allSettings.ui.gantDayEndH   !== undefined) ? allSettings.ui.gantDayEndH   : 24;
@@ -7633,15 +7748,25 @@ function myDeckApply(idx) {
       }).join('');
       htmlChart.innerHTML =
         '<div style="display:flex;border-bottom:2px solid #d0d0d0;background:#fff;position:sticky;top:0;z-index:3;">'
-        + '<div style="width:' + labelW + 'px;min-width:' + labelW + 'px;border-right:1px solid #e0e0e0;padding:0 6px;display:flex;flex-direction:column;justify-content:center;">'
+        + '<div id="gantLabelResizer" style="width:' + labelW + 'px;min-width:' + labelW + 'px;border-right:3px solid #d0d0d0;padding:0 6px;display:flex;flex-direction:column;justify-content:center;position:relative;flex-shrink:0;">'
         + '<span style="font-size:9px;color:#aaa;">工程</span>'
         + '<span style="font-size:9px;color:#888;font-weight:600;">' + todayLabel + '</span>'
+        + '<div id="gantResizerHandle" style="position:absolute;right:-8px;top:0;bottom:0;width:16px;cursor:col-resize;z-index:10;display:flex;align-items:center;justify-content:center;"'
+        + ' onmouseover="_gantResizerHover(true)" onmouseout="_gantResizerHover(false)">'
+        + '<div id="gantResizerBar" style="width:4px;height:70%;border-radius:3px;background:rgba(180,180,200,0.5);transition:width 0.15s,background 0.15s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;">'
+        + '<div style="width:2px;height:2px;border-radius:50%;background:#9fa8da;"></div>'
+        + '<div style="width:2px;height:2px;border-radius:50%;background:#9fa8da;"></div>'
+        + '<div style="width:2px;height:2px;border-radius:50%;background:#9fa8da;"></div>'
+        + '<div style="width:2px;height:2px;border-radius:50%;background:#9fa8da;"></div>'
+        + '<div style="width:2px;height:2px;border-radius:50%;background:#9fa8da;"></div>'
+        + '</div></div>'
         + '</div>'
         + '<div style="flex:1;position:relative;height:56px;overflow:hidden;background:#fafafa;border-right:1px solid #ccc;">'
         + nightBg + headerCols + nowLine + '</div></div>' + rows;
       requestAnimationFrame(function() {
         const area2 = htmlChart.closest('#gantChartArea') || htmlChart.parentElement;
         if (area2 && !allSettings.ui.gantDisableAutoScroll) area2.scrollLeft = Math.max(0, nowX - Math.floor((area2.clientWidth - labelW) / 2));
+        _initGantLabelResizer();
       });
     }
 
