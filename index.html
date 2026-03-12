@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.32.47';
+    const APP_VERSION = 'v0.32.48';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -7336,7 +7336,7 @@ function myDeckApply(idx) {
     // ===== 共通：選択肢モーダル =====
     function showChoiceModal(opts) {
       const m = document.createElement('div');
-      m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:2500;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
+      m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
       const btnStyles = {
         primary: 'padding:11px;background:#262626;color:#fff;border:none;border-radius:10px;font-size:0.9em;cursor:pointer;font-weight:600;width:100%;',
         danger:  'padding:11px;background:#fff;color:#ff3b30;border:1.5px solid #ff3b30;border-radius:10px;font-size:0.9em;cursor:pointer;width:100%;',
@@ -8084,7 +8084,9 @@ function myDeckApply(idx) {
       const id = _gantEditingGanttId;
       const gantt = allTasks.find(t => t.id === id);
       if (!gantt) return;
-      const linkedCount = (gantt.taskIds || []).length;
+      // 実在するタスクのみカウント（孤立参照を除外）
+      const validTaskIds = (gantt.taskIds || []).filter(tid => allTasks.some(t => t.id === tid));
+      const linkedCount = validTaskIds.length;
       const taskLine = linkedCount > 0 ? `<br>紐づくやること <b>${linkedCount}件</b> はどうしますか？` : '';
       const btns = [];
       if (linkedCount > 0) {
@@ -8101,8 +8103,7 @@ function myDeckApply(idx) {
         btns.push({
           label: 'やることごと、すべて消す', style: 'danger',
           onClick: function() {
-            const taskIds = gantt.taskIds || [];
-            allTasks = allTasks.filter(t => t.id !== id && !taskIds.includes(t.id));
+            allTasks = allTasks.filter(t => t.id !== id && !validTaskIds.includes(t.id));
             const bp = allTasks.find(t => t.id === gantt.blueprintId);
             if (bp) recalcBlueprintFromGants(bp);
             saveAllTasks(); closeGanttEditor(); renderGantView();
