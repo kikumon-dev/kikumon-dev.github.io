@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.33.28';
+    const APP_VERSION = 'v0.33.51';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -417,6 +417,7 @@
     .scratch-item-actions .btn-save    { color: #2d2416; border-color: #2d2416; }
     .scratch-item-actions .btn-promote { color: #4facfe; border-color: #4facfe; }
     .scratch-item-actions .btn-del     { color: #f66;    border-color: #f66; }
+    .scratch-item-actions .btn-journal { color: #262626; border-color: #262626; }
     /* タップで選択中（旧） */
     .scratch-item.selected .scratch-item-dot { background: #4facfe; }
     .scratch-task-label {
@@ -2854,7 +2855,56 @@
     #adminBadgeExtra { display: none !important; }
     #adminBadgeExtra.admin-visible { display: block !important; }
 
+      @media (max-width: 480px) {
+        .pastel-palette {
+          display: grid !important;
+          grid-template-columns: repeat(6, 1fr) !important;
+          flex-wrap: wrap !important;
+          overflow-x: visible !important;
+          gap: 8px !important;
+          padding: 4px 0 8px !important;
+        }
+        .pastel-palette > div {
+          width: auto !important;
+          height: 36px !important;
+          border-radius: 8px !important;
+          min-width: 36px !important;
+        }
+        .pastel-palette > div:nth-child(n+13) {
+          display: none !important;
+        }
+      }
       #blueprintPastelPalette::-webkit-scrollbar, #ganttPastelPalette::-webkit-scrollbar { display:none; }
+      .jnl-card { transition: box-shadow 0.15s; }
+      .jnl-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+      @keyframes emojiBounce {
+        0%   { transform: scale(1); }
+        30%  { transform: scale(1.45) rotate(-8deg); }
+        55%  { transform: scale(1.2) rotate(5deg); }
+        75%  { transform: scale(1.35) rotate(-3deg); }
+        100% { transform: scale(1.25); }
+      }
+      .emoji-pick-btn {
+        font-size:1.5em; background:none; border:none; cursor:pointer;
+        padding:4px; border-radius:50%; opacity:1; filter:none;
+        transition:background 0.15s, transform 0.12s;
+        transform-origin:center; line-height:1;
+      }
+      .emoji-pick-btn:hover {
+        background:rgba(0,0,0,0.06);
+        transform:scale(1.2);
+      }
+      .emoji-pick-btn:active {
+        animation: emojiBounce 0.35s ease forwards;
+      }
+      .emoji-pick-btn.selected {
+        background:rgba(0,0,0,0.08);
+        transform:scale(1.2);
+        box-shadow: 0 0 0 2px rgba(0,0,0,0.15);
+      }
+      .emoji-pick-btn.selected:active {
+        animation: emojiBounce 0.35s ease forwards;
+      }
     </style>
   <script>    // 色の切り替えをCSSに反映
     if (typeof USE_COLORS !== 'undefined' && USE_COLORS) {
@@ -2888,6 +2938,7 @@
     <button class="nav-tab" id="navYearly" onclick="switchView('yearly')">年間</button>
     <button class="nav-tab" id="navGant" onclick="switchView('gant')" style="display:none;">造営</button>
     <button class="nav-tab" id="navNotebook" onclick="switchView('notebook')">自由帳</button>
+    <button class="nav-tab" id="navJournal" onclick="switchView('journal')">日誌</button>
     <button class="nav-tab" id="navCraft" onclick="switchView('craft')" style="display:none;" title="やることクラフト"><svg width="18" height="16" viewBox="0 0 36 32" fill="currentColor" style="vertical-align:middle;">
   <!-- 左塔 -->
   <rect x="2" y="16" width="6" height="14" rx="1"/>
@@ -2948,6 +2999,7 @@
         <div class="scratch-input-dot" id="scratchInputDot"></div>
         <textarea class="scratch-input" id="scratchInput" placeholder="なんでも…" rows="1"></textarea>
       </div>
+
     </div>
   </div>
   <div class="container">
@@ -3401,7 +3453,14 @@
     <div style="background:#fff; border-radius:16px; width:90%; max-width:480px; max-height:85vh; overflow:hidden; display:flex; flex-direction:column;">
       <div style="overflow-y:auto; padding:24px; flex:1;">
       <h3 style="margin:0 0 16px 0; font-size:1.1em; font-weight:700;">志（こころざし）<span style="font-size:0.72em;color:#aaa;font-weight:400;margin-left:6px;">造営計画</span></h3>
-      <input id="blueprintTitleInput" type="text" placeholder="計画名（例：英語上達、体を鍛える）" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:0.95em; box-sizing:border-box; margin-bottom:12px;">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
+        <button id="blueprintEmojiBtn" onclick="toggleBlueprintEmojiPicker()" style="font-size:1.6em;width:44px;height:44px;border:1px solid #ddd;border-radius:8px;background:#fafafa;cursor:pointer;flex-shrink:0;">🏰</button>
+        <input id="blueprintTitleInput" type="text" placeholder="計画名（例：英語上達、体を鍛える）" style="flex:1; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:0.95em; box-sizing:border-box;">
+      </div>
+      <div id="blueprintEmojiPicker" style="display:none;margin-bottom:12px;background:#f9f9f9;border:1px solid #e0e0e0;border-radius:10px;padding:10px;">
+        <div style="font-size:0.75em;color:#888;margin-bottom:6px;">紋章を選ぶ</div>
+        <div id="blueprintEmojiGrid" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
+      </div>
       <textarea id="blueprintVisionInput" placeholder="ビジョン（任意）" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:0.9em; box-sizing:border-box; margin-bottom:12px; height:60px; resize:none;"></textarea>
       <div style="display:flex; gap:8px; margin-bottom:12px;">
         <div style="flex:1;">
@@ -3415,7 +3474,7 @@
       </div>
       <div style="margin-bottom:16px;">
         <label style="font-size:0.8em;color:#666;display:block;margin-bottom:8px;font-weight:600;">🎨 カードの色</label>
-        <div id="blueprintPastelPalette" style="display:flex;flex-wrap:nowrap;gap:4px;overflow-x:auto;padding:3px 3px 6px;margin-bottom:10px;scrollbar-width:none;-webkit-overflow-scrolling:touch;align-items:center;"></div>
+        <div id="blueprintPastelPalette" class="pastel-palette" style="display:flex;flex-wrap:nowrap;gap:4px;overflow-x:auto;padding:3px 3px 6px;margin-bottom:10px;scrollbar-width:none;-webkit-overflow-scrolling:touch;align-items:center;"></div>
         <div style="display:flex;gap:12px;align-items:center;">
           <div style="display:flex;align-items:center;gap:6px;">
             <span style="font-size:0.75em;color:#888;">背景</span>
@@ -3456,7 +3515,7 @@
       <!-- バーカラー設定 -->
       <div style="margin-bottom:16px;">
         <label style="font-size:0.8em;color:#666;display:block;margin-bottom:8px;font-weight:600;">🎨 バーの色</label>
-        <div id="ganttPastelPalette" style="display:flex;flex-wrap:nowrap;gap:4px;overflow-x:auto;padding:3px 3px 6px;margin-bottom:10px;scrollbar-width:none;-webkit-overflow-scrolling:touch;align-items:center;"></div>
+        <div id="ganttPastelPalette" class="pastel-palette" style="display:flex;flex-wrap:nowrap;gap:4px;overflow-x:auto;padding:3px 3px 6px;margin-bottom:10px;scrollbar-width:none;-webkit-overflow-scrolling:touch;align-items:center;"></div>
         <div style="display:flex;gap:12px;align-items:center;">
           <div style="display:flex;align-items:center;gap:6px;">
             <span style="font-size:0.75em;color:#888;">背景</span>
@@ -3500,6 +3559,13 @@
     </div>
   </div>
   <!-- 自由帳ビュー v0.12.0 -->
+  <div id="journalView" style="display:none;height:100%;overflow-y:auto;padding:16px;box-sizing:border-box;">
+  <div style="display:flex;align-items:center;justify-content:space-between;max-width:560px;margin:0 auto 12px;">
+    <div style="font-size:0.85em;font-weight:700;color:#262626;">王国日誌</div>
+    <button onclick="openNewJournal()" style="width:32px;height:32px;border-radius:50%;background:#262626;color:#fff;border:none;font-size:1.2em;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:300;line-height:1;">+</button>
+  </div>
+  <div id="journalListArea"></div>
+</div>
   <div id="notebookView" class="nb-view">
     <div class="nb-shelf" id="nbShelf"></div>
     <div class="nb-spread" id="nbSpread">
@@ -4503,6 +4569,8 @@
       flags: {
         tutorialSeen:       false,
         gantTourSeen:       false,
+        journalTourSeen:    false,
+        scratchTourSeen:    false,
         adminMode:          false,
         inspectionMode:     false,
         purpose:            '',
@@ -5752,8 +5820,8 @@ function myDeckApply(idx) {
       if (_gantAutoScroll) _gantAutoScroll.checked = allSettings.ui.gantDisableAutoScroll === true;
       const _startH = document.getElementById('gantDayStartH');
       const _endH   = document.getElementById('gantDayEndH');
-      if (_startH) _startH.value = allSettings.ui.gantDayStartH || 0;
-      if (_endH)   _endH.value   = allSettings.ui.gantDayEndH   || 24;
+      if (_startH) _startH.value = (allSettings.ui.gantDayStartH !== undefined ? allSettings.ui.gantDayStartH : 6);
+      if (_endH)   _endH.value   = (allSettings.ui.gantDayEndH   !== undefined ? allSettings.ui.gantDayEndH   : 24);
       const _rowHSlider = document.getElementById('weeklyRowHSlider');
       if (_rowHSlider) _rowHSlider.value = allSettings.ui.weeklyRowH || '80';
       var _rowHSliderSp = document.getElementById('weeklyRowHSliderSp');
@@ -7395,26 +7463,55 @@ function myDeckApply(idx) {
       if (progress < 100) return '仕上げの時。|最後まで、丁寧に。';
       return 'この志は、成し遂げられた。|次の王国を、描こう。';
     }
+    function toggleBlueprintEmojiPicker() {
+      var p = document.getElementById('blueprintEmojiPicker');
+      if (!p) return;
+      if (p.style.display === 'none') {
+        var grid = document.getElementById('blueprintEmojiGrid');
+        if (grid && grid.innerHTML === '') {
+          var emojis = ['🏰','🏯','⚔️','🛡️','👑','🌟','🔥','💡','🌱','🎯','📚','💪','🚀','🌈','🎨','🏆','🗺️','⚙️','🌙','☀️','🌊','🏔️','🦋','🌸','🍀'];
+          grid.innerHTML = emojis.map(function(e) {
+            return '<button class="emoji-pick-btn" onclick="(function(){' +
+              'var b=document.getElementById(\'blueprintEmojiBtn\');if(b)b.textContent=\'' + e + '\';' +
+              'var p=document.getElementById(\'blueprintEmojiPicker\');if(p)p.style.display=\'none\';' +
+              '})()">' + e + '</button>';
+          }).join('');
+        }
+        p.style.display = 'block';
+      } else {
+        p.style.display = 'none';
+      }
+    }
     function _showBlueprintTip(card) {
-      const msg   = card.getAttribute('data-bp-msg') || '';
-      const color = card.getAttribute('data-bp-color') || '#333';
-      let el = document.getElementById('_bpTipSingleton');
+      var msg   = card.getAttribute('data-bp-msg') || '';
+      if (!msg) return;
+      var color = card.getAttribute('data-bp-color') || '#4facfe';
+      var textColor = card.getAttribute('data-bp-textcolor') || '#1a237e';
+      var el = document.getElementById('_bpTipSingleton');
       if (!el) {
         el = document.createElement('div');
         el.id = '_bpTipSingleton';
-        el.style.cssText = 'display:none;position:absolute;z-index:9999;border-radius:10px;padding:10px 14px;font-size:11px;line-height:1.7;font-weight:600;pointer-events:none;white-space:pre;box-shadow:0 4px 16px rgba(0,0,0,0.18);';
         document.body.appendChild(el);
       }
-      const textColor = card.getAttribute('data-bp-textcolor') || '#fff';
+      // body直下に確実に移動
+      if (el.parentNode !== document.body) document.body.appendChild(el);
+      el.style.cssText = 'position:fixed;z-index:99999;border-radius:10px;padding:10px 14px;'
+        + 'font-size:11px;line-height:1.8;font-weight:600;pointer-events:none;white-space:pre-wrap;'
+        + 'box-shadow:0 4px 16px rgba(0,0,0,0.2);max-width:200px;'
+        + 'background:' + color + '22;color:' + textColor + ';border:1.5px solid ' + color + '88;';
       el.textContent = msg.replace(/\|/g, '\n');
-      el.style.background = color + '22';
-      el.style.color = textColor;
-      el.style.border = '1.5px solid ' + color + '88';
+      // 位置計算（display前にvisibilityで一時表示して高さ取得）
+      el.style.visibility = 'hidden';
       el.style.display = 'block';
-      // カード直下に表示
-      const rect = card.getBoundingClientRect();
-      el.style.left = rect.left + 'px';
-      el.style.top  = (rect.bottom + 6) + 'px';
+      var rect = card.getBoundingClientRect();
+      var tipH = el.offsetHeight;
+      var tipW = el.offsetWidth;
+      var top = rect.bottom + 8;
+      if (top + tipH > window.innerHeight - 10) top = rect.top - tipH - 8;
+      var left = Math.max(8, Math.min(rect.left, window.innerWidth - tipW - 8));
+      el.style.top  = top + 'px';
+      el.style.left = left + 'px';
+      el.style.visibility = 'visible';
       card.style.boxShadow = '0 4px 16px ' + color + '55';
     }
     function _hideBlueprintTip() {
@@ -7577,9 +7674,12 @@ function myDeckApply(idx) {
         " onclick="selectGantBlueprint('${bp.id}')"
            onmouseenter="_showBlueprintTip(this)"
            onmouseleave="_hideBlueprintTip()"
-           data-bp-msg="${_bpMsg}" data-bp-color="${color}" data-bp-textcolor="${bp.textColor||'#1a237e'}">
+           data-bp-msg="${_bpMsg.replace(/"/g,'&quot;')}" data-bp-color="${color}" data-bp-textcolor="${bp.textColor||'#1a237e'}">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-            <div style="font-size:0.85em;font-weight:600;color:#262626;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;">${bp.title}</div>
+            <div style="display:flex;align-items:center;gap:4px;min-width:0;">
+              <span style="font-size:1em;flex-shrink:0;">${bp.emoji||'🏰'}</span>
+              <div style="font-size:0.85em;font-weight:600;color:#262626;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;">${bp.title}</div>
+            </div>
             <button onclick="event.stopPropagation();openBlueprintEditor('${bp.id}')" style="background:none;border:none;font-size:0.75em;color:#aaa;cursor:pointer;padding:2px;">✏️</button>
           </div>
           <div style="height:4px;background:#f0f0f0;border-radius:2px;margin-bottom:6px;">
@@ -7643,6 +7743,16 @@ function myDeckApply(idx) {
       requestAnimationFrame(function(){ overlay.style.background = 'rgba(0,0,0,0.7)'; });
 
       const slides = [
+        {
+          emoji: '🗺️',
+          title: '造営は、必須じゃない',
+          sub: '週間・月間ビューだけで、充分な人がほとんど。',
+          items: [
+            { n:'💡', color:'#a78bfa', title:'一般ユーザーへ', desc:'日次・週間・月間で管理するだけで十分です。<br>造営は、もっと大きな夢を描きたくなったときに開けばいい。' },
+            { n:'👑', color:'#ffd700', title:'管理職・プロジェクトリーダーへ', desc:'志（ゴール）→ 手立て（施策）→ タスク（行動）の3層で<br>プロジェクトの地図を描けます。ここが本領発揮の場所。' },
+            { n:'🏢', color:'#4facfe', title:'社長・経営者へ', desc:'中長期の戦略を「造営計画」として可視化できます。<br>チームと共有する地図として使ってください。' },
+          ]
+        },
         {
           emoji: '🏯',
           title: '造営ビューへようこそ',
@@ -7876,6 +7986,10 @@ function myDeckApply(idx) {
     function _gantEdit(btn) {
       var gid = btn.dataset.gid;
       if (gid) openGanttEditor(gid);
+    }
+    function _gantAddTaskDirect(gid) {
+      if (!gid) return;
+      openGanttQuickTask(gid);
     }
     function _gantAddTask(btn) {
       var gid = btn.dataset.gid;
@@ -8199,6 +8313,13 @@ function myDeckApply(idx) {
       startInput.value  = bp ? (bp.startDate || '') : '';
       endInput.value    = bp ? (bp.endDate   || '') : '';
       if (deleteBtn) deleteBtn.style.display = id ? '' : 'none';
+      // 絵文字ボタン初期化
+      const _bpEmojiBtn = document.getElementById('blueprintEmojiBtn');
+      if (_bpEmojiBtn) _bpEmojiBtn.textContent = (bp && bp.emoji) ? bp.emoji : '🏰';
+      const _bpEmojiPicker = document.getElementById('blueprintEmojiPicker');
+      if (_bpEmojiPicker) _bpEmojiPicker.style.display = 'none';
+      const _bpEmojiGrid = document.getElementById('blueprintEmojiGrid');
+      if (_bpEmojiGrid) _bpEmojiGrid.innerHTML = '';
       // パステルカラーピッカー（工程エディタと同じ構造）
       const _bpBgPicker  = document.getElementById('blueprintBgPicker');
       const _bpTxPicker  = document.getElementById('blueprintTextPicker');
@@ -8249,8 +8370,10 @@ function myDeckApply(idx) {
           bp.endDate = end ? end.value : '';
           const _svBg = document.getElementById('blueprintBgPicker');
           const _svTx = document.getElementById('blueprintTextPicker');
+          const _svEm = document.getElementById('blueprintEmojiBtn');
           bp.color     = _svBg ? _svBg.value : '#c5cae9';
           bp.textColor = _svTx ? _svTx.value : '#283593';
+          bp.emoji     = _svEm ? _svEm.textContent.trim() : '🏰';
         }
       } else {
         const blueprints = getBlueprints();
@@ -8263,6 +8386,7 @@ function myDeckApply(idx) {
           endDate: end ? end.value : '',
           color:     (function(){ const e=document.getElementById('blueprintBgPicker');   return e?e.value:'#c5cae9'; })(),
           textColor: (function(){ const e=document.getElementById('blueprintTextPicker'); return e?e.value:'#283593'; })(),
+          emoji:     (function(){ const e=document.getElementById('blueprintEmojiBtn'); return e?e.textContent.trim():'🏰'; })(),
           order: blueprints.length,
           ganttIds: [],
           achieveMode: 'both',
@@ -8271,10 +8395,17 @@ function myDeckApply(idx) {
         });
       }
       saveAllTasks();
+      const _savedBpId = _gantEditingBlueprintId || allTasks.filter(t=>t.kind==='blueprint').slice(-1)[0]?.id;
       closeBlueprintEditor();
       renderGantView();
       if (!_gantEditingBlueprintId) {
-        showToast('造営計画が生まれました。工程を刻んでいきましょう 🏯', {type:'next', duration:4000});
+        showToast('造営計画が生まれました 🏯', {type:'next', duration:6000, action:{
+          label:'工程を刻む →',
+          fn: function() {
+            if (_savedBpId) _gantSelectedBlueprintId = _savedBpId;
+            openGanttEditor(null);
+          }
+        }});
       } else {
         showToast('王国に刻まれました ✅', {type:'success'});
       }
@@ -8667,12 +8798,12 @@ function myDeckApply(idx) {
       renderGantView();
       if (isNew) {
         const g = allTasks.find(t => t.id === savedGanttId);
-        const hasBar = g && (g.startDate || g.startTime);
-        if (hasBar) {
-          showToast('王国に工程が生まれました ✅', {type:'success', duration:3000});
-        } else {
-          showToast('王国に工程が生まれました。やることを紐づけると、バーが現れます 📅', {type:'next', duration:5000});
-        }
+        showToast('工程が生まれました 🏗', {type:'next', duration:6000, action:{
+          label:'タスクを追加 →',
+          fn: function() {
+            if (g) { _gantSelectedBlueprintId = g.blueprintId || null; _gantAddTaskDirect(g.id); }
+          }
+        }});
       } else {
         showToast('王国に刻まれました ✅', {type:'success'});
       }
@@ -9605,6 +9736,21 @@ function myDeckApply(idx) {
       renderAllSections(dateStr);
       renderWeeklyView();
       if (document.getElementById('monthlyView').style.display === 'block') renderMonthlyView();
+      // 造営工程に紐づいている場合はトースト案内
+      if (typeof showToast === 'function') {
+        const linkedGant = allTasks.find(function(t) { return t.kind==='gantt' && (t.taskIds||[]).includes(taskId); });
+        if (linkedGant) {
+          const hasTime = !!(time);
+          if (hasTime) {
+            showToast('時を刻んだ。バーが王国に現れます 📅', {type:'success', duration:3000});
+          } else {
+            showToast('タスクが工程に刻まれました 🏗', {type:'next', duration:4000, action:{
+              label:'時を刻む →',
+              fn: function() { openTaskEditModal(taskId); }
+            }});
+          }
+        }
+      }
     }
     // 編集モーダルから削除
     function deleteTaskFromEditModal() {
@@ -9741,6 +9887,10 @@ function myDeckApply(idx) {
         scratchView.style.display = 'flex';
         scratchView.style.flexDirection = 'column';
         document.getElementById('dailyTabScratch').classList.add('active');
+        if (!allSettings.flags.scratchTourSeen) {
+          allSettings.flags.scratchTourSeen = true; saveAllSettings();
+          setTimeout(showScratchOnboarding, 400);
+        }
         renderScratchView();
       } else if (mode === 'timeline') {
         timelineView.style.display = 'flex';
@@ -9805,12 +9955,14 @@ function myDeckApply(idx) {
       actions.className = 'scratch-item-actions';
       actions.innerHTML = `
         <button class="btn-promote">タスクに</button>
+        <button class="btn-journal">日誌に</button>
         <button class="btn-save">保存</button>
         <button class="btn-del">削除</button>
       `;
       actions.querySelector('.btn-save').onclick    = (e) => { e.stopPropagation(); saveInlineEdit(div, item, ta.value); };
       actions.querySelector('.btn-promote').onclick = (e) => { e.stopPropagation(); promoteInlineItem(div, item); };
       actions.querySelector('.btn-del').onclick     = (e) => { e.stopPropagation(); deleteInlineItem(div, item); };
+      actions.querySelector('.btn-journal').onclick = (e) => { e.stopPropagation(); saveScratchItemAsJournal(ta.value, item); };
       div.appendChild(actions);
     }
     function cancelInlineEdit(div) {
@@ -10600,6 +10752,7 @@ function myDeckApply(idx) {
       'tokuLog', 'taskCompletedTotal', 'taskCompletedStreak',
       'migration_calendarId_v1', 'extendedvaluekey',
       'notebooks', '_calIdMigMap',
+      'journals',
     ]);
     // 起動時スキャン
     (function() {
@@ -10671,6 +10824,7 @@ function myDeckApply(idx) {
       if (gantView) gantView.style.display = 'none';
       document.getElementById('timelineView').style.display = 'none';
       document.getElementById('scratchView').style.display = 'none';
+      var _jv = document.getElementById('journalView'); if (_jv) _jv.style.display = 'none';
       document.getElementById('dailyInnerTabBar').style.display = 'none';
       var _hb = document.getElementById('tutorialHelpBtn');
       if (_hb) _hb.style.display = '';
@@ -10745,6 +10899,16 @@ function myDeckApply(idx) {
           allSettings.flags.gantTourSeen = true;
           saveAllSettings();
           setTimeout(showGantTour, 400);
+        }
+      } else if (view === 'journal') {
+        var jv = document.getElementById('journalView');
+        if (jv) jv.style.display = 'block';
+        var nj = document.getElementById('navJournal');
+        if (nj) nj.classList.add('active');
+        if (typeof renderJournalView === 'function') renderJournalView();
+        if (!allSettings.flags.journalTourSeen) {
+          allSettings.flags.journalTourSeen = true; saveAllSettings();
+          setTimeout(showJournalOnboarding, 400);
         }
       } else if (view === 'craft') {
         if (craftView) craftView.style.display = 'block';
@@ -17196,7 +17360,390 @@ document.addEventListener('DOMContentLoaded', function() {
   if (typeof updateGuildUI === 'function') updateGuildUI();
   // マイデッキ初期表示
   if (typeof renderMyDecks === 'function') renderMyDecks();
-});</script>
+});
+    // ===== 王国日誌システム =====
+    function loadJournals() {
+      try { return JSON.parse(localStorage.getItem('journals') || '[]'); } catch(e) { return []; }
+    }
+    function saveJournals(arr) {
+      localStorage.setItem('journals', JSON.stringify(arr));
+    }
+    // 日誌メタ（気分・体調・天気）の状態
+    window._journalMeta = { mood: 0, condition: 0, weather: '' };
+    function setJournalMeta(type, val) {
+      window._journalMeta[type] = val;
+      // ボタンのopacity更新
+      const pickerId = type === 'mood' ? 'moodPicker' : type === 'condition' ? 'conditionPicker' : 'weatherPicker';
+      const picker = document.getElementById(pickerId);
+      if (!picker) return;
+      picker.querySelectorAll('button').forEach(function(btn) {
+        const bval = btn.getAttribute('data-' + type);
+        const match = type === 'weather' ? bval === String(val) : parseInt(bval) === val;
+        btn.style.opacity = match ? '1' : '0.35';
+        btn.style.transform = match ? 'scale(1.15)' : '';
+      });
+    }
+      function _showJournalToast(msg) {
+        var t = document.createElement('div');
+        t.textContent = msg;
+        t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#262626;color:#fff;padding:10px 20px;border-radius:20px;font-size:0.85em;z-index:9999;pointer-events:none;white-space:nowrap;';
+        document.body.appendChild(t);
+        setTimeout(function() { t.remove(); }, 2500);
+      }
+    function saveScratchItemAsJournal(text, item) {
+      const t = (text || '').trim();
+      if (!t) return;
+      const m = window._journalMeta || { mood:0, condition:0, weather:'' };
+      const today = new Date();
+      const dateStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+      const journals = loadJournals();
+      const existing = journals.findIndex(function(j) { return j.date === dateStr; });
+      var toastMsg;
+      if (existing >= 0) {
+        journals[existing].text = (journals[existing].text ? journals[existing].text + '\n' : '') + t;
+        journals[existing].savedAt = new Date().toISOString();
+        toastMsg = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌に追記しました';
+      } else {
+        journals.unshift({ id: 'JNL_' + Date.now(), kind: 'journal', date: dateStr, text: t, mood: m.mood, condition: m.condition, weather: m.weather, savedAt: new Date().toISOString() });
+        toastMsg = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌を作成しました';
+      }
+      saveJournals(journals);
+      _showJournalToast(toastMsg);
+    }
+    function saveScratchAsJournal() {
+      const inputEl = document.getElementById('scratchInput');
+      const text = inputEl ? inputEl.value.trim() : '';
+      if (!text) { alert('内容を入力してから保存してください'); return; }
+      const m = window._journalMeta;
+      const today = new Date();
+      const dateStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+      const journals = loadJournals();
+      const existing = journals.findIndex(function(j) { return j.date === dateStr; });
+      const entry = { id: 'JNL_' + Date.now(), kind: 'journal', date: dateStr, text: text, mood: m.mood, condition: m.condition, weather: m.weather, savedAt: new Date().toISOString() };
+      var toastMsg2;
+      if (existing >= 0) {
+        // 同日は本文を追記
+        journals[existing].text = (journals[existing].text ? journals[existing].text + '\n' : '') + text;
+        journals[existing].savedAt = new Date().toISOString();
+        toastMsg2 = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌に追記しました';
+      } else {
+        journals.unshift(entry);
+        toastMsg2 = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌を作成しました';
+      }
+      saveJournals(journals);
+      if (inputEl) { inputEl.value = ''; inputEl.style.height = ''; }
+      _showJournalToast(toastMsg2);
+    }
+    function saveAsJournal() {
+      const scratchItems = [];
+      document.querySelectorAll('#scratchList .scratch-item-text').forEach(function(el) {
+        if (el.textContent.trim()) scratchItems.push(el.textContent.trim());
+      });
+      const inputEl = document.getElementById('scratchInput');
+      const inputText = inputEl ? inputEl.value.trim() : '';
+      const allText = scratchItems.concat(inputText ? [inputText] : []).join('\n');
+      if (!allText && !window._journalMeta.mood && !window._journalMeta.condition && !window._journalMeta.weather) {
+        alert('内容を入力してから保存してください');
+        return;
+      }
+      const today = new Date();
+      const dateStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+      const journals = loadJournals();
+      // 同日の日誌があれば上書き確認
+      const existing = journals.findIndex(function(j) { return j.date === dateStr; });
+      var _toastMsg3;
+      if (existing >= 0) {
+        Object.assign(journals[existing], {
+          text: allText, mood: window._journalMeta.mood,
+          condition: window._journalMeta.condition, weather: window._journalMeta.weather,
+          savedAt: new Date().toISOString()
+        });
+        _toastMsg3 = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌を更新しました';
+      } else {
+        journals.unshift({
+          id: 'JNL_' + Date.now(),
+          kind: 'journal',
+          date: dateStr,
+          text: allText,
+          mood: window._journalMeta.mood,
+          condition: window._journalMeta.condition,
+          weather: window._journalMeta.weather,
+          savedAt: new Date().toISOString()
+        });
+      }
+      saveJournals(journals);
+      _showJournalToast(_toastMsg3 || ('📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌を作成しました'));
+    }
+    function renderJournalView() {
+      const area = document.getElementById('journalListArea');
+      if (!area) return;
+      const journals = loadJournals();
+      if (journals.length === 0) {
+        area.innerHTML = '<div style="text-align:center;padding:60px 20px;color:#aaa;"><div style="font-size:2em;margin-bottom:12px;">📖</div><div style="font-size:0.9em;">まだ日誌がありません。<br>雑記帳から「日誌として保存」してみよう。</div></div>';
+        return;
+      }
+      const MOOD_E = ['','😞','😐','🙂','😊','🌟'];
+      const COND_E = ['','🤒','😴','😐','💪','⚡'];
+      area.innerHTML = '<div style="max-width:560px;margin:0 auto;">'
+        + '<div style="font-size:0.8em;color:#aaa;margin-bottom:12px;font-weight:600;">王国日誌 — ' + journals.length + '件</div>'
+        + journals.map(function(j) {
+          const preview = (j.text || '').replace(/\n/g,' ').slice(0,60) + ((j.text||'').length > 60 ? '…' : '');
+          return '<div class="jnl-card" onclick="openJournalDetail(\'' + j.id + '\')"'
+            + ' style="background:#fff;border:1px solid #efefef;border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;">'
+            + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">'
+            + '<div style="font-size:0.85em;font-weight:700;color:#262626;">' + j.date + '</div>'
+            + '<div style="display:flex;gap:4px;font-size:1em;">'
+            + (j.weather || '') + (j.mood ? MOOD_E[j.mood] : '') + (j.condition ? COND_E[j.condition] : '')
+            + '</div></div>'
+            + '<div style="font-size:0.82em;color:#666;line-height:1.6;">' + (preview || '<span style="color:#ccc">（本文なし）</span>') + '</div>'
+            + '</div>';
+        }).join('')
+        + '</div>';
+    }
+    function openJournalDetail(id) {
+      const journals = loadJournals();
+      const j = journals.find(function(x) { return x.id === id; });
+      if (!j) return;
+      const MOOD_E = ['','😞','😐','🙂','😊','🌟'];
+      const COND_E = ['','🤒','😴','😐','💪','⚡'];
+      // モーダル表示
+      let modal = document.getElementById('journalDetailModal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'journalDetailModal';
+        modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;';
+        modal.innerHTML = '<div style="background:#fff;border-radius:16px;width:90%;max-width:480px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;">'
+          + '<div style="overflow-y:auto;padding:24px;flex:1;" id="journalDetailBody"></div>'
+          + '<div style="display:flex;gap:8px;padding:12px 24px 20px;border-top:1px solid #f0f0f0;border-radius:0 0 16px 16px;background:#fff;flex-shrink:0;">'
+          + '<button onclick="editJournal(window._currentJournalId)" style="flex:1;padding:10px;background:#f5f5f5;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;">編集</button>'
+          + '<button onclick="deleteJournal(window._currentJournalId)" style="padding:10px 16px;background:#fff;border:1px solid #ff3b30;color:#ff3b30;border-radius:8px;font-size:0.9em;cursor:pointer;">削除</button>'
+          + '<button onclick="document.getElementById(\'journalDetailModal\').style.display=\'none\'" style="padding:10px 16px;background:#f5f5f5;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;">閉じる</button>'
+          + '</div></div>';
+        document.body.appendChild(modal);
+      }
+      window._currentJournalId = id;
+      const body = document.getElementById('journalDetailBody');
+      body.innerHTML = '<div style="font-size:1em;font-weight:700;color:#262626;margin-bottom:8px;">' + j.date + '</div>'
+        + '<div style="display:flex;gap:6px;font-size:1.1em;margin-bottom:14px;">'
+        + (j.weather||'') + (j.mood ? MOOD_E[j.mood] : '') + (j.condition ? COND_E[j.condition] : '')
+        + '</div>'
+        + '<div style="font-size:0.9em;color:#333;line-height:1.8;white-space:pre-wrap;">' + (j.text||'（本文なし）') + '</div>';
+      modal.style.display = 'flex';
+    }
+    function editJournal(id) {
+      const journals = loadJournals();
+      const j = journals.find(function(x) { return x.id === id; });
+      if (!j) return;
+      document.getElementById('journalDetailModal').style.display = 'none';
+      // 編集モーダル
+      let modal = document.getElementById('journalEditModal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'journalEditModal';
+        modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1001;align-items:center;justify-content:center;';
+        document.body.appendChild(modal);
+      }
+      modal.innerHTML = '<div style="background:#fff;border-radius:16px;width:90%;max-width:480px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;">'
+        + '<div style="overflow-y:auto;padding:24px;flex:1;">'
+        + '<h3 style="margin:0 0 16px;font-size:1em;font-weight:700;">日誌を編集</h3>'
+        + '<input id="journalEditDate" type="date" value="' + j.date + '" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:0.9em;box-sizing:border-box;margin-bottom:12px;">'
+        + '<textarea id="journalEditText" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:0.9em;box-sizing:border-box;height:120px;resize:none;margin-bottom:12px;">' + (j.text||'') + '</textarea>'
+        + '</div>'
+        + '<div style="display:flex;gap:8px;padding:12px 24px 20px;border-top:1px solid #f0f0f0;border-radius:0 0 16px 16px;background:#fff;flex-shrink:0;">'
+        + '<button onclick="saveJournalEdit(\'' + id + '\')" style="flex:1;padding:10px;background:#262626;color:#fff;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;font-weight:600;">保存</button>'
+        + '<button onclick="document.getElementById(\'journalEditModal\').style.display=\'none\'" style="padding:10px 16px;background:#f5f5f5;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;">キャンセル</button>'
+        + '</div></div>';
+      modal.style.display = 'flex';
+    }
+    function saveJournalEdit(id) {
+      var journals = loadJournals();
+      const idx = journals.findIndex(function(x) { return x.id === id; });
+      if (idx < 0) return;
+      const newDate = document.getElementById('journalEditDate').value || journals[idx].date;
+      const newText = document.getElementById('journalEditText').value.trim();
+      // 日付が変わった場合、変更先に同日の別エントリがあれば統合
+      const conflictIdx = journals.findIndex(function(x, i) { return i !== idx && x.date === newDate; });
+      if (conflictIdx >= 0) {
+        // 変更先に既存エントリあり → 本文を追記、絵文字は編集中のもので上書き、元を削除
+        const merged = (journals[conflictIdx].text || '') + (newText ? '\n' + newText : '');
+        journals[conflictIdx].text = merged.trim();
+        if (journals[idx].mood)      journals[conflictIdx].mood      = journals[idx].mood;
+        if (journals[idx].condition) journals[conflictIdx].condition = journals[idx].condition;
+        if (journals[idx].weather)   journals[conflictIdx].weather   = journals[idx].weather;
+        journals[conflictIdx].savedAt = new Date().toISOString();
+        journals.splice(idx, 1);
+        _showJournalToast('📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(newDate) + 'の日誌に統合しました');
+      } else {
+        journals[idx].date = newDate;
+        journals[idx].text = newText;
+        journals[idx].savedAt = new Date().toISOString();
+        _showJournalToast('📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(newDate) + 'の日誌を更新しました');
+      }
+      journals.sort(function(a,b){ return b.date.localeCompare(a.date); });
+      saveJournals(journals);
+      var em = document.getElementById('journalEditModal');
+      if (em) em.style.display = 'none';
+      renderJournalView();
+    }
+    function deleteJournal(id) {
+      const journals = loadJournals().filter(function(j) { return j.id !== id; });
+      saveJournals(journals);
+      var dm = document.getElementById('journalDetailModal');
+      if (dm) dm.style.display = 'none';
+      _showJournalToast('🗑️ 日誌を削除しました');
+      renderJournalView();
+    }
+    // ===== 王国日誌システム END =====
+
+    // ===== 日誌・雑記帳 オンボーディング =====
+    function _showOnboardingModal(steps, storageKey) {
+      let idx = 0;
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:2000;display:flex;align-items:center;justify-content:center;';
+      function render() {
+        const s = steps[idx];
+        const isLast = idx === steps.length - 1;
+        modal.innerHTML =
+          '<div style="background:#fff;border-radius:20px;padding:28px 24px;width:88%;max-width:360px;text-align:center;">'
+          + '<div style="font-size:2.2em;margin-bottom:12px;">' + s.emoji + '</div>'
+          + '<div style="font-size:1em;font-weight:700;color:#262626;margin-bottom:8px;">' + s.title + '</div>'
+          + '<div style="font-size:0.85em;color:#666;line-height:1.7;margin-bottom:20px;">' + s.body + '</div>'
+          + '<div style="display:flex;gap:8px;justify-content:center;margin-bottom:14px;">'
+          + steps.map(function(_,i){ return '<div style="width:6px;height:6px;border-radius:50%;background:' + (i===idx?'#262626':'#ddd') + ';"></div>'; }).join('')
+          + '</div>'
+          + '<div style="display:flex;gap:8px;">'
+          + (idx > 0 ? '<button onclick="_onbPrev()" style="flex:1;padding:10px;background:#f5f5f5;border:none;border-radius:10px;font-size:0.9em;cursor:pointer;">← 戻る</button>' : '')
+          + '<button onclick="_onbNext()" style="flex:1;padding:10px;background:#262626;color:#fff;border:none;border-radius:10px;font-size:0.9em;font-weight:600;cursor:pointer;">' + (isLast ? '始める ✦' : '次へ →') + '</button>'
+          + '</div></div>';
+      }
+      window._onbNext = function() {
+        if (idx < steps.length - 1) { idx++; render(); }
+        else { document.body.removeChild(modal); }
+      };
+      window._onbPrev = function() { if (idx > 0) { idx--; render(); } };
+      render();
+      document.body.appendChild(modal);
+    }
+
+    function showScratchOnboarding() {
+      _showOnboardingModal([
+        { emoji: '✏️', title: '全部やらなくていい', body: '今日できたことだけ、刻んでいこう。<br>完璧を目指さなくて大丈夫。<br>ひとこと書くだけで、十分。' },
+        { emoji: '🌱', title: '書いたら、行き先を選ぶ', body: '「タスクに」→ やることリストへ。<br>「日誌に」→ 今日の記録として残す。<br>どちらでもいいし、どちらでもなくていい。' },
+        { emoji: '📖', title: '積み重ねが、地図になる', body: '雑記帳の記録は日誌に流せる。<br>1週間後に見返したとき、<br>あの日の自分が戻ってくる。' },
+      ]);
+    }
+
+    function showJournalOnboarding() {
+      _showOnboardingModal([
+        { emoji: '📖', title: '王国日誌', body: 'ここは、あなたの王国の記録庫。<br>雑記帳から保存した日誌が<br>時系列で積み重なっていく。' },
+        { emoji: '🗓️', title: '過去の日付にも書ける', body: '右上の「＋」から、<br>日付を指定して日誌を作れる。<br>昨日のことを今日書いてもいい。' },
+        { emoji: '🌟', title: '気分・体調・天気も記録', body: 'その日の状態が絵文字で残る。<br>カードを見るだけで<br>あの日を思い出せる。' },
+      ]);
+    }
+
+    // 日誌の新規作成モーダル
+    function openNewJournal() {
+      const MOOD_E = ['','😞','😐','🙂','😊','🌟'];
+      const COND_E = ['','🤒','😴','😐','💪','⚡'];
+      const WEAT_E = ['☀️','🌤️','☁️','🌧️','⛄'];
+      const today = new Date();
+      const todayStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+
+      let modal = document.getElementById('journalNewModal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'journalNewModal';
+        modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1001;align-items:center;justify-content:center;';
+        document.body.appendChild(modal);
+      }
+      window._newJournalMeta = { mood: 0, condition: 0, weather: '' };
+
+      function buildNewModal() {
+        const m = window._newJournalMeta;
+        modal.innerHTML =
+          '<div style="background:#fff;border-radius:16px;width:90%;max-width:480px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;">'
+          + '<div style="overflow-y:auto;padding:24px;flex:1;">'
+          + '<h3 style="margin:0 0 16px;font-size:1em;font-weight:700;">📖 新しい日誌</h3>'
+          + '<label style="font-size:0.8em;color:#666;display:block;margin-bottom:4px;">日付</label>'
+          + '<input id="journalNewDate" type="date" value="' + todayStr + '" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:0.9em;box-sizing:border-box;margin-bottom:12px;">'
+          + '<label style="font-size:0.8em;color:#666;display:block;margin-bottom:8px;">気分・体調・天気</label>'
+          + '<div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;">'
+          + '<div style="display:flex;gap:6px;align-items:center;">' + [1,2,3,4,5].map(function(i){ return '<button class="emoji-pick-btn' + (m.mood===i?' selected':'') + '" data-type="mood" data-val="' + i + '">' + MOOD_E[i] + '</button>'; }).join('') + '</div>'
+          + '<div style="display:flex;gap:6px;align-items:center;">' + [1,2,3,4,5].map(function(i){ return '<button class="emoji-pick-btn' + (m.condition===i?' selected':'') + '" data-type="condition" data-val="' + i + '">' + COND_E[i] + '</button>'; }).join('') + '</div>'
+          + '<div style="display:flex;gap:6px;align-items:center;" id="newWeatPicker">' + WEAT_E.map(function(e){ return '<button class="emoji-pick-btn' + (m.weather===e?' selected':'') + '" data-weat="' + e + '" data-type="weather" data-val="' + e + '">' + e + '</button>'; }).join('') + '</div>'
+          + '</div>'
+          + '<textarea id="journalNewText" placeholder="今日の記録..." style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:0.9em;box-sizing:border-box;height:140px;resize:none;"></textarea>'
+          + '</div>'
+          + '<div style="display:flex;gap:8px;padding:12px 24px 20px;border-top:1px solid #f0f0f0;border-radius:0 0 16px 16px;background:#fff;flex-shrink:0;">'
+          + '<button onclick="saveNewJournal()" style="flex:1;padding:10px;background:#262626;color:#fff;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;font-weight:600;">保存</button>'
+          + '<button onclick="document.getElementById(\'journalNewModal\').style.display=\'none\'" style="padding:10px 16px;background:#f5f5f5;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;">キャンセル</button>'
+          + '</div></div>';
+        modal.style.display = 'flex';
+      }
+      window.setNewJournalMeta = function(type, val) {
+        window._newJournalMeta[type] = val;
+        buildNewModal();
+        attachNewModalEvents();
+      };
+      function attachNewModalEvents() {
+        // emoji-pick-btn 全ボタンにクリックイベント
+        modal.querySelectorAll('.emoji-pick-btn').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            var type = this.getAttribute('data-type');
+            var val = this.getAttribute('data-val');
+            if (type === 'mood' || type === 'condition') val = parseInt(val);
+            window._newJournalMeta[type] = val;
+            // テキストを退避してから再描画
+            var ta2 = document.getElementById('journalNewText');
+            if (ta2) window._newJournalText = ta2.value;
+            buildNewModal(); attachNewModalEvents();
+          });
+        });
+        // テキスト内容を復元
+        var ta = document.getElementById('journalNewText');
+        if (ta) {
+          if (window._newJournalText) ta.value = window._newJournalText;
+          ta.addEventListener('input', function() { window._newJournalText = ta.value; });
+        }
+      }
+      buildNewModal();
+      attachNewModalEvents();
+      // テキスト変更時に保存
+      setTimeout(function() {
+        var ta = document.getElementById('journalNewText');
+        if (ta) ta.addEventListener('input', function() { window._newJournalText = ta.value; });
+      }, 50);
+    }
+
+    function saveNewJournal() {
+      const dateEl = document.getElementById('journalNewDate');
+      const textEl = document.getElementById('journalNewText');
+      const dateStr = dateEl ? dateEl.value : '';
+      const text = textEl ? textEl.value.trim() : '';
+      if (!dateStr) { alert('日付を入力してください'); return; }
+      const m = window._newJournalMeta;
+      const journals = loadJournals();
+      const existing = journals.findIndex(function(j) { return j.date === dateStr; });
+      var _toastMsg4;
+      if (existing >= 0) {
+        var prev = journals[existing].text || '';
+        journals[existing].text = prev ? prev + '\n' + text : text;
+        Object.assign(journals[existing], { mood: m.mood, condition: m.condition, weather: m.weather, savedAt: new Date().toISOString() });
+        _toastMsg4 = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌に追記しました';
+      } else {
+        journals.unshift({ id: 'JNL_' + Date.now(), kind: 'journal', date: dateStr, text: text, mood: m.mood, condition: m.condition, weather: m.weather, savedAt: new Date().toISOString() });
+        journals.sort(function(a,b){ return b.date.localeCompare(a.date); });
+        _toastMsg4 = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌を作成しました';
+      }
+      saveJournals(journals);
+      var jnm = document.getElementById('journalNewModal');
+      if (jnm) jnm.style.display = 'none';
+      window._newJournalText = '';
+      renderJournalView();
+      _showJournalToast(_toastMsg4);
+    }
+    // ===== 日誌・雑記帳 オンボーディング END =====
+</script>
 <!-- ===== 商人ギルドモーダル ===== -->
 <div id="guildModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:10000;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;">
   <div style="background:linear-gradient(160deg,#1a1200,#2a1a00);border:2px solid #c8a200;border-radius:18px;padding:30px 24px;max-width:380px;width:100%;color:#fff;box-shadow:0 0 60px rgba(200,162,0,0.4);text-align:center;">
