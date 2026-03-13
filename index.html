@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.33.51';
+    const APP_VERSION = 'v0.33.59';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -4545,7 +4545,7 @@
         gantEnabled:      true,
         gantDisableAutoScroll: true,
         gantDayStartH: 6,
-        gantLabelW: 160,
+        gantLabelW: null,
         gantDayEndH: 24,
         gantTimeScale:    'day',
         gantShowCompleted: true
@@ -8031,9 +8031,13 @@ function myDeckApply(idx) {
       const areaW    = areaEl ? Math.max(areaEl.clientWidth || areaEl.offsetWidth || window.innerWidth, 100) : window.innerWidth;
       // ラベル列：設定値があればそれを使用、なければ画面幅の35%（80〜200px）
       const _savedLW = allSettings.ui.gantLabelW;
+      const _isMobile = window.innerWidth < 480;
+      const _defaultLW = _isMobile
+        ? Math.min(160, Math.max(120, Math.floor(window.innerWidth * 0.38)))
+        : Math.min(200, Math.max(120, Math.floor(areaW * 0.35)));
       const labelW   = (_savedLW && _savedLW >= 60 && _savedLW <= 300)
         ? _savedLW
-        : Math.min(200, Math.max(80, Math.floor(areaW * 0.35)));
+        : _defaultLW;
       const startH   = (allSettings.ui.gantDayStartH !== undefined) ? allSettings.ui.gantDayStartH : 6;
       const endH     = (allSettings.ui.gantDayEndH   !== undefined) ? allSettings.ui.gantDayEndH   : 24;
       const SPAN     = endH - startH;
@@ -8122,7 +8126,7 @@ function myDeckApply(idx) {
           ? '<button data-eid="' + eid + '" onclick="_gantToggle(this)" style="background:none;border:none;font-size:13px;color:#888;cursor:pointer;padding:2px 2px;flex-shrink:0;transition:transform 0.15s;width:18px;">›</button>'
           : '<span style="display:inline-block;width:18px;"></span>';
         const labelCell = '<td style="position:sticky;left:0;z-index:2;background:' + bg + ';border-right:1px solid #d0d8e8;border-bottom:1px solid #efefef;border-left:3px solid ' + barColor + '55;padding:0;width:' + labelW + 'px;min-width:' + labelW + 'px;max-width:' + labelW + 'px;vertical-align:middle;">'
-          + '<div style="display:flex;align-items:center;padding:0 2px;min-height:' + rowH + 'px;overflow:visible;">'
+          + '<div style="display:flex;align-items:center;padding:0 2px;min-height:' + rowH + 'px;overflow:hidden;">'
           + expandBtn
           + '<div style="flex:1;min-width:0;overflow:hidden;display:flex;align-items:center;">'
           + '<button data-gid="' + gantt.id + '" onclick="_gantEdit(this)" style="flex:1;background:none;border:none;text-align:left;padding:4px 2px;cursor:pointer;display:flex;align-items:center;gap:4px;min-width:0;overflow:hidden;min-height:' + rowH + 'px;">'
@@ -8132,8 +8136,8 @@ function myDeckApply(idx) {
           + '<div style="font-size:9px;color:#aaa;margin-top:1px;">' + (tc>0 ? dc+'/'+tc+'件' : '未定') + '</div>'
           + '</div></button>'
           + '</div>'
-          + '<button data-gid="' + gantt.id + '" onclick="_gantEdit(this)" style="background:none;border:none;font-size:13px;cursor:pointer;padding:0 2px;flex-shrink:0;opacity:0.5;line-height:1;">✏️</button>'
-          + '<button data-gid="' + gantt.id + '" onclick="_gantAddTask(this)" style="background:' + barColor + '44;border:none;border-radius:50%;font-size:13px;font-weight:700;cursor:pointer;width:22px;height:22px;flex-shrink:0;line-height:22px;text-align:center;padding:0;margin-right:3px;">+</button>'
+          + '<button data-gid="' + gantt.id + '" onclick="_gantEdit(this)" style="background:none;border:none;font-size:11px;cursor:pointer;padding:0 1px;flex-shrink:0;opacity:0.5;line-height:1;min-width:18px;">✏️</button>'
+          + '<button data-gid="' + gantt.id + '" onclick="_gantAddTask(this)" style="background:' + barColor + '44;border:none;border-radius:50%;font-size:12px;font-weight:700;cursor:pointer;width:20px;height:20px;flex-shrink:0;line-height:20px;text-align:center;padding:0;margin-right:2px;">+</button>'
           + '</div></td>';
 
         // ステップバー
@@ -16163,7 +16167,101 @@ function copyDeckCodeFromModal() {
 }</script>
 <!-- ===== チュートリアルモーダル ===== -->
 <div id="tutorialOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;">
-  <div style="background:#1a1a2e;border:1px solid #4facfe;border-radius:20px;max-width:380px;width:92%;color:#fff;position:relative;box-shadow:0 0 40px rgba(79,172,254,0.3);max-height:90vh;overflow:hidden;display:flex;flex-direction:column;">
+
+  <!-- ミッション・ビジョン スプラッシュ -->
+  <div id="tutorialSplash" style="max-width:390px;width:92%;margin:0 auto;position:relative;">
+    <div id="_ycCard" style="background:#1a1a2e;border-radius:20px;color:#fff;box-shadow:0 0 50px rgba(255,215,0,0.15);overflow:hidden;width:100%;box-sizing:border-box;">
+
+      <!-- slide 0: MISSION -->
+      <div id="_ycS0" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:36px 24px 24px;box-sizing:border-box;width:100%;">
+        <div style="font-size:2.6em;animation:_ycPulse 2.4s ease-in-out infinite;">🏰</div>
+        <div style="font-size:1.05em;font-weight:800;color:#ffd700;letter-spacing:0.08em;margin:12px 0 4px;animation:_ycGlow 2.5s ease-in-out infinite;">やることクラフト</div>
+        <div style="font-size:0.68em;color:#aaa;font-weight:700;letter-spacing:0.14em;margin-bottom:16px;">MISSION</div>
+        <div style="width:40px;height:2px;background:linear-gradient(90deg,#ffd700,#4facfe);border-radius:2px;margin-bottom:18px;"></div>
+        <div style="font-size:0.9em;line-height:2;font-weight:500;color:#fff;animation:_ycFadeUp 0.6s 0.2s ease both;opacity:0;">
+          自分で決めた、<span style="color:#ffd700;font-weight:700;">自分による、</span><br>
+          自分のための<span style="color:#ffd700;font-weight:700;">創造的な毎日。</span>
+        </div>
+        <div style="font-size:0.88em;color:#4facfe;font-weight:700;margin-top:8px;line-height:1.8;animation:_ycFadeUp 0.6s 0.4s ease both;opacity:0;">
+          その創造物で、<br>みんなで遊ぼう。
+        </div>
+        <button onclick="_ycGoSlide(1)" style="margin-top:24px;background:linear-gradient(135deg,#ffd700,#ffaa00);border:none;border-radius:30px;color:#7a4800;font-size:0.88em;font-weight:800;padding:10px 28px;cursor:pointer;animation:_ycFadeUp 0.6s 0.6s ease both;opacity:0;">つぎへ →</button>
+      </div>
+
+      <!-- slide 1: VISION -->
+      <div id="_ycS1" style="display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:36px 24px 24px;box-sizing:border-box;width:100%;">
+        <div style="font-size:2.2em;">✨</div>
+        <div style="font-size:0.68em;color:#aaa;font-weight:700;letter-spacing:0.14em;margin:12px 0 6px;">VISION</div>
+        <div style="width:40px;height:2px;background:linear-gradient(90deg,#a78bfa,#4facfe);border-radius:2px;margin-bottom:20px;"></div>
+        <div style="font-size:1em;line-height:2.1;color:#e0e0e0;font-style:italic;font-weight:500;">
+          今日の創造が、<br>
+          <span style="color:#a78bfa;font-weight:700;">めぐりめぐって</span><br>
+          誰かの明日を<span style="color:#ffd700;font-weight:700;">輝かす。</span>
+        </div>
+        <button onclick="_ycGoSlide(2)" style="margin-top:28px;background:linear-gradient(135deg,#a78bfa,#4facfe);border:none;border-radius:30px;color:#fff;font-size:0.88em;font-weight:800;padding:10px 28px;cursor:pointer;">つぎへ →</button>
+      </div>
+
+      <!-- slide 2: VALUES -->
+      <div id="_ycS2" style="display:none;flex-direction:column;align-items:center;padding:28px 20px 20px;box-sizing:border-box;width:100%;">
+        <div style="font-size:0.68em;color:#aaa;font-weight:700;letter-spacing:0.14em;margin-bottom:14px;text-align:center;">VALUES</div>
+        <div style="width:100%;display:flex;flex-direction:column;gap:8px;">
+          <div style="background:rgba(255,215,0,0.07);border:1px solid rgba(255,215,0,0.2);border-radius:10px;padding:10px 14px;">
+            <div style="font-size:0.8em;font-weight:800;color:#ffd700;margin-bottom:3px;">⚒️ 創る</div>
+            <div style="font-size:0.75em;color:#ccc;line-height:1.6;">じぶんで決める。動くこと自体が価値。<br>今日の一歩が、王国になる。</div>
+          </div>
+          <div style="background:rgba(79,172,254,0.07);border:1px solid rgba(79,172,254,0.2);border-radius:10px;padding:10px 14px;">
+            <div style="font-size:0.8em;font-weight:800;color:#4facfe;margin-bottom:3px;">✍️ 刻む</div>
+            <div style="font-size:0.75em;color:#ccc;line-height:1.6;">小さくても、本物。ひとこと書いた日も、創造した日。<br>自分の言葉、自分の時を刻む。</div>
+          </div>
+          <div style="background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:10px;padding:10px 14px;">
+            <div style="font-size:0.8em;font-weight:800;color:#a78bfa;margin-bottom:3px;">🔄 めぐらす</div>
+            <div style="font-size:0.75em;color:#ccc;line-height:1.6;">自分の創造物を、誰かへ。<br>渡したとき、王国はもっと豊かになる。</div>
+          </div>
+          <div style="background:rgba(129,199,132,0.07);border:1px solid rgba(129,199,132,0.2);border-radius:10px;padding:10px 14px;">
+            <div style="font-size:0.8em;font-weight:800;color:#81c784;margin-bottom:3px;">🎮 遊ぶ</div>
+            <div style="font-size:0.75em;color:#ccc;line-height:1.6;">まじめにやらなくていい。遊び心が、王国を動かす。<br>たのしいから、つづく。</div>
+          </div>
+        </div>
+        <button onclick="document.getElementById('tutorialSplash').style.display='none';document.getElementById('tutorialMain').style.display='flex';" style="margin-top:16px;background:linear-gradient(135deg,#ffd700,#ff8800);border:none;border-radius:30px;color:#7a4800;font-size:0.88em;font-weight:800;padding:10px 0;cursor:pointer;width:100%;">王国へ入る →</button>
+      </div>
+
+      <!-- ドットナビ -->
+      <div id="_ycDots" style="display:flex;justify-content:center;align-items:center;gap:8px;padding:0 0 16px;"></div>
+    </div>
+
+    <style>
+    @keyframes _ycFadeUp { from{opacity:0;transform:translateY(16px);} to{opacity:1;transform:translateY(0);} }
+    @keyframes _ycGlow   { 0%,100%{text-shadow:0 0 10px rgba(255,215,0,0.4);} 50%{text-shadow:0 0 28px rgba(255,215,0,0.9);} }
+    @keyframes _ycPulse  { 0%,100%{transform:scale(1);} 50%{transform:scale(1.1);} }
+    </style>
+
+    <script>
+    function _ycGoSlide(n) {
+      for(var i=0;i<3;i++){
+        var s=document.getElementById('_ycS'+i);
+        if(s) s.style.display='none';
+      }
+      var next=document.getElementById('_ycS'+n);
+      if(next){ next.style.display='flex'; }
+      _ycUpdateDots(n);
+    }
+    function _ycUpdateDots(active) {
+      var dots=document.getElementById('_ycDots');
+      if(!dots) return;
+      dots.innerHTML='';
+      for(var i=0;i<3;i++){
+        var d=document.createElement('div');
+        d.style.cssText='width:'+(i===active?'20':'8')+'px;height:8px;border-radius:4px;background:'+(i===active?'#ffd700':'rgba(255,255,255,0.25)')+';transition:all 0.3s;cursor:pointer;flex-shrink:0;';
+        (function(idx){ d.onclick=function(){ _ycGoSlide(idx); }; })(i);
+        dots.appendChild(d);
+      }
+    }
+    _ycUpdateDots(0);
+    </script>
+  </div>
+
+  <!-- 従来のチュートリアル -->
+  <div id="tutorialMain" style="display:none;background:#1a1a2e;border:1px solid #4facfe;border-radius:20px;max-width:380px;width:92%;color:#fff;position:relative;box-shadow:0 0 40px rgba(79,172,254,0.3);max-height:90vh;overflow:hidden;flex-direction:column;">
   <div style="overflow-y:auto;overflow-x:hidden;padding:28px 24px;-webkit-overflow-scrolling:touch;flex:1;">
     <div style="font-size:2em;text-align:center;margin-bottom:4px;">🏰</div>
     <h2 style="text-align:center;color:#ffd700;font-size:1.1em;margin:0 0 20px 0;letter-spacing:0.05em;">はじめての方へ</h2>
@@ -16415,7 +16513,13 @@ function receiveStarterDeck() {
 }
 function showTutorial() {
   var el = document.getElementById('tutorialOverlay');
-  if (el) { el.style.display = 'flex'; }
+  if (!el) return;
+  var splash = document.getElementById('tutorialSplash');
+  var main   = document.getElementById('tutorialMain');
+  // スプラッシュは毎回表示
+  if (splash) splash.style.display = 'flex';
+  if (main)   main.style.display   = 'none';
+  el.style.display = 'flex';
 }
 function toggleLibrary() {
   var content = document.getElementById('libraryContent');
@@ -17832,6 +17936,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div id="craftCodeDisplay" style="background:#0d1b2a;border:1px solid #ffd700;border-radius:8px;padding:12px;font-family:monospace;font-size:0.8em;color:#ffd700;word-break:break-all;margin-bottom:16px;min-height:48px;display:flex;align-items:center;justify-content:center;"></div>
     <button onclick="copyCraftCode()" style="width:100%;padding:11px;background:linear-gradient(135deg,#ffd700,#ff8800);border:none;border-radius:8px;color:#fff;font-size:0.95em;font-weight:bold;cursor:pointer;margin-bottom:8px;">📋 コードをコピー</button>
     <button onclick="closeCraftShareModal()" style="width:100%;padding:11px;background:transparent;border:1px solid #555;border-radius:8px;color:#aaa;font-size:0.9em;cursor:pointer;">閉じる</button>
+    </div>
   </div>
 </div>
 <!-- ===== 王国訪問モーダル ===== -->
