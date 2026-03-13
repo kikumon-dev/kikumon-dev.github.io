@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.33.59';
+    const APP_VERSION = 'v0.33.67';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -16173,56 +16173,85 @@ function copyDeckCodeFromModal() {
     <div id="_ycCard" style="background:#1a1a2e;border-radius:20px;color:#fff;box-shadow:0 0 50px rgba(255,215,0,0.15);overflow:hidden;width:100%;box-sizing:border-box;">
 
       <!-- slide 0: MISSION -->
-      <div id="_ycS0" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:36px 24px 24px;box-sizing:border-box;width:100%;">
-        <div style="font-size:2.6em;animation:_ycPulse 2.4s ease-in-out infinite;">🏰</div>
-        <div style="font-size:1.05em;font-weight:800;color:#ffd700;letter-spacing:0.08em;margin:12px 0 4px;animation:_ycGlow 2.5s ease-in-out infinite;">やることクラフト</div>
-        <div style="font-size:0.68em;color:#aaa;font-weight:700;letter-spacing:0.14em;margin-bottom:16px;">MISSION</div>
-        <div style="width:40px;height:2px;background:linear-gradient(90deg,#ffd700,#4facfe);border-radius:2px;margin-bottom:18px;"></div>
-        <div style="font-size:0.9em;line-height:2;font-weight:500;color:#fff;animation:_ycFadeUp 0.6s 0.2s ease both;opacity:0;">
+      <div id="_ycS0" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 24px 28px;box-sizing:border-box;width:100%;">
+        <div style="font-size:3em;animation:_ycFloat 5s ease-in-out infinite,_ycBurst 1.4s cubic-bezier(0.16,1,0.3,1) both;">🏰</div>
+        <div style="font-size:1.08em;font-weight:800;color:#ffd700;letter-spacing:0.1em;margin:16px 0 6px;animation:_ycGlow 5s ease-in-out infinite,_ycFadeUp 1.6s 0.6s cubic-bezier(0.16,1,0.3,1) both;opacity:0;">やることクラフト</div>
+        <div style="font-size:0.68em;color:#888;font-weight:700;letter-spacing:0.16em;margin-bottom:18px;animation:_ycFadeIn 1.6s 1.2s ease both;opacity:0;">MISSION</div>
+        <div style="width:50px;height:1px;background:linear-gradient(90deg,transparent,#ffd700,transparent);margin-bottom:22px;animation:_ycFadeIn 1.6s 1.5s ease both;opacity:0;"></div>
+        <div style="font-size:0.92em;line-height:2.1;font-weight:500;color:#f0f0f0;animation:_ycReveal 1.8s 1.8s cubic-bezier(0.16,1,0.3,1) both;opacity:0;">
           自分で決めた、<span style="color:#ffd700;font-weight:700;">自分による、</span><br>
           自分のための<span style="color:#ffd700;font-weight:700;">創造的な毎日。</span>
         </div>
-        <div style="font-size:0.88em;color:#4facfe;font-weight:700;margin-top:8px;line-height:1.8;animation:_ycFadeUp 0.6s 0.4s ease both;opacity:0;">
+        <div style="font-size:0.9em;color:#4facfe;font-weight:700;margin-top:10px;line-height:1.9;animation:_ycReveal 1.8s 2.6s cubic-bezier(0.16,1,0.3,1) both;opacity:0;">
           その創造物で、<br>みんなで遊ぼう。
         </div>
-        <button onclick="_ycGoSlide(1)" style="margin-top:24px;background:linear-gradient(135deg,#ffd700,#ffaa00);border:none;border-radius:30px;color:#7a4800;font-size:0.88em;font-weight:800;padding:10px 28px;cursor:pointer;animation:_ycFadeUp 0.6s 0.6s ease both;opacity:0;">つぎへ →</button>
+        <button onclick="_ycGoSlide(1)" style="margin-top:28px;background:linear-gradient(135deg,#ffd700,#ffaa00);border:none;border-radius:30px;color:#7a4800;font-size:0.88em;font-weight:800;padding:11px 32px;cursor:pointer;box-shadow:0 4px 18px rgba(255,215,0,0.35);animation:_ycFadeUp 1.4s 3.4s ease both;opacity:0;">つぎへ →</button>
       </div>
 
       <!-- slide 1: VISION -->
-      <div id="_ycS1" style="display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:36px 24px 24px;box-sizing:border-box;width:100%;">
-        <div style="font-size:2.2em;">✨</div>
-        <div style="font-size:0.68em;color:#aaa;font-weight:700;letter-spacing:0.14em;margin:12px 0 6px;">VISION</div>
-        <div style="width:40px;height:2px;background:linear-gradient(90deg,#a78bfa,#4facfe);border-radius:2px;margin-bottom:20px;"></div>
-        <div style="font-size:1em;line-height:2.1;color:#e0e0e0;font-style:italic;font-weight:500;">
+      <div id="_ycS1" style="display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 24px 28px;box-sizing:border-box;width:100%;">
+        <div style="font-size:2.6em;animation:_ycFloat 5.5s ease-in-out infinite,_ycBurst 1.4s cubic-bezier(0.16,1,0.3,1) both;">✨</div>
+        <div style="font-size:0.68em;color:#888;font-weight:700;letter-spacing:0.16em;margin:14px 0 8px;animation:_ycFadeIn 1.6s 0.6s ease both;opacity:0;">VISION</div>
+        <div style="width:50px;height:1px;background:linear-gradient(90deg,transparent,#a78bfa,transparent);margin-bottom:24px;animation:_ycFadeIn 1.6s 1.0s ease both;opacity:0;"></div>
+        <div style="font-size:1.05em;line-height:2.2;color:#e8e8e8;font-style:italic;font-weight:500;animation:_ycReveal 2s 1.4s cubic-bezier(0.16,1,0.3,1) both;opacity:0;">
           今日の創造が、<br>
           <span style="color:#a78bfa;font-weight:700;">めぐりめぐって</span><br>
           誰かの明日を<span style="color:#ffd700;font-weight:700;">輝かす。</span>
         </div>
-        <button onclick="_ycGoSlide(2)" style="margin-top:28px;background:linear-gradient(135deg,#a78bfa,#4facfe);border:none;border-radius:30px;color:#fff;font-size:0.88em;font-weight:800;padding:10px 28px;cursor:pointer;">つぎへ →</button>
+        <button onclick="_ycGoSlide(2)" style="margin-top:32px;background:linear-gradient(135deg,#a78bfa,#4facfe);border:none;border-radius:30px;color:#fff;font-size:0.88em;font-weight:800;padding:11px 32px;cursor:pointer;box-shadow:0 4px 18px rgba(167,139,250,0.35);animation:_ycFadeUp 1.4s 2.8s ease both;opacity:0;">つぎへ →</button>
       </div>
 
       <!-- slide 2: VALUES -->
       <div id="_ycS2" style="display:none;flex-direction:column;align-items:center;padding:28px 20px 20px;box-sizing:border-box;width:100%;">
-        <div style="font-size:0.68em;color:#aaa;font-weight:700;letter-spacing:0.14em;margin-bottom:14px;text-align:center;">VALUES</div>
+        <div style="font-size:0.68em;color:#888;font-weight:700;letter-spacing:0.16em;margin-bottom:14px;text-align:center;animation:_ycFadeIn 1.4s 0.3s ease both;opacity:0;">VALUES</div>
         <div style="width:100%;display:flex;flex-direction:column;gap:8px;">
-          <div style="background:rgba(255,215,0,0.07);border:1px solid rgba(255,215,0,0.2);border-radius:10px;padding:10px 14px;">
+          <div style="background:rgba(255,215,0,0.07);border:1px solid rgba(255,215,0,0.2);border-radius:10px;padding:10px 14px;animation:_ycReveal 1.4s 0.6s cubic-bezier(0.16,1,0.3,1) both;opacity:0;">
             <div style="font-size:0.8em;font-weight:800;color:#ffd700;margin-bottom:3px;">⚒️ 創る</div>
             <div style="font-size:0.75em;color:#ccc;line-height:1.6;">じぶんで決める。動くこと自体が価値。<br>今日の一歩が、王国になる。</div>
           </div>
-          <div style="background:rgba(79,172,254,0.07);border:1px solid rgba(79,172,254,0.2);border-radius:10px;padding:10px 14px;">
+          <div style="background:rgba(79,172,254,0.07);border:1px solid rgba(79,172,254,0.2);border-radius:10px;padding:10px 14px;animation:_ycReveal 1.4s 1.2s cubic-bezier(0.16,1,0.3,1) both;opacity:0;">
             <div style="font-size:0.8em;font-weight:800;color:#4facfe;margin-bottom:3px;">✍️ 刻む</div>
             <div style="font-size:0.75em;color:#ccc;line-height:1.6;">小さくても、本物。ひとこと書いた日も、創造した日。<br>自分の言葉、自分の時を刻む。</div>
           </div>
-          <div style="background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:10px;padding:10px 14px;">
+          <div style="background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:10px;padding:10px 14px;animation:_ycReveal 1.4s 1.8s cubic-bezier(0.16,1,0.3,1) both;opacity:0;">
             <div style="font-size:0.8em;font-weight:800;color:#a78bfa;margin-bottom:3px;">🔄 めぐらす</div>
             <div style="font-size:0.75em;color:#ccc;line-height:1.6;">自分の創造物を、誰かへ。<br>渡したとき、王国はもっと豊かになる。</div>
           </div>
-          <div style="background:rgba(129,199,132,0.07);border:1px solid rgba(129,199,132,0.2);border-radius:10px;padding:10px 14px;">
-            <div style="font-size:0.8em;font-weight:800;color:#81c784;margin-bottom:3px;">🎮 遊ぶ</div>
-            <div style="font-size:0.75em;color:#ccc;line-height:1.6;">まじめにやらなくていい。遊び心が、王国を動かす。<br>たのしいから、つづく。</div>
+        </div>
+        <button onclick="_ycGoSlide(3)" style="margin-top:16px;background:linear-gradient(135deg,#a78bfa,#4facfe);border:none;border-radius:30px;color:#fff;font-size:0.88em;font-weight:800;padding:10px 0;cursor:pointer;width:100%;box-shadow:0 4px 16px rgba(167,139,250,0.3);animation:_ycFadeUp 1.4s 2.6s ease both;opacity:0;">つぎへ →</button>
+      </div>
+
+      <!-- slide 3: TRUE VALUES -->
+      <div id="_ycS3" style="display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:36px 24px 28px;box-sizing:border-box;width:100%;position:relative;">
+
+        <!-- くす玉コンフェッティ（ボタン押下後に出現） -->
+        <div id="_ycCrackerWrap" style="position:absolute;top:30%;left:50%;transform:translateX(-50%);pointer-events:none;display:none;">
+          <span style="position:absolute;font-size:1.2em;animation:_ycConfA 1.2s 0s ease-out forwards;">🎊</span>
+          <span style="position:absolute;font-size:1em;animation:_ycConfB 1.1s 0.05s ease-out forwards;">✨</span>
+          <span style="position:absolute;font-size:1.1em;animation:_ycConfC 1.3s 0.1s ease-out forwards;">🎉</span>
+          <span style="position:absolute;font-size:0.9em;animation:_ycConfD 1.0s 0.08s ease-out forwards;">⭐</span>
+          <span style="position:absolute;font-size:1.2em;animation:_ycConfE 1.2s 0.15s ease-out forwards;">🎊</span>
+          <span style="position:absolute;font-size:1em;animation:_ycConfF 1.1s 0.03s ease-out forwards;">💫</span>
+          <span style="position:absolute;font-size:0.85em;animation:_ycConfG 1.3s 0.12s ease-out forwards;">🌟</span>
+          <span style="position:absolute;font-size:1em;animation:_ycConfH 1.0s 0.07s ease-out forwards;">🎈</span>
+        </div>
+
+        <div style="font-size:2.8em;animation:_ycFloat 5s ease-in-out infinite,_ycBurst 1.4s cubic-bezier(0.16,1,0.3,1) both;">🎨</div>
+        <div style="font-size:0.68em;color:#81c784;font-weight:700;letter-spacing:0.16em;margin:12px 0 6px;animation:_ycFadeIn 1.6s 0.5s ease both;opacity:0;">TRUE VALUES</div>
+        <div style="width:50px;height:1px;background:linear-gradient(90deg,transparent,#81c784,transparent);margin-bottom:20px;animation:_ycFadeIn 1.6s 0.9s ease both;opacity:0;"></div>
+        <div style="font-size:1.05em;font-weight:800;color:#ffd700;line-height:1.9;margin-bottom:6px;animation:_ycReveal 1.8s 1.2s cubic-bezier(0.16,1,0.3,1) both;opacity:0;">
+          遊び心がよみがえる！<br>
+          <span style="font-size:0.88em;color:#fff;font-weight:600;">そこから始まる、真の創造的な日々。</span>
+        </div>
+        <div style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px 16px;margin:16px 0 24px;text-align:left;animation:_ycReveal 1.8s 1.9s cubic-bezier(0.16,1,0.3,1) both;opacity:0;">
+          <div style="font-size:0.8em;color:#ccc;line-height:2.1;">
+            まじめにやらなくていい。<br>
+            <span style="color:#81c784;font-weight:700;">夢中に遊んだ、あの頃。</span><br>
+            <span style="color:#ffd700;font-weight:700;">夢中に創ってた、手づくりの手触り感。</span><br>
+            それが、ここにある。
           </div>
         </div>
-        <button onclick="document.getElementById('tutorialSplash').style.display='none';document.getElementById('tutorialMain').style.display='flex';" style="margin-top:16px;background:linear-gradient(135deg,#ffd700,#ff8800);border:none;border-radius:30px;color:#7a4800;font-size:0.88em;font-weight:800;padding:10px 0;cursor:pointer;width:100%;">王国へ入る →</button>
+        <button onclick="_ycFireCracker()" style="background:linear-gradient(135deg,#ffd700,#81c784);border:none;border-radius:30px;color:#2a4a2a;font-size:1em;font-weight:800;padding:14px 0;cursor:pointer;width:100%;letter-spacing:0.04em;box-shadow:0 4px 20px rgba(255,215,0,0.4);animation:_ycFadeUp 1.4s 3.0s ease both;opacity:0;">さあ、遊ぼう 🎨</button>
       </div>
 
       <!-- ドットナビ -->
@@ -16230,26 +16259,59 @@ function copyDeckCodeFromModal() {
     </div>
 
     <style>
-    @keyframes _ycFadeUp { from{opacity:0;transform:translateY(16px);} to{opacity:1;transform:translateY(0);} }
-    @keyframes _ycGlow   { 0%,100%{text-shadow:0 0 10px rgba(255,215,0,0.4);} 50%{text-shadow:0 0 28px rgba(255,215,0,0.9);} }
-    @keyframes _ycPulse  { 0%,100%{transform:scale(1);} 50%{transform:scale(1.1);} }
+    /* ラグジュアリー・ゆったり */
+    @keyframes _ycFadeUp  { from{opacity:0;transform:translateY(28px);} to{opacity:1;transform:translateY(0);} }
+    @keyframes _ycFadeIn  { from{opacity:0;} to{opacity:1;} }
+    @keyframes _ycGlow    { 0%,100%{text-shadow:0 0 8px rgba(255,215,0,0.2);} 50%{text-shadow:0 0 36px rgba(255,215,0,1),0 0 70px rgba(255,215,0,0.35);} }
+    @keyframes _ycPulse   { 0%,100%{transform:scale(1);} 50%{transform:scale(1.05);} }
+    @keyframes _ycFloat   { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);} }
+    @keyframes _ycShimmer { 0%{background-position:200% center;} 100%{background-position:-200% center;} }
+    @keyframes _ycReveal  { from{opacity:0;transform:translateY(18px) scale(0.96);} to{opacity:1;transform:translateY(0) scale(1);} }
+    /* くす玉・クラッカー */
+    @keyframes _ycConfA { 0%{transform:translate(0,0) rotate(0deg);opacity:1;} 100%{transform:translate(-60px,80px) rotate(540deg);opacity:0;} }
+    @keyframes _ycConfB { 0%{transform:translate(0,0) rotate(0deg);opacity:1;} 100%{transform:translate(60px,90px) rotate(-480deg);opacity:0;} }
+    @keyframes _ycConfC { 0%{transform:translate(0,0) rotate(0deg);opacity:1;} 100%{transform:translate(-40px,100px) rotate(600deg);opacity:0;} }
+    @keyframes _ycConfD { 0%{transform:translate(0,0) rotate(0deg);opacity:1;} 100%{transform:translate(50px,70px) rotate(-360deg);opacity:0;} }
+    @keyframes _ycConfE { 0%{transform:translate(0,0) rotate(0deg);opacity:1;} 100%{transform:translate(-80px,60px) rotate(420deg);opacity:0;} }
+    @keyframes _ycConfF { 0%{transform:translate(0,0) rotate(0deg);opacity:1;} 100%{transform:translate(80px,80px) rotate(-540deg);opacity:0;} }
+    @keyframes _ycConfG { 0%{transform:translate(0,0) rotate(0deg);opacity:1;} 100%{transform:translate(20px,110px) rotate(300deg);opacity:0;} }
+    @keyframes _ycConfH { 0%{transform:translate(0,0) rotate(0deg);opacity:1;} 100%{transform:translate(-20px,95px) rotate(-420deg);opacity:0;} }
+    @keyframes _ycBurst  { 0%{transform:scale(0.5);opacity:0;} 40%{transform:scale(1.3);opacity:1;} 100%{transform:scale(1);opacity:1;} }
     </style>
 
     <script>
-    function _ycGoSlide(n) {
-      for(var i=0;i<3;i++){
+    function _ycFireCracker() {
+  var wrap = document.getElementById('_ycCrackerWrap');
+  if (wrap) {
+    wrap.style.display = 'block';
+    setTimeout(function(){
+      document.getElementById('tutorialSplash').style.display='none';
+      document.getElementById('tutorialMain').style.display='flex';
+    }, 900);
+  } else {
+    document.getElementById('tutorialSplash').style.display='none';
+    document.getElementById('tutorialMain').style.display='flex';
+  }
+}
+function _ycGoSlide(n) {
+      for(var i=0;i<4;i++){
         var s=document.getElementById('_ycS'+i);
         if(s) s.style.display='none';
       }
       var next=document.getElementById('_ycS'+n);
-      if(next){ next.style.display='flex'; }
+      if(next){
+        // アニメーションリセット：一旦非表示→再表示でkeyframeを再実行
+        next.style.display='none';
+        void next.offsetWidth;
+        next.style.display='flex';
+      }
       _ycUpdateDots(n);
     }
     function _ycUpdateDots(active) {
       var dots=document.getElementById('_ycDots');
       if(!dots) return;
       dots.innerHTML='';
-      for(var i=0;i<3;i++){
+      for(var i=0;i<4;i++){
         var d=document.createElement('div');
         d.style.cssText='width:'+(i===active?'20':'8')+'px;height:8px;border-radius:4px;background:'+(i===active?'#ffd700':'rgba(255,255,255,0.25)')+';transition:all 0.3s;cursor:pointer;flex-shrink:0;';
         (function(idx){ d.onclick=function(){ _ycGoSlide(idx); }; })(i);
@@ -16264,26 +16326,27 @@ function copyDeckCodeFromModal() {
   <div id="tutorialMain" style="display:none;background:#1a1a2e;border:1px solid #4facfe;border-radius:20px;max-width:380px;width:92%;color:#fff;position:relative;box-shadow:0 0 40px rgba(79,172,254,0.3);max-height:90vh;overflow:hidden;flex-direction:column;">
   <div style="overflow-y:auto;overflow-x:hidden;padding:28px 24px;-webkit-overflow-scrolling:touch;flex:1;">
     <div style="font-size:2em;text-align:center;margin-bottom:4px;">🏰</div>
-    <h2 style="text-align:center;color:#ffd700;font-size:1.1em;margin:0 0 20px 0;letter-spacing:0.05em;">はじめての方へ</h2>
+    <h2 style="text-align:center;color:#ffd700;font-size:1.1em;margin:0 0 6px 0;letter-spacing:0.05em;">王国へようこそ。</h2>
+    <div style="text-align:center;font-size:0.82em;color:#aaa;margin-bottom:20px;">まず、遊ぶように始めよう。</div>
     <div style="margin-bottom:16px;">
       <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;">
         <div style="background:#4facfe;color:#fff;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.85em;flex-shrink:0;">1</div>
         <div>
-          <div style="font-weight:bold;color:#4facfe;margin-bottom:2px;">やることを入れよう</div>
+          <div style="font-weight:bold;color:#4facfe;margin-bottom:2px;">やることを、ひとつ入れてみて</div>
           <div style="font-size:0.85em;color:#ccc;">タスクは全部、王国の素材になるよ！</div>
         </div>
       </div>
       <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;">
         <div style="background:#ffd700;color:#1a1a2e;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.85em;flex-shrink:0;">2</div>
         <div>
-          <div style="font-weight:bold;color:#ffd700;margin-bottom:2px;">タスクをこなすたびに、王国が育っていく</div>
+          <div style="font-weight:bold;color:#ffd700;margin-bottom:2px;">こなすたびに、王国が育っていく</div>
           <div style="font-size:0.85em;color:#ccc;">完了したら、クリックで線が引けるよ！</div>
         </div>
       </div>
       <div style="display:flex;gap:12px;align-items:flex-start;">
         <div style="background:#a78bfa;color:#fff;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.85em;flex-shrink:0;">3</div>
         <div>
-          <div style="font-weight:bold;color:#a78bfa;margin-bottom:2px;">いつの間にか、王国ができている</div>
+          <div style="font-weight:bold;color:#a78bfa;margin-bottom:2px;">いつの間にか、あなただけの王国ができてる</div>
           <div style="font-size:0.85em;color:#ccc;">ちゃんとやれば、どんな仕事も王国の礎になる</div>
         </div>
       </div>
@@ -16468,6 +16531,7 @@ function copyDeckCodeFromModal() {
                 造営ビューはその王国の地図です。<br>
                 <strong style="color:#4facfe;">本当に輝く王国の地図と工程は、あなたの手にあるよ！</strong>
               </div>
+              <button onclick="showGantOnboarding()" style="width:100%;margin-top:12px;padding:11px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:10px;color:#fff;font-size:0.88em;font-weight:800;cursor:pointer;letter-spacing:0.04em;box-shadow:0 3px 12px rgba(79,172,254,0.3);">🏯 造営ビューのオンボーディングを見る →</button>
             </div>
           </div>
         </div><!-- /aboutAccordion -->
@@ -16510,6 +16574,82 @@ function receiveStarterDeck() {
   if (typeof renderAllSections === 'function') renderAllSections(today);
   allSettings.deck.starterDone = true; saveAllSettings();
   if (typeof showCraftMessage === 'function') showCraftMessage('👑 王国スタートデッキを受け取った！');
+}
+function showGantOnboarding() {
+  // 既存の造営ビューオンボーディングを流用
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
+  document.body.appendChild(overlay);
+  var slides = [
+    {
+      emoji:'🗺️', title:'造営は、必須じゃない',
+      sub:'週間・月間ビューだけで、充分な人がほとんど。',
+      items:[
+        {n:'💡',color:'#a78bfa',title:'一般ユーザーへ',desc:'日次・週間・月間で管理するだけで十分です。<br>造営は、もっと大きな夢を描きたくなったときに開けばいい。'},
+        {n:'👑',color:'#ffd700',title:'管理職・プロジェクトリーダーへ',desc:'志（ゴール）→ 手立て（施策）→ タスク（行動）の3層で<br>プロジェクトの地図を描けます。ここが本領発揮の場所。'},
+        {n:'🏢',color:'#4facfe',title:'社長・経営者へ',desc:'中長期の戦略を「造営計画」として可視化できます。<br>チームと共有する地図として使ってください。'}
+      ]
+    },
+    {
+      emoji:'🏯', title:'造営ビューへようこそ',
+      sub:'王国の地図を、あなたの手で描こう。',
+      items:[
+        {n:'1',color:'#4facfe',title:'志を立てる',desc:'「＋ 造営計画」で夢や目標をひとつ。<br>大きくなくていい。続けたいことでもいい。'},
+        {n:'2',color:'#ffd700',title:'工程を刻む',desc:'「工程を刻む」でステップに分ける。<br>基礎固め → 実践 → 仕上げ　細かくしすぎなくていい。'},
+        {n:'3',color:'#a78bfa',title:'タスクを紐づける',desc:'工程行の ＋ でタスクを即作成。「○件」で展開できる。'}
+      ]
+    },
+    {
+      emoji:'⏰', title:'時を刻むと、王国が動く',
+      sub:'タスクに日付と時刻を入れるだけでいい。',
+      items:[
+        {n:'4',color:'#f8bbd0',title:'日付・時刻を入れる',desc:'時刻を入れると、ガントバーが現れる。<br>「まだ、時を刻んでいない」が消えたとき、王国が動き始める。'},
+        {n:'5',color:'#81c784',title:'日・週・月で俯瞰する',desc:'<strong style="color:#fff;">日</strong>：今日の動き　<strong style="color:#fff;">週</strong>：この週の流れ　<strong style="color:#fff;">月</strong>：長期の俯瞰<br>視点を自由に切り替えよう。'},
+        {n:'✦',color:'#ffd700',title:'志カードにホバーしてみよう',desc:'進捗に応じて、王国からのメッセージが届く。<br>100%になったとき、次の志が始まる。'}
+      ]
+    }
+  ];
+  function buildGantSlide(idx) {
+    var s = slides[idx];
+    var itemsHtml = s.items.map(function(item){
+      return '<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:12px;">'
+        +'<div style="width:26px;height:26px;border-radius:50%;background:'+item.color+';color:#1a1a2e;font-size:0.82em;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+item.n+'</div>'
+        +'<div><div style="font-weight:700;color:'+item.color+';margin-bottom:2px;font-size:0.85em;">'+item.title+'</div>'
+        +'<div style="font-size:0.78em;color:#ccc;line-height:1.7;">'+item.desc+'</div></div>'
+        +'</div>';
+    }).join('');
+    var dotsHtml = slides.map(function(_,i){
+      return '<div style="width:'+(i===idx?'20':'8')+'px;height:8px;border-radius:4px;background:'+(i===idx?'#4facfe':'rgba(255,255,255,0.2)')+';transition:width 0.3s;"></div>';
+    }).join('');
+    var isLast = idx === slides.length - 1;
+    return '<div style="background:#1a1a2e;border:1px solid #4facfe;border-radius:20px;max-width:380px;width:92%;color:#fff;box-shadow:0 0 40px rgba(79,172,254,0.3);max-height:90vh;overflow:hidden;display:flex;flex-direction:column;transform:translateY(20px);opacity:0;transition:transform 0.3s cubic-bezier(0.34,1.4,0.64,1),opacity 0.25s;" id="_gOBCard">'
+      +'<div style="overflow-y:auto;padding:28px 24px 16px;flex:1;">'
+      +'<div style="font-size:2.2em;text-align:center;margin-bottom:6px;">'+s.emoji+'</div>'
+      +'<h2 style="text-align:center;color:#ffd700;font-size:1.05em;margin:0 0 4px;letter-spacing:0.04em;">'+s.title+'</h2>'
+      +'<div style="text-align:center;font-size:0.78em;color:#aaa;margin-bottom:20px;">'+s.sub+'</div>'
+      +itemsHtml
+      +'</div>'
+      +'<div style="padding:16px 24px 20px;border-top:1px solid rgba(255,255,255,0.1);display:flex;flex-direction:column;gap:10px;">'
+      +'<div style="display:flex;justify-content:center;gap:6px;margin-bottom:2px;">'+dotsHtml+'</div>'
+      +(isLast
+        ? '<button id="_gOBBtn" style="width:100%;padding:13px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:10px;color:#fff;font-size:0.95em;font-weight:700;cursor:pointer;">🏰 さあ、王国を、一緒に築こう！</button>'
+        : '<button id="_gOBBtn" style="width:100%;padding:13px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:10px;color:#fff;font-size:0.95em;font-weight:700;cursor:pointer;">次へ →</button>'
+          +'<button id="_gOBSkip" style="width:100%;padding:8px;background:none;border:none;color:#555;font-size:0.8em;cursor:pointer;">スキップ</button>')
+      +'</div></div>';
+  }
+  function renderGantSlide(idx) {
+    overlay.innerHTML = buildGantSlide(idx);
+    requestAnimationFrame(function(){
+      var card = document.getElementById('_gOBCard');
+      if (card) { card.style.transform='translateY(0)'; card.style.opacity='1'; }
+    });
+    var btn  = document.getElementById('_gOBBtn');
+    var skip = document.getElementById('_gOBSkip');
+    if (btn)  btn.onclick  = function(){ if (idx < slides.length-1) renderGantSlide(idx+1); else overlay.remove(); };
+    if (skip) skip.onclick = function(){ overlay.remove(); };
+  }
+  renderGantSlide(0);
+  overlay.addEventListener('click', function(e){ if (e.target===overlay) overlay.remove(); });
 }
 function showTutorial() {
   var el = document.getElementById('tutorialOverlay');
