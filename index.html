@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.34.13';
+    const APP_VERSION = 'v0.34.14';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -17994,11 +17994,13 @@ document.addEventListener('DOMContentLoaded', function() {
       const existing = journals.findIndex(function(j) { return j.date === dateStr; });
       var toastMsg;
       if (existing >= 0) {
-        journals[existing].text = (journals[existing].text ? journals[existing].text + '\n' : '') + t;
+        // 既存の日誌のthoughtsに追加
+        if (!Array.isArray(journals[existing].thoughts)) journals[existing].thoughts = [];
+        journals[existing].thoughts.push({ id: generateTaskId(), text: t });
         journals[existing].savedAt = new Date().toISOString();
-        toastMsg = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌に追記しました';
+        toastMsg = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌に追加しました';
       } else {
-        allTasks.push({ id: generateTaskId(), kind: 'journal', date: dateStr, text: t, mood: m.mood, condition: m.condition, weather: m.weather, savedAt: new Date().toISOString() });
+        allTasks.push({ id: generateTaskId(), kind: 'journal', date: dateStr, text: '', thoughts: [{ id: generateTaskId(), text: t }], mood: m.mood, condition: m.condition, weather: m.weather, savedAt: new Date().toISOString() });
         toastMsg = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌を作成しました';
       }
       // 雑記帳のアイテムを削除
@@ -18141,7 +18143,7 @@ document.addEventListener('DOMContentLoaded', function() {
         + '<div style="display:flex;gap:6px;font-size:1.1em;margin-bottom:14px;">'
         + (j.weather||'') + (j.mood ? MOOD_E[j.mood] : '') + (j.condition ? COND_E[j.condition] : '')
         + '</div>'
-        + (j.text ? '<div style="font-size:0.7em;color:#aaa;font-weight:600;letter-spacing:0.1em;margin-bottom:6px;">今日の日誌</div>' : '')
+        + (j.text ? '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><div style="font-size:0.7em;color:#aaa;font-weight:600;letter-spacing:0.1em;">今日の日誌</div><button onclick="textToThoughts(\'' + j.id + '\')" style="font-size:0.68em;padding:2px 8px;border-radius:4px;border:1px solid rgba(74,96,128,0.3);background:rgba(74,96,128,0.06);color:#4a6080;cursor:pointer;">✂️ 切り分けて使う</button></div>' : '')
         + '<div style="font-size:0.9em;color:#333;line-height:1.8;white-space:pre-wrap;">' + (j.text||'') + '</div>'
         + _thoughtsHtml;
       modal.style.display = 'flex';
@@ -18234,6 +18236,19 @@ document.addEventListener('DOMContentLoaded', function() {
       if (!th) return;
       th.text = newText;
       saveAllTasks();
+    }
+    function textToThoughts(journalId) {
+      var j = allTasks.find(function(t){ return t.id === journalId; });
+      if (!j || !j.text) return;
+      var lines = j.text.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
+      if (lines.length === 0) return;
+      if (!Array.isArray(j.thoughts)) j.thoughts = [];
+      lines.forEach(function(line){
+        j.thoughts.push({ id: generateTaskId(), text: line });
+      });
+      j.text = '';
+      saveAllTasks();
+      openJournalDetail(journalId);
     }
     function thoughtDelete(journalId, thoughtId) {
       var j = allTasks.find(function(t){ return t.id === journalId; });
