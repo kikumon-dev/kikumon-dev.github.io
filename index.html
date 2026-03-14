@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.34.08';
+    const APP_VERSION = 'v0.34.12';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -10822,10 +10822,16 @@ function myDeckApply(idx) {
       allTasks = allTasks.filter(function(t){ return !movedIds.has(t.id); });
       saveAllTasks();
       localStorage.setItem('_lastScratchMoveDate', today);
+      if (typeof renderScratchView === 'function') renderScratchView();
       _dbgLog && _dbgLog('moveScratchToThoughts done. moved=' + oldS.length);
     }
     moveScratchToThoughts();
-    document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'visible') moveScratchToThoughts(); });
+    document.addEventListener('visibilitychange', function(){
+      if (document.visibilityState === 'visible') {
+        moveScratchToThoughts();
+        if (typeof renderScratchView === 'function') renderScratchView();
+      }
+    });
     window._dbgLog('【昇格完了】UUID ENGINE v7 --- 識別子体系、最新世代 / 時は刻まれました');
     window._dbgLog('migrateToUUIDv7 done');
     // mig_*フラグの値を'1'に正規化（'true'が残っている場合）
@@ -10859,6 +10865,7 @@ function myDeckApply(idx) {
       'simpleMode', 'dataVersion',
       'mig_journals_to_alltasks_v1', 'mig_journal_ids_to_uuid_v7',
       '_lastScratchMoveDate',
+      'tokuLog', 'selectedDailyDate', 'tlLastScrollTop',
     ]);
     // 起動時スキャン
     (function() {
@@ -17682,7 +17689,7 @@ function renderDeckBuilderTasks() {
         (t.memo ? '<div style="font-size:0.75em;color:#888;margin-top:3px;word-break:break-all;">' + t.memo + '</div>' : '<div style="font-size:0.72em;color:#555;margin-top:3px;">メモなし</div>') +
         '<div style="font-size:0.7em;color:#a78bfa;margin-top:3px;">' + (sectionNames[t.section]||'') + '</div>' +
       '</div>' +
-      '<div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0;">' +
+      '<div style="display:flex;flex-direction:row;gap:4px;flex-shrink:0;align-items:center;">' +
         '<button onclick="deckBuilderMoveTask(' + i + ',-1)" style="padding:2px 6px;background:#2a2040;border:1px solid #4a3060;border-radius:4px;color:#aaa;font-size:0.75em;cursor:pointer;">▲</button>' +
         '<button onclick="deckBuilderMoveTask(' + i + ',1)" style="padding:2px 6px;background:#2a2040;border:1px solid #4a3060;border-radius:4px;color:#aaa;font-size:0.75em;cursor:pointer;">▼</button>' +
         '<button onclick="deckBuilderEditTask(' + i + ')" style="padding:2px 6px;background:#1a2040;border:1px solid #4060a0;border-radius:4px;color:#7aacff;font-size:0.75em;cursor:pointer;">✏️</button>' +
@@ -17937,6 +17944,17 @@ document.addEventListener('DOMContentLoaded', function() {
   if (typeof renderMyDecks === 'function') renderMyDecks();
 });
     // ===== 王国日誌システム =====
+    function formatJournalDate(dateStr) {
+      if (!dateStr) return dateStr;
+      var parts = dateStr.split('-');
+      if (parts.length !== 3) return dateStr;
+      var y = parseInt(parts[0]);
+      var m = parseInt(parts[1]);
+      var d = parseInt(parts[2]);
+      var date = new Date(y, m-1, d);
+      var w = ['日','月','火','水','木','金','土'][date.getDay()];
+      return y + '年' + m + '月' + d + '日（' + w + '）';
+    }
     function loadJournals() {
       return allTasks.filter(function(t){ return t.kind === 'journal'; })
         .sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
@@ -18064,15 +18082,15 @@ document.addEventListener('DOMContentLoaded', function() {
         + journals.map(function(j) {
           const preview = (j.text || '').replace(/\n/g,' ').slice(0,60) + ((j.text||'').length > 60 ? '…' : '');
           const _thoughts = Array.isArray(j.thoughts) ? j.thoughts : [];
-          const _tBadge = _thoughts.length > 0 ? '<span style="font-size:0.68em;background:rgba(79,172,254,0.1);color:#4facfe;border:1px solid rgba(79,172,254,0.2);border-radius:4px;padding:1px 5px;margin-left:5px;">💭 ' + _thoughts.length + '</span>' : '';
+          const _tBadge = _thoughts.length > 0 ? '<span style="font-size:0.68em;background:rgba(79,172,254,0.1);color:#4facfe;border:1px solid rgba(79,172,254,0.2);border-radius:4px;padding:1px 5px;margin-left:5px;">' + _thoughts.length + '件</span>' : '';
           return '<div class="jnl-card" onclick="openJournalDetail(\'' + j.id + '\')"'
             + ' style="background:#fff;border:1px solid #efefef;border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;">'
             + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">'
-            + '<div style="display:flex;align-items:center;font-size:0.85em;font-weight:700;color:#262626;">' + j.date + _tBadge + '</div>'
+            + '<div style="display:flex;align-items:center;font-size:0.85em;font-weight:700;color:#262626;">' + formatJournalDate(j.date) + _tBadge + '</div>'
             + '<div style="display:flex;gap:4px;font-size:1em;">'
             + (j.weather || '') + (j.mood ? MOOD_E[j.mood] : '') + (j.condition ? COND_E[j.condition] : '')
             + '</div></div>'
-            + '<div style="font-size:0.82em;color:#666;line-height:1.6;">' + (preview || '<span style="color:#ccc">（本文なし）</span>') + '</div>'
+            + '<div style="font-size:0.82em;color:#666;line-height:1.6;">' + (preview || '<span style="color:#aaa;font-size:0.95em;">💭 今日考えたこと ' + (Array.isArray(j.thoughts) && j.thoughts.length > 0 ? j.thoughts.length + '件' : '') + '</span>') + '</div>'
             + '</div>';
         }).join('')
         + '</div>';
@@ -18108,14 +18126,14 @@ document.addEventListener('DOMContentLoaded', function() {
               return '<div id="th_' + th.id + '" style="display:flex;align-items:flex-start;gap:8px;margin-bottom:5px;padding:8px 10px;background:#fafafa;border-radius:8px;">'
                 + '<div style="width:5px;height:5px;border-radius:50%;background:#bbb;margin-top:7px;flex-shrink:0;"></div>'
                 + '<div contenteditable="true" onblur="thoughtSaveEdit(\'' + j.id + '\',\'' + th.id + '\',this.textContent)" style="font-size:0.84em;color:#444;line-height:1.7;flex:1;outline:none;min-height:1.4em;">' + escapeHtml(th.text) + '</div>'
-                + '<div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0;">'
+                + '<div style="display:flex;flex-direction:row;gap:4px;flex-shrink:0;align-items:center;">'
                 + '<button onclick="thoughtToScratch(\'' + j.id + '\',\'' + th.id + '\')" style="padding:3px 8px;border-radius:4px;border:1px solid #e0e0e0;background:#fff;color:#555;font-size:0.7em;cursor:pointer;white-space:nowrap;">📝 雑記帳へ</button>'
-                + '<button onclick="thoughtToTask(\'' + j.id + '\',\'' + th.id + '\')" style="padding:3px 8px;border-radius:4px;border:1px solid #e0e0e0;background:#fff;color:#555;font-size:0.7em;cursor:pointer;white-space:nowrap;">＋ タスクに</button>'
+                + '<button onclick="thoughtDelete(\'' + j.id + '\',\'' + th.id + '\')" style="padding:3px 6px;border-radius:4px;border:1px solid #ffcccc;background:#fff;color:#e05a5a;font-size:0.7em;cursor:pointer;">✕</button>'
                 + '</div></div>';
             }).join('')
           + '</div>'
         : '';
-      body.innerHTML = '<div style="font-size:1em;font-weight:700;color:#262626;margin-bottom:8px;">' + j.date + '</div>'
+      body.innerHTML = '<div style="font-size:1em;font-weight:700;color:#262626;margin-bottom:8px;">' + formatJournalDate(j.date) + '</div>'
         + '<div style="display:flex;gap:6px;font-size:1.1em;margin-bottom:14px;">'
         + (j.weather||'') + (j.mood ? MOOD_E[j.mood] : '') + (j.condition ? COND_E[j.condition] : '')
         + '</div>'
@@ -18213,6 +18231,13 @@ document.addEventListener('DOMContentLoaded', function() {
       th.text = newText;
       saveAllTasks();
     }
+    function thoughtDelete(journalId, thoughtId) {
+      var j = allTasks.find(function(t){ return t.id === journalId; });
+      if (!j || !Array.isArray(j.thoughts)) return;
+      j.thoughts = j.thoughts.filter(function(t){ return t.id !== thoughtId; });
+      saveAllTasks();
+      openJournalDetail(journalId);
+    }
     function deleteJournal(id) {
       const jIdx = allTasks.findIndex(function(t){ return t.id === id && t.kind === 'journal'; });
       if (jIdx !== -1) allTasks.splice(jIdx, 1);
@@ -18256,17 +18281,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function showScratchOnboarding() {
       _showOnboardingModal([
-        { emoji: '✏️', title: '全部やらなくていい', body: '今日できたことだけ、刻んでいこう。<br>完璧を目指さなくて大丈夫。<br>ひとこと書くだけで、十分。' },
-        { emoji: '🌱', title: '書いたら、行き先を選ぶ', body: '「タスクに」→ やることリストへ。<br>「日誌に」→ 今日の記録として残す。<br>どちらでもいいし、どちらでもなくていい。' },
-        { emoji: '📖', title: '積み重ねが、地図になる', body: '雑記帳の記録は日誌に流せる。<br>1週間後に見返したとき、<br>あの日の自分が戻ってくる。' },
+        { emoji: '✏️', title: 'あ、フレッシュ。', body: 'いつ開いても、白紙から始められる。<br>昨日の自分が残したものは、もうここにない。<br>時間が、勝手に片付けてくれた。' },
+        { emoji: '🌊', title: 'また、考えてみよ。', body: '書いたことは消えていない。日誌に届いている。<br>捨てたわけじゃない、退避しただけ。<br>だからここはいつでも、考える場所になる。' },
+        { emoji: '📋', title: 'あ、スッキリしてる。', body: 'タスクにしたいなら、「タスクに」を押すだけ。<br>したくなければ、しなくていい。<br>強制はない。あなたが主役だ。' },
+        { emoji: '🏰', title: 'あ、スッキリはじめられた。', body: '今日も、なんでも書いていい。<br>ここはあなたの王国の、作業台。<br>さあ、はじめよう。' },
       ]);
     }
 
     function showJournalOnboarding() {
       _showOnboardingModal([
-        { emoji: '📖', title: '王国日誌', body: 'ここは、あなたの王国の記録庫。<br>雑記帳から保存した日誌が<br>時系列で積み重なっていく。' },
-        { emoji: '🗓️', title: '過去の日付にも書ける', body: '右上の「＋」から、<br>日付を指定して日誌を作れる。<br>昨日のことを今日書いてもいい。' },
-        { emoji: '🌟', title: '気分・体調・天気も記録', body: 'その日の状態が絵文字で残る。<br>カードを見るだけで<br>あの日を思い出せる。' },
+        { emoji: '📬', title: 'あ、来てる。', body: '昨日の雑記帳が、今日の日誌になっている。<br>整理した覚えはない。<br>それでいい。時間がやってくれた。' },
+        { emoji: '💭', title: 'また、考えてみよ。', body: '断片が、行ごとに届いている。<br>捨てなくていい。戻せる。動かせる。<br>思考はまだ、生きている。' },
+        { emoji: '📝', title: 'あ、残ってた。', body: '「雑記帳へ」で今日の作業台へ戻せる。<br>日誌は墓場じゃない。<br>思考の中継地点だ。' },
+        { emoji: '🔗', title: 'あ、続いてる。', body: '昨日と今日が、ここでつながっている。<br>気分・体調・天気も絵文字で刻める。<br>文章がなくても、あの日が残る。' },
+        { emoji: '🗓️', title: '過去の日付にも、書ける。', body: '右上の「＋」から日付を指定して作れる。<br>昨日のことを今日書いてもいい。<br>記録に、締め切りはない。' },
       ]);
     }
 
