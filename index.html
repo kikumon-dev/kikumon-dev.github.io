@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.34.12';
+    const APP_VERSION = 'v0.34.13';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -18001,7 +18001,11 @@ document.addEventListener('DOMContentLoaded', function() {
         allTasks.push({ id: generateTaskId(), kind: 'journal', date: dateStr, text: t, mood: m.mood, condition: m.condition, weather: m.weather, savedAt: new Date().toISOString() });
         toastMsg = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌を作成しました';
       }
+      // 雑記帳のアイテムを削除
+      var delIdx = allTasks.findIndex(function(t){ return t.id === item.id; });
+      if (delIdx !== -1) allTasks.splice(delIdx, 1);
       saveAllTasks();
+      renderScratchView();
       _showJournalToast(toastMsg);
     }
     function saveScratchAsJournal() {
