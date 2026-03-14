@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.34.06';
+    const APP_VERSION = 'v0.34.08';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -10801,6 +10801,31 @@ function myDeckApply(idx) {
         window._dbgLog && window._dbgLog('migrateJournalsToAllTasks done. added=' + added);
       } catch(e) { console.error('[migrateJournalsToAllTasks]', e); }
     })();
+    // 日付変更時：雑記帳→thoughtsに自動移動
+    function moveScratchToThoughts() {
+      var today = getLocalDateStr(new Date());
+      if (localStorage.getItem('_lastScratchMoveDate') === today) return;
+      var oldS = allTasks.filter(function(t){ return t.kind === 'scratch' && t.date && t.date < today; });
+      if (oldS.length === 0) { localStorage.setItem('_lastScratchMoveDate', today); return; }
+      var byDate = {};
+      oldS.forEach(function(s){ if (!byDate[s.date]) byDate[s.date]=[]; byDate[s.date].push({ id: generateTaskId(), text: s.text }); });
+      Object.keys(byDate).forEach(function(date) {
+        var j = allTasks.find(function(t){ return t.kind === 'journal' && t.date === date; });
+        if (!j) {
+          j = { id: generateTaskId(), kind: 'journal', date: date, text: '', thoughts: [], mood: 0, condition: 0, weather: '', savedAt: new Date().toISOString() };
+          allTasks.push(j);
+        }
+        if (!Array.isArray(j.thoughts)) j.thoughts = [];
+        byDate[date].forEach(function(th){ j.thoughts.push(th); });
+      });
+      var movedIds = new Set(oldS.map(function(s){ return s.id; }));
+      allTasks = allTasks.filter(function(t){ return !movedIds.has(t.id); });
+      saveAllTasks();
+      localStorage.setItem('_lastScratchMoveDate', today);
+      _dbgLog && _dbgLog('moveScratchToThoughts done. moved=' + oldS.length);
+    }
+    moveScratchToThoughts();
+    document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'visible') moveScratchToThoughts(); });
     window._dbgLog('【昇格完了】UUID ENGINE v7 --- 識別子体系、最新世代 / 時は刻まれました');
     window._dbgLog('migrateToUUIDv7 done');
     // mig_*フラグの値を'1'に正規化（'true'が残っている場合）
@@ -10833,6 +10858,7 @@ function myDeckApply(idx) {
       'dailyScrollInit', 'weeklyScrollInit', 'nbLastPageId',
       'simpleMode', 'dataVersion',
       'mig_journals_to_alltasks_v1', 'mig_journal_ids_to_uuid_v7',
+      '_lastScratchMoveDate',
     ]);
     // 起動時スキャン
     (function() {
@@ -17154,6 +17180,23 @@ function showDebugLog() {
     localStorage.removeItem('_dbg_errors');
     wrap.remove();
   };
+  var btnTestMove = document.createElement('button');
+  btnTestMove.textContent = '🔄 日付変更テスト';
+  btnTestMove.style.cssText = 'width:100%;padding:9px;background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);border-radius:8px;color:#ffd700;font-size:0.82em;cursor:pointer;margin-bottom:8px;';
+  btnTestMove.onclick = function(){
+    var yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    var yStr = yesterday.getFullYear() + '-' + String(yesterday.getMonth()+1).padStart(2,'0') + '-' + String(yesterday.getDate()).padStart(2,'0');
+    var changed = 0;
+    allTasks.forEach(function(t){ if (t.kind === 'scratch') { t.date = yStr; changed++; } });
+    if (changed === 0) { showToast('雑記帳にアイテムがありません', {type:'warn'}); return; }
+    saveAllTasks();
+    localStorage.removeItem('_lastScratchMoveDate');
+    moveScratchToThoughts();
+    wrap.remove();
+    showToast('🔄 テスト実行（' + changed + '件移動）', {type:'info'});
+  };
+  box.appendChild(btnTestMove);
   var btnClose = document.createElement('button');
   btnClose.textContent = '閉じる';
   btnClose.style.cssText = 'flex:2;padding:10px;background:#4facfe;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer;';
@@ -17940,7 +17983,7 @@ document.addEventListener('DOMContentLoaded', function() {
         allTasks.push({ id: generateTaskId(), kind: 'journal', date: dateStr, text: t, mood: m.mood, condition: m.condition, weather: m.weather, savedAt: new Date().toISOString() });
         toastMsg = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌を作成しました';
       }
-      saveJournals(journals);
+      saveAllTasks();
       _showJournalToast(toastMsg);
     }
     function saveScratchAsJournal() {
@@ -18003,7 +18046,7 @@ document.addEventListener('DOMContentLoaded', function() {
           savedAt: new Date().toISOString()
         });
       }
-      saveJournals(journals);
+      saveAllTasks();
       _showJournalToast(_toastMsg3 || ('📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌を作成しました'));
     }
     function renderJournalView() {
@@ -18020,10 +18063,12 @@ document.addEventListener('DOMContentLoaded', function() {
         + '<div style="font-size:0.8em;color:#aaa;margin-bottom:12px;font-weight:600;">王国日誌 — ' + journals.length + '件</div>'
         + journals.map(function(j) {
           const preview = (j.text || '').replace(/\n/g,' ').slice(0,60) + ((j.text||'').length > 60 ? '…' : '');
+          const _thoughts = Array.isArray(j.thoughts) ? j.thoughts : [];
+          const _tBadge = _thoughts.length > 0 ? '<span style="font-size:0.68em;background:rgba(79,172,254,0.1);color:#4facfe;border:1px solid rgba(79,172,254,0.2);border-radius:4px;padding:1px 5px;margin-left:5px;">💭 ' + _thoughts.length + '</span>' : '';
           return '<div class="jnl-card" onclick="openJournalDetail(\'' + j.id + '\')"'
             + ' style="background:#fff;border:1px solid #efefef;border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;">'
             + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">'
-            + '<div style="font-size:0.85em;font-weight:700;color:#262626;">' + j.date + '</div>'
+            + '<div style="display:flex;align-items:center;font-size:0.85em;font-weight:700;color:#262626;">' + j.date + _tBadge + '</div>'
             + '<div style="display:flex;gap:4px;font-size:1em;">'
             + (j.weather || '') + (j.mood ? MOOD_E[j.mood] : '') + (j.condition ? COND_E[j.condition] : '')
             + '</div></div>'
@@ -18055,11 +18100,28 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       window._currentJournalId = id;
       const body = document.getElementById('journalDetailBody');
+      if (!body) return;
+      const _jThoughts = Array.isArray(j.thoughts) ? j.thoughts : [];
+      const _thoughtsHtml = _jThoughts.length > 0
+        ? '<div style="margin-top:16px;padding-top:14px;border-top:1px solid #f0f0f0;"><div style="font-size:0.7em;color:#aaa;font-weight:600;letter-spacing:0.1em;margin-bottom:8px;">今日考えたこと</div>'
+          + _jThoughts.map(function(th) {
+              return '<div id="th_' + th.id + '" style="display:flex;align-items:flex-start;gap:8px;margin-bottom:5px;padding:8px 10px;background:#fafafa;border-radius:8px;">'
+                + '<div style="width:5px;height:5px;border-radius:50%;background:#bbb;margin-top:7px;flex-shrink:0;"></div>'
+                + '<div contenteditable="true" onblur="thoughtSaveEdit(\'' + j.id + '\',\'' + th.id + '\',this.textContent)" style="font-size:0.84em;color:#444;line-height:1.7;flex:1;outline:none;min-height:1.4em;">' + escapeHtml(th.text) + '</div>'
+                + '<div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0;">'
+                + '<button onclick="thoughtToScratch(\'' + j.id + '\',\'' + th.id + '\')" style="padding:3px 8px;border-radius:4px;border:1px solid #e0e0e0;background:#fff;color:#555;font-size:0.7em;cursor:pointer;white-space:nowrap;">📝 雑記帳へ</button>'
+                + '<button onclick="thoughtToTask(\'' + j.id + '\',\'' + th.id + '\')" style="padding:3px 8px;border-radius:4px;border:1px solid #e0e0e0;background:#fff;color:#555;font-size:0.7em;cursor:pointer;white-space:nowrap;">＋ タスクに</button>'
+                + '</div></div>';
+            }).join('')
+          + '</div>'
+        : '';
       body.innerHTML = '<div style="font-size:1em;font-weight:700;color:#262626;margin-bottom:8px;">' + j.date + '</div>'
         + '<div style="display:flex;gap:6px;font-size:1.1em;margin-bottom:14px;">'
         + (j.weather||'') + (j.mood ? MOOD_E[j.mood] : '') + (j.condition ? COND_E[j.condition] : '')
         + '</div>'
-        + '<div style="font-size:0.9em;color:#333;line-height:1.8;white-space:pre-wrap;">' + (j.text||'（本文なし）') + '</div>';
+        + (j.text ? '<div style="font-size:0.7em;color:#aaa;font-weight:600;letter-spacing:0.1em;margin-bottom:6px;">今日の日誌</div>' : '')
+        + '<div style="font-size:0.9em;color:#333;line-height:1.8;white-space:pre-wrap;">' + (j.text||'') + '</div>'
+        + _thoughtsHtml;
       modal.style.display = 'flex';
     }
     function editJournal(id) {
@@ -18113,10 +18175,43 @@ document.addEventListener('DOMContentLoaded', function() {
         _showJournalToast('📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(newDate) + 'の日誌を更新しました');
       }
       journals.sort(function(a,b){ return b.date.localeCompare(a.date); });
-      saveJournals(journals);
+      saveAllTasks();
       var em = document.getElementById('journalEditModal');
       if (em) em.style.display = 'none';
       renderJournalView();
+    }
+    function thoughtToScratch(journalId, thoughtId) {
+      var j = allTasks.find(function(t){ return t.id === journalId; });
+      if (!j || !Array.isArray(j.thoughts)) return;
+      var th = j.thoughts.find(function(t){ return t.id === thoughtId; });
+      if (!th) return;
+      addScratchItem(th.text);
+      j.thoughts = j.thoughts.filter(function(t){ return t.id !== thoughtId; });
+      saveAllTasks();
+      document.getElementById('journalDetailModal').style.display = 'none';
+      renderJournalView();
+      showToast('📝 雑記帳へ戻しました', {type:'success'});
+    }
+    function thoughtToTask(journalId, thoughtId) {
+      var j = allTasks.find(function(t){ return t.id === journalId; });
+      if (!j || !Array.isArray(j.thoughts)) return;
+      var th = j.thoughts.find(function(t){ return t.id === thoughtId; });
+      if (!th) return;
+      var dateStr = (typeof currentDailyDate !== 'undefined' && currentDailyDate) || getLocalDateStr(new Date());
+      allTasks.push({ id: generateTaskId(), kind: 'scratch', text: th.text, date: dateStr, createdAt: new Date().toISOString() });
+      j.thoughts = j.thoughts.filter(function(t){ return t.id !== thoughtId; });
+      saveAllTasks();
+      document.getElementById('journalDetailModal').style.display = 'none';
+      renderJournalView();
+      showToast('＋ 雑記帳に追加しました（タスクに上げてください）', {type:'success'});
+    }
+    function thoughtSaveEdit(journalId, thoughtId, newText) {
+      var j = allTasks.find(function(t){ return t.id === journalId; });
+      if (!j || !Array.isArray(j.thoughts)) return;
+      var th = j.thoughts.find(function(t){ return t.id === thoughtId; });
+      if (!th) return;
+      th.text = newText;
+      saveAllTasks();
     }
     function deleteJournal(id) {
       const jIdx = allTasks.findIndex(function(t){ return t.id === id && t.kind === 'journal'; });
@@ -18268,7 +18363,7 @@ document.addEventListener('DOMContentLoaded', function() {
         allTasks.push({ id: generateTaskId(), kind: 'journal', date: dateStr, text: text, mood: m.mood, condition: m.condition, weather: m.weather, savedAt: new Date().toISOString() });
         _toastMsg4 = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌を作成しました';
       }
-      saveJournals(journals);
+      saveAllTasks();
       var jnm = document.getElementById('journalNewModal');
       if (jnm) jnm.style.display = 'none';
       window._newJournalText = '';
