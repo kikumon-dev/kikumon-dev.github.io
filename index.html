@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.33.99';
+    const APP_VERSION = 'v0.34.06';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -4960,8 +4960,7 @@
     }
     function completeSetup(selectedNames) {
       if (selectedNames.length === 0) {
-        alert('⚠️ 最低1つカレンダーを選んでください。');
-        return;
+        showToast('⚠️ 最低1つカレンダーを選んでください。', {type:'warn'}); return;
       }
       calendars = selectedNames.map(name => {
         const tmpl = CALENDAR_TEMPLATES.find(t => t.name === name) 
@@ -5331,11 +5330,19 @@ function getMyDecks() {
     btnDelete.style.cssText = 'padding:6px 10px;background:rgba(239,83,80,0.15);border:1px solid #ef5350;border-radius:6px;color:#ef5350;font-size:0.75em;cursor:pointer;';
     btnDelete.textContent = '削除';
     btnDelete.addEventListener('click', (function(d){ return function(){
-      if (!confirm('このデッキを削除しますか？')) return;
-      var i = allTasks.findIndex(function(t){ return t.id === d.id; });
-      if (i >= 0) allTasks.splice(i, 1);
-      saveAllTasks();
-      renderMyDecks();
+      showChoiceModal({
+        title: 'デッキを削除',
+        desc: 'このデッキを削除しますか？',
+        buttons: [
+          { label: '削除', style: 'danger', onClick: function() {
+            var i = allTasks.findIndex(function(t){ return t.id === d.id; });
+            if (i >= 0) allTasks.splice(i, 1);
+            saveAllTasks();
+            renderMyDecks();
+          }},
+          { label: 'キャンセル', style: 'cancel', onClick: function(){} }
+        ]
+      });
     }; })(deck));
     var btnEdit = document.createElement('button');
     btnEdit.style.cssText = 'flex:1;padding:6px;background:rgba(168,85,247,0.15);border:1px solid #a855f7;border-radius:6px;color:#a855f7;font-size:0.75em;font-weight:700;cursor:pointer;';
@@ -5716,8 +5723,7 @@ function myDeckApply(idx) {
     // 週間タスクに追加確定
     function confirmAddToWeekly() {
       if (!pendingScheduleTask || selectedWeekday === null) {
-        alert('曜日を選択してください');
-        return;
+        showToast('曜日を選択してください', {type:'warn'}); return;
       }
       const rawTime = document.getElementById('weeklyTaskTime').value;
       const time = rawTime || '09:00'; // 時間未入力なら09:00デフォルト
@@ -6223,12 +6229,10 @@ function myDeckApply(idx) {
       const newSection = parseInt(document.getElementById('editTaskSection').value);
       // calendarIdは_editCalendarIdを使用
       if (!newText) {
-        alert('タスク名を入力してください');
-        return;
+        showToast('タスク名を入力してください', {type:'warn'}); return;
       }
       if (!newDate) {
-        alert('日付を入力してください');
-        return;
+        showToast('日付を入力してください', {type:'warn'}); return;
       }
       // 時刻あり→both（日次＋週間）、なし→daily_only
       const _newScope = newTime ? 'both' : 'daily_only';
@@ -8361,7 +8365,7 @@ function myDeckApply(idx) {
       const title = document.getElementById('blueprintTitleInput');
       if (!title) return;
       const titleVal = title.value.trim();
-      if (!titleVal) { alert('計画名を入力してください'); return; }
+      if (!titleVal) { showToast('計画名を入力してください', {type:'warn'}); return; }
       const vision = document.getElementById('blueprintVisionInput');
       const start = document.getElementById('blueprintStartInput');
       const end = document.getElementById('blueprintEndInput');
@@ -9088,12 +9092,10 @@ function myDeckApply(idx) {
       const time = getTimeFromSelect('monthly');
       const section = parseInt(document.getElementById('monthlyTaskSection').value);
       if (!text) {
-        alert('タスクを入力してください');
-        return;
+        showToast('タスクを入力してください', {type:'warn'}); return;
       }
       if (!dateStr) {
-        alert('日付を入力してください');
-        return;
+        showToast('日付を入力してください', {type:'warn'}); return;
       }
       // 時刻あり→both、なし→daily_only
       const _mScope = time ? 'both' : 'daily_only';
@@ -9190,8 +9192,7 @@ function myDeckApply(idx) {
       const taskSection = parseInt(document.getElementById('createTaskSection').value);
       // calendarIdは_createCalendarIdを使用
       if (!taskText) {
-        alert('タスク名を入力してください');
-        return;
+        showToast('タスク名を入力してください', {type:'warn'}); return;
       }
       const _cRepeat = document.getElementById('createRepeat') ? document.getElementById('createRepeat').value : 'none';
       const _cRepeatEnd = document.getElementById('createRepeatEnd') ? document.getElementById('createRepeatEnd').value : '';
@@ -9722,6 +9723,40 @@ function myDeckApply(idx) {
       }, 100);
     }
     // タスク編集モーダルを閉じる
+    function sendTaskEditToScratch() {
+      var titleEl = document.getElementById('taskEditText');
+      if (!titleEl) return;
+      var title = titleEl.value.trim();
+      if (!title) { showToast('タスク名がありません', {type:'warn'}); return; }
+      var taskId = document.getElementById('taskEditId').value;
+      showChoiceModal({
+        title: '📝 雑記帳へ送る',
+        desc: '「' + title + '」を雑記帳へ送り、タスクを削除します。',
+        buttons: [
+          { label: '送る', style: 'primary', onClick: function() {
+            addScratchItem(title);
+            // タスクをallTasksから削除
+            var idx = allTasks.findIndex(function(t){ return t.id === taskId; });
+            if (idx !== -1) {
+              allTasks.forEach(function(t){
+                if (t.kind === 'gantt' && t.taskIds) {
+                  t.taskIds = t.taskIds.filter(function(id){ return id !== taskId; });
+                }
+              });
+              allTasks.splice(idx, 1);
+              saveAllTasks();
+            }
+            closeTaskEditModal();
+            var dateStr = (typeof currentDailyDate !== 'undefined' && currentDailyDate) || getLocalDateStr(new Date());
+            if (typeof renderAllSections === 'function') renderAllSections(dateStr);
+            if (typeof renderWeeklyView === 'function') renderWeeklyView();
+            if (typeof renderGantView === 'function') renderGantView();
+            showToast('📝 雑記帳へ送りました', {type:'success'});
+          }},
+          { label: 'キャンセル', style: 'cancel', onClick: function(){} }
+        ]
+      });
+    }
     function closeTaskEditModal() {
       document.getElementById('taskEditModal').classList.remove('show');
     }
@@ -9735,8 +9770,8 @@ function myDeckApply(idx) {
       const endTime = getTimeFromSelect('taskEditEnd') || null;
       const repeat = document.getElementById('taskEditRepeat').value;
       const repeatEnd = document.getElementById('taskEditRepeatEnd').value;
-      if (!text) { alert('タスク名を入力してください'); return; }
-      if (!date) { alert('日付を入力してください'); return; }
+      if (!text) { showToast('タスク名を入力してください', {type:'warn'}); return; }
+      if (!date) { showToast('日付を入力してください', {type:'warn'}); return; }
       // 元タスクを更新
       const baseTask = allTasks.find(t => t.id === taskId);
       updateTask(taskId, { 
@@ -10487,7 +10522,7 @@ function myDeckApply(idx) {
       if (_dhCount > 0) exportMsg += `⚔️ デッキ履歴：${_dhCount}件\n`;
       if (_mdCount > 0) exportMsg += `🃏 マイデッキ：${_mdCount}件\n`;
       exportMsg += `\n合計：${allTasks.length}件\nファイル: ${filename}`;
-      alert(exportMsg);
+      showToast(exportMsg, {type:'info'});
     }
     // インポート：JSONファイルを読み込み
     function importData(event) {
@@ -10500,14 +10535,15 @@ function myDeckApply(idx) {
           // ① セットアップ未完了チェック
           const currentCalsCheck = JSON.parse(localStorage.getItem('calendars') || '[]');
           if (currentCalsCheck.length === 0) {
-            alert('⚠️ 先にカレンダーをセットアップしてください。\n画面を更新してカレンダーを作成してから再度インポートしてください。');
+            showToast('⚠️ 先にカレンダーをセットアップしてください。\n画面を更新してカレンダーを作成してから再度インポートしてください。', {type:'warn'});
             event.target.value = '';
             return;
           }
           const tasksData = data.tasks || data.allTasks;
           if (!tasksData || !Array.isArray(tasksData)) throw new Error('タスクデータが見つかりません');
           // ③ 完了タスクを含めるか確認
-          const includeCompleted = confirm('完了済みタスクも復元しますか？\n（キャンセルで未完了タスクのみ）');
+          const includeCompleted = true; // showChoiceModalで分岐（下記）
+          // ※ iOS対応：confirm廃止。完了タスクも含めて復元する（全件復元）
           let _invalidCount = 0;
           const _NON_TASK_KINDS = ['note', 'dailyStatus', 'family', 'deckHistory', 'myDeck', 'guildLicense', 'stamp'];
           const validTasks = tasksData.filter(task => {
@@ -10631,10 +10667,10 @@ function myDeckApply(idx) {
             importMsg += `❌ データ破損により失敗：${_invalidCount}件\n`;
           }
           importMsg += `\n合計：${tasksData.length}件中 ${newTasks.length}件を追加`;
-          alert(importMsg);
+          showToast(importMsg, {type:'info'});
           location.reload();
         } catch (err) {
-          alert(`インポートエラー: ${err.message}`);
+          showToast(`インポートエラー: ${err.message}`, {type:'error'});
         }
         event.target.value = '';
       };
@@ -10745,6 +10781,26 @@ function myDeckApply(idx) {
     // さらに古い命名も削除
     ['catMigrationDone_v170', 'migration_displayScope_v1', 'mig:uuidv7'].forEach(k => localStorage.removeItem(k));
     migrateToUUIDv7();
+    // ===== journalsキー→allTasks統合マイグレーション =====
+    (function migrateJournalsToAllTasks() {
+      if (localStorage.getItem('mig_journals_to_alltasks_v1')) return;
+      try {
+        var oldJournals = JSON.parse(localStorage.getItem('journals') || '[]');
+        var existingIds = new Set(allTasks.map(function(t){ return t.id; }));
+        var added = 0;
+        oldJournals.forEach(function(j) {
+          if (!existingIds.has(j.id)) {
+            if (j.id && j.id.indexOf('JNL_') === 0) j.id = generateTaskId();
+            j.kind = 'journal';
+            allTasks.push(j);
+            added++;
+          }
+        });
+        if (added > 0) saveAllTasks();
+        localStorage.setItem('mig_journals_to_alltasks_v1', '1');
+        window._dbgLog && window._dbgLog('migrateJournalsToAllTasks done. added=' + added);
+      } catch(e) { console.error('[migrateJournalsToAllTasks]', e); }
+    })();
     window._dbgLog('【昇格完了】UUID ENGINE v7 --- 識別子体系、最新世代 / 時は刻まれました');
     window._dbgLog('migrateToUUIDv7 done');
     // mig_*フラグの値を'1'に正規化（'true'が残っている場合）
@@ -10773,6 +10829,10 @@ function myDeckApply(idx) {
       'migration_calendarId_v1', 'extendedvaluekey',
       'notebooks', '_calIdMigMap',
       'journals',
+      'calendars', 'mainCalendarId', 'autoMainCalendar',
+      'dailyScrollInit', 'weeklyScrollInit', 'nbLastPageId',
+      'simpleMode', 'dataVersion',
+      'mig_journals_to_alltasks_v1', 'mig_journal_ids_to_uuid_v7',
     ]);
     // 起動時スキャン
     (function() {
@@ -11600,7 +11660,7 @@ function myDeckApply(idx) {
     }
     // エントリーポイント
     function nbShowExport() {
-      if (nbPages().length===0){ alert('エクスポートするページがありません。'); return; }
+      if (nbPages().length===0){ showToast('エクスポートするページがありません。', {type:'warn'}); return; }
       nbShareStep0();
     }
     function nbShowImport() { nbShareImportStep1(); }
@@ -12310,25 +12370,23 @@ function loadSettingsUI() {
       }
       // ファイルサイズチェック（5MB以下に緩和）
       if (file.size > 5 * 1024 * 1024) {
-        alert('画像サイズは5MB以下にしてください');
-        return;
+        showToast('画像サイズは5MB以下にしてください', {type:'warn'}); return;
       }
       // タイプチェックを緩和（iOSで空になる場合がある）
       const validExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif'];
       const fileName = file.name.toLowerCase();
       const hasValidExt = validExtensions.some(ext => fileName.endsWith(ext));
       if (file.type && !file.type.startsWith('image/') && !hasValidExt) {
-        alert('画像ファイルを選択してください');
-        return;
+        showToast('画像ファイルを選択してください', {type:'warn'}); return;
       }
       const reader = new FileReader();
       reader.onerror = function(err) {
-        alert('画像の読み込みに失敗しました');
+        showToast('画像の読み込みに失敗しました', {type:'error'});
       };
       reader.onload = function(e) {
         const img = new Image();
         img.onerror = function(err) {
-          alert('この画像形式は対応していません。\nJPGまたはPNG形式でお試しください。');
+          showToast('この画像形式は対応していません。\nJPGまたはPNG形式でお試しください。', {type:'error'});
         };
         img.onload = function() {
           try {
@@ -12350,7 +12408,7 @@ function loadSettingsUI() {
             allSettings.profile.avatar = resizedBase64; saveAllSettings();
             updateNavAvatar();
           } catch (err) {
-            alert('画像の処理に失敗しました');
+            showToast('画像の処理に失敗しました', {type:'error'});
           }
         };
         img.src = e.target.result;
@@ -12509,7 +12567,7 @@ function loadSettingsUI() {
       }
     }
     function addCalendarSetting() {
-      if (calendars.length >= 15) { alert('カレンダーは最大15個です'); return; }
+      if (calendars.length >= 15) { showToast('カレンダーは最大15個です', {type:'warn'}); return; }
       const colors = ['#f48fb1','#ffcc80','#fff176','#80deea','#b39ddb','#ef9a9a','#c5e1a5','#80cbc4'];
       calendars.push({
         id: (typeof generateTaskId === 'function') ? generateTaskId() : crypto.randomUUID(),
@@ -12521,7 +12579,7 @@ function loadSettingsUI() {
       saveCalendars();
       loadCalendarSettingsUI();
     }    function removeCalendar(calId) {
-      if (calendars.length <= 1) { alert('最後のカレンダーは削除できません'); return; }
+      if (calendars.length <= 1) { showToast('最後のカレンダーは削除できません', {type:'warn'}); return; }
       const idx = calendars.findIndex(c => c.id === calId);
       if (idx < 0) return;
       allTasks = allTasks.filter(t => t.calendarId !== calId);
@@ -12686,7 +12744,7 @@ function loadSettingsUI() {
           switchView(_sv.value);
         }
       } catch(e) {
-        alert('保存エラー: ' + e.message);
+        showToast('保存エラー: ' + e.message, {type:'error'});
       }
     }
     // 初期ビューを取得    // 起動時にナビアバターを更新
@@ -13841,6 +13899,9 @@ window.addEventListener('afterprint', function() {
         <button class="modal-btn modal-btn-delete" onclick="deleteTaskFromEditModal()">削除</button>
         <button class="modal-btn modal-btn-save" onclick="saveTaskEdit()">保存</button>
       </div>
+      <div style="margin-top:10px;">
+        <button onclick="sendTaskEditToScratch()" style="width:100%;padding:10px;background:rgba(79,172,254,0.07);border:1px solid rgba(79,172,254,0.25);border-radius:8px;color:#4facfe;font-size:0.88em;cursor:pointer;letter-spacing:0.03em;font-weight:600;">📝 雑記帳へ送る</button>
+      </div>
       <!-- 造営工程への紐づけ（gantEnabledのときのみ表示） -->
       <div id="taskEditGantSection" style="margin-top:16px;padding-top:16px;border-top:1px solid #f0f0f0;display:none;">
         <label style="font-size:0.8em;color:#666;display:block;margin-bottom:6px;font-weight:600;">🏗 工程に刻む</label>
@@ -14029,11 +14090,11 @@ function visitCraft() {
   if (upper.startsWith('DCK1:')) {
     var raw2;
     try { raw2 = decodeURIComponent(escape(atob(code.slice(5)))); }
-    catch(e) { alert('コードが壊れています'); return; }
+    catch(e) { showToast('コードが壊れています', {type:'warn'}); return; }
     var deck;
     try { deck = JSON.parse(raw2); }
-    catch(e) { alert('コードの形式が正しくありません'); return; }
-    if (deck.kind !== 'deck') { alert('コードの形式が正しくありません'); return; }
+    catch(e) { showToast('コードの形式が正しくありません', {type:'warn'}); return; }
+    if (deck.kind !== 'deck') { showToast('コードの形式が正しくありません', {type:'warn'}); return; }
     // confirm省略（アーティファクト環境）
     var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
     var _visitDeckId = deck.deckId || ('visit_' + Date.now());
@@ -14064,16 +14125,15 @@ function visitCraft() {
   }
   // CRF1: クラフトコード
   if (!upper.startsWith('CRF1:')) {
-    alert('CRF1: または DCK1: で始まるコードを入力してください');
-    return;
+    showToast('CRF1: または DCK1: で始まるコードを入力してください', {type:'warn'}); return;
   }
   var raw;
   try { raw = decodeURIComponent(escape(atob(code.slice(5)))); }
-  catch(e) { alert('コードが壊れています'); return; }
+  catch(e) { showToast('コードが壊れています', {type:'warn'}); return; }
   var data;
   try { data = JSON.parse(raw); }
-  catch(e) { alert('コードの形式が正しくありません'); return; }
-  if (data.kind !== 'craft') { alert('コードの形式が正しくありません'); return; }
+  catch(e) { showToast('コードの形式が正しくありません', {type:'warn'}); return; }
+  if (data.kind !== 'craft') { showToast('コードの形式が正しくありません', {type:'warn'}); return; }
   closeCraftVisitModal();
   renderVisitCraft(data);
 }
@@ -17312,16 +17372,16 @@ function closeGuildMode() {
 }
 function applyGuildLicense() {
   var code = (document.getElementById('guildLicenseInput').value || '').trim();
-  if (!code) { alert('コードを入力してください'); return; }
+  if (!code) { showToast('コードを入力してください', {type:'warn'}); return; }
   var upper = code.toUpperCase();
-  if (!upper.startsWith('GLD1:')) { alert('GLD1: で始まるコードを入力してください'); return; }
+  if (!upper.startsWith('GLD1:')) { showToast('GLD1: で始まるコードを入力してください', {type:'warn'}); return; }
   var raw;
   try { raw = decodeURIComponent(escape(atob(code.slice(5)))); }
-  catch(e) { alert('コードが壊れています'); return; }
+  catch(e) { showToast('コードが壊れています', {type:'warn'}); return; }
   var data;
   try { data = JSON.parse(raw); }
-  catch(e) { alert('コードの形式が正しくありません'); return; }
-  if (data.kind !== 'guildLicense') { alert('コードの形式が正しくありません'); return; }
+  catch(e) { showToast('コードの形式が正しくありません', {type:'warn'}); return; }
+  if (data.kind !== 'guildLicense') { showToast('コードの形式が正しくありません', {type:'warn'}); return; }
   // ライセンス保存（allTasks統合）
   var _glIdx2 = allTasks.findIndex(function(t){ return t.kind === 'guildLicense'; });
   if (_glIdx2 >= 0) allTasks.splice(_glIdx2, 1);
@@ -17395,8 +17455,8 @@ function updateGuildUI() {
 var _deckBuilderTasks = [];
 function deckBuilderSave() {
   var title = (document.getElementById('deckBuilderTitle').value || '').trim();
-  if (!title) { alert('デッキ名を入力してください'); return; }
-  if (_deckBuilderTasks.length === 0) { alert('タスクを1枚以上追加してください'); return; }
+  if (!title) { showToast('デッキ名を入力してください', {type:'warn'}); return; }
+  if (_deckBuilderTasks.length === 0) { showToast('タスクを1枚以上追加してください', {type:'warn'}); return; }
   var desc = (document.getElementById('deckBuilderDesc') ? document.getElementById('deckBuilderDesc').value : '') || '';
   var myName = allSettings.profile.name || '名無し';
   var customCreatedBy = (document.getElementById('deckBuilderCreatedBy') ? document.getElementById('deckBuilderCreatedBy').value.trim() : '');
@@ -17504,7 +17564,7 @@ function closeDeckBuilder() {
 var _deckBuilderEditingIdx = -1;
 function deckBuilderAddTask() {
   var text = (document.getElementById('deckBuilderTaskText').value || '').trim();
-  if (!text) { alert('タスク名を入力してください'); return; }
+  if (!text) { showToast('タスク名を入力してください', {type:'warn'}); return; }
   var memo = (document.getElementById('deckBuilderTaskMemo').value || '').trim();
   var section = parseInt(document.getElementById('deckBuilderTaskSection').value) || 1;
   var time = (document.getElementById('deckBuilderTaskTime') ? document.getElementById('deckBuilderTaskTime').value : '') || '';
@@ -17590,8 +17650,8 @@ function renderDeckBuilderTasks() {
 }
 function deckBuilderPublish() {
   var title = (document.getElementById('deckBuilderTitle').value || '').trim();
-  if (!title) { alert('デッキ名を入力してください'); return; }
-  if (_deckBuilderTasks.length === 0) { alert('タスクを1枚以上追加してください'); return; }
+  if (!title) { showToast('デッキ名を入力してください', {type:'warn'}); return; }
+  if (_deckBuilderTasks.length === 0) { showToast('タスクを1枚以上追加してください', {type:'warn'}); return; }
   var myName = allSettings.profile.name || 'admin';
   var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
   var deckId = (typeof generateTaskId === 'function') ? generateTaskId() : crypto.randomUUID();
@@ -17632,15 +17692,15 @@ function deckBuilderPublish() {
 }
 function generateDeckEntry() {
   var code = (document.getElementById('deckApproveInput').value || '').trim();
-  if (!code) { alert('APL1:コードを入力してください'); return; }
-  if (!code.toUpperCase().startsWith('APL1:')) { alert('APL1: で始まるコードを貼り付けてください'); return; }
+  if (!code) { showToast('APL1:コードを入力してください', {type:'warn'}); return; }
+  if (!code.toUpperCase().startsWith('APL1:')) { showToast('APL1: で始まるコードを貼り付けてください', {type:'warn'}); return; }
   var raw;
   try { raw = decodeURIComponent(escape(atob(code.slice(5)))); }
-  catch(e) { alert('コードが壊れています'); return; }
+  catch(e) { showToast('コードが壊れています', {type:'warn'}); return; }
   var deck;
   try { deck = JSON.parse(raw); }
-  catch(e) { alert('コードの形式が正しくありません'); return; }
-  if (deck.kind !== 'deck' || deck.status !== 'apply') { alert('申請コードではありません'); return; }
+  catch(e) { showToast('コードの形式が正しくありません', {type:'warn'}); return; }
+  if (deck.kind !== 'deck' || deck.status !== 'apply') { showToast('申請コードではありません', {type:'warn'}); return; }
   // エントリ生成
   var shortId = deck.deckId ? deck.deckId.replace(/-/g,'').slice(0,8) : Date.now().toString(36);
   var entry = {
@@ -17675,8 +17735,8 @@ function generateDeckEntry() {
 }
 function deckBuilderApply() {
   var title = (document.getElementById('deckBuilderTitle').value || '').trim();
-  if (!title) { alert('デッキ名を入力してください'); return; }
-  if (_deckBuilderTasks.length === 0) { alert('タスクを1枚以上追加してください'); return; }
+  if (!title) { showToast('デッキ名を入力してください', {type:'warn'}); return; }
+  if (_deckBuilderTasks.length === 0) { showToast('タスクを1枚以上追加してください', {type:'warn'}); return; }
   var myName = allSettings.profile.name || '名無し';
   var customCreatedBy = (document.getElementById('deckBuilderCreatedBy') ? document.getElementById('deckBuilderCreatedBy').value.trim() : '');
   if (customCreatedBy && _adminModeActive) myName = customCreatedBy;
@@ -17726,16 +17786,16 @@ function deckBuilderApply() {
 }
 function importDeckFromSettings() {
   var code = (document.getElementById('deckImportInput').value || '').trim();
-  if (!code) { alert('コードを入力してください'); return; }
+  if (!code) { showToast('コードを入力してください', {type:'warn'}); return; }
   var upper = code.toUpperCase();
-  if (!upper.startsWith('DCK1:')) { alert('DCK1: で始まるコードを入力してください'); return; }
+  if (!upper.startsWith('DCK1:')) { showToast('DCK1: で始まるコードを入力してください', {type:'warn'}); return; }
   var raw;
   try { raw = decodeURIComponent(escape(atob(code.slice(5)))); }
-  catch(e) { alert('コードが壊れています'); return; }
+  catch(e) { showToast('コードが壊れています', {type:'warn'}); return; }
   var deck;
   try { deck = JSON.parse(raw); }
-  catch(e) { alert('コードの形式が正しくありません'); return; }
-  if (deck.kind !== 'deck') { alert('コードの形式が正しくありません'); return; }
+  catch(e) { showToast('コードの形式が正しくありません', {type:'warn'}); return; }
+  if (deck.kind !== 'deck') { showToast('コードの形式が正しくありません', {type:'warn'}); return; }
   showChoiceModal({
     title: '🎁 ' + (deck.title||'デッキ') + 'を受け取る',
     desc: deck.tasks.length + '枚のやることが王国に加わります。',
@@ -17835,10 +17895,11 @@ document.addEventListener('DOMContentLoaded', function() {
 });
     // ===== 王国日誌システム =====
     function loadJournals() {
-      try { return JSON.parse(localStorage.getItem('journals') || '[]'); } catch(e) { return []; }
+      return allTasks.filter(function(t){ return t.kind === 'journal'; })
+        .sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
     }
     function saveJournals(arr) {
-      localStorage.setItem('journals', JSON.stringify(arr));
+      saveAllTasks();
     }
     // 日誌メタ（気分・体調・天気）の状態
     window._journalMeta = { mood: 0, condition: 0, weather: '' };
@@ -17876,7 +17937,7 @@ document.addEventListener('DOMContentLoaded', function() {
         journals[existing].savedAt = new Date().toISOString();
         toastMsg = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌に追記しました';
       } else {
-        journals.unshift({ id: 'JNL_' + Date.now(), kind: 'journal', date: dateStr, text: t, mood: m.mood, condition: m.condition, weather: m.weather, savedAt: new Date().toISOString() });
+        allTasks.push({ id: generateTaskId(), kind: 'journal', date: dateStr, text: t, mood: m.mood, condition: m.condition, weather: m.weather, savedAt: new Date().toISOString() });
         toastMsg = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌を作成しました';
       }
       saveJournals(journals);
@@ -17885,13 +17946,13 @@ document.addEventListener('DOMContentLoaded', function() {
     function saveScratchAsJournal() {
       const inputEl = document.getElementById('scratchInput');
       const text = inputEl ? inputEl.value.trim() : '';
-      if (!text) { alert('内容を入力してから保存してください'); return; }
+      if (!text) { showToast('内容を入力してから保存してください', {type:'warn'}); return; }
       const m = window._journalMeta;
       const today = new Date();
       const dateStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
       const journals = loadJournals();
       const existing = journals.findIndex(function(j) { return j.date === dateStr; });
-      const entry = { id: 'JNL_' + Date.now(), kind: 'journal', date: dateStr, text: text, mood: m.mood, condition: m.condition, weather: m.weather, savedAt: new Date().toISOString() };
+      const entry = { id: generateTaskId(), kind: 'journal', date: dateStr, text: text, mood: m.mood, condition: m.condition, weather: m.weather, savedAt: new Date().toISOString() };
       var toastMsg2;
       if (existing >= 0) {
         // 同日は本文を追記
@@ -17899,10 +17960,10 @@ document.addEventListener('DOMContentLoaded', function() {
         journals[existing].savedAt = new Date().toISOString();
         toastMsg2 = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌に追記しました';
       } else {
-        journals.unshift(entry);
+        allTasks.push(entry);
         toastMsg2 = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌を作成しました';
       }
-      saveJournals(journals);
+      saveAllTasks();
       if (inputEl) { inputEl.value = ''; inputEl.style.height = ''; }
       _showJournalToast(toastMsg2);
     }
@@ -17915,8 +17976,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const inputText = inputEl ? inputEl.value.trim() : '';
       const allText = scratchItems.concat(inputText ? [inputText] : []).join('\n');
       if (!allText && !window._journalMeta.mood && !window._journalMeta.condition && !window._journalMeta.weather) {
-        alert('内容を入力してから保存してください');
-        return;
+        showToast('内容を入力してから保存してください', {type:'warn'}); return;
       }
       const today = new Date();
       const dateStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
@@ -17932,8 +17992,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         _toastMsg3 = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌を更新しました';
       } else {
-        journals.unshift({
-          id: 'JNL_' + Date.now(),
+        allTasks.push({
+          id: generateTaskId(),
           kind: 'journal',
           date: dateStr,
           text: allText,
@@ -18043,7 +18103,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (journals[idx].condition) journals[conflictIdx].condition = journals[idx].condition;
         if (journals[idx].weather)   journals[conflictIdx].weather   = journals[idx].weather;
         journals[conflictIdx].savedAt = new Date().toISOString();
-        journals.splice(idx, 1);
+        var _jSpliceIdx = allTasks.findIndex(function(t){ return t.id === journals[idx].id; });
+        if (_jSpliceIdx !== -1) allTasks.splice(_jSpliceIdx, 1);
         _showJournalToast('📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(newDate) + 'の日誌に統合しました');
       } else {
         journals[idx].date = newDate;
@@ -18058,8 +18119,9 @@ document.addEventListener('DOMContentLoaded', function() {
       renderJournalView();
     }
     function deleteJournal(id) {
-      const journals = loadJournals().filter(function(j) { return j.id !== id; });
-      saveJournals(journals);
+      const jIdx = allTasks.findIndex(function(t){ return t.id === id && t.kind === 'journal'; });
+      if (jIdx !== -1) allTasks.splice(jIdx, 1);
+      saveAllTasks();
       var dm = document.getElementById('journalDetailModal');
       if (dm) dm.style.display = 'none';
       _showJournalToast('🗑️ 日誌を削除しました');
@@ -18192,7 +18254,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const textEl = document.getElementById('journalNewText');
       const dateStr = dateEl ? dateEl.value : '';
       const text = textEl ? textEl.value.trim() : '';
-      if (!dateStr) { alert('日付を入力してください'); return; }
+      if (!dateStr) { showToast('日付を入力してください', {type:'warn'}); return; }
       const m = window._newJournalMeta;
       const journals = loadJournals();
       const existing = journals.findIndex(function(j) { return j.date === dateStr; });
@@ -18203,8 +18265,7 @@ document.addEventListener('DOMContentLoaded', function() {
         Object.assign(journals[existing], { mood: m.mood, condition: m.condition, weather: m.weather, savedAt: new Date().toISOString() });
         _toastMsg4 = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌に追記しました';
       } else {
-        journals.unshift({ id: 'JNL_' + Date.now(), kind: 'journal', date: dateStr, text: text, mood: m.mood, condition: m.condition, weather: m.weather, savedAt: new Date().toISOString() });
-        journals.sort(function(a,b){ return b.date.localeCompare(a.date); });
+        allTasks.push({ id: generateTaskId(), kind: 'journal', date: dateStr, text: text, mood: m.mood, condition: m.condition, weather: m.weather, savedAt: new Date().toISOString() });
         _toastMsg4 = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌を作成しました';
       }
       saveJournals(journals);
