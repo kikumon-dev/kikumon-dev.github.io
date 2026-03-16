@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.34.40';
+    const APP_VERSION = 'v0.34.41';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -6144,12 +6144,23 @@ function myDeckApply(idx) {
             // 完了トグル
             const _wasDone = task.completed;
             task.completed = !task.completed;
+            task.done = task.completed; // 造営(gantt)のdoneと同期
             task.updatedAt = new Date().toISOString();
             saveAllTasks();
             if (!_wasDone && task.completed) {
               onTaskCompleted(task);
               if (task.deckId && typeof incrementDeckHistoryStat === 'function') {
                 incrementDeckHistoryStat(task.deckId);
+              }
+            } else if (_wasDone && !task.completed) {
+              // 完了を外したときもgantt進捗を更新
+              var _linkedGants = getGantsAll().filter(function(g){ return (g.taskIds||[]).includes(task.id); });
+              if (_linkedGants.length > 0) {
+                _linkedGants.forEach(function(g){
+                  var bp = allTasks.find(function(t){ return t.id === g.blueprintId; });
+                  if (bp) recalcBlueprintFromGants(bp);
+                });
+                saveAllTasks();
               }
             }
             titleSpan.style.textDecoration = task.completed ? 'line-through' : '';
@@ -7286,11 +7297,21 @@ function myDeckApply(idx) {
             if (e.target.textContent === '✏️') return;
             const _wasDone = t.completed;
             t.completed = !t.completed;
+            t.done = t.completed; // 造営(gantt)のdoneと同期
             saveAllTasks();
             if (!_wasDone && t.completed) {
               onTaskCompleted(t);
               if (t.deckId && typeof incrementDeckHistoryStat === 'function') {
                 incrementDeckHistoryStat(t.deckId);
+              }
+            } else if (_wasDone && !t.completed) {
+              var _linkedGants = getGantsAll().filter(function(g){ return (g.taskIds||[]).includes(t.id); });
+              if (_linkedGants.length > 0) {
+                _linkedGants.forEach(function(g){
+                  var bp = allTasks.find(function(x){ return x.id === g.blueprintId; });
+                  if (bp) recalcBlueprintFromGants(bp);
+                });
+                saveAllTasks();
               }
             }
             ts.style.textDecoration = t.completed ? 'line-through' : '';
@@ -15959,12 +15980,15 @@ function _getHotokuMessage(task) {
 }
 function onTaskCompleted(task) {
   // 造営（gantt）に紐づいているタスクの進捗を反映
+  // ganttはt.doneで進捗管理→task.completedと同期する
+  task.done = task.completed;
   var linkedGants = getGantsAll().filter(function(g){ return (g.taskIds||[]).includes(task.id); });
   if (linkedGants.length > 0) {
     linkedGants.forEach(function(g) {
       var bp = allTasks.find(function(t){ return t.id === g.blueprintId; });
       if (bp) recalcBlueprintFromGants(bp);
     });
+    saveAllTasks();
     // 造営ビューが開いていれば再描画
     var gantView = document.getElementById('gantView');
     if (gantView && gantView.style.display !== 'none') renderGantView();
