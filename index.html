@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.34.16';
+    const APP_VERSION = 'v0.34.17';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -5473,7 +5473,7 @@ function myDeckApply(idx) {
       });
       if (changed) {
         saveAllTasks();
-        console.log('[migration] displayScope移行完了:', allTasks.length, 'タスク');
+        // migration完了（ログ削除済み）;
       }
       localStorage.setItem('mig_show_in_daily_to_display_scope_v1', '1');
     }
@@ -10131,7 +10131,11 @@ function myDeckApply(idx) {
       const input = document.getElementById('scratchInput');
       if (!input) return;
       const text = input.value.trim();
-      if (text) addScratchItem(text);
+      if (!text) return;
+      input.blur();
+      input.value = '';
+      input.style.height = '';
+      addScratchItem(text);
     }
     function escapeHtml(str) {
       return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -12991,7 +12995,7 @@ function loadSettingsUI() {
           migCount++;
         }
       });
-      if (migCount > 0) console.log('[migrate] dailyStatus.stampId → stampIds[] ' + migCount + '件');
+      
       saveAllTasks();
       } catch(e) {
         console.warn('[initStampDefs] error', e);
