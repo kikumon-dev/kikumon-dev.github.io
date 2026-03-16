@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.34.15';
+    const APP_VERSION = 'v0.34.16';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -18127,7 +18127,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (!body) return;
       const _jThoughts = Array.isArray(j.thoughts) ? j.thoughts : [];
       const _thoughtsHtml = _jThoughts.length > 0
-        ? '<div style="margin-top:16px;padding-top:14px;border-top:1px solid #f0f0f0;"><div style="font-size:0.7em;color:#aaa;font-weight:600;letter-spacing:0.1em;margin-bottom:8px;">今日考えたこと</div>'
+        ? '<div style="margin-top:16px;padding-top:14px;border-top:1px solid #f0f0f0;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"><div style="font-size:0.7em;color:#aaa;font-weight:600;letter-spacing:0.1em;">今日考えたこと</div><button onclick="thoughtsToText(\'' + j.id + '\')" style="font-size:0.68em;padding:2px 8px;border-radius:4px;border:1px solid #e0e0e0;background:#fff;color:#888;cursor:pointer;">↩ まとめて戻す</button></div>'
           + _jThoughts.map(function(th) {
               return '<div id="th_' + th.id + '" style="display:flex;align-items:flex-start;gap:8px;margin-bottom:5px;padding:8px 10px;background:#fafafa;border-radius:8px;">'
                 + '<div style="width:5px;height:5px;border-radius:50%;background:#bbb;margin-top:7px;flex-shrink:0;"></div>'
@@ -18247,6 +18247,15 @@ document.addEventListener('DOMContentLoaded', function() {
         j.thoughts.push({ id: generateTaskId(), text: line });
       });
       j.text = '';
+      saveAllTasks();
+      openJournalDetail(journalId);
+    }
+    function thoughtsToText(journalId) {
+      var j = allTasks.find(function(t){ return t.id === journalId; });
+      if (!j || !Array.isArray(j.thoughts) || j.thoughts.length === 0) return;
+      var lines = j.thoughts.map(function(t){ return t.text; }).filter(Boolean);
+      j.text = (j.text ? j.text + '\n' : '') + lines.join('\n');
+      j.thoughts = [];
       saveAllTasks();
       openJournalDetail(journalId);
     }
