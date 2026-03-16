@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.34.34';
+    const APP_VERSION = 'v0.34.38';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -4550,7 +4550,16 @@
      * 注意：
      * - 月間/年間ビューはdateフィールドで直接フィルタ（フラグ不要）
      */
-    let allTasks = []; // 全タスクの唯一のデータソース
+    let allTasks = []; // 全タスクの唯一のデータソース（SSOT）
+    // ===== allTasks操作ルール =====
+    // 【禁止】アプリ実行中のCRUD操作での再代入: allTasks = allTasks.filter(...) など
+    //         → splice / push を使うこと
+    // 【例外・許容】以下の文脈のみ再代入を許容する:
+    //   1. 変数宣言（この行）
+    //   2. loadAllTasks()：起動時のlocalStorageからの初期化
+    //   3. migrateToUUIDv7()：全IDを新オブジェクトに置き換えるマイグレーション専用
+    //   4. clearAllData()：全データリセット操作
+    //   5. INITIAL_DATA代入：初期データセット（必ずコピーして汚染防止）
     window.allTasks = allTasks; // クラフトモードから参照できるよう公開
     // ===== allSettings SSOT（v0.29.19新設） =====
     const SETTINGS_DEFAULT = {
@@ -5316,7 +5325,7 @@
     // thoughtsはkind:'thought' + parentId:journalIdでトップレベルに保持
     function getThoughts(journalId) {
       return allTasks.filter(function(t){ return t.kind === 'thought' && t.parentId === journalId; })
-        .sort(function(a,b){ return new Date(a.createdAt) - new Date(b.createdAt); });
+        .sort(function(a,b){ return a.id < b.id ? -1 : a.id > b.id ? 1 : 0; });
     }
     // ===== thoughtsヘルパー（kind:'thought' フラット構造） =====
     function addThought(journalId, text) {
@@ -5488,6 +5497,7 @@ function myDeckApply(idx) {
       const idMap = {};
       allTasks.forEach(t => { idMap[t.id] = generateTaskId(); });
       // 2. allTasks全件書き換え
+      // ※ここだけallTasks再代入を許容：マイグレーション専用・全IDを新オブジェクトに置き換える必要があるため
       allTasks = allTasks.map(t => {
         const n = Object.assign({}, t);
         // id本体
@@ -5561,7 +5571,7 @@ function myDeckApply(idx) {
           }
           // データが空配列の場合も初期データを使用
           if (allTasks.length === 0 && INITIAL_DATA && INITIAL_DATA.length > 0) {
-            allTasks = INITIAL_DATA;
+            allTasks = INITIAL_DATA.map(function(t){ return Object.assign({}, t); }); // INITIAL_DATA汚染防止
             saveAllTasks(); window.allTasks = allTasks;
             if (INITIAL_PURPOSE) {
               allSettings.flags.purpose = INITIAL_PURPOSE; saveAllSettings();
@@ -5599,7 +5609,7 @@ function myDeckApply(idx) {
       }
       // LocalStorageにデータがない、または空の場合は初期データを使用
       if (allTasks.length === 0 && INITIAL_DATA && INITIAL_DATA.length > 0) {
-        allTasks = INITIAL_DATA;
+        allTasks = INITIAL_DATA.map(function(t){ return Object.assign({}, t); }); // INITIAL_DATA汚染防止
         saveAllTasks(); window.allTasks = allTasks;
         if (INITIAL_PURPOSE) {
           allSettings.flags.purpose = INITIAL_PURPOSE; saveAllSettings();
@@ -8509,8 +8519,10 @@ function myDeckApply(idx) {
       if (taskCount > 0) btns.push({
         label: 'やることを残して、計画と工程だけ消す', style: 'primary',
         onClick: function() {
-          allTasks = allTasks.filter(t => !(t.kind === 'gantt' && t.blueprintId === id));
-          allTasks = allTasks.filter(t => t.id !== id);
+          for (var i = allTasks.length - 1; i >= 0; i--) {
+            if (allTasks[i].kind === 'gantt' && allTasks[i].blueprintId === id) allTasks.splice(i, 1);
+            else if (allTasks[i].id === id) allTasks.splice(i, 1);
+          }
           if (_gantSelectedBlueprintId === id) _gantSelectedBlueprintId = null;
           saveAllTasks(); closeBlueprintEditor(); renderGantView();
           showToast('計画と工程を消しました。やることは残っています。', {type:'success', duration:4000});
@@ -8519,9 +8531,11 @@ function myDeckApply(idx) {
       btns.push({
         label: 'すべてまとめて消す' + (taskCount > 0 ? '（やること含む）' : ''), style: 'danger',
         onClick: function() {
-          allTasks = allTasks.filter(t => !uniqueTaskIds.includes(t.id));
-          allTasks = allTasks.filter(t => !(t.kind === 'gantt' && t.blueprintId === id));
-          allTasks = allTasks.filter(t => t.id !== id);
+          for (var i = allTasks.length - 1; i >= 0; i--) {
+            if (uniqueTaskIds.includes(allTasks[i].id)) allTasks.splice(i, 1);
+            else if (allTasks[i].kind === 'gantt' && allTasks[i].blueprintId === id) allTasks.splice(i, 1);
+            else if (allTasks[i].id === id) allTasks.splice(i, 1);
+          }
           if (_gantSelectedBlueprintId === id) _gantSelectedBlueprintId = null;
           saveAllTasks(); closeBlueprintEditor(); renderGantView();
           showToast('計画・工程・やることをすべて消しました。', {type:'success', duration:3000});
@@ -8916,7 +8930,7 @@ function myDeckApply(idx) {
         btns.push({
           label: 'やることを残して、工程だけ消す', style: 'primary',
           onClick: function() {
-            allTasks = allTasks.filter(t => t.id !== id);
+            var _idx = allTasks.findIndex(t => t.id === id); if (_idx !== -1) allTasks.splice(_idx, 1);
             const bp = allTasks.find(t => t.id === gantt.blueprintId);
             if (bp) recalcBlueprintFromGants(bp);
             saveAllTasks(); closeGanttEditor(); renderGantView();
@@ -8926,7 +8940,9 @@ function myDeckApply(idx) {
         btns.push({
           label: 'やることごと、すべて消す', style: 'danger',
           onClick: function() {
-            allTasks = allTasks.filter(t => t.id !== id && !validTaskIds.includes(t.id));
+            for (var i = allTasks.length - 1; i >= 0; i--) {
+              if (allTasks[i].id === id || validTaskIds.includes(allTasks[i].id)) allTasks.splice(i, 1);
+            }
             const bp = allTasks.find(t => t.id === gantt.blueprintId);
             if (bp) recalcBlueprintFromGants(bp);
             saveAllTasks(); closeGanttEditor(); renderGantView();
@@ -8937,7 +8953,7 @@ function myDeckApply(idx) {
         btns.push({
           label: '工程を消す', style: 'danger',
           onClick: function() {
-            allTasks = allTasks.filter(t => t.id !== id);
+            var _idx = allTasks.findIndex(t => t.id === id); if (_idx !== -1) allTasks.splice(_idx, 1);
             const bp = allTasks.find(t => t.id === gantt.blueprintId);
             if (bp) recalcBlueprintFromGants(bp);
             saveAllTasks(); closeGanttEditor(); renderGantView();
@@ -10618,7 +10634,9 @@ function myDeckApply(idx) {
           const includeCompleted = true; // showChoiceModalで分岐（下記）
           // ※ iOS対応：confirm廃止。完了タスクも含めて復元する（全件復元）
           let _invalidCount = 0;
-          const _NON_TASK_KINDS = ['note', 'dailyStatus', 'family', 'deckHistory', 'myDeck', 'guildLicense', 'stamp'];
+          // task以外のkind：taskバリデーション（text/section/date）をスキップして全件通す
+          const _NON_TASK_KINDS = ['note', 'journal', 'thought', 'scratch', 'blueprint', 'gantt',
+            'dailyStatus', 'family', 'deckHistory', 'myDeck', 'guildLicense', 'stamp'];
           const validTasks = tasksData.filter(task => {
             if (!task.id || typeof task.id !== 'string') { _invalidCount++; return false; }
             if (_NON_TASK_KINDS.includes(task.kind)) return true; // 非タスクkindはそのまま通す
@@ -10706,7 +10724,7 @@ function myDeckApply(idx) {
               Object.assign(existing, incoming);
             }
           });
-          allTasks = [...allTasks, ...newTasks];
+          newTasks.forEach(function(t){ allTasks.push(t); });
           // 相手のdeletedIdsを自分の削除リストにも反映
           incomingDeletedIds.forEach(function(id) { myDeletedIds.add(id); });
           localStorage.setItem('deletedTaskIds', JSON.stringify([...myDeletedIds]));
@@ -10891,7 +10909,9 @@ function myDeckApply(idx) {
         byDate[date].forEach(function(text){ addThought(j.id, text); });
       });
       var movedIds = new Set(oldS.map(function(s){ return s.id; }));
-      allTasks = allTasks.filter(function(t){ return !movedIds.has(t.id); });
+      for (var i = allTasks.length - 1; i >= 0; i--) {
+        if (movedIds.has(allTasks[i].id)) allTasks.splice(i, 1);
+      }
       saveAllTasks();
       localStorage.setItem('_lastScratchMoveDate', today);
       if (typeof renderScratchView === 'function') renderScratchView();
@@ -11162,9 +11182,11 @@ function myDeckApply(idx) {
     }
     function nbPagesSet(pages) {
       // allTasksからnoteを全削除して差し替え
-      allTasks = allTasks.filter(function(t){ return t.kind !== 'note'; });
+      for (var i = allTasks.length - 1; i >= 0; i--) {
+        if (allTasks[i].kind === 'note') allTasks.splice(i, 1);
+      }
       pages.forEach(function(p, i){ p.order = i; });
-      allTasks = allTasks.concat(pages);
+      pages.forEach(function(p){ allTasks.push(p); });
       saveAllTasks();
     }
     function nbPage(id) {
@@ -12688,7 +12710,9 @@ function loadSettingsUI() {
       if (calendars.length <= 1) { showToast('最後のカレンダーは削除できません', {type:'warn'}); return; }
       const idx = calendars.findIndex(c => c.id === calId);
       if (idx < 0) return;
-      allTasks = allTasks.filter(t => t.calendarId !== calId);
+      for (var i = allTasks.length - 1; i >= 0; i--) {
+        if (allTasks[i].calendarId === calId) allTasks.splice(i, 1);
+      }
       saveAllTasks();
       try {
         const mainId = localStorage.getItem('mainCalendarId');
@@ -17395,9 +17419,9 @@ function closeLpModal() {
 function deleteRepeatFutureTasks(groupId, fromDate) {
   var today = fromDate || getLocalDateStr(new Date());
   var before = allTasks.length;
-  allTasks = allTasks.filter(function(t) {
-    return t.repeatGroupId !== groupId || t.date < today;
-  });
+  for (var i = allTasks.length - 1; i >= 0; i--) {
+    if (allTasks[i].repeatGroupId === groupId && allTasks[i].date >= today) allTasks.splice(i, 1);
+  }
   return before - allTasks.length;
 }
 // 共通：繰り返しタスク生成
@@ -18353,7 +18377,7 @@ document.addEventListener('DOMContentLoaded', function() {
       j.text = '';
       saveAllTasks();
       renderJournalView();
-      setTimeout(function(){ openJournalDetail(journalId); }, 50);
+      requestAnimationFrame(function(){ openJournalDetail(journalId); });
     }
     function thoughtsToText(journalId) {
       var j = allTasks.find(function(t){ return t.id === journalId; });
@@ -18364,7 +18388,7 @@ document.addEventListener('DOMContentLoaded', function() {
       deleteThoughtsByJournal(journalId);
       saveAllTasks();
       renderJournalView();
-      setTimeout(function(){ openJournalDetail(journalId); }, 50);
+      requestAnimationFrame(function(){ openJournalDetail(journalId); });
     }
     function thoughtDelete(journalId, thoughtId) {
       deleteThought(thoughtId);
