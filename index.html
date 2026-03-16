@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.34.46';
+    const APP_VERSION = 'v0.34.52';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -3488,7 +3488,7 @@
       <h3 style="margin:0 0 16px 0; font-size:1.1em; font-weight:700;">志（こころざし）<span style="font-size:0.72em;color:#aaa;font-weight:400;margin-left:6px;">造営計画</span></h3>
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
         <button id="blueprintEmojiBtn" onclick="toggleBlueprintEmojiPicker()" style="font-size:1.6em;width:44px;height:44px;border:1px solid #ddd;border-radius:8px;background:#fafafa;cursor:pointer;flex-shrink:0;">🏰</button>
-        <input id="blueprintTitleInput" type="text" placeholder="計画名（例：英語上達、体を鍛える）" style="flex:1; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:0.95em; box-sizing:border-box;">
+        <input id="blueprintTitleInput" type="text" placeholder="計画名（例：海賊王になる！英語上達、体鍛える）" style="flex:1; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:0.95em; box-sizing:border-box;">
       </div>
       <div id="blueprintEmojiPicker" style="display:none;margin-bottom:12px;background:#f9f9f9;border:1px solid #e0e0e0;border-radius:10px;padding:10px;">
         <div style="font-size:0.75em;color:#888;margin-bottom:6px;">紋章を選ぶ</div>
