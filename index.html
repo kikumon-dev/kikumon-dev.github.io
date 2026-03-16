@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.34.42';
+    const APP_VERSION = 'v0.34.43';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -7739,10 +7739,27 @@ function myDeckApply(idx) {
       renderGantChart();
     }
     function renderGantView() {
+      // 展開状態を記憶してから再描画
+      var _openIds = [];
+      document.querySelectorAll('[id^=ganttExpand_]').forEach(function(el){
+        if (el.style.display !== 'none') _openIds.push(el.id);
+      });
       renderGantBlueprints();
       // display:'flex'直後はlayoutが未確定→RAFで遅延してareaWを正確に取得
       requestAnimationFrame(function() {
         renderGantChart();
+        // 展開状態を復元
+        if (_openIds.length > 0) {
+          setTimeout(function(){
+            _openIds.forEach(function(id){
+              var el = document.getElementById(id);
+              if (el) el.style.display = 'table-row-group';
+              var btn = null;
+              document.querySelectorAll('[data-eid]').forEach(function(x){ if(x.dataset.eid===id) btn=x; });
+              if (btn) btn.style.transform = 'rotate(90deg)';
+            });
+          }, 50);
+        }
       });
       // 設定UI同期
       const scaleCheck = document.getElementById('gantShowCompletedCheck');
@@ -8109,23 +8126,7 @@ function myDeckApply(idx) {
       t.completed = t.done; // 日次ビューのcompletedと双方向同期
       saveAllTasks();
       if (typeof recalcAll === 'function') recalcAll(tid);
-      // 展開状態を記憶してから再描画
-      var openIds = [];
-      document.querySelectorAll('[id^=ganttExpand_]').forEach(function(el){
-        if (el.style.display !== 'none') openIds.push(el.id);
-      });
-      renderGantView();
-      setTimeout(function(){
-        openIds.forEach(function(id){
-          var el = document.getElementById(id);
-          var b  = document.querySelector('[data-eid]');
-          if (b && b.dataset.eid !== id) b = null;
-          // fallback: 全ボタンからeid一致を探す
-          if (!b) { document.querySelectorAll('[data-eid]').forEach(function(x){ if(x.dataset.eid===id) b=x; }); }
-          if (el) { el.style.display = 'table-row-group'; }
-          if (b)  { b.style.transform = 'rotate(90deg)'; }
-        });
-      }, 50);
+      renderGantView(); // 展開状態の保存・復元はrenderGantView内で処理
     }
     function _gantEditTask(btn) {
       var tid = btn.dataset.tid;
