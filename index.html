@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.34.14';
+    const APP_VERSION = 'v0.34.15';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -5210,7 +5210,7 @@
           const sc = t.displayScope || (t.showInDaily && !t.showInWeekly ? 'daily_only' : t.showInDaily && t.showInWeekly ? 'both' : null);
           if (!sc || sc === 'weekly_only') return false;
           if (!isCalendarVisible(t.calendarId)) return false;
-          if (sc === 'daily_only') return true;
+          if (sc === 'daily_only') return t.date === date;
           return (t.date === date); // both: その日だけ
         })
         .forEach(t => {
