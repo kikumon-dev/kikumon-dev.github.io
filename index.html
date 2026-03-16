@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.34.27';
+    const APP_VERSION = 'v0.34.34';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -38,7 +38,7 @@
           // 少し待ってから追加（アプリ初期化後）
           setTimeout(function() {
             var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
-            var _deckId = deck.deckId || ('qr_' + Date.now());
+            var _deckId = deck.deckId || generateTaskId();
             deck.tasks.forEach(function(d) {
               var t = (typeof createTask === 'function') ? createTask(d.text, today, null, d.section||1, 'both') : null;
               if (t) {
@@ -94,10 +94,14 @@
           }, 800);
         } catch(e) {}
       })();
-  // ===== データマイグレーション =====
+  // ===== データマイグレーション（dataVersion一元管理） =====
+  // 新しいマイグレーションは必ずここに追加する
+  // mig_xxxフラグ方式は廃止（dataVersionで管理）
+  // 現在の最新バージョン: 2
+  const DATA_VERSION_LATEST = 3;
   (function migrateData() {
     var version = parseInt(localStorage.getItem('dataVersion') || '0');
-    // v0→v1: guildLicenseのtype→kind変換（allTasks内を対象に）
+    // v0→v1: guildLicenseのtype→kind変換
     if (version < 1) {
       try {
         var _glEntry = allTasks.find(function(t){ return t.kind === 'guildLicense'; });
@@ -106,8 +110,37 @@
           delete _glEntry.type;
           saveAllTasks();
         }
-      } catch(e) { console.warn('[migrate] guildLicense失敗', e); }
-      // dataVersionはallSettings.meta.dataVersionで管理（独立キー廃止）
+      } catch(e) { console.warn('[migrate v1] guildLicense失敗', e); }
+    }
+    // v1→v2: journalsキーの残存クリーン化
+    if (version < 2) {
+      try {
+        if (localStorage.getItem('journals')) {
+          localStorage.removeItem('journals');
+          window._dbgLog && window._dbgLog('[migrate v2] journalsキー削除完了');
+        }
+      } catch(e) { console.warn('[migrate v2] journals削除失敗', e); }
+    }
+    // v2→v3: journal.thoughtsネスト配列→kind:'thought'フラット構造に移行
+    if (version < 3) {
+      try {
+        var migratedThoughts = 0;
+        allTasks.forEach(function(t) {
+          if (t.kind === 'journal' && Array.isArray(t.thoughts) && t.thoughts.length > 0) {
+            t.thoughts.forEach(function(th) {
+              allTasks.push({ id: th.id || generateTaskId(), kind: 'thought', parentId: t.id, text: th.text, createdAt: t.savedAt || new Date().toISOString() });
+              migratedThoughts++;
+            });
+            delete t.thoughts;
+          }
+        });
+        if (migratedThoughts > 0) saveAllTasks();
+        window._dbgLog && window._dbgLog('[migrate v3] thoughts フラット化完了. count=' + migratedThoughts);
+      } catch(e) { console.warn('[migrate v3] thoughtsフラット化失敗', e); }
+    }
+    // バージョンを最新に更新
+    if (version < DATA_VERSION_LATEST) {
+      localStorage.setItem('dataVersion', String(DATA_VERSION_LATEST));
     }
   })();
       if ((allSettings.ui.craftModeEnabled === true || allSettings.ui.craftModeEnabled === 'true')) {
@@ -132,7 +165,7 @@
           dhArr.forEach(function(h) {
             var exists = allTasks.some(function(t){ return t.kind === 'deckHistory' && t.deckId === h.deckId; });
             if (!exists) {
-              allTasks.push(Object.assign({ id: 'dh_' + (h.deckId || Date.now()), createdAt: new Date().toISOString() }, h, { kind: 'deckHistory' }));
+              allTasks.push(Object.assign({ id: generateTaskId(), createdAt: new Date().toISOString() }, h, { kind: 'deckHistory' }));
               changed = true;
             }
           });
@@ -149,7 +182,7 @@
           mdArr.forEach(function(d) {
             var exists = allTasks.some(function(t){ return t.kind === 'myDeck' && t.deckId === d.deckId; });
             if (!exists) {
-              var newId = d.id || d.deckId || ('md_' + Date.now());
+              var newId = d.id || d.deckId || generateTaskId();
               allTasks.push(Object.assign({ createdAt: new Date().toISOString() }, d, { id: newId, kind: 'myDeck' }));
               changed = true;
             }
@@ -165,7 +198,7 @@
         var glData = JSON.parse(legacyGL);
         var exists = allTasks.some(function(t){ return t.kind === 'guildLicense'; });
         if (!exists && glData && (glData.kind === 'guildLicense')) {
-          glData.id = glData.id || ('gl_' + Date.now());
+          glData.id = glData.id || generateTaskId();
           glData.createdAt = glData.createdAt || new Date().toISOString();
           allTasks.push(glData);
           changed = true;
@@ -5266,12 +5299,50 @@
     function getDeckHistory() {
       return allTasks.filter(function(t){ return t.kind === 'deckHistory'; });
     }
+    // ===== kindヘルパー一覧（allTasksへの直接filterを禁止し必ずここを通す） =====
+    // ゲーム系: stamp / guildLicense は allTasks 内に置くが将来 allSettings へ移行予定
+    function getStamps() {
+      return allTasks.filter(function(t){ return t.kind === 'stamp'; });
+    }
+    function getGuildLicense() {
+      return allTasks.find(function(t){ return t.kind === 'guildLicense'; }) || null;
+    }
+    function getGantsAll() {
+      return allTasks.filter(function(t){ return t.kind === 'gantt'; });
+    }
+    function getJournals() {
+      return allTasks.filter(function(t){ return t.kind === 'journal'; });
+    }
+    // thoughtsはkind:'thought' + parentId:journalIdでトップレベルに保持
+    function getThoughts(journalId) {
+      return allTasks.filter(function(t){ return t.kind === 'thought' && t.parentId === journalId; })
+        .sort(function(a,b){ return new Date(a.createdAt) - new Date(b.createdAt); });
+    }
+    // ===== thoughtsヘルパー（kind:'thought' フラット構造） =====
+    function addThought(journalId, text) {
+      allTasks.push({ id: generateTaskId(), kind: 'thought', parentId: journalId, text: text, createdAt: new Date().toISOString() });
+    }
+    function deleteThought(thoughtId) {
+      var idx = allTasks.findIndex(function(t){ return t.id === thoughtId && t.kind === 'thought'; });
+      if (idx !== -1) allTasks.splice(idx, 1);
+    }
+    function updateThoughtText(thoughtId, newText) {
+      var th = allTasks.find(function(t){ return t.id === thoughtId && t.kind === 'thought'; });
+      if (th) th.text = newText;
+    }
+    function deleteThoughtsByJournal(journalId) {
+      for (var i = allTasks.length - 1; i >= 0; i--) {
+        if (allTasks[i].kind === 'thought' && allTasks[i].parentId === journalId) {
+          allTasks.splice(i, 1);
+        }
+      }
+    }
     function addDeckHistory(deck) {
       var existing = allTasks.find(function(t){ return t.kind === 'deckHistory' && t.deckId === deck.deckId; });
       if (existing) return; // 重複はスキップ
       allTasks.push({
-        id: (typeof generateTaskId === 'function') ? generateTaskId() : ('dh_' + Date.now()),
-        deckId: deck.deckId || ('manual_' + Date.now()),
+        id: generateTaskId(),
+        deckId: deck.deckId || generateTaskId(),
         kind: 'deckHistory',
         title: deck.title || '名称不明のデッキ',
         status: deck.status || 'active',
@@ -8272,7 +8343,7 @@ function myDeckApply(idx) {
       const scale = allSettings.ui.gantTimeScale || 'day';
       let gants = _gantSelectedBlueprintId
         ? getGantsByBlueprint(_gantSelectedBlueprintId)
-        : allTasks.filter(t => t.kind === 'gantt');
+        : getGantsAll();
       if (!allSettings.ui.gantShowCompleted) gants = gants.filter(g => !g.achieved);
       const addGanttBtn = document.getElementById('gantAddGanttBtn');
       if (addGanttBtn) addGanttBtn.style.display = 'block';
@@ -9506,9 +9577,7 @@ function myDeckApply(idx) {
 
     function _showGanttLinkSnackbar(taskId) {
       const gantOn = allSettings.ui.gantEnabled === true || allSettings.ui.gantEnabled === 'true';
-      const gants = allTasks.filter(t => t.kind === 'gantt');
-      if (!gantOn || gants.length === 0) return;
-      // 既存スナックバーがあれば削除
+      const gants = getGantsAll();
       const old = document.getElementById('_ganttLinkSnackbar');
       if (old) old.remove();
       // 志でグループ化したオプション生成
@@ -9656,12 +9725,12 @@ function myDeckApply(idx) {
       // 造営工程紐づけUI初期化
       const gantSection = document.getElementById('taskEditGantSection');
       if (gantSection) {
-        const ganttCount = allTasks.filter(t => t.kind === 'gantt').length;
+        const ganttCount = getGantsAll().length;
         const gantOn = (allSettings.ui.gantEnabled === true || allSettings.ui.gantEnabled === 'true') || ganttCount > 0;
         if (gantOn) {
           gantSection.style.display = 'block';
           // 現在の紐づき工程を表示
-          const linked = allTasks.filter(t => t.kind === 'gantt' && (t.taskIds||[]).includes(taskId));
+          const linked = getGantsAll().filter(t => (t.taskIds||[]).includes(taskId));
           const linkedDiv = document.getElementById('taskEditGantLinked');
           if (linkedDiv) {
             linkedDiv.innerHTML = linked.length === 0
@@ -9677,13 +9746,13 @@ function myDeckApply(idx) {
           // 工程セレクト更新（全ganttを表示）
           const sel = document.getElementById('taskEditGantSelect');
           if (sel) {
-            const gants = allTasks.filter(t => t.kind === 'gantt');
+            const gants = getGantsAll();
             if (gants.length === 0) {
               sel.innerHTML = '<option value="">工程がありません（造営タブで追加）</option>';
               sel.onchange = null;
             } else {
               // 志でグループ分け
-              const blueprints = allTasks.filter(t => t.kind === 'blueprint');
+              const blueprints = getBlueprints();
               let html = '<option value="">▼ 工程を選んで即追加...</option>';
               // 志あり工程
               blueprints.forEach(bp => {
@@ -10812,15 +10881,14 @@ function myDeckApply(idx) {
       var oldS = allTasks.filter(function(t){ return t.kind === 'scratch' && t.date && t.date < today; });
       if (oldS.length === 0) { localStorage.setItem('_lastScratchMoveDate', today); return; }
       var byDate = {};
-      oldS.forEach(function(s){ if (!byDate[s.date]) byDate[s.date]=[]; byDate[s.date].push({ id: generateTaskId(), text: s.text }); });
+      oldS.forEach(function(s){ if (!byDate[s.date]) byDate[s.date]=[]; byDate[s.date].push(s.text); });
       Object.keys(byDate).forEach(function(date) {
         var j = allTasks.find(function(t){ return t.kind === 'journal' && t.date === date; });
         if (!j) {
-          j = { id: generateTaskId(), kind: 'journal', date: date, text: '', thoughts: [], mood: 0, condition: 0, weather: '', savedAt: new Date().toISOString() };
+          j = { id: generateTaskId(), kind: 'journal', date: date, text: '', mood: 0, condition: 0, weather: '', savedAt: new Date().toISOString() };
           allTasks.push(j);
         }
-        if (!Array.isArray(j.thoughts)) j.thoughts = [];
-        byDate[date].forEach(function(th){ j.thoughts.push(th); });
+        byDate[date].forEach(function(text){ addThought(j.id, text); });
       });
       var movedIds = new Set(oldS.map(function(s){ return s.id; }));
       allTasks = allTasks.filter(function(t){ return !movedIds.has(t.id); });
@@ -10999,6 +11067,7 @@ function myDeckApply(idx) {
       } else if (view === 'notebook') {
         notebookView.style.display = 'block';
         document.getElementById('navNotebook').classList.add('active');
+        nbCurrentId = null; // タブ一覧から始める
         // 初回のみObserver起動（以降は自動追従）
         if (!nbSpreadMode) { nbInitSpreadObserver(); } else { nbRender(); }
       } else if (view === 'gant') {
@@ -11160,14 +11229,14 @@ function myDeckApply(idx) {
       var spread = document.getElementById('nbSpread');
       var pages = nbPages();
       var isSingle = nbSpreadMode !== 'spread';
-      if (pages.length === 0 || !nbCurrentId) {
-        // ページがあれば1枚目を自動選択
-        if (pages.length > 0) {
-          nbCurrentId = pages[0].id;
-        } else {
-          spread.innerHTML = '<div class="nb-empty-state"><span class="nb-empty-state-icon">📒</span><p>まだページがありません<br>メモ、アイデア、対策ノート、なんでも</p><button class="nb-empty-state-btn" onclick="nbNewPage()">＋ 最初のページを作る</button></div>';
-          return;
-        }
+      if (pages.length === 0) {
+        spread.innerHTML = '<div class="nb-empty-state"><span class="nb-empty-state-icon">📒</span><p>まだページがありません<br>メモ、アイデア、対策ノート、なんでも</p><button class="nb-empty-state-btn" onclick="nbNewPage()">＋ 最初のページを作る</button></div>';
+        return;
+      }
+      if (!nbCurrentId) {
+        // タブは表示済み、本文は何も開かない
+        spread.innerHTML = '<div class="nb-empty-state"><span class="nb-empty-state-icon">📒</span><p>ページを選んでください</p></div>';
+        return;
       }
       var page = nbPage(nbCurrentId);
       if (!page) {
@@ -14150,7 +14219,7 @@ function visitCraft() {
     if (deck.kind !== 'deck') { showToast('コードの形式が正しくありません', {type:'warn'}); return; }
     // confirm省略（アーティファクト環境）
     var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
-    var _visitDeckId = deck.deckId || ('visit_' + Date.now());
+    var _visitDeckId = deck.deckId || generateTaskId();
     deck.tasks.forEach(function(d) {
       var t = (typeof createTask === 'function') ? createTask(d.text, today, null, d.section||1, 'daily_only') : null;
       if (t) {
@@ -16203,7 +16272,7 @@ function receiveDeckByCode(code) {
   if (typeof closeQRScanner === 'function') closeQRScanner();
   // confirm省略（アーティファクト環境）
   var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
-  var _deckId = deck.deckId || ('qrscan_' + Date.now());
+  var _deckId = deck.deckId || generateTaskId();
   deck.tasks.forEach(function(d) {
     var t = (typeof createTask === 'function') ? createTask(d.text, today, null, d.section||1, 'both') : null;
     if (t) {
@@ -17480,7 +17549,7 @@ function applyGuildLicense() {
   // ライセンス保存（allTasks統合）
   var _glIdx2 = allTasks.findIndex(function(t){ return t.kind === 'guildLicense'; });
   if (_glIdx2 >= 0) allTasks.splice(_glIdx2, 1);
-  data.id = data.id || (typeof generateTaskId === 'function' ? generateTaskId() : 'gl_' + Date.now());
+  data.id = data.id || generateTaskId();
   data.createdAt = data.createdAt || new Date().toISOString();
   allTasks.push(data);
   saveAllTasks();
@@ -17897,7 +17966,7 @@ function importDeckFromSettings() {
     buttons: [
       { label: '受け取る', style: 'primary', onClick: function() {
         var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
-        var _deckId = deck.deckId || ('manual_' + Date.now());
+        var _deckId = deck.deckId || generateTaskId();
         deck.tasks.forEach(function(d) {
           var t = (typeof createTask === 'function') ? createTask(d.text, today, null, d.section||1, 'both') : null;
           if (t) {
@@ -18039,13 +18108,14 @@ document.addEventListener('DOMContentLoaded', function() {
       const existing = journals.findIndex(function(j) { return j.date === dateStr; });
       var toastMsg;
       if (existing >= 0) {
-        // 既存の日誌のthoughtsに追加
-        if (!Array.isArray(journals[existing].thoughts)) journals[existing].thoughts = [];
-        journals[existing].thoughts.push({ id: generateTaskId(), text: t });
+        // 既存の日誌のthoughtsに追加（フラット構造）
+        addThought(journals[existing].id, t);
         journals[existing].savedAt = new Date().toISOString();
         toastMsg = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌に追加しました';
       } else {
-        allTasks.push({ id: generateTaskId(), kind: 'journal', date: dateStr, text: '', thoughts: [{ id: generateTaskId(), text: t }], mood: m.mood, condition: m.condition, weather: m.weather, savedAt: new Date().toISOString() });
+        var newJournal = { id: generateTaskId(), kind: 'journal', date: dateStr, text: '', mood: m.mood, condition: m.condition, weather: m.weather, savedAt: new Date().toISOString() };
+        allTasks.push(newJournal);
+        addThought(newJournal.id, t);
         toastMsg = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌を作成しました';
       }
       // 雑記帳のアイテムを削除
@@ -18132,7 +18202,7 @@ document.addEventListener('DOMContentLoaded', function() {
         + '<div style="font-size:0.8em;color:#aaa;margin-bottom:12px;font-weight:600;">王国日誌 — ' + journals.length + '件</div>'
         + journals.map(function(j) {
           const preview = (j.text || '').replace(/\n/g,' ').slice(0,60) + ((j.text||'').length > 60 ? '…' : '');
-          const _thoughts = Array.isArray(j.thoughts) ? j.thoughts : [];
+          const _thoughts = getThoughts(j.id);
           const _tBadge = _thoughts.length > 0 ? '<span style="font-size:0.68em;background:rgba(79,172,254,0.1);color:#4facfe;border:1px solid rgba(79,172,254,0.2);border-radius:4px;padding:1px 5px;margin-left:5px;">' + _thoughts.length + '件</span>' : '';
           return '<div class="jnl-card" onclick="openJournalDetail(\'' + j.id + '\')"'
             + ' style="background:#fff;border:1px solid #efefef;border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;">'
@@ -18141,7 +18211,7 @@ document.addEventListener('DOMContentLoaded', function() {
             + '<div style="display:flex;gap:4px;font-size:1em;">'
             + (j.weather || '') + (j.mood ? MOOD_E[j.mood] : '') + (j.condition ? COND_E[j.condition] : '')
             + '</div></div>'
-            + '<div style="font-size:0.82em;color:#666;line-height:1.6;">' + (preview || '<span style="color:#aaa;font-size:0.95em;">💭 今日考えたこと ' + (Array.isArray(j.thoughts) && j.thoughts.length > 0 ? j.thoughts.length + '件' : '') + '</span>') + '</div>'
+            + '<div style="font-size:0.82em;color:#666;line-height:1.6;">' + (preview || '<span style="color:#aaa;font-size:0.95em;">💭 今日考えたこと ' + (_thoughts.length > 0 ? _thoughts.length + '件' : '') + '</span>') + '</div>'
             + '</div>';
         }).join('')
         + '</div>';
@@ -18170,7 +18240,7 @@ document.addEventListener('DOMContentLoaded', function() {
       window._currentJournalId = id;
       const body = document.getElementById('journalDetailBody');
       if (!body) return;
-      const _jThoughts = Array.isArray(j.thoughts) ? j.thoughts : [];
+      const _jThoughts = getThoughts(j.id);
       const _thoughtsHtml = _jThoughts.length > 0
         ? '<div style="margin-top:16px;padding-top:14px;border-top:1px solid #f0f0f0;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"><div style="font-size:0.7em;color:#aaa;font-weight:600;letter-spacing:0.1em;">今日考えたこと</div><button onclick="thoughtsToText(\'' + j.id + '\')" style="font-size:0.68em;padding:2px 8px;border-radius:4px;border:1px solid #e0e0e0;background:#fff;color:#888;cursor:pointer;">↩ まとめて戻す</button></div>'
           + _jThoughts.map(function(th) {
@@ -18250,36 +18320,28 @@ document.addEventListener('DOMContentLoaded', function() {
       renderJournalView();
     }
     function thoughtToScratch(journalId, thoughtId) {
-      var j = allTasks.find(function(t){ return t.id === journalId; });
-      if (!j || !Array.isArray(j.thoughts)) return;
-      var th = j.thoughts.find(function(t){ return t.id === thoughtId; });
+      var th = allTasks.find(function(t){ return t.id === thoughtId && t.kind === 'thought'; });
       if (!th) return;
       addScratchItem(th.text);
-      j.thoughts = j.thoughts.filter(function(t){ return t.id !== thoughtId; });
+      deleteThought(thoughtId);
       saveAllTasks();
       document.getElementById('journalDetailModal').style.display = 'none';
       renderJournalView();
       showToast('📝 雑記帳へ戻しました', {type:'success'});
     }
     function thoughtToTask(journalId, thoughtId) {
-      var j = allTasks.find(function(t){ return t.id === journalId; });
-      if (!j || !Array.isArray(j.thoughts)) return;
-      var th = j.thoughts.find(function(t){ return t.id === thoughtId; });
+      var th = allTasks.find(function(t){ return t.id === thoughtId && t.kind === 'thought'; });
       if (!th) return;
       var dateStr = (typeof currentDailyDate !== 'undefined' && currentDailyDate) || getLocalDateStr(new Date());
       allTasks.push({ id: generateTaskId(), kind: 'scratch', text: th.text, date: dateStr, createdAt: new Date().toISOString() });
-      j.thoughts = j.thoughts.filter(function(t){ return t.id !== thoughtId; });
+      deleteThought(thoughtId);
       saveAllTasks();
       document.getElementById('journalDetailModal').style.display = 'none';
       renderJournalView();
       showToast('＋ 雑記帳に追加しました（タスクに上げてください）', {type:'success'});
     }
     function thoughtSaveEdit(journalId, thoughtId, newText) {
-      var j = allTasks.find(function(t){ return t.id === journalId; });
-      if (!j || !Array.isArray(j.thoughts)) return;
-      var th = j.thoughts.find(function(t){ return t.id === thoughtId; });
-      if (!th) return;
-      th.text = newText;
+      updateThoughtText(thoughtId, newText);
       saveAllTasks();
     }
     function textToThoughts(journalId) {
@@ -18287,33 +18349,32 @@ document.addEventListener('DOMContentLoaded', function() {
       if (!j || !j.text) return;
       var lines = j.text.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
       if (lines.length === 0) return;
-      if (!Array.isArray(j.thoughts)) j.thoughts = [];
-      lines.forEach(function(line){
-        j.thoughts.push({ id: generateTaskId(), text: line });
-      });
+      lines.forEach(function(line){ addThought(journalId, line); });
       j.text = '';
       saveAllTasks();
-      openJournalDetail(journalId);
+      renderJournalView();
+      setTimeout(function(){ openJournalDetail(journalId); }, 50);
     }
     function thoughtsToText(journalId) {
       var j = allTasks.find(function(t){ return t.id === journalId; });
-      if (!j || !Array.isArray(j.thoughts) || j.thoughts.length === 0) return;
-      var lines = j.thoughts.map(function(t){ return t.text; }).filter(Boolean);
+      var thoughts = getThoughts(journalId);
+      if (!j || thoughts.length === 0) return;
+      var lines = thoughts.map(function(t){ return t.text; }).filter(Boolean);
       j.text = (j.text ? j.text + '\n' : '') + lines.join('\n');
-      j.thoughts = [];
+      deleteThoughtsByJournal(journalId);
       saveAllTasks();
-      openJournalDetail(journalId);
+      renderJournalView();
+      setTimeout(function(){ openJournalDetail(journalId); }, 50);
     }
     function thoughtDelete(journalId, thoughtId) {
-      var j = allTasks.find(function(t){ return t.id === journalId; });
-      if (!j || !Array.isArray(j.thoughts)) return;
-      j.thoughts = j.thoughts.filter(function(t){ return t.id !== thoughtId; });
+      deleteThought(thoughtId);
       saveAllTasks();
       openJournalDetail(journalId);
     }
     function deleteJournal(id) {
       const jIdx = allTasks.findIndex(function(t){ return t.id === id && t.kind === 'journal'; });
       if (jIdx !== -1) allTasks.splice(jIdx, 1);
+      deleteThoughtsByJournal(id); // フラット構造のthoughtsも削除
       saveAllTasks();
       var dm = document.getElementById('journalDetailModal');
       if (dm) dm.style.display = 'none';
