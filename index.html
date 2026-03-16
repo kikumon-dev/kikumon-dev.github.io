@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.34.41';
+    const APP_VERSION = 'v0.34.42';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -8106,6 +8106,7 @@ function myDeckApply(idx) {
       var t = allTasks.find(function(x){ return x.id===tid; });
       if (!t) return;
       t.done = !t.done;
+      t.completed = t.done; // 日次ビューのcompletedと双方向同期
       saveAllTasks();
       if (typeof recalcAll === 'function') recalcAll(tid);
       // 展開状態を記憶してから再描画
