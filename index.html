@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.34.38';
+    const APP_VERSION = 'v0.34.39';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -16779,6 +16779,12 @@ function _ycGoSlide(n) {
           <!-- Mission / Vision / Values -->
           <div style="margin-bottom:6px;">
             <button onclick="_ycShowMVVSplash()" style="width:100%;text-align:left;background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);border-radius:8px;padding:8px 12px;color:#ffd700;font-size:0.85em;font-weight:bold;cursor:pointer;">✨ やることクラフトをもっと知る</button>
+          </div>
+          <div style="margin-bottom:6px;">
+            <button onclick="hideTutorial();setTimeout(function(){switchView('daily');setTimeout(function(){switchDailyTab('scratch');setTimeout(showScratchOnboarding,300);},200);},200);" style="width:100%;text-align:left;background:rgba(79,172,254,0.08);border:1px solid rgba(79,172,254,0.25);border-radius:8px;padding:8px 12px;color:#4facfe;font-size:0.85em;font-weight:bold;cursor:pointer;">✏️ 雑記帳の使い方</button>
+          </div>
+          <div style="margin-bottom:6px;">
+            <button onclick="hideTutorial();setTimeout(function(){switchView('journal');setTimeout(showJournalOnboarding,300);},200);" style="width:100%;text-align:left;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.25);border-radius:8px;padding:8px 12px;color:#a78bfa;font-size:0.85em;font-weight:bold;cursor:pointer;">📖 日誌の使い方</button>
           </div>
           <div style="margin-bottom:6px;">
             <button onclick="toggleAbout('aboutPhilosophy')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#81c784;font-size:0.85em;font-weight:bold;cursor:pointer;">🌿 やることクラフトが大切にしていること</button>
