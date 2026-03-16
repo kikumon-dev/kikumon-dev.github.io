@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.34.23';
+    const APP_VERSION = 'v0.34.27';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -16464,7 +16464,7 @@ function _ycWelcomeAnim() {
     cy = rect.top + rect.height / 2;
   }
   // 王冠：🏰の中心に着地
-  var crown = sp('👑','position:fixed;font-size:2.8em;left:'+(cx-23)+'px;top:'+(cy-65)+'px;transform:translateX(-50%);animation:_ycCrownDrop 1.0s 0s cubic-bezier(0.34,1.4,0.64,1) both;');
+  var crown = sp('👑','position:fixed;font-size:2.8em;left:'+(cx-31)+'px;top:'+(cy-65)+'px;transform:translateX(-50%);animation:_ycCrownDrop 1.0s 0s cubic-bezier(0.34,1.4,0.64,1) both;');
   layer.appendChild(crown);
   // 波紋：着地点から広がる
   [0.95, 1.15].forEach(function(d){
@@ -16683,7 +16683,10 @@ function _ycGoSlide(n) {
       </button>
       <div id="libraryContent" style="display:none;margin-top:8px;">
         <div id="aboutAccordion">
-          <!-- やることクラフトが大切にしていること -->
+          <!-- Mission / Vision / Values -->
+          <div style="margin-bottom:6px;">
+            <button onclick="_ycShowMVVSplash()" style="width:100%;text-align:left;background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);border-radius:8px;padding:8px 12px;color:#ffd700;font-size:0.85em;font-weight:bold;cursor:pointer;">✨ やることクラフトをもっと知る</button>
+          </div>
           <div style="margin-bottom:6px;">
             <button onclick="toggleAbout('aboutPhilosophy')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#81c784;font-size:0.85em;font-weight:bold;cursor:pointer;">🌿 やることクラフトが大切にしていること</button>
             <div id="aboutPhilosophy" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:14px 12px;font-size:0.82em;color:#ccc;line-height:1.7;">
@@ -16996,9 +16999,31 @@ function showTutorial() {
   if (!el) return;
   var splash = document.getElementById('tutorialSplash');
   var main   = document.getElementById('tutorialMain');
+  if (allSettings.flags.tutorialSeen) {
+    // 2回目以降：スプラッシュをスキップして王国へようこそから
+    if (splash) splash.style.display = 'none';
+    if (main)   main.style.display   = 'flex';
+    el.style.display = 'flex';
+    // レイアウト確定を待ってからアニメ起動
+    setTimeout(function() {
+      if (typeof _ycWelcomeAnim === 'function') _ycWelcomeAnim();
+    }, 80);
+  } else {
+    // 初回のみスプラッシュから
+    if (splash) splash.style.display = 'flex';
+    if (main)   main.style.display   = 'none';
+    _ycGoSlide(0);
+    el.style.display = 'flex';
+  }
+}
+// 図書館「やることクラフトをもっと知る」からスプラッシュを全部流す
+function _ycShowMVVSplash() {
+  var el = document.getElementById('tutorialOverlay');
+  if (!el) return;
+  var splash = document.getElementById('tutorialSplash');
+  var main   = document.getElementById('tutorialMain');
   if (splash) splash.style.display = 'flex';
   if (main)   main.style.display   = 'none';
-  // 毎回スライド0（MISSION）から
   _ycGoSlide(0);
   el.style.display = 'flex';
 }
