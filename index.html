@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.34.21';
+    const APP_VERSION = 'v0.34.22';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -13814,14 +13814,7 @@ function _restoreAfterPrint() {
   // containerを元に戻す（再描画）
   if (typeof switchView === 'function') switchView(localStorage.getItem('currentView') || 'daily');
 }
-// afterprintイベント（標準）
-window.addEventListener('afterprint', _restoreAfterPrint);
-// matchMedia監視（EdgeでafterPrintが発火しない場合の保険）
-if (window.matchMedia) {
-  window.matchMedia('print').addEventListener('change', function(mq) {
-    if (!mq.matches) _restoreAfterPrint();
-  });
-}</script>
+window.addEventListener('afterprint', _restoreAfterPrint);</script>
   <!-- タスク編集モーダル -->
   <!-- 検索モーダル -->
   <div id="searchModal" class="custom-modal" onclick="if(event.target.id==='searchModal') closeSearchModal();">
