@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.34.18';
+    const APP_VERSION = 'v0.34.20';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -13803,7 +13803,7 @@ window.addEventListener('beforeprint', function() {
     c.style.position = 'static';
   }
 });
-window.addEventListener('afterprint', function() {
+function _restoreAfterPrint() {
   // 印刷後に元の状態に戻す
   const hideIds = ['dailyInnerTabBar','scratchView','timelineView','weeklyView',
     'monthlyView','yearlyView','notebookView','shopView','craftView',
@@ -13822,9 +13822,28 @@ window.addEventListener('afterprint', function() {
       delete el.dataset.printHidden;
     }
   });
+  // containerのインラインスタイルをリセット（beforeprintで打ち込んだ値を除去）
+  const c = document.querySelector('.container');
+  if (c) {
+    c.style.removeProperty('width');
+    c.style.removeProperty('height');
+    c.style.removeProperty('grid-template-columns');
+    c.style.removeProperty('grid-template-rows');
+    c.style.removeProperty('margin');
+    c.style.removeProperty('position');
+    c.style.removeProperty('display');
+  }
   // containerを元に戻す（再描画）
   if (typeof switchView === 'function') switchView(localStorage.getItem('currentView') || 'daily');
-});</script>
+}
+// afterprintイベント（標準）
+window.addEventListener('afterprint', _restoreAfterPrint);
+// matchMedia監視（EdgeでafterPrintが発火しない場合の保険）
+if (window.matchMedia) {
+  window.matchMedia('print').addEventListener('change', function(mq) {
+    if (!mq.matches) _restoreAfterPrint();
+  });
+}</script>
   <!-- タスク編集モーダル -->
   <!-- 検索モーダル -->
   <div id="searchModal" class="custom-modal" onclick="if(event.target.id==='searchModal') closeSearchModal();">
