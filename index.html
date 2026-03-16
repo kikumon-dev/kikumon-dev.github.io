@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.34.43';
+    const APP_VERSION = 'v0.34.45';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -6161,6 +6161,8 @@ function myDeckApply(idx) {
                   if (bp) recalcBlueprintFromGants(bp);
                 });
                 saveAllTasks();
+                var _gv = document.getElementById('gantView');
+                if (_gv && _gv.style.display !== 'none') renderGantView();
               }
             }
             titleSpan.style.textDecoration = task.completed ? 'line-through' : '';
@@ -7312,6 +7314,8 @@ function myDeckApply(idx) {
                   if (bp) recalcBlueprintFromGants(bp);
                 });
                 saveAllTasks();
+                var _gv = document.getElementById('gantView');
+                if (_gv && _gv.style.display !== 'none') renderGantView();
               }
             }
             ts.style.textDecoration = t.completed ? 'line-through' : '';
@@ -9684,14 +9688,26 @@ function myDeckApply(idx) {
       if (task) {
         const wasCompleted = task.completed;
         task.completed = !task.completed;
+        task.done = task.completed; // 造営(gantt)のdoneと双方向同期
         task.updatedAt = new Date().toISOString();
         saveAllTasks();
-        // クラフトモード：完了時にリアルタイム更新
         if (!wasCompleted && task.completed) {
+          // 完了時
           onTaskCompleted(task);
-          // deckHistory：完了カウントを加算
           if (task.deckId && typeof incrementDeckHistoryStat === 'function') {
             incrementDeckHistoryStat(task.deckId);
+          }
+        } else if (wasCompleted && !task.completed) {
+          // 完了を外したとき：gantt進捗を更新
+          var _linkedGants = getGantsAll().filter(function(g){ return (g.taskIds||[]).includes(task.id); });
+          if (_linkedGants.length > 0) {
+            _linkedGants.forEach(function(g){
+              var bp = allTasks.find(function(t){ return t.id === g.blueprintId; });
+              if (bp) recalcBlueprintFromGants(bp);
+            });
+            saveAllTasks();
+            var _gv = document.getElementById('gantView');
+            if (_gv && _gv.style.display !== 'none') renderGantView();
           }
         }
         // 日次ビュー：全象限を再描画
