@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.34.45';
+    const APP_VERSION = 'v0.34.46';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -3535,7 +3535,7 @@
       <h3 style="margin:0 0 16px 0; font-size:1.1em; font-weight:700;">手立て（てだて）<span style="font-size:0.72em;color:#aaa;font-weight:400;margin-left:6px;">ステップ</span></h3>
       <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;">
         <button id="ganttEmojiBtn" onclick="toggleGanttEmojiPicker()" title="紋章を変える" style="font-size:1.6em;width:44px;height:44px;border:1px solid #ddd;border-radius:8px;background:#fafafa;cursor:pointer;flex-shrink:0;position:relative;transition:transform 0.15s,box-shadow 0.15s;" onmouseenter="this.style.transform='scale(1.15)';this.style.boxShadow='0 4px 12px rgba(92,107,192,0.3)';this._tip=Object.assign(document.createElement('div'),{textContent:'🏰 紋章を変える',style:'position:absolute;bottom:-30px;left:50%;transform:translateX(-50%);background:#3c3c5c;color:#fff;font-size:10px;padding:3px 8px;border-radius:6px;white-space:nowrap;pointer-events:none;z-index:99;font-family:sans-serif;'});this.appendChild(this._tip);" onmouseleave="this.style.transform='';this.style.boxShadow='';if(this._tip)this._tip.remove();">🏗</button>
-        <input id="ganttTitleInput" type="text" placeholder="工程名（例：基礎固め、仕上げ）" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:0.95em;box-sizing:border-box;">
+        <input id="ganttTitleInput" type="text" placeholder="工程名（例：第1ステップ、準備期間、仕上げ）" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:0.95em;box-sizing:border-box;">
       </div>
       <div id="ganttEmojiPicker" style="display:none;margin-bottom:12px;background:#f9f9f9;border:1px solid #e0e0e0;border-radius:10px;padding:10px;">
         <div style="font-size:0.75em;color:#888;margin-bottom:8px;font-weight:600;">絵文字を選ぶ</div>
