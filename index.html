@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.34.74';
+    const APP_VERSION = 'v0.34.75';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -7616,7 +7616,7 @@ function myDeckApply(idx) {
     }
 
     function _deleteGrandVision(id) {
-      // 紐づく志のgrandvisionIdをnullに
+      const linkedCount = allTasks.filter(t => t.kind==='blueprint' && t.grandvisionId===id).length;
       allTasks.filter(t => t.kind==='blueprint' && t.grandvisionId===id).forEach(function(bp){ bp.grandvisionId = null; });
       const idx = allTasks.findIndex(t => t.id === id);
       if (idx !== -1) allTasks.splice(idx, 1);
@@ -7625,7 +7625,8 @@ function myDeckApply(idx) {
       document.querySelectorAll('div[style*=fixed]').forEach(function(el){ if(el.querySelector('#gvTitleInput')) el.remove(); });
       renderGrandVisionBar();
       renderGantBlueprints();
-      showToast('グランドビジョンを削除しました',{type:'success'});
+      renderGantChart();
+      showToast('グランドビジョンを削除しました' + (linkedCount > 0 ? '（志' + linkedCount + '件の紐づきを解除）' : ''), {type:'success'});
     }
 
     function getGantsByBlueprint(blueprintId) {
@@ -18487,8 +18488,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function promoteScratchToGant(text, item) {
       const t = (text || '').trim();
       if (!t) return;
-      // 最初の行を志名、残りの行をタスクにする
-      const lines = t.split(/[\n　]/).map(function(l){ return l.trim(); }).filter(Boolean);
+      // 改行・全角スペース・「実行手順：」などのラベルで分割
+      const lines = t.split(/[\n　]/)
+        .map(function(l){ return l.replace(/^[\d]+[\.．、。\)）\]】]\s*/, '').replace(/^(目標|手段|装備|実行手順)[：:]\s*/, '').trim(); })
+        .filter(Boolean);
       const bpTitle = lines[0].slice(0, 30);
       const taskLines = lines.slice(1);
       // 志（blueprint）を作成
