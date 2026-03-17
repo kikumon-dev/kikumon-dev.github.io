@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.35.00';
+    const APP_VERSION = 'v0.35.01';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -8004,7 +8004,7 @@ function myDeckApply(idx) {
             <div style="display:flex;align-items:center;gap:4px;min-width:0;">
               <span class="bp-grip" style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;cursor:grab;padding:2px 3px;justify-content:center;"><span style="display:block;width:10px;height:1.5px;background:#bbb;border-radius:1px;"></span><span style="display:block;width:10px;height:1.5px;background:#bbb;border-radius:1px;"></span><span style="display:block;width:10px;height:1.5px;background:#bbb;border-radius:1px;"></span></span>
               <span style="font-size:1em;flex-shrink:0;">${bp.emoji||'🏰'}</span>
-              <div style="font-size:0.85em;font-weight:600;color:#262626;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;">${bp.title}</div>
+              <div style="font-size:0.85em;font-weight:600;color:#262626;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.4;max-width:140px;">${bp.title}</div>
             </div>
             <button onclick="event.stopPropagation();openBlueprintEditor('${bp.id}')" style="background:none;border:none;font-size:0.75em;color:#aaa;cursor:pointer;padding:2px;">✏️</button>
           </div>
