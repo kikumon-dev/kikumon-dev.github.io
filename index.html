@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.34.58';
+    const APP_VERSION = 'v0.34.74';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -451,6 +451,7 @@
     .scratch-item-actions .btn-promote { color: #4facfe; border-color: #4facfe; }
     .scratch-item-actions .btn-del     { color: #f66;    border-color: #f66; }
     .scratch-item-actions .btn-journal { color: #262626; border-color: #262626; }
+    .scratch-item-actions .btn-gant    { color: #a78bfa; border-color: #a78bfa; }
     /* タップで選択中（旧） */
     .scratch-item.selected .scratch-item-dot { background: #4facfe; }
     .scratch-task-label {
@@ -3453,8 +3454,30 @@
   <!-- 年間ビュー（YEARLY PLANNER型） -->
   <!-- 造営ビュー -->
   <div id="gantView" style="display:none; flex-direction:column; height:calc(100vh - 50px); background:#fafafa; overflow:hidden;">
-    <!-- 上部30%：blueprintカード一覧 -->
-    <div id="gantBlueprintArea" style="height:30%; min-height:120px; max-height:200px; overflow-x:auto; overflow-y:hidden; display:flex; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid #e8e8e8; background:#fff; -webkit-overflow-scrolling:touch; scrollbar-width:none;">
+    <!-- グランドビジョン表示エリア -->
+    <div id="grandVisionBanner" style="display:none;flex-shrink:0;background:linear-gradient(135deg,#2d1b69 0%,#1a0f3c 100%);padding:12px 16px;border-bottom:1px solid rgba(167,139,250,0.3);">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1;">
+          <span id="gvBannerEmoji" style="font-size:1.4em;flex-shrink:0;">🎖️</span>
+          <div style="min-width:0;flex:1;">
+            <div id="gvBannerTitle" style="font-size:0.95em;font-weight:700;color:#e9d5ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+            <div id="gvBannerVision" style="font-size:0.75em;color:#c4b5fd;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:8px;">
+          <select id="gvBannerSelect" onchange="_onGvBannerChange(this.value)" style="background:rgba(255,255,255,0.1);border:1px solid rgba(167,139,250,0.4);border-radius:8px;color:#e9d5ff;font-size:0.75em;padding:4px 6px;cursor:pointer;max-width:100px;">
+          </select>
+          <button onclick="openGrandVisionEditor(document.getElementById('gvBannerSelect').value||null)" style="background:rgba(255,255,255,0.1);border:1px solid rgba(167,139,250,0.3);border-radius:8px;font-size:0.75em;color:#c4b5fd;cursor:pointer;padding:4px 8px;">✏️</button>
+          <button onclick="openGrandVisionEditor(null)" style="background:rgba(167,139,250,0.3);border:none;border-radius:8px;font-size:0.75em;color:#fff;cursor:pointer;padding:4px 8px;font-weight:700;">＋</button>
+        </div>
+      </div>
+    </div>
+    <!-- グランドビジョンがない場合の追加ボタン -->
+    <div id="grandVisionEmpty" style="display:none;flex-shrink:0;padding:6px 12px;background:#f8f6ff;border-bottom:1px solid #ede9fe;text-align:right;">
+      <button onclick="openGrandVisionEditor(null)" style="background:none;border:1px dashed #c4b5fd;border-radius:8px;color:#a78bfa;font-size:0.75em;padding:4px 10px;cursor:pointer;">🎖️ グランドビジョンを作る</button>
+    </div>
+    <!-- 上部：blueprintカード一覧 -->
+    <div id="gantBlueprintArea" style="max-height:220px; overflow-x:hidden; overflow-y:auto; display:grid; grid-template-columns:repeat(2,1fr); gap:8px; padding:10px 12px; border-bottom:1px solid #e8e8e8; background:#fff; -webkit-overflow-scrolling:touch;">
       <!-- blueprintカードがJSで挿入される -->
     </div>
     <!-- 時間スケール切替 -->
@@ -3495,6 +3518,12 @@
         <div id="blueprintEmojiGrid" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
       </div>
       <textarea id="blueprintVisionInput" placeholder="ビジョン（任意）" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:0.9em; box-sizing:border-box; margin-bottom:12px; height:60px; resize:none;"></textarea>
+      <div style="margin-bottom:12px;">
+        <label style="font-size:0.8em;color:#666;display:block;margin-bottom:4px;">🎖️ グランドビジョン</label>
+        <select id="blueprintGvSelect" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:0.85em;box-sizing:border-box;">
+          <option value="">なし</option>
+        </select>
+      </div>
       <div style="display:flex; gap:8px; margin-bottom:12px;">
         <div style="flex:1;">
           <label style="font-size:0.8em; color:#666; display:block; margin-bottom:4px;">開始日</label>
@@ -7469,9 +7498,136 @@ function myDeckApply(idx) {
       {bg:'#efebe9',text:'#3e2723'},{bg:'#eceff1',text:'#263238'},
       {bg:'#e0f7fa',text:'#006064'}
     ];
-    function getBlueprints() {
-      return allTasks.filter(t => t.kind === 'blueprint').sort((a,b) => (a.order||0)-(b.order||0));
+    function getGrandVisions() {
+      return allTasks.filter(t => t.kind === 'grandvision').sort((a,b) => (a.order||0)-(b.order||0));
     }
+    var _selectedGrandVisionId = null; // null=全表示
+
+    function renderGrandVisionBar() {
+      const banner = document.getElementById('grandVisionBanner');
+      const empty  = document.getElementById('grandVisionEmpty');
+      if (!banner || !empty) return;
+      const gvs = getGrandVisions();
+      if (gvs.length === 0) {
+        banner.style.display = 'none';
+        empty.style.display  = 'block';
+        _selectedGrandVisionId = null;
+        return;
+      }
+      empty.style.display  = 'none';
+      banner.style.display = 'flex';
+      // 選択中GVが存在しなくなった場合だけリセット（nullは全表示として正常）
+      if (_selectedGrandVisionId && !gvs.find(g => g.id === _selectedGrandVisionId)) {
+        _selectedGrandVisionId = null;
+      }
+      const gv = _selectedGrandVisionId ? gvs.find(g => g.id === _selectedGrandVisionId) : null;
+      document.getElementById('gvBannerEmoji').textContent  = gv ? (gv.emoji || '🎖️') : '🎖️';
+      document.getElementById('gvBannerTitle').textContent  = gv ? (gv.title || '') : '全作戦';
+      document.getElementById('gvBannerVision').textContent = gv ? (gv.vision || '') : '全志を表示中';
+      const sel = document.getElementById('gvBannerSelect');
+      if (sel) {
+        sel.innerHTML = '<option value="">全作戦</option>' + gvs.map(g =>
+          `<option value="${g.id}" ${g.id===_selectedGrandVisionId?'selected':''}>${g.emoji||'🎖️'} ${g.title}</option>`
+        ).join('');
+      }
+    }
+    function _onGvBannerChange(id) {
+      _selectedGrandVisionId = id || null;
+      renderGrandVisionBar();
+      renderGantBlueprints();
+      renderGantChart();
+    }
+
+    function getBlueprints() {
+      const all = allTasks.filter(t => t.kind === 'blueprint').sort((a,b) => (a.order||0)-(b.order||0));
+      if (!_selectedGrandVisionId) return all;
+      return all.filter(b => b.grandvisionId === _selectedGrandVisionId);
+    }
+
+    function openGrandVisionEditor(id) {
+      const gv = id ? allTasks.find(t => t.id === id) : null;
+      const allBps = allTasks.filter(t => t.kind === 'blueprint').sort((a,b) => (a.order||0)-(b.order||0));
+      const bpCheckList = allBps.length === 0 ? '<div style="font-size:0.8em;color:#aaa;">志がまだありません</div>' :
+        allBps.map(bp => `
+          <label style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f0f0f0;cursor:pointer;">
+            <input type="checkbox" class="gv-bp-check" value="${bp.id}" ${bp.grandvisionId===id&&id?'checked':''} style="width:16px;height:16px;cursor:pointer;">
+            <span style="font-size:0.85em;color:#333;">${bp.emoji||'🏰'} ${bp.title}</span>
+          </label>`).join('');
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+      overlay.innerHTML = `
+        <div style="background:#fff;border-radius:16px;padding:24px 20px;width:92vw;max-width:360px;max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+          <div style="font-size:1em;font-weight:700;color:#333;margin-bottom:16px;">🎖️ グランドビジョン</div>
+          <input id="gvTitleInput" type="text" placeholder="タイトル（例：部屋の完全制圧）" value="${gv?gv.title:''}"
+            style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:0.9em;box-sizing:border-box;margin-bottom:10px;">
+          <textarea id="gvVisionInput" placeholder="なぜ戦うか（ビジョン）" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:0.85em;box-sizing:border-box;height:70px;resize:none;margin-bottom:10px;">${gv?gv.vision||'':''}</textarea>
+          <div style="display:flex;gap:8px;margin-bottom:12px;">
+            <select id="gvEmojiSelect" style="flex:1;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:0.9em;">
+              ${['🎖️','🏰','⚔️','🛡️','🌟','🔥','🎯','👑','🗺️','🏆'].map(e=>`<option value="${e}" ${(gv&&gv.emoji===e)||(!gv&&e==='🎖️')?'selected':''}>${e}</option>`).join('')}
+            </select>
+            <input id="gvColorInput" type="color" value="${gv?gv.color||'#a78bfa':'#a78bfa'}" style="width:44px;height:38px;border:none;border-radius:8px;cursor:pointer;padding:0;">
+          </div>
+          <div style="font-size:0.8em;font-weight:600;color:#666;margin-bottom:8px;">紐づける志を選ぶ</div>
+          <div style="background:#fafafa;border:1px solid #eee;border-radius:8px;padding:8px 12px;margin-bottom:12px;max-height:160px;overflow-y:auto;">
+            ${bpCheckList}
+          </div>
+          <div style="font-size:0.75em;color:#aaa;margin-bottom:12px;">visionが空の志には、このビジョンを自動コピーします</div>
+          <div style="display:flex;gap:8px;">
+            ${gv?`<button onclick="_deleteGrandVision('${gv.id}')" style="padding:10px 14px;background:#fff;border:1px solid #f66;color:#f66;border-radius:8px;font-size:0.85em;cursor:pointer;">削除</button>`:''}
+            <button onclick="this.closest('div[style*=fixed]').remove()" style="flex:1;padding:10px;background:#f0f0f0;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;">キャンセル</button>
+            <button onclick="_saveGrandVision('${id||''}',this)" style="flex:1;padding:10px;background:#a78bfa;color:#fff;border:none;border-radius:8px;font-size:0.9em;font-weight:700;cursor:pointer;">保存</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
+      setTimeout(function(){ const el=document.getElementById('gvTitleInput'); if(el) el.focus(); }, 100);
+    }
+
+    function _saveGrandVision(id, btn) {
+      const title = (document.getElementById('gvTitleInput').value||'').trim();
+      if (!title) { showToast('タイトルを入力してください',{type:'warn'}); return; }
+      const vision = (document.getElementById('gvVisionInput').value||'').trim();
+      const emoji  = document.getElementById('gvEmojiSelect').value;
+      const color  = document.getElementById('gvColorInput').value;
+      // チェックされた志のIDを取得
+      const checkedIds = Array.from(document.querySelectorAll('.gv-bp-check:checked')).map(function(c){ return c.value; });
+      const gvId = id || generateTaskId();
+      if (id) {
+        const gv = allTasks.find(t => t.id === id);
+        if (gv) { gv.title=title; gv.vision=vision; gv.emoji=emoji; gv.color=color; }
+      } else {
+        const gvs = getGrandVisions();
+        allTasks.push({ id: gvId, kind:'grandvision', title, vision, emoji, color, order: gvs.length, createdAt: new Date().toISOString() });
+      }
+      // 全志のgrandvisionIdを更新
+      allTasks.filter(t => t.kind==='blueprint').forEach(function(bp){
+        if (checkedIds.includes(bp.id)) {
+          bp.grandvisionId = gvId;
+          if (!bp.vision) bp.vision = vision; // visionが空なら継承
+        } else if (bp.grandvisionId === gvId) {
+          bp.grandvisionId = null; // チェックを外したら解除
+        }
+      });
+      saveAllTasks();
+      btn.closest('div[style*=fixed]').remove();
+      renderGrandVisionBar();
+      renderGantBlueprints();
+      showToast('🎖️ グランドビジョンを保存しました',{type:'success'});
+    }
+
+    function _deleteGrandVision(id) {
+      // 紐づく志のgrandvisionIdをnullに
+      allTasks.filter(t => t.kind==='blueprint' && t.grandvisionId===id).forEach(function(bp){ bp.grandvisionId = null; });
+      const idx = allTasks.findIndex(t => t.id === id);
+      if (idx !== -1) allTasks.splice(idx, 1);
+      if (_selectedGrandVisionId === id) _selectedGrandVisionId = null;
+      saveAllTasks();
+      document.querySelectorAll('div[style*=fixed]').forEach(function(el){ if(el.querySelector('#gvTitleInput')) el.remove(); });
+      renderGrandVisionBar();
+      renderGantBlueprints();
+      showToast('グランドビジョンを削除しました',{type:'success'});
+    }
+
     function getGantsByBlueprint(blueprintId) {
       return allTasks.filter(t => t.kind === 'gantt' && t.blueprintId === blueprintId)
                      .sort((a,b) => (a.order||0)-(b.order||0));
@@ -7748,6 +7904,7 @@ function myDeckApply(idx) {
       document.querySelectorAll('[id^=ganttExpand_]').forEach(function(el){
         if (el.style.display !== 'none') _openIds.push(el.id);
       });
+      renderGrandVisionBar();
       renderGantBlueprints();
       // display:'flex'直後はlayoutが未確定→RAFで遅延してareaWを正確に取得
       requestAnimationFrame(function() {
@@ -7792,8 +7949,8 @@ function myDeckApply(idx) {
         const color = bp.color || '#3498db';
         const ganttCount = getGantsByBlueprint(bp.id).length;
         const _bpMsg = _getBlueprintHoverMsg(bp, progress, ganttCount);
-        return `<div style="
-          min-width:170px; max-width:220px; padding:10px 14px;
+        return `<div class="bp-card" data-bpid="${bp.id}" draggable="false" style="
+          min-width:0; max-width:100%; padding:10px 14px;
           border-radius:12px; border:2px solid ${isSelected ? color : '#e8e8e8'};
           background:${isSelected ? color + '15' : '#fff'};
           cursor:pointer; flex-shrink:0; position:relative;
@@ -7804,8 +7961,9 @@ function myDeckApply(idx) {
            data-bp-msg="${_bpMsg.replace(/"/g,'&quot;')}" data-bp-color="${color}" data-bp-textcolor="${bp.textColor||'#1a237e'}">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
             <div style="display:flex;align-items:center;gap:4px;min-width:0;">
+              <span class="bp-grip" style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;cursor:grab;padding:2px 3px;justify-content:center;"><span style="display:block;width:10px;height:1.5px;background:#bbb;border-radius:1px;"></span><span style="display:block;width:10px;height:1.5px;background:#bbb;border-radius:1px;"></span><span style="display:block;width:10px;height:1.5px;background:#bbb;border-radius:1px;"></span></span>
               <span style="font-size:1em;flex-shrink:0;">${bp.emoji||'🏰'}</span>
-              <div style="font-size:0.85em;font-weight:600;color:#262626;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;">${bp.title}</div>
+              <div style="font-size:0.85em;font-weight:600;color:#262626;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;">${bp.title}</div>
             </div>
             <button onclick="event.stopPropagation();openBlueprintEditor('${bp.id}')" style="background:none;border:none;font-size:0.75em;color:#aaa;cursor:pointer;padding:2px;">✏️</button>
           </div>
@@ -8123,6 +8281,60 @@ function myDeckApply(idx) {
       var gid = btn.dataset.gid;
       if (gid) openGanttQuickTask(gid);
     }
+    // 志カードD&D
+    var _bpDrag = { fromId: null };
+    function _initBlueprintDrag() {
+      document.addEventListener('mousedown', function(e) {
+        var grip = e.target.closest ? e.target.closest('.bp-grip') : null;
+        if (!grip) return;
+        var card = grip.closest('.bp-card');
+        if (!card) return;
+        card.setAttribute('draggable', 'true');
+        card.addEventListener('dragend', function once() {
+          card.setAttribute('draggable', 'false');
+          card.removeEventListener('dragend', once);
+        });
+      });
+      document.addEventListener('dragstart', function(e) {
+        var card = e.target.closest ? e.target.closest('.bp-card') : null;
+        if (!card || card.getAttribute('draggable') !== 'true') return;
+        _bpDrag.fromId = card.dataset.bpid;
+        card.style.opacity = '0.4';
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      document.addEventListener('dragend', function() {
+        if (!_bpDrag.fromId) return; // 志カードのドラッグでなければ無視
+        document.querySelectorAll('.bp-card').forEach(function(c){ c.style.opacity=''; c.style.outline=''; c.setAttribute('draggable','false'); });
+        _bpDrag.fromId = null;
+      });
+      document.addEventListener('dragover', function(e) {
+        if (!_bpDrag.fromId) return; // 志カードのドラッグ中でなければ無視
+        var card = e.target.closest ? e.target.closest('.bp-card') : null;
+        if (!card || card.dataset.bpid === _bpDrag.fromId) return;
+        e.preventDefault();
+        document.querySelectorAll('.bp-card').forEach(function(c){ c.style.outline=''; });
+        card.style.outline = '2px solid #a78bfa';
+      });
+      document.addEventListener('drop', function(e) {
+        if (!_bpDrag.fromId) return; // 志カードのドラッグ中でなければ無視
+        var card = e.target.closest ? e.target.closest('.bp-card') : null;
+        if (!card || card.dataset.bpid === _bpDrag.fromId) return;
+        e.preventDefault();
+        _bpReorder(_bpDrag.fromId, card.dataset.bpid);
+      });
+    }
+    function _bpReorder(fromId, toId) {
+      var blueprints = allTasks.filter(t => t.kind === 'blueprint').sort((a,b) => (a.order||0)-(b.order||0));
+      var fromIdx = blueprints.findIndex(function(b){ return b.id === fromId; });
+      var toIdx   = blueprints.findIndex(function(b){ return b.id === toId; });
+      if (fromIdx === -1 || toIdx === -1) return;
+      var moved = blueprints.splice(fromIdx, 1)[0];
+      blueprints.splice(toIdx, 0, moved);
+      blueprints.forEach(function(b, i){ b.order = i; });
+      saveAllTasks();
+      renderGantBlueprints();
+    }
+    _initBlueprintDrag();
     // 造営タスク行ドラッグ&ドロップ（グリップ経由でtr行を動かす）
     var _gantDrag = { ganttId: null, fromIdx: null, fromTid: null };
     function _initGantTaskDrag() {
@@ -8453,7 +8665,12 @@ function myDeckApply(idx) {
       const scale = allSettings.ui.gantTimeScale || 'day';
       let gants = _gantSelectedBlueprintId
         ? getGantsByBlueprint(_gantSelectedBlueprintId)
-        : getGantsAll();
+        : _selectedGrandVisionId
+          ? getGantsAll().filter(function(g){
+              var bp = allTasks.find(function(t){ return t.id === g.blueprintId; });
+              return bp && bp.grandvisionId === _selectedGrandVisionId;
+            })
+          : getGantsAll();
       if (!allSettings.ui.gantShowCompleted) gants = gants.filter(g => !g.achieved);
       const addGanttBtn = document.getElementById('gantAddGanttBtn');
       if (addGanttBtn) addGanttBtn.style.display = 'block';
@@ -8541,6 +8758,14 @@ function myDeckApply(idx) {
         }).join('');
       }
       modal.style.display = 'flex';
+      // グランドビジョンselect初期化
+      const gvSelect = document.getElementById('blueprintGvSelect');
+      if (gvSelect) {
+        const gvs = getGrandVisions();
+        gvSelect.innerHTML = '<option value="">なし</option>' + gvs.map(gv =>
+          `<option value="${gv.id}" ${bp&&bp.grandvisionId===gv.id?'selected':''}>${gv.emoji||'🎖️'} ${gv.title}</option>`
+        ).join('');
+      }
     }
     function saveBlueprintEditor() {
       const title = document.getElementById('blueprintTitleInput');
@@ -8563,15 +8788,17 @@ function myDeckApply(idx) {
           bp.color     = _svBg ? _svBg.value : '#c5cae9';
           bp.textColor = _svTx ? _svTx.value : '#283593';
           const _newBpEmoji = _svEm ? _svEm.textContent.trim() : '🏰';
-          // 志の絵文字が変わったら配下の全工程に同期
           if (bp.emoji !== _newBpEmoji) {
             allTasks.filter(t => t.kind === 'gantt' && t.blueprintId === bp.id)
               .forEach(g => { g.emoji = _newBpEmoji; });
           }
           bp.emoji = _newBpEmoji;
+          const _gvSel = document.getElementById('blueprintGvSelect');
+          bp.grandvisionId = _gvSel ? (_gvSel.value || null) : null;
         }
       } else {
         const blueprints = getBlueprints();
+        const _gvSel = document.getElementById('blueprintGvSelect');
         allTasks.push({
           id: generateTaskId(),
           kind: 'blueprint',
@@ -8582,6 +8809,7 @@ function myDeckApply(idx) {
           color:     (function(){ const e=document.getElementById('blueprintBgPicker');   return e?e.value:'#c5cae9'; })(),
           textColor: (function(){ const e=document.getElementById('blueprintTextPicker'); return e?e.value:'#283593'; })(),
           emoji:     (function(){ const e=document.getElementById('blueprintEmojiBtn'); return e?e.textContent.trim():'🏰'; })(),
+          grandvisionId: _gvSel ? (_gvSel.value || null) : null,
           order: blueprints.length,
           ganttIds: [],
           achieveMode: 'both',
@@ -10208,6 +10436,7 @@ function myDeckApply(idx) {
       actions.innerHTML = `
         <button class="btn-promote">タスクに</button>
         <button class="btn-journal">日誌に</button>
+        <button class="btn-gant">造営に</button>
         <button class="btn-save">保存</button>
         <button class="btn-del">削除</button>
       `;
@@ -10215,6 +10444,7 @@ function myDeckApply(idx) {
       actions.querySelector('.btn-promote').onclick = (e) => { e.stopPropagation(); promoteInlineItem(div, item); };
       actions.querySelector('.btn-del').onclick     = (e) => { e.stopPropagation(); deleteInlineItem(div, item); };
       actions.querySelector('.btn-journal').onclick = (e) => { e.stopPropagation(); saveScratchItemAsJournal(ta.value, item); };
+      actions.querySelector('.btn-gant').onclick    = (e) => { e.stopPropagation(); promoteScratchToGant(ta.value, item); };
       div.appendChild(actions);
     }
     function cancelInlineEdit(div) {
@@ -10748,7 +10978,7 @@ function myDeckApply(idx) {
           let _invalidCount = 0;
           // task以外のkind：taskバリデーション（text/section/date）をスキップして全件通す
           const _NON_TASK_KINDS = ['note', 'journal', 'thought', 'scratch', 'blueprint', 'gantt',
-            'dailyStatus', 'family', 'deckHistory', 'myDeck', 'guildLicense', 'stamp'];
+            'dailyStatus', 'family', 'deckHistory', 'myDeck', 'guildLicense', 'stamp', 'grandvision'];
           const validTasks = tasksData.filter(task => {
             if (!task.id || typeof task.id !== 'string') { _invalidCount++; return false; }
             if (_NON_TASK_KINDS.includes(task.kind)) return true; // 非タスクkindはそのまま通す
@@ -18254,6 +18484,52 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.appendChild(t);
         setTimeout(function() { t.remove(); }, 2500);
       }
+    function promoteScratchToGant(text, item) {
+      const t = (text || '').trim();
+      if (!t) return;
+      // 最初の行を志名、残りの行をタスクにする
+      const lines = t.split(/[\n　]/).map(function(l){ return l.trim(); }).filter(Boolean);
+      const bpTitle = lines[0].slice(0, 30);
+      const taskLines = lines.slice(1);
+      // 志（blueprint）を作成
+      const bpId = generateTaskId();
+      const bp = {
+        id: bpId, kind: 'blueprint', title: bpTitle, vision: '', color: '#a78bfa',
+        startDate: null, endDate: null, createdAt: new Date().toISOString()
+      };
+      allTasks.push(bp);
+      // 工程（gantt）を作成
+      const ganttId = generateTaskId();
+      const gantt = {
+        id: ganttId, kind: 'gantt', title: '第1ステップ', blueprintId: bpId,
+        taskIds: [], startDate: null, endDate: null, achieved: false, achievedAt: null,
+        progressMode: 'auto', progressManual: null, emoji: '🏰',
+        createdAt: new Date().toISOString()
+      };
+      allTasks.push(gantt);
+      // 残りの行をタスクとして生成し工程に紐づける
+      const today = getLocalDateStr(new Date());
+      taskLines.forEach(function(line) {
+        if (!line) return;
+        const task = { id: generateTaskId(), kind: 'task', text: line, date: today,
+          section: 1, completed: false, done: false, displayScope: 'daily_only',
+          createdAt: new Date().toISOString() };
+        allTasks.push(task);
+        gantt.taskIds.push(task.id);
+      });
+      // 雑記帳アイテムを削除
+      const delIdx = allTasks.findIndex(function(x){ return x.id === item.id; });
+      if (delIdx !== -1) allTasks.splice(delIdx, 1);
+      saveAllTasks();
+      renderScratchView();
+      showToast('🏰 造営に登録しました', {type:'success'});
+      setTimeout(function(){
+        if (allSettings.ui.gantEnabled) {
+          switchView('gant');
+          setTimeout(function(){ selectGantBlueprint(bpId); }, 300);
+        }
+      }, 300);
+    }
     function saveScratchItemAsJournal(text, item) {
       const t = (text || '').trim();
       if (!t) return;
