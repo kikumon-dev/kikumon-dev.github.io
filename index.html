@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.34.79';
+    const APP_VERSION = 'v0.34.93';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -3033,7 +3033,9 @@
         <div class="scratch-input-dot" id="scratchInputDot"></div>
         <textarea class="scratch-input" id="scratchInput" placeholder="なんでも…" rows="1"></textarea>
       </div>
-
+      <div style="padding:8px 16px 4px;">
+        <button onclick="openAiPlanModal()" style="width:100%;padding:10px;background:linear-gradient(135deg,#a78bfa,#6d28d9);color:#fff;border:none;border-radius:10px;font-size:0.85em;font-weight:700;cursor:pointer;letter-spacing:0.03em;">✨ AIに計画を作ってもらう</button>
+      </div>
     </div>
   </div>
   <div class="container">
@@ -16757,8 +16759,26 @@ function copyDeckCodeFromModal() {
   <div id="tutorialSplash" style="max-width:390px;width:92%;margin:0 auto;position:relative;">
     <div id="_ycCard" style="background:#1a1a2e;border-radius:20px;color:#fff;box-shadow:0 0 50px rgba(255,215,0,0.15);overflow:hidden;width:100%;box-sizing:border-box;">
 
-      <!-- slide 0: MISSION -->
+      <!-- slide -1: キャッチコピー -->
       <div id="_ycS0" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 24px 28px;box-sizing:border-box;width:100%;">
+        <div style="font-size:3em;animation:_ycFloat 4.5s ease-in-out infinite,_ycBurst 1.1s cubic-bezier(0.16,1,0.3,1) both;">🏰</div>
+        <div style="font-size:1.08em;font-weight:800;color:#ffd700;letter-spacing:0.1em;margin:16px 0 6px;animation:_ycGlow 4.5s ease-in-out infinite,_ycFadeUp 1.2s 0.5s cubic-bezier(0.16,1,0.3,1) both;opacity:0;">やることクラフト</div>
+        <div style="width:50px;height:1px;background:linear-gradient(90deg,transparent,#ffd700,transparent);margin:12px auto 20px;animation:_ycFadeIn 1.2s 1.0s ease both;opacity:0;"></div>
+        <div style="font-size:1.1em;font-weight:800;color:#fff;line-height:1.9;animation:_ycReveal 1.4s 1.3s cubic-bezier(0.16,1,0.3,1) both;opacity:0;">
+          夢と、今日が<span style="color:#ffd700;">つながる。</span>
+        </div>
+        <div style="font-size:0.88em;color:#a78bfa;font-weight:700;margin-top:8px;animation:_ycReveal 1.4s 1.8s cubic-bezier(0.16,1,0.3,1) both;opacity:0;">
+          あなたの王国が、動き出す。
+        </div>
+        <div style="margin-top:16px;animation:_ycFadeIn 1.2s 2.3s ease both;opacity:0;">
+          <div style="font-size:0.78em;color:#888;line-height:2.0;">ぜんぶ、一本の線になる。</div>
+          <div style="font-size:0.78em;color:#888;line-height:2.0;">小さく始めて、大きくつながる。</div>
+        </div>
+        <button onclick="_ycGoSlide(1)" style="margin-top:28px;background:linear-gradient(135deg,#ffd700,#ffaa00);border:none;border-radius:30px;color:#7a4800;font-size:0.88em;font-weight:800;padding:11px 32px;cursor:pointer;box-shadow:0 4px 18px rgba(255,215,0,0.35);animation:_ycFadeUp 1.1s 2.9s ease both;opacity:0;">つぎへ →</button>
+      </div>
+
+      <!-- slide 1: MISSION -->
+      <div id="_ycS1" style="display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 24px 28px;box-sizing:border-box;width:100%;">
         <div style="font-size:3em;animation:_ycFloat 4.5s ease-in-out infinite,_ycBurst 1.1s cubic-bezier(0.16,1,0.3,1) both;">🏰</div>
         <div style="font-size:1.08em;font-weight:800;color:#ffd700;letter-spacing:0.1em;margin:16px 0 6px;animation:_ycGlow 4.5s ease-in-out infinite,_ycFadeUp 1.2s 0.5s cubic-bezier(0.16,1,0.3,1) both;opacity:0;">やることクラフト</div>
         <div style="font-size:0.68em;color:#888;font-weight:700;letter-spacing:0.16em;margin-bottom:18px;animation:_ycFadeIn 1.2s 1.0s ease both;opacity:0;">MISSION</div>
@@ -16770,11 +16790,11 @@ function copyDeckCodeFromModal() {
         <div style="font-size:0.9em;color:#f0f0f0;font-weight:500;margin-top:10px;line-height:1.9;animation:_ycReveal 1.4s 2.2s cubic-bezier(0.16,1,0.3,1) both;opacity:0;">
           その創造物で、<br>みんなで遊ぼう。
         </div>
-        <button onclick="_ycGoSlide(1)" style="margin-top:28px;background:linear-gradient(135deg,#ffd700,#ffaa00);border:none;border-radius:30px;color:#7a4800;font-size:0.88em;font-weight:800;padding:11px 32px;cursor:pointer;box-shadow:0 4px 18px rgba(255,215,0,0.35);animation:_ycFadeUp 1.1s 2.9s ease both;opacity:0;">つぎへ →</button>
+        <button onclick="_ycGoSlide(2)" style="margin-top:28px;background:linear-gradient(135deg,#ffd700,#ffaa00);border:none;border-radius:30px;color:#7a4800;font-size:0.88em;font-weight:800;padding:11px 32px;cursor:pointer;box-shadow:0 4px 18px rgba(255,215,0,0.35);animation:_ycFadeUp 1.1s 2.9s ease both;opacity:0;">つぎへ →</button>
       </div>
 
-      <!-- slide 1: VISION -->
-      <div id="_ycS1" style="display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 24px 28px;box-sizing:border-box;width:100%;">
+      <!-- slide 2: VISION -->
+      <div id="_ycS2" style="display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 24px 28px;box-sizing:border-box;width:100%;">
         <div style="font-size:2.6em;animation:_ycFloat 5s ease-in-out infinite,_ycBurst 1.1s cubic-bezier(0.16,1,0.3,1) both;">🎨</div>
         <div style="font-size:0.68em;color:#888;font-weight:700;letter-spacing:0.16em;margin:14px 0 8px;animation:_ycFadeIn 1.2s 0.5s ease both;opacity:0;">VISION</div>
         <div style="width:50px;height:1px;background:linear-gradient(90deg,transparent,#a78bfa,transparent);margin-bottom:24px;animation:_ycFadeIn 1.2s 0.9s ease both;opacity:0;"></div>
@@ -16783,11 +16803,11 @@ function copyDeckCodeFromModal() {
           <span style="color:#a78bfa;font-weight:700;">めぐりめぐって</span><br>
           誰かの明日を<span style="color:#ffd700;font-weight:700;">輝かす。</span>
         </div>
-        <button onclick="_ycGoSlide(2)" style="margin-top:32px;background:linear-gradient(135deg,#a78bfa,#4facfe);border:none;border-radius:30px;color:#fff;font-size:0.88em;font-weight:800;padding:11px 32px;cursor:pointer;box-shadow:0 4px 18px rgba(167,139,250,0.35);animation:_ycFadeUp 1.1s 2.4s ease both;opacity:0;">つぎへ →</button>
+        <button onclick="_ycGoSlide(3)" style="margin-top:32px;background:linear-gradient(135deg,#a78bfa,#4facfe);border:none;border-radius:30px;color:#fff;font-size:0.88em;font-weight:800;padding:11px 32px;cursor:pointer;box-shadow:0 4px 18px rgba(167,139,250,0.35);animation:_ycFadeUp 1.1s 2.4s ease both;opacity:0;">つぎへ →</button>
       </div>
 
-      <!-- slide 2: VALUES -->
-      <div id="_ycS2" style="display:none;flex-direction:column;align-items:center;padding:28px 20px 20px;box-sizing:border-box;width:100%;">
+      <!-- slide 3: VALUES -->
+      <div id="_ycS3" style="display:none;flex-direction:column;align-items:center;padding:28px 20px 20px;box-sizing:border-box;width:100%;">
         <div style="font-size:2.2em;text-align:center;margin-bottom:6px;animation:_ycFloat 4.5s ease-in-out infinite,_ycBurst 1.1s cubic-bezier(0.16,1,0.3,1) both;">🌟</div>
         <div style="font-size:0.68em;color:#888;font-weight:700;letter-spacing:0.16em;margin-bottom:14px;text-align:center;animation:_ycFadeIn 1.1s 0.3s ease both;opacity:0;">VALUES</div>
         <div style="width:100%;display:flex;flex-direction:column;gap:8px;">
@@ -16804,11 +16824,11 @@ function copyDeckCodeFromModal() {
             <div style="font-size:0.75em;color:#ccc;line-height:1.6;">自分の創造物を、誰かへ。<br>渡したとき、王国はもっと豊かになる。</div>
           </div>
         </div>
-        <button onclick="_ycGoSlide(3)" style="margin-top:16px;background:linear-gradient(135deg,#a78bfa,#4facfe);border:none;border-radius:30px;color:#fff;font-size:0.88em;font-weight:800;padding:10px 0;cursor:pointer;width:100%;box-shadow:0 4px 16px rgba(167,139,250,0.3);animation:_ycFadeUp 1.1s 2.2s ease both;opacity:0;">つぎへ →</button>
+        <button onclick="_ycGoSlide(4)" style="margin-top:16px;background:linear-gradient(135deg,#a78bfa,#4facfe);border:none;border-radius:30px;color:#fff;font-size:0.88em;font-weight:800;padding:10px 0;cursor:pointer;width:100%;box-shadow:0 4px 16px rgba(167,139,250,0.3);animation:_ycFadeUp 1.1s 2.2s ease both;opacity:0;">つぎへ →</button>
       </div>
 
-      <!-- slide 3: TRUE VALUES -->
-      <div id="_ycS3" style="display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:36px 24px 28px;box-sizing:border-box;width:100%;position:relative;">
+      <!-- slide 4: TRUE VALUES -->
+      <div id="_ycS4" style="display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:36px 24px 28px;box-sizing:border-box;width:100%;position:relative;">
 
         <!-- くす玉コンフェッティ（ボタン押下後に出現） -->
         <div id="_ycCrackerWrap" style="position:absolute;top:30%;left:50%;transform:translateX(-50%);pointer-events:none;display:none;">
@@ -17089,7 +17109,7 @@ function _ycGoSlide(n) {
       var dots=document.getElementById('_ycDots');
       if(!dots) return;
       dots.innerHTML='';
-      for(var i=0;i<4;i++){
+      for(var i=0;i<5;i++){
         var d=document.createElement('div');
         d.style.cssText='width:'+(i===active?'20':'8')+'px;height:8px;border-radius:4px;background:'+(i===active?'#ffd700':'rgba(255,255,255,0.25)')+';transition:all 0.3s;cursor:pointer;flex-shrink:0;';
         (function(idx){ d.onclick=function(){ _ycGoSlide(idx); }; })(i);
@@ -17106,30 +17126,69 @@ function _ycGoSlide(n) {
   <div id="_ycWelcomeAnim" style="position:fixed;inset:0;pointer-events:none;z-index:99999;display:none;"></div>
   <div style="overflow-y:auto;overflow-x:hidden;padding:28px 24px;-webkit-overflow-scrolling:touch;flex:1;">
     <div style="font-size:2em;text-align:center;margin-bottom:4px;">🏰</div>
-    <h2 style="text-align:center;color:#ffd700;font-size:1.1em;margin:0 0 6px 0;letter-spacing:0.05em;">王国へようこそ。</h2>
-    <div style="text-align:center;font-size:0.82em;color:#aaa;margin-bottom:20px;">まず、遊ぶように始めよう。</div>
+    <h2 style="text-align:center;color:#ffd700;font-size:1.1em;margin:0 0 4px 0;letter-spacing:0.05em;">王国へようこそ。</h2>
+    <div style="text-align:center;font-size:0.88em;color:#a78bfa;font-weight:700;margin-bottom:4px;">夢と、今日がつながる。</div>
+    <div style="text-align:center;font-size:0.75em;color:#666;margin-bottom:20px;">小さく始めて、大きくつながる。</div>
     <div style="margin-bottom:16px;">
       <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;">
         <div style="background:#4facfe;color:#fff;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.85em;flex-shrink:0;">1</div>
         <div>
-          <div style="font-weight:bold;color:#4facfe;margin-bottom:2px;">やることを、ひとつ入れてみて</div>
-          <div style="font-size:0.85em;color:#ccc;">タスクは全部、王国の素材になるよ！</div>
+          <div style="font-weight:bold;color:#4facfe;margin-bottom:2px;">✏️ まず、雑記帳に書き出してみてね</div>
+          <div style="font-size:0.85em;color:#ccc;">頭の中にあること、なんでも。完璧じゃなくていいよ。</div>
         </div>
       </div>
       <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;">
         <div style="background:#ffd700;color:#1a1a2e;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.85em;flex-shrink:0;">2</div>
         <div>
-          <div style="font-weight:bold;color:#ffd700;margin-bottom:2px;">こなすたびに、王国が育っていく</div>
-          <div style="font-size:0.85em;color:#ccc;">完了したら、クリックで線が引けるよ！</div>
+          <div style="font-weight:bold;color:#ffd700;margin-bottom:2px;">☑️ やったら完了にしてみてね</div>
+          <div style="font-size:0.85em;color:#ccc;">タスクをタップするだけ。こなすたびに王国が育っていくよ。</div>
         </div>
       </div>
       <div style="display:flex;gap:12px;align-items:flex-start;">
         <div style="background:#a78bfa;color:#fff;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.85em;flex-shrink:0;">3</div>
         <div>
-          <div style="font-weight:bold;color:#a78bfa;margin-bottom:2px;">いつの間にか、あなただけの王国ができてる</div>
-          <div style="font-size:0.85em;color:#ccc;">ちゃんとやれば、どんな仕事も王国の礎になる</div>
+          <div style="font-weight:bold;color:#a78bfa;margin-bottom:2px;">🏰 慣れてきたら、造営で計画を立ててみて</div>
+          <div style="font-size:0.85em;color:#ccc;">夢・志・工程・やること。4つがつながると、人生が一本の線になるよ。</div>
         </div>
       </div>
+    </div>
+    <!-- 4階層解説 -->
+    <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px;margin-bottom:16px;">
+      <div style="font-size:0.78em;color:#888;margin-bottom:10px;letter-spacing:0.05em;">📐 やることクラフトの4つのつながり</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-size:1em;">🎖️</div>
+          <div>
+            <div style="font-size:0.82em;font-weight:700;color:#e9d5ff;">グランドビジョン</div>
+            <div style="font-size:0.72em;color:#aaa;">大切にしたいこと。自分らしい人生の方向性。</div>
+          </div>
+        </div>
+        <div style="padding-left:12px;color:#555;font-size:0.75em;">↓</div>
+        <div style="display:flex;align-items:center;gap:8px;padding-left:8px;">
+          <div style="font-size:1em;">🏰</div>
+          <div>
+            <div style="font-size:0.82em;font-weight:700;color:#a78bfa;">志（こころざし）</div>
+            <div style="font-size:0.72em;color:#aaa;">叶えたいこと。例：英語を話せるようになりたい</div>
+          </div>
+        </div>
+        <div style="padding-left:12px;color:#555;font-size:0.75em;">↓</div>
+        <div style="display:flex;align-items:center;gap:8px;padding-left:16px;">
+          <div style="font-size:1em;">🏗️</div>
+          <div>
+            <div style="font-size:0.82em;font-weight:700;color:#4facfe;">工程（ステップ）</div>
+            <div style="font-size:0.72em;color:#aaa;">どう進めるか。例：まず基礎固めから</div>
+          </div>
+        </div>
+        <div style="padding-left:12px;color:#555;font-size:0.75em;">↓</div>
+        <div style="display:flex;align-items:center;gap:8px;padding-left:24px;">
+          <div style="font-size:1em;">✅</div>
+          <div>
+            <div style="font-size:0.82em;font-weight:700;color:#ffd700;">やること（タスク）</div>
+            <div style="font-size:0.72em;color:#aaa;">今日、具体的に何をするか。</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:10px;font-size:0.75em;color:#666;line-height:1.6;">最初はタスクだけでOK。慣れてきたら、上に積み上げていけばいいよ。</div>
     </div>
     <div style="border-top:1px solid rgba(255,255,255,0.15);margin:16px 0 12px;"></div>
     <div id="librarySection">
@@ -17144,10 +17203,10 @@ function _ycGoSlide(n) {
             <button onclick="_ycShowMVVSplash()" style="width:100%;text-align:left;background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);border-radius:8px;padding:8px 12px;color:#ffd700;font-size:0.85em;font-weight:bold;cursor:pointer;">✨ やることクラフトをもっと知る</button>
           </div>
           <div style="margin-bottom:6px;">
-            <button onclick="hideTutorial();setTimeout(function(){switchView('daily');setTimeout(function(){switchDailyTab('scratch');setTimeout(showScratchOnboarding,300);},200);},200);" style="width:100%;text-align:left;background:rgba(79,172,254,0.08);border:1px solid rgba(79,172,254,0.25);border-radius:8px;padding:8px 12px;color:#4facfe;font-size:0.85em;font-weight:bold;cursor:pointer;">✏️ 雑記帳の使い方</button>
+            <button onclick="hideTutorial();allSettings.flags.scratchTourSeen=true;saveAllSettings();setTimeout(function(){switchView('daily');setTimeout(function(){switchDailyTab('scratch');setTimeout(showScratchOnboarding,300);},200);},200);" style="width:100%;text-align:left;background:rgba(79,172,254,0.08);border:1px solid rgba(79,172,254,0.25);border-radius:8px;padding:8px 12px;color:#4facfe;font-size:0.85em;font-weight:bold;cursor:pointer;">✏️ 雑記帳の使い方</button>
           </div>
           <div style="margin-bottom:6px;">
-            <button onclick="hideTutorial();setTimeout(function(){switchView('journal');setTimeout(showJournalOnboarding,300);},200);" style="width:100%;text-align:left;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.25);border-radius:8px;padding:8px 12px;color:#a78bfa;font-size:0.85em;font-weight:bold;cursor:pointer;">📖 日誌の使い方</button>
+            <button onclick="hideTutorial();allSettings.flags.journalTourSeen=true;saveAllSettings();setTimeout(function(){switchView('journal');setTimeout(showJournalOnboarding,300);},200);" style="width:100%;text-align:left;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.25);border-radius:8px;padding:8px 12px;color:#a78bfa;font-size:0.85em;font-weight:bold;cursor:pointer;">📖 日誌の使い方</button>
           </div>
           <div style="margin-bottom:6px;">
             <button onclick="toggleAbout('aboutPhilosophy')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#81c784;font-size:0.85em;font-weight:bold;cursor:pointer;">🌿 やることクラフトが大切にしていること</button>
@@ -18494,43 +18553,46 @@ document.addEventListener('DOMContentLoaded', function() {
     function promoteScratchToGant(text, item) {
       const t = (text || '').trim();
       if (!t) return;
-      // 改行・全角スペース・「実行手順：」などのラベルで分割
+      // 改行・全角スペースで分割
       const lines = t.split(/[\n　]/)
-        .map(function(l){ return l.replace(/^[\d]+[\.．、。\)）\]】]\s*/, '').replace(/^(目標|手段|装備|実行手順)[：:]\s*/, '').trim(); })
+        .map(function(l){ return l.replace(/^[\d]+[\.．、。\)）\]】]\s*/, '').trim(); })
         .filter(Boolean);
       const bpTitle = lines[0].slice(0, 30);
-      const taskLines = lines.slice(1);
+      // 開始・終了・時刻をパース
+      var startDate = null, endDate = null, startTime = '', endTime = '';
+      var taskLines = [];
+      lines.slice(1).forEach(function(l) {
+        var mStart = l.match(/^開始[：:]\s*(\d{4}-\d{2}-\d{2})(?:\s*(\d{2}:\d{2}))?/);
+        var mEnd   = l.match(/^終了[：:]\s*(\d{4}-\d{2}-\d{2})(?:\s*(\d{2}:\d{2}))?/);
+        if (mStart) { startDate = mStart[1]; if (mStart[2]) startTime = mStart[2]; }
+        else if (mEnd) { endDate = mEnd[1]; if (mEnd[2]) endTime = mEnd[2]; }
+        else taskLines.push(l.replace(/^(目標|手段|装備|実行手順)[：:]\s*/, '').trim());
+      });
+      taskLines = taskLines.filter(Boolean);
       // 志（blueprint）を作成
       const bpId = generateTaskId();
-      const bp = {
-        id: bpId, kind: 'blueprint', title: bpTitle, vision: '', color: '#a78bfa',
-        startDate: null, endDate: null, createdAt: new Date().toISOString()
-      };
+      const bp = { id: bpId, kind: 'blueprint', title: bpTitle, vision: '', color: '#a78bfa',
+        startDate: startDate, endDate: endDate, order: getBlueprints().length, createdAt: new Date().toISOString() };
       allTasks.push(bp);
       // 工程（gantt）を作成
-      const ganttId = generateTaskId();
-      const gantt = {
-        id: ganttId, kind: 'gantt', title: '第1ステップ', blueprintId: bpId,
-        taskIds: [], startDate: null, endDate: null, achieved: false, achievedAt: null,
-        progressMode: 'auto', progressManual: null, emoji: '🏰',
-        createdAt: new Date().toISOString()
-      };
+      const gantt = { id: generateTaskId(), kind: 'gantt', title: '第1ステップ', blueprintId: bpId,
+        taskIds: [], startDate: startDate, endDate: endDate,
+        startTime: startTime, endTime: endTime,
+        achieved: false, achievedAt: null,
+        progressMode: 'auto', progressManual: null, emoji: '🏰', createdAt: new Date().toISOString() };
       allTasks.push(gantt);
       // 残りの行をタスクとして生成し工程に紐づける
       const today = getLocalDateStr(new Date());
       taskLines.forEach(function(line) {
         if (!line) return;
-        const task = { id: generateTaskId(), kind: 'task', text: line, date: today,
+        const task = { id: generateTaskId(), kind: 'task', text: line, date: startDate || today,
           section: 1, completed: false, done: false, displayScope: 'daily_only',
           createdAt: new Date().toISOString() };
         allTasks.push(task);
         gantt.taskIds.push(task.id);
       });
-      // 雑記帳アイテムを削除
-      const delIdx = allTasks.findIndex(function(x){ return x.id === item.id; });
-      if (delIdx !== -1) allTasks.splice(delIdx, 1);
+      // 雑記帳アイテムは削除しない（メモとして残す）
       saveAllTasks();
-      renderScratchView();
       showToast('🏰 造営に登録しました', {type:'success'});
       setTimeout(function(){
         if (allSettings.ui.gantEnabled) {
@@ -18538,6 +18600,110 @@ document.addEventListener('DOMContentLoaded', function() {
           setTimeout(function(){ selectGantBlueprint(bpId); }, 300);
         }
       }, 300);
+    }
+    function openAiPlanModal() {
+      var overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+      var box = document.createElement('div');
+      box.style.cssText = 'background:#fff;border-radius:16px;padding:24px 20px;width:92vw;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.18);max-height:90vh;overflow-y:auto;';
+      box.innerHTML = '<div style="font-size:1em;font-weight:700;color:#333;margin-bottom:6px;">✨ AIに計画を作ってもらう</div>'
+        + '<div style="font-size:0.78em;color:#888;margin-bottom:10px;">やりたいことを入力してプロンプトをコピー→ChatGPTやClaudeに貼り付けてください</div>'
+        + '<div style="font-size:0.8em;color:#666;margin-bottom:4px;">やりたいこと</div>'
+        + '<input id="aiPlanInput" type="text" placeholder="例：部屋を片付ける、英語上達" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:0.9em;box-sizing:border-box;margin-bottom:10px;">'
+        + '<div style="display:flex;gap:8px;margin-bottom:10px;">'
+        + '<div style="flex:1;"><div style="font-size:0.8em;color:#666;margin-bottom:4px;">開始日</div><input id="aiPlanStart" type="date" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:0.85em;box-sizing:border-box;"></div>'
+        + '<div style="flex:1;"><div style="font-size:0.8em;color:#666;margin-bottom:4px;">終了日</div><input id="aiPlanEnd" type="date" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:0.85em;box-sizing:border-box;"></div>'
+        + '</div>'
+        + '<div style="display:flex;gap:8px;margin-bottom:10px;">'
+        + '<div style="flex:1;"><div style="font-size:0.8em;color:#666;margin-bottom:4px;">開始時刻</div><select id="aiPlanStartH" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:0.85em;box-sizing:border-box;">'
+        + Array.from({length:24},function(_,i){ return '<option value="'+i+'">'+(i<10?'0':'')+i+':00</option>'; }).join('')
+        + '</select></div>'
+        + '<div style="flex:1;"><div style="font-size:0.8em;color:#666;margin-bottom:4px;">終了時刻</div><select id="aiPlanEndH" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:0.85em;box-sizing:border-box;">'
+        + Array.from({length:24},function(_,i){ return '<option value="'+i+'">'+(i<10?'0':'')+i+':00</option>'; }).join('')
+        + '</select></div>'
+        + '</div>'
+        + '<div style="background:#f8f6ff;border:1px solid #e9d5ff;border-radius:8px;padding:12px;margin-bottom:12px;font-size:0.78em;color:#555;line-height:1.6;white-space:pre-wrap;" id="aiPlanPreview">やりたいことを入力すると、プロンプトが生成されます</div>'
+        + '<div style="font-size:0.75em;color:#bbb;margin-bottom:8px;padding:8px;background:#f9f9f9;border-radius:8px;line-height:1.6;">💡 各タスクの時刻は自動で入りません。造営に登録した後、タスクの ✏️ を押して時刻を入れてください。</div>'
+        + '<div style="display:flex;gap:8px;margin-bottom:8px;">'
+        + '<button id="aiPlanCloseBtn" style="flex:1;padding:10px;background:#f0f0f0;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;">閉じる</button>'
+        + '<button id="aiPlanCopyBtn" style="flex:1;padding:10px;background:linear-gradient(135deg,#a78bfa,#6d28d9);color:#fff;border:none;border-radius:8px;font-size:0.9em;font-weight:700;cursor:pointer;">📋 コピー</button>'
+        + '</div>'
+        + '<div style="font-size:0.75em;color:#aaa;text-align:center;">コピー後、AIに貼り付けて返答をそのまま雑記帳に貼ってください</div>';
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
+      overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
+      document.getElementById('aiPlanCloseBtn').addEventListener('click', function(){ overlay.remove(); });
+      var input = document.getElementById('aiPlanInput');
+      if (input) {
+        input.focus();
+        input.addEventListener('input', function(){ updateAiPlanPreview(this.value); });
+      }
+      document.getElementById('aiPlanCopyBtn').addEventListener('click', copyAiPlanPrompt);
+      // 今日の日付・現在時刻をデフォルトに
+      var today = getLocalDateStr(new Date());
+      var nowH = new Date().getHours();
+      var startEl = document.getElementById('aiPlanStart');
+      var endEl   = document.getElementById('aiPlanEnd');
+      var startHEl = document.getElementById('aiPlanStartH');
+      var endHEl   = document.getElementById('aiPlanEndH');
+      if (startEl) startEl.value = today;
+      if (endEl)   endEl.value   = today;
+      if (startHEl) startHEl.value = nowH;
+      if (endHEl)   endHEl.value   = Math.min(nowH + 1, 23);
+      // 時刻変更時もプレビュー更新
+      [startHEl, endHEl, startEl, endEl].forEach(function(el){
+        if (el) el.addEventListener('change', function(){ updateAiPlanPreview(document.getElementById('aiPlanInput').value); });
+      });
+    }
+
+    function updateAiPlanPreview(goal) {
+      var preview = document.getElementById('aiPlanPreview');
+      if (!preview) return;
+      if (!goal.trim()) {
+        preview.textContent = 'やりたいことを入力すると、プロンプトが生成されます';
+        return;
+      }
+      var start   = (document.getElementById('aiPlanStart')||{}).value  || '';
+      var end     = (document.getElementById('aiPlanEnd')||{}).value    || '';
+      var startH  = (document.getElementById('aiPlanStartH')||{}).value;
+      var endH    = (document.getElementById('aiPlanEndH')||{}).value;
+      preview.textContent = _buildAiPlanPrompt(goal.trim(), start, end, startH, endH);
+    }
+
+    function _buildAiPlanPrompt(goal, start, end, startH, endH) {
+      var period = '';
+      var sh = startH !== undefined && startH !== '' ? (startH<10?'0':'')+startH+':00' : '';
+      var eh = endH   !== undefined && endH   !== '' ? (endH  <10?'0':'')+endH  +':00' : '';
+      if (start) period += '\n開始：' + start + (sh ? ' ' + sh : '');
+      if (end)   period += '\n終了：' + end   + (eh ? ' ' + eh : '');
+      return 'やりたいこと：' + goal + period + '\n\n以下の形式だけで返答してください。説明・前置き・番号は不要です。\n\n1行目：やりたいことの名前（20文字以内）\n2行目以降：そのためにやること（1行1つ・3〜5件）';
+    }
+
+    function copyAiPlanPrompt() {
+      var input   = document.getElementById('aiPlanInput');
+      var goal    = (input ? input.value : '').trim();
+      if (!goal) { showToast('やりたいことを入力してください', {type:'warn'}); return; }
+      var start   = (document.getElementById('aiPlanStart')||{}).value  || '';
+      var end     = (document.getElementById('aiPlanEnd')||{}).value    || '';
+      var startH  = (document.getElementById('aiPlanStartH')||{}).value;
+      var endH    = (document.getElementById('aiPlanEndH')||{}).value;
+      var prompt  = _buildAiPlanPrompt(goal, start, end, startH, endH);
+      var btn = document.getElementById('aiPlanCopyBtn');
+      function done() {
+        if (btn) { btn.textContent = '✅ コピー済み'; setTimeout(function(){ btn.textContent = '📋 コピー'; }, 2000); }
+        showToast('📋 プロンプトをコピーしました', {type:'success'});
+      }
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(prompt).then(done).catch(function(){
+          var ta = document.createElement('textarea');
+          ta.value = prompt; document.body.appendChild(ta); ta.select();
+          document.execCommand('copy'); document.body.removeChild(ta); done();
+        });
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = prompt; document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); document.body.removeChild(ta); done();
+      }
     }
     function saveScratchItemAsJournal(text, item) {
       const t = (text || '').trim();
