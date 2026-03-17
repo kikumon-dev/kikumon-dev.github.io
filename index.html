@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.34.75';
+    const APP_VERSION = 'v0.34.77';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -10964,25 +10964,57 @@ function myDeckApply(idx) {
       reader.onload = function(e) {
         try {
           const data = JSON.parse(e.target.result);
-          // ① セットアップ未完了チェック
           const currentCalsCheck = JSON.parse(localStorage.getItem('calendars') || '[]');
           if (currentCalsCheck.length === 0) {
-            showToast('⚠️ 先にカレンダーをセットアップしてください。\n画面を更新してカレンダーを作成してから再度インポートしてください。', {type:'warn'});
+            showToast('⚠️ 先にカレンダーをセットアップしてください。', {type:'warn'});
             event.target.value = '';
             return;
           }
           const tasksData = data.tasks || data.allTasks;
           if (!tasksData || !Array.isArray(tasksData)) throw new Error('タスクデータが見つかりません');
-          // ③ 完了タスクを含めるか確認
-          const includeCompleted = true; // showChoiceModalで分岐（下記）
-          // ※ iOS対応：confirm廃止。完了タスクも含めて復元する（全件復元）
+          // モード選択モーダルを出す
+          const overlay = document.createElement('div');
+          overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;';
+          overlay.innerHTML = `
+            <div style="background:#fff;border-radius:16px;padding:24px 20px;width:92vw;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+              <div style="font-size:1em;font-weight:700;color:#333;margin-bottom:8px;">📥 インポートモード</div>
+              <div style="font-size:0.82em;color:#888;margin-bottom:16px;">ファイル：${file.name}（${tasksData.length}件）</div>
+              <button id="importMergeBtn" style="width:100%;padding:12px;background:#4facfe;color:#fff;border:none;border-radius:10px;font-size:0.9em;font-weight:700;cursor:pointer;margin-bottom:8px;">
+                ➕ マージ（新しいデータだけ追加）
+              </button>
+              <div style="font-size:0.75em;color:#aaa;margin-bottom:12px;padding:0 4px;">同じIDのデータは更新日時で比較して新しい方を残します</div>
+              <button id="importOverwriteBtn" style="width:100%;padding:12px;background:#fff;border:1.5px solid #f66;color:#f66;border-radius:10px;font-size:0.9em;font-weight:700;cursor:pointer;margin-bottom:8px;">
+                🔄 完全上書き（既存データを全て置き換え）
+              </button>
+              <div style="font-size:0.75em;color:#aaa;margin-bottom:16px;padding:0 4px;">⚠️ 今の本番データは消えます。テスト環境のデータで完全に置き換えます</div>
+              <button onclick="this.closest('div[style*=fixed]').remove()" style="width:100%;padding:10px;background:#f0f0f0;border:none;border-radius:10px;font-size:0.9em;cursor:pointer;">キャンセル</button>
+            </div>`;
+          document.body.appendChild(overlay);
+          overlay.addEventListener('click', function(ev){ if(ev.target===overlay) overlay.remove(); });
+
+          function _doImport(overwrite) {
+            overlay.remove();
+            _execImport(data, tasksData, file, event, overwrite);
+          }
+          document.getElementById('importMergeBtn').onclick = function(){ _doImport(false); };
+          document.getElementById('importOverwriteBtn').onclick = function(){ _doImport(true); };
+        } catch (err) {
+          showToast('インポートエラー: ' + err.message, {type:'error'});
+          event.target.value = '';
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function _execImport(data, tasksData, file, event, overwrite) {
+      try {
+          const includeCompleted = true;
           let _invalidCount = 0;
-          // task以外のkind：taskバリデーション（text/section/date）をスキップして全件通す
           const _NON_TASK_KINDS = ['note', 'journal', 'thought', 'scratch', 'blueprint', 'gantt',
             'dailyStatus', 'family', 'deckHistory', 'myDeck', 'guildLicense', 'stamp', 'grandvision'];
           const validTasks = tasksData.filter(task => {
             if (!task.id || typeof task.id !== 'string') { _invalidCount++; return false; }
-            if (_NON_TASK_KINDS.includes(task.kind)) return true; // 非タスクkindはそのまま通す
+            if (_NON_TASK_KINDS.includes(task.kind)) return true;
             if (task.kind === 'task' || !task.kind) {
               if (!task.text || typeof task.text !== 'string') { _invalidCount++; return false; }
               if (!task.section || ![1,2,3,4].includes(task.section)) { _invalidCount++; return false; }
@@ -10992,7 +11024,6 @@ function myDeckApply(idx) {
             return true;
           });
           if (validTasks.length === 0) throw new Error('有効なタスクがありません');
-          // 旧固定ID（work, private等）の名前マップ
           const LEGACY_NAME_MAP = {
             'work': '仕事', 'school': '学校', 'private': 'プライベート',
             'partner': 'パートナー', 'child1': '長男', 'child2': '長女',
@@ -11003,112 +11034,87 @@ function myDeckApply(idx) {
             'cal-default-project1': 'プロジェクト1', 'cal-default-project2': 'プロジェクト2',
             'cal-default-memo': 'メモ'
           };
-          // 自分のカレンダー：名前→IDのマップ
           const currentCals = JSON.parse(localStorage.getItem('calendars') || '[]');
           const nameToId = {};
           currentCals.forEach(function(c) { nameToId[c.name] = c.id; });
-          // 送り主のカレンダー：ID→名前のマップ（エクスポートに含まれるcalendars）
           const senderIdToName = {};
           if (data.calendars && Array.isArray(data.calendars)) {
             data.calendars.forEach(function(c) { senderIdToName[c.id] = c.name; });
           }
-          // タスクのcalendarIdを自分のIDに変換
           let _importUnmatchedCount = 0;
           let _importFallbackCalName = '';
           const fixedTasks = validTasks.map(function(t) {
             if (!t.calendarId) return t;
-            // ① 旧固定IDの場合
             const legacyName = LEGACY_NAME_MAP[t.calendarId];
-            if (legacyName && nameToId[legacyName]) {
-              return Object.assign({}, t, { calendarId: nameToId[legacyName] });
-            }
-            // ② 送り主のUUIDと自分のUUIDが違う場合→名前で突合
+            if (legacyName && nameToId[legacyName]) return Object.assign({}, t, { calendarId: nameToId[legacyName] });
             if (senderIdToName[t.calendarId]) {
               const calName = senderIdToName[t.calendarId];
-              if (nameToId[calName]) {
-                return Object.assign({}, t, { calendarId: nameToId[calName] });
-              }
+              if (nameToId[calName]) return Object.assign({}, t, { calendarId: nameToId[calName] });
             }
-            // ③ 自分に同じIDがあればそのまま
-            if (currentCals.find(function(c) { return c.id === t.calendarId; })) {
-              return t;
-            }
-            // ④ どれにも該当しない→エクスポートのcalendarsから自動追加
+            if (currentCals.find(function(c) { return c.id === t.calendarId; })) return t;
             if (senderIdToName[t.calendarId]) {
-              // 送り主のカレンダー情報がある → 自動追加
               const calToAdd = data.calendars.find(function(c) { return c.id === t.calendarId; });
               if (calToAdd && !currentCals.find(function(c) { return c.id === calToAdd.id; })) {
                 currentCals.push({ id: calToAdd.id, name: calToAdd.name, color: calToAdd.color, visible: true, shareable: true });
                 localStorage.setItem('calendars', JSON.stringify(currentCals));
                 nameToId[calToAdd.name] = calToAdd.id;
               }
-              return t; // calendarIdそのまま使える
+              return t;
             }
-            // 完全に不明なID → 先頭カレンダーに割り当て＆警告
             _importUnmatchedCount = (_importUnmatchedCount || 0) + 1;
             if (!_importFallbackCalName && currentCals[0]) _importFallbackCalName = currentCals[0].name;
             return Object.assign({}, t, { calendarId: currentCals[0] ? currentCals[0].id : t.calendarId });
           });
-          // ⑤ 削除済みIDをスキップ
-          const myDeletedIds = new Set(JSON.parse(localStorage.getItem('deletedTaskIds') || '[]'));
-          const incomingDeletedIds = new Set(data.deletedIds || []);
-          const existingIds = new Set(allTasks.map(t => t.id));
-          const newTasks = fixedTasks.filter(t =>
-            !existingIds.has(t.id) && !myDeletedIds.has(t.id)
-          );
-          // ⑥ updatedAtで判定：自分の更新が新しければ上書きしない
-          fixedTasks.forEach(function(incoming) {
-            if (!existingIds.has(incoming.id)) return;
-            const existing = allTasks.find(t => t.id === incoming.id);
-            if (!existing) return;
-            const incomingTime = new Date(incoming.updatedAt || 0).getTime();
-            const existingTime = new Date(existing.updatedAt || 0).getTime();
-            if (incomingTime > existingTime) {
-              Object.assign(existing, incoming);
-            }
-          });
-          newTasks.forEach(function(t){ allTasks.push(t); });
-          // 相手のdeletedIdsを自分の削除リストにも反映
-          incomingDeletedIds.forEach(function(id) { myDeletedIds.add(id); });
-          localStorage.setItem('deletedTaskIds', JSON.stringify([...myDeletedIds]));
+
+          let _added = 0;
+          let _updated = 0;
+          if (overwrite) {
+            // 完全上書き：既存を消してインポートデータで置き換え
+            allTasks.length = 0;
+            fixedTasks.forEach(function(t){ allTasks.push(t); });
+            _added = fixedTasks.length;
+          } else {
+            // マージ
+            const myDeletedIds = new Set(JSON.parse(localStorage.getItem('deletedTaskIds') || '[]'));
+            const incomingDeletedIds = new Set(data.deletedIds || []);
+            const existingIds = new Set(allTasks.map(t => t.id));
+            const newTasks = fixedTasks.filter(t => !existingIds.has(t.id) && !myDeletedIds.has(t.id));
+            fixedTasks.forEach(function(incoming) {
+              if (!existingIds.has(incoming.id)) return;
+              const existing = allTasks.find(t => t.id === incoming.id);
+              if (!existing) return;
+              const incomingTime = new Date(incoming.updatedAt || 0).getTime();
+              const existingTime = new Date(existing.updatedAt || 0).getTime();
+              if (incomingTime > existingTime) { Object.assign(existing, incoming); _updated++; }
+            });
+            newTasks.forEach(function(t){ allTasks.push(t); });
+            _added = newTasks.length;
+            incomingDeletedIds.forEach(function(id) { myDeletedIds.add(id); });
+            localStorage.setItem('deletedTaskIds', JSON.stringify([...myDeletedIds]));
+          }
+
           saveAllTasks();
-          if (data.purpose) { allSettings.flags.purpose = data.purpose; }
-          if (data.stopCondition) { allSettings.flags.stopCondition = data.stopCondition; }
           if (data.settings) {
             allSettings = deepMergeSettings(JSON.parse(JSON.stringify(SETTINGS_DEFAULT)), data.settings);
           }
           saveAllSettings();
           if (data.calendars && Array.isArray(data.calendars)) {
-            // マージ方式：IDが同じなら更新、新しければ追加、自分固有のものは残す
             let myCals = JSON.parse(localStorage.getItem('calendars') || '[]');
             data.calendars.forEach(function(incoming) {
               const idx = myCals.findIndex(function(c) { return c.id === incoming.id; });
-              if (idx >= 0) {
-                myCals[idx] = Object.assign(myCals[idx], incoming); // 上書き更新
-              } else {
-                myCals.push(incoming); // 新規追加
-              }
+              if (idx >= 0) { myCals[idx] = Object.assign(myCals[idx], incoming); }
+              else { myCals.push(incoming); }
             });
             localStorage.setItem('calendars', JSON.stringify(myCals));
           }
-          const _matched = newTasks.length - _importUnmatchedCount;
-          let importMsg = `インポート完了！\n\n`;
-          importMsg += `✅ 成功：${_matched}件\n`;
-          if (_importUnmatchedCount > 0) {
-            importMsg += `⚠️ 先頭の「${_importFallbackCalName}」カレンダーに追加：${_importUnmatchedCount}件\n`;
-          }
-          if (_invalidCount > 0) {
-            importMsg += `❌ データ破損により失敗：${_invalidCount}件\n`;
-          }
-          importMsg += `\n合計：${tasksData.length}件中 ${newTasks.length}件を追加`;
-          showToast(importMsg, {type:'info'});
+          const modeLabel = overwrite ? '完全上書き' : 'マージ';
+          const afterCount = allTasks.length;
+          showToast(`📥 インポート完了（${modeLabel}）\n合計：${afterCount}件` + (overwrite ? `\n（上書き前：${afterCount + _added}件 → ${afterCount}件）` : `\n追加：${_added}件` + (_updated ? `　更新：${_updated}件` : '')), {type:'info', duration:8000});
           location.reload();
-        } catch (err) {
-          showToast(`インポートエラー: ${err.message}`, {type:'error'});
-        }
-        event.target.value = '';
-      };
-      reader.readAsText(file);
+      } catch (err) {
+        showToast('インポートエラー: ' + err.message, {type:'error'});
+      }
+      event.target.value = '';
     }
     // 色切り替え
     function toggleColors() {
