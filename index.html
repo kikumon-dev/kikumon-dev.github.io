@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.34.77';
+    const APP_VERSION = 'v0.34.79';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -11110,7 +11110,7 @@ function myDeckApply(idx) {
           const modeLabel = overwrite ? '完全上書き' : 'マージ';
           const afterCount = allTasks.length;
           showToast(`📥 インポート完了（${modeLabel}）\n合計：${afterCount}件` + (overwrite ? `\n（上書き前：${afterCount + _added}件 → ${afterCount}件）` : `\n追加：${_added}件` + (_updated ? `　更新：${_updated}件` : '')), {type:'info', duration:8000});
-          location.reload();
+          setTimeout(function(){ location.reload(); }, 8000);
       } catch (err) {
         showToast('インポートエラー: ' + err.message, {type:'error'});
       }
