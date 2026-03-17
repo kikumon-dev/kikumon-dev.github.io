@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.34.93';
+    const APP_VERSION = 'v0.35.00';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -7602,14 +7602,52 @@ function myDeckApply(idx) {
         allTasks.push({ id: gvId, kind:'grandvision', title, vision, emoji, color, order: gvs.length, createdAt: new Date().toISOString() });
       }
       // 全志のgrandvisionIdを更新
-      allTasks.filter(t => t.kind==='blueprint').forEach(function(bp){
-        if (checkedIds.includes(bp.id)) {
-          bp.grandvisionId = gvId;
-          if (!bp.vision) bp.vision = vision; // visionが空なら継承
-        } else if (bp.grandvisionId === gvId) {
-          bp.grandvisionId = null; // チェックを外したら解除
-        }
-      });
+      const linkedBps = allTasks.filter(t => t.kind==='blueprint' && checkedIds.includes(t.id));
+      const unlinkedBps = allTasks.filter(t => t.kind==='blueprint' && !checkedIds.includes(t.id) && t.grandvisionId === gvId);
+      // チェックを外した志は解除
+      unlinkedBps.forEach(function(bp){ bp.grandvisionId = null; });
+      // チェックした志のgrandvisionIdを更新
+      linkedBps.forEach(function(bp){ bp.grandvisionId = gvId; });
+
+      // visionが空の志は無条件で継承
+      const emptyVisionBps = linkedBps.filter(function(bp){ return !bp.vision; });
+      emptyVisionBps.forEach(function(bp){ bp.vision = vision; });
+
+      // visionが既にある志が存在する場合は選択モーダル
+      const hasVisionBps = linkedBps.filter(function(bp){ return bp.vision && vision; });
+      if (hasVisionBps.length > 0 && vision) {
+        saveAllTasks();
+        btn.closest('div[style*=fixed]').remove();
+        renderGrandVisionBar();
+        renderGantBlueprints();
+        showToast('🎖️ グランドビジョンを保存しました',{type:'success'});
+        // 選択モーダルを出す
+        var overlay2 = document.createElement('div');
+        overlay2.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+        var box2 = document.createElement('div');
+        box2.style.cssText = 'background:#fff;border-radius:16px;padding:24px 20px;width:92vw;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,0.18);';
+        box2.innerHTML = '<div style="font-size:1em;font-weight:700;color:#333;margin-bottom:8px;">🎖️ GVのビジョンが変わりました</div>'
+          + '<div style="font-size:0.82em;color:#888;margin-bottom:16px;">配下の志（' + hasVisionBps.length + '件）のビジョンをどうしますか？</div>'
+          + '<button id="gvVisionAppend" style="width:100%;padding:10px;background:#a78bfa;color:#fff;border:none;border-radius:8px;font-size:0.9em;font-weight:700;cursor:pointer;margin-bottom:8px;">追記する</button>'
+          + '<button id="gvVisionOverwrite" style="width:100%;padding:10px;background:#f66;color:#fff;border:none;border-radius:8px;font-size:0.9em;font-weight:700;cursor:pointer;margin-bottom:8px;">上書きする</button>'
+          + '<button id="gvVisionKeep" style="width:100%;padding:10px;background:#f0f0f0;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;">そのままにする</button>';
+        overlay2.appendChild(box2);
+        document.body.appendChild(overlay2);
+        document.getElementById('gvVisionAppend').onclick = function(){
+          hasVisionBps.forEach(function(bp){ bp.vision = bp.vision + '\n' + vision; });
+          saveAllTasks(); overlay2.remove();
+          showToast('📝 ビジョンを追記しました',{type:'success'});
+          renderGantBlueprints();
+        };
+        document.getElementById('gvVisionOverwrite').onclick = function(){
+          hasVisionBps.forEach(function(bp){ bp.vision = vision; });
+          saveAllTasks(); overlay2.remove();
+          showToast('📝 ビジョンを上書きしました',{type:'success'});
+          renderGantBlueprints();
+        };
+        document.getElementById('gvVisionKeep').onclick = function(){ overlay2.remove(); };
+        return;
+      }
       saveAllTasks();
       btn.closest('div[style*=fixed]').remove();
       renderGrandVisionBar();
@@ -17147,8 +17185,8 @@ function _ycGoSlide(n) {
       <div style="display:flex;gap:12px;align-items:flex-start;">
         <div style="background:#a78bfa;color:#fff;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.85em;flex-shrink:0;">3</div>
         <div>
-          <div style="font-weight:bold;color:#a78bfa;margin-bottom:2px;">🏰 慣れてきたら、造営で計画を立ててみて</div>
-          <div style="font-size:0.85em;color:#ccc;">夢・志・工程・やること。4つがつながると、人生が一本の線になるよ。</div>
+          <div style="font-weight:bold;color:#a78bfa;margin-bottom:2px;">🌐 やることが、3Dの王国になる</div>
+          <div style="font-size:0.85em;color:#ccc;">こなすたびに王国が育っていくよ。あなたの行動が、リアルタイムで反映される。</div>
         </div>
       </div>
     </div>
@@ -17188,7 +17226,7 @@ function _ycGoSlide(n) {
           </div>
         </div>
       </div>
-      <div style="margin-top:10px;font-size:0.75em;color:#666;line-height:1.6;">最初はタスクだけでOK。慣れてきたら、上に積み上げていけばいいよ。</div>
+      <div style="margin-top:10px;font-size:0.75em;color:#666;line-height:1.6;">最初はタスクだけでOK。慣れてきたら、造営で上に積み上げていけばいいよ。</div>
     </div>
     <div style="border-top:1px solid rgba(255,255,255,0.15);margin:16px 0 12px;"></div>
     <div id="librarySection">
@@ -18607,7 +18645,7 @@ document.addEventListener('DOMContentLoaded', function() {
       var box = document.createElement('div');
       box.style.cssText = 'background:#fff;border-radius:16px;padding:24px 20px;width:92vw;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.18);max-height:90vh;overflow-y:auto;';
       box.innerHTML = '<div style="font-size:1em;font-weight:700;color:#333;margin-bottom:6px;">✨ AIに計画を作ってもらう</div>'
-        + '<div style="font-size:0.78em;color:#888;margin-bottom:10px;">やりたいことを入力してプロンプトをコピー→ChatGPTやClaudeに貼り付けてください</div>'
+        + '<div style="font-size:0.78em;color:#888;margin-bottom:10px;">やりたいことを入力してプロンプトをコピー→ChatGPTやClaudeに貼り付けてください。出力を雑記帳に入れたら「造営に」を押してください。</div>'
         + '<div style="font-size:0.8em;color:#666;margin-bottom:4px;">やりたいこと</div>'
         + '<input id="aiPlanInput" type="text" placeholder="例：部屋を片付ける、英語上達" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:0.9em;box-sizing:border-box;margin-bottom:10px;">'
         + '<div style="display:flex;gap:8px;margin-bottom:10px;">'
@@ -18628,7 +18666,7 @@ document.addEventListener('DOMContentLoaded', function() {
         + '<button id="aiPlanCloseBtn" style="flex:1;padding:10px;background:#f0f0f0;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;">閉じる</button>'
         + '<button id="aiPlanCopyBtn" style="flex:1;padding:10px;background:linear-gradient(135deg,#a78bfa,#6d28d9);color:#fff;border:none;border-radius:8px;font-size:0.9em;font-weight:700;cursor:pointer;">📋 コピー</button>'
         + '</div>'
-        + '<div style="font-size:0.75em;color:#aaa;text-align:center;">コピー後、AIに貼り付けて返答をそのまま雑記帳に貼ってください</div>';
+        + '';
       overlay.appendChild(box);
       document.body.appendChild(overlay);
       overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
