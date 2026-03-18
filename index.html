@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.35.05';
+    const APP_VERSION = 'v0.35.10';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -3479,8 +3479,12 @@
       <button onclick="openGrandVisionEditor(null)" style="background:none;border:1px dashed #c4b5fd;border-radius:8px;color:#a78bfa;font-size:0.75em;padding:4px 10px;cursor:pointer;">🎖️ グランドビジョンを作る</button>
     </div>
     <!-- 上部：blueprintカード一覧 -->
-    <div id="gantBlueprintArea" style="max-height:220px; overflow-x:hidden; overflow-y:auto; display:grid; grid-template-columns:repeat(2,1fr); gap:8px; padding:10px 12px; border-bottom:1px solid #e8e8e8; background:#fff; -webkit-overflow-scrolling:touch;">
+    <div id="gantBlueprintArea" style="overflow-x:hidden; overflow-y:auto; display:grid; grid-template-columns:repeat(2,1fr); gap:8px; padding:10px 12px; border-bottom:1px solid #e8e8e8; background:#fff; -webkit-overflow-scrolling:touch; height:280px; flex-shrink:0;">
       <!-- blueprintカードがJSで挿入される -->
+    </div>
+    <!-- スプリッター（上下可変） -->
+    <div id="gantSplitter" style="height:10px;background:#f0f0f0;border-top:1px solid #e0e0e0;border-bottom:1px solid #e0e0e0;cursor:ns-resize;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+      <div style="width:32px;height:3px;background:#ccc;border-radius:2px;pointer-events:none;"></div>
     </div>
     <!-- 時間スケール切替 -->
     <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 16px; background:#fff; border-bottom:1px solid #efefef;">
@@ -3501,7 +3505,7 @@
     <!-- 下部70%：ガントチャート -->
     <div id="gantChartArea" style="flex:1; overflow:auto; -webkit-overflow-scrolling:touch; position:relative;">
       <div id="gantAddGanttBtn" style="display:none; padding:10px 16px;">
-        <button onclick="openGanttEditor(null)" style="width:100%;padding:10px;background:#f5f5f5;border:1px dashed #ccc;border-radius:8px;font-size:0.9em;color:#666;cursor:pointer;">工程を刻む</button>
+        <button onclick="openGanttEditor(null)" style="width:100%;padding:10px;background:#f5f5f5;border:1px dashed #ccc;border-radius:8px;font-size:0.9em;color:#666;cursor:pointer;">工程を刻む（例：第1ステップ、第2ステップ、第3ステップ）</button>
       </div>
       <div class="gant-html-chart"></div>
     </div>
@@ -7805,7 +7809,7 @@ function myDeckApply(idx) {
       el.style.cssText = 'position:fixed;z-index:99999;border-radius:10px;padding:10px 14px;'
         + 'font-size:11px;line-height:1.8;font-weight:600;pointer-events:none;white-space:pre-wrap;'
         + 'box-shadow:0 4px 16px rgba(0,0,0,0.2);max-width:200px;'
-        + 'background:' + color + '22;color:' + textColor + ';border:1.5px solid ' + color + '88;';
+        + 'background:#fff;color:' + textColor + ';border:2px solid ' + color + ';';
       el.textContent = msg.replace(/\|/g, '\n');
       // 位置計算（display前にvisibilityで一時表示して高さ取得）
       el.style.visibility = 'hidden';
@@ -7963,6 +7967,8 @@ function myDeckApply(idx) {
           }, 50);
         }
       });
+      // スプリッター初期化（未初期化のときだけ）
+      _initGantSplitter();
       // 設定UI同期
       const scaleCheck = document.getElementById('gantShowCompletedCheck');
       if (scaleCheck) scaleCheck.checked = allSettings.ui.gantShowCompleted !== false;
@@ -7974,6 +7980,40 @@ function myDeckApply(idx) {
           btn.style.borderColor = s === scale ? '#333' : '#ddd';
         }
       });
+    }
+    function _initGantSplitter() {
+      var splitter = document.getElementById('gantSplitter');
+      if (!splitter || splitter._splitterInited) return;
+      splitter._splitterInited = true;
+      var area = document.getElementById('gantBlueprintArea');
+      var startY, startH;
+      function onMove(e) {
+        var clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        var newH = Math.max(80, Math.min(startH + (clientY - startY), window.innerHeight * 0.7));
+        area.style.height = newH + 'px';
+      }
+      function onEnd() {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onEnd);
+        document.removeEventListener('touchmove', onMove);
+        document.removeEventListener('touchend', onEnd);
+        splitter.style.background = '#f0f0f0';
+      }
+      splitter.addEventListener('mousedown', function(e) {
+        startY = e.clientY;
+        startH = area.offsetHeight;
+        splitter.style.background = '#e0e0e0';
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onEnd);
+        e.preventDefault();
+      });
+      splitter.addEventListener('touchstart', function(e) {
+        startY = e.touches[0].clientY;
+        startH = area.offsetHeight;
+        document.addEventListener('touchmove', onMove, {passive:false});
+        document.addEventListener('touchend', onEnd);
+        e.preventDefault();
+      }, {passive:false});
     }
     function renderGantBlueprints() {
       const area = document.getElementById('gantBlueprintArea');
