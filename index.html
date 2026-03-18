@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.35.14';
+    const APP_VERSION = 'v0.35.15';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -11128,7 +11128,6 @@ function myDeckApply(idx) {
 
     function _execImport(data, tasksData, file, event, overwrite) {
       try {
-          const includeCompleted = true;
           let _invalidCount = 0;
           const _NON_TASK_KINDS = ['note', 'journal', 'thought', 'scratch', 'blueprint', 'gantt',
             'dailyStatus', 'family', 'deckHistory', 'myDeck', 'guildLicense', 'stamp', 'grandvision'];
@@ -11139,7 +11138,6 @@ function myDeckApply(idx) {
               if (!task.text || typeof task.text !== 'string') { _invalidCount++; return false; }
               if (!task.section || ![1,2,3,4].includes(task.section)) { _invalidCount++; return false; }
               if (!task.date || !/^\d{4}-\d{2}-\d{2}$/.test(task.date)) { _invalidCount++; return false; }
-              if (!includeCompleted && task.completed) return false;
             }
             return true;
           });
