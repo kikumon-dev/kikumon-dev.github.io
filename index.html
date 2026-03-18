@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.35.72';
+    const APP_VERSION = 'v0.35.73';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -11630,7 +11630,7 @@ function myDeckApply(idx) {
         settingsView.style.display = 'block';
         if (typeof updateGuildUI === 'function') updateGuildUI();
         document.getElementById('navSettings').classList.add('active');
-        loadSettingsUI();
+        if (typeof loadSettingsUI === 'function') loadSettingsUI();
         if (typeof renderDeckShop === 'function') renderDeckShop();
         if (typeof renderDeckHistory === 'function') renderDeckHistory();
       } else if (view === 'notebook') {
@@ -12612,19 +12612,6 @@ window.addEventListener('afterprint', function() {
   setTimeout(function() {
     if (typeof switchView === 'function') switchView(localStorage.getItem('currentView') || 'daily');
   }, 100);
-  // 深考モードから使う関数をグローバルに公開
-  window.saveAllTasks = saveAllTasks;
-  window.switchView = switchView;
-  window.switchDailyTab = switchDailyTab;
-  window.generateTaskId = generateTaskId;
-  window.getLocalDateStr = getLocalDateStr;
-  window.showToast = showToast;
-  window.allTasks = allTasks;
-  // allTasksへの安全なpush（letのスコープ問題を回避）
-  window._pushToAllTasks = function(task) {
-    allTasks.push(task);
-    saveAllTasks();
-  };
 });</script>
   <!-- タスク編集モーダル -->
   <!-- 検索モーダル -->
