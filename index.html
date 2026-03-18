@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.35.26';
+    const APP_VERSION = 'v0.35.27';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -8795,9 +8795,12 @@ function myDeckApply(idx) {
         : _selectedGrandVisionId
           ? getGantsAll().filter(function(g){
               var bp = allTasks.find(function(t){ return t.id === g.blueprintId; });
-              return bp && bp.grandvisionId === _selectedGrandVisionId;
+              return bp && !bp.inHeaven && bp.grandvisionId === _selectedGrandVisionId;
             })
-          : getGantsAll();
+          : getGantsAll().filter(function(g){
+              var bp = allTasks.find(function(t){ return t.id === g.blueprintId; });
+              return !bp || !bp.inHeaven;
+            });
       if (!allSettings.ui.gantShowCompleted) gants = gants.filter(g => !g.achieved);
       const addGanttBtn = document.getElementById('gantAddGanttBtn');
       if (addGanttBtn) addGanttBtn.style.display = 'block';
@@ -9001,6 +9004,7 @@ function myDeckApply(idx) {
         bp.inHeaven = true;
         bp.heavenAt = new Date().toISOString();
         bp.heavenProgress = getBlueprintProgress(bp);
+        if (_gantSelectedBlueprintId === bp.id) _gantSelectedBlueprintId = null;
         // 配下タスクを日次・週間から非表示にする
         const gants = getGantsByBlueprint(bp.id);
         gants.forEach(function(g) {
