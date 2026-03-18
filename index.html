@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.35.74';
+    const APP_VERSION = 'v0.35.75';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -11376,9 +11376,6 @@ function myDeckApply(idx) {
       localStorage.removeItem('_dbg_log');
     })();
     loadAllSettings();
-    // アーティファクト環境（localStorage空）のフォールバック
-    if (typeof allTasks === 'undefined' || allTasks === null) { window.allTasks = []; }
-    if (typeof calendars === 'undefined' || calendars === null) { window.calendars = []; }
     window._dbgLog('【解析完了】BOOT SEQUENCE INITIATED --- 主の記憶領域にアクセスします / 全システム、起動を開始します / ' + APP_VERSION);
     window._dbgLog('loadAllSettings done. craftMode=' + allSettings.ui.craftModeEnabled + ' renderMode=' + allSettings.ui.craftRenderMode + ' savedView=' + localStorage.getItem('currentView'));
     // gantEnabledをデフォルトtrue（既存ユーザー対応）
