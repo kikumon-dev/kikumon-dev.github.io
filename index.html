@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.35.10';
+    const APP_VERSION = 'v0.35.14';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -3504,8 +3504,22 @@
     </div>
     <!-- 下部70%：ガントチャート -->
     <div id="gantChartArea" style="flex:1; overflow:auto; -webkit-overflow-scrolling:touch; position:relative;">
-      <div id="gantAddGanttBtn" style="display:none; padding:10px 16px;">
-        <button onclick="openGanttEditor(null)" style="width:100%;padding:10px;background:#f5f5f5;border:1px dashed #ccc;border-radius:8px;font-size:0.9em;color:#666;cursor:pointer;">工程を刻む（例：第1ステップ、第2ステップ、第3ステップ）</button>
+      <div id="gantAddGanttBtn" style="display:none; padding:10px 16px; position:relative;">
+        <button onclick="openGanttEditor(null)"
+          onmouseenter="document.getElementById('_ganttBtnTip').style.display='block'"
+          onmouseleave="document.getElementById('_ganttBtnTip').style.display='none'"
+          style="width:100%;padding:10px;background:#f5f5f5;border:1px dashed #ccc;border-radius:8px;font-size:0.9em;color:#666;cursor:pointer;">工程を刻む（例：第1ステップ、第2ステップ、第3ステップ）</button>
+        <div id="_ganttBtnTip" style="display:none;position:absolute;left:16px;right:16px;top:56px;background:#fff;border:1.5px solid #a78bfa;border-radius:10px;padding:12px 14px;font-size:0.8em;color:#555;line-height:1.8;z-index:999;box-shadow:0 4px 16px rgba(0,0,0,0.1);">
+          🏗️ <b>工程</b>とは、志を達成するためのステップのことです。<br>
+          例えば「英語上達」なら…<br>
+          　第1ステップ：基礎固め<br>
+          　第2ステップ：毎日練習<br>
+          　第3ステップ：実践・仕上げ<br>
+          <span style="color:#a78bfa;font-size:0.9em;">細かくしすぎなくて大丈夫です。</span><br>
+          <span style="color:#888;font-size:0.9em;">✅ 工程の中にやること（タスク）を入れると、日次にも表示されるよ。</span><br>
+          <span style="color:#888;font-size:0.9em;">🎖️ グランドビジョンと紐づけると、大きな目標とつながるよ。</span><br>
+          <span style="color:#888;font-size:0.9em;">タスクはあとから何度でも追加できるよ。</span>
+        </div>
       </div>
       <div class="gant-html-chart"></div>
     </div>
@@ -7766,13 +7780,17 @@ function myDeckApply(idx) {
     }
     // 志カードのホバーメッセージ生成
     function _getBlueprintHoverMsg(bp, progress, ganttCount) {
-      if (ganttCount === 0) return '工程をまだ刻んでいない。|最初の一歩を、ここに。';
-      if (progress === 0) return '王国の礎は整った。|あとは、動くだけ。';
-      if (progress < 30) return '歩み始めた。|焦らずに、一歩ずつ。';
-      if (progress < 60) return '着実に前へ進んでいる。|積み重ねが、王国を育てる。';
-      if (progress < 90) return 'もう少しで完成する。|ここまで来た自分を信じろ。';
-      if (progress < 100) return '仕上げの時。|最後まで、丁寧に。';
-      return 'この志は、成し遂げられた。|次の王国を、描こう。';
+      var encouragement;
+      if (ganttCount === 0) encouragement = '工程をまだ刻んでいない。|最初の一歩を、ここに。';
+      else if (progress === 0) encouragement = '王国の礎は整った。|あとは、動くだけ。';
+      else if (progress < 30) encouragement = '歩み始めた。|焦らずに、一歩ずつ。';
+      else if (progress < 60) encouragement = '着実に前へ進んでいる。|積み重ねが、王国を育てる。';
+      else if (progress < 90) encouragement = 'もう少しで完成する。|ここまで来た自分を信じろ。';
+      else if (progress < 100) encouragement = '仕上げの時。|最後まで、丁寧に。';
+      else encouragement = 'この志は、成し遂げられた。|次の王国を、描こう。';
+      var gvLine = bp.grandvisionId ? 'この志、大きな夢とつながってるよ。' : 'グランドビジョンに紐づけると、もっと広い世界が見えるよ。|大きな夢と結んでみて。';
+      var taskLine = ganttCount === 0 ? 'タスクはあとから何度でも追加できるよ。' : 'タスクはあとから追加できるよ。';
+      return encouragement + '|' + gvLine + '|' + taskLine;
     }
     function toggleBlueprintEmojiPicker() {
       var p = document.getElementById('blueprintEmojiPicker');
