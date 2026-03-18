@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.35.04';
+    const APP_VERSION = 'v0.35.05';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -8856,7 +8856,14 @@ function myDeckApply(idx) {
           }
           bp.emoji = _newBpEmoji;
           const _gvSel = document.getElementById('blueprintGvSelect');
-          bp.grandvisionId = _gvSel ? (_gvSel.value || null) : null;
+          const _newGvId = _gvSel ? (_gvSel.value || null) : null;
+          const _oldGvId = bp.grandvisionId;
+          bp.grandvisionId = _newGvId;
+          // 新たにGVに紐づいた かつ visionが空 → GVのvisionを継承
+          if (_newGvId && _newGvId !== _oldGvId && !bp.vision) {
+            const _gv = allTasks.find(t => t.id === _newGvId);
+            if (_gv && _gv.vision) bp.vision = _gv.vision;
+          }
         }
       } else {
         const blueprints = getBlueprints();
