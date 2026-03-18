@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.35.71';
+    const APP_VERSION = 'v0.35.72';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -16058,30 +16058,28 @@ function _dfmSaveToScratch() {
   var r = document.getElementById('dfm-result');
   var result = r ? r.value.trim() : '';
   var text = '【深考】' + _dfmCurrentQuestion + (result ? '\n' + result : '');
-  var dateStr = window.getLocalDateStr ? window.getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
-  var newId = window.generateTaskId ? window.generateTaskId() : ('df_' + Date.now());
-  var newTask = {
-    id: newId,
-    text: text,
-    date: dateStr,
-    time: null,
-    section: 1,
-    completed: false,
-    done: false,
-    displayScope: 'daily_only',
-    kind: 'task',
-    createdAt: new Date().toISOString()
-  };
-  try {
-    if (window._pushToAllTasks) window._pushToAllTasks(newTask);
-  } catch(e) {}
+  var dateStr = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
+  var newId = (typeof generateTaskId === 'function') ? generateTaskId() : ('df_' + Date.now());
+  if (typeof allTasks !== 'undefined' && allTasks) {
+    allTasks.push({
+      id: newId,
+      text: text,
+      date: dateStr,
+      time: null,
+      section: 1,
+      completed: false,
+      done: false,
+      displayScope: 'daily_only',
+      kind: 'task',
+      createdAt: new Date().toISOString()
+    });
+    if (typeof saveAllTasks === 'function') saveAllTasks();
+  }
   closeDeepFocusMode();
-  try {
-    if (window.switchView) {
-      window.switchView('daily');
-      setTimeout(function(){ if (window.switchDailyTab) window.switchDailyTab('scratch'); }, 150);
-    }
-  } catch(e) {}
+  if (typeof switchView === 'function') {
+    switchView('daily');
+    setTimeout(function(){ if (typeof switchDailyTab === 'function') switchDailyTab('scratch'); }, 150);
+  }
   showToast('雑記帳に送りました！', {type:'success', duration:3000});
 }
 function _dfmReset() {
