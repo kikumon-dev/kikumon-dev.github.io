@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.35.78';
+    const APP_VERSION = 'v0.35.80';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -3025,7 +3025,6 @@
     <!-- ヘッダー：日付のみ -->
     <div class="scratch-header">
       <span class="scratch-date-label" id="scratchDateLabel"></span>
-      <button onclick="openDeepFocusMode()" style="background:none;border:1px solid #333;color:#666;border-radius:8px;padding:3px 10px;font-size:0.75em;cursor:pointer;letter-spacing:0.05em;">✦ 深考</button>
     </div>
     <!-- リスト＋入力欄 -->
     <div class="scratch-body" id="scratchBody">
@@ -3035,7 +3034,11 @@
         <textarea class="scratch-input" id="scratchInput" placeholder="なんでも…" rows="1"></textarea>
       </div>
       <div style="padding:8px 16px 4px;">
-        <button onclick="openAiPlanModal()" style="width:100%;padding:10px;background:linear-gradient(135deg,#a78bfa,#6d28d9);color:#fff;border:none;border-radius:10px;font-size:0.85em;font-weight:700;cursor:pointer;letter-spacing:0.03em;">✨ AIに計画を作ってもらう</button>
+        <div style="font-size:0.68em;color:#aaa;text-align:center;margin-bottom:6px;letter-spacing:0.08em;">— 自力と他力の両輪 —</div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="openDeepFocusMode()" style="flex:1;padding:11px 8px;background:#0a0a0a;border:1.5px solid #a78bfa;border-radius:10px;color:#a78bfa;font-size:0.82em;font-weight:700;cursor:pointer;letter-spacing:0.02em;line-height:1.4;">✦ 自分で深く考える</button>
+          <button onclick="openAiPlanModal()" style="flex:1;padding:11px 8px;background:linear-gradient(135deg,#a78bfa,#6d28d9);color:#fff;border:none;border-radius:10px;font-size:0.82em;font-weight:700;cursor:pointer;letter-spacing:0.02em;line-height:1.4;">✨ AIに計画を作ってもらう</button>
+        </div>
       </div>
     </div>
   </div>
@@ -15613,14 +15616,16 @@ function _ycGoSlide(n) {
           <div style="margin-bottom:6px;">
             <button onclick="toggleAbout('aboutDeepFocus')" style="width:100%;text-align:left;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.25);border-radius:8px;padding:8px 12px;color:#a78bfa;font-size:0.85em;font-weight:bold;cursor:pointer;">✦ 深考とは</button>
             <div id="aboutDeepFocus" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(167,139,250,0.15);border-radius:0 0 8px 8px;padding:14px 12px;font-size:0.82em;color:#ccc;line-height:1.9;">
-              <div style="color:#a78bfa;font-weight:700;margin-bottom:8px;">アインシュタインの思考法</div>
+              <div style="color:#a78bfa;font-weight:700;margin-bottom:6px;">自分の力で、AIの力で。両輪で動かす。</div>
+              <div style="color:#555;margin-bottom:12px;">頭と知恵を、フル活用する。</div>
+              <div style="color:#a78bfa;font-weight:700;margin-bottom:6px;">アインシュタインの思考法</div>
               <div style="margin-bottom:10px;">人より長く問題に向き合ったから、相対性理論が生まれた。</div>
               <div style="color:#a78bfa;font-weight:700;margin-bottom:6px;">深考の3ステップ</div>
               <div style="margin-bottom:4px;">① 外部の刺激を、徹底的に遮断する。</div>
               <div style="margin-bottom:4px;">② たった一つの問いを立てる。</div>
               <div style="margin-bottom:10px;">③ 脳が飽きたと悲鳴をあげても、あと5分考え続ける。</div>
               <div style="color:#555;margin-bottom:10px;">その5分の先に、普通では見えない境地がある。</div>
-              <div style="color:#a78bfa;font-size:0.9em;">その問いが幸せに向かうなら、始めましょう。</div>
+              <div style="color:#a78bfa;">その問いが幸せに向かうなら、始めましょう。</div>
             </div>
           </div>
           <!-- 王国について -->
@@ -16066,7 +16071,10 @@ function _dfmStartTimer(seconds) {
 function _dfmFinish() {
   if (_dfmTimerInterval) clearInterval(_dfmTimerInterval);
   var r = document.getElementById('dfm-result');
-  var result = r ? r.value.trim() : '';
+  var r2 = document.getElementById('dfm-result-timer');
+  var result = (r ? r.value.trim() : '');
+  var extra = (r2 ? r2.value.trim() : '');
+  if (extra) result = result ? result + '\n' + extra : extra;
   var dateStr = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
   var newId = (typeof generateTaskId === 'function') ? generateTaskId() : ('dfocus_' + Date.now());
   if (typeof allTasks !== 'undefined' && allTasks) {
@@ -16088,22 +16096,18 @@ function _dfmFinish() {
 }
 function _dfmSaveToScratch() {
   var r = document.getElementById('dfm-result');
-  var result = r ? r.value.trim() : '';
+  var r2 = document.getElementById('dfm-result-timer');
+  var result = (r ? r.value.trim() : '');
+  var extra = (r2 ? r2.value.trim() : '');
+  if (extra) result = result ? result + '\n' + extra : extra;
   var text = '【深考】' + _dfmCurrentQuestion + (result ? '\n' + result : '');
   var dateStr = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
   var newId = (typeof generateTaskId === 'function') ? generateTaskId() : ('df_' + Date.now());
   if (typeof allTasks !== 'undefined' && allTasks) {
     allTasks.push({
-      id: newId,
-      text: text,
-      date: dateStr,
-      time: null,
-      section: 1,
-      completed: false,
-      done: false,
-      displayScope: 'daily_only',
-      kind: 'scratch',
-      createdAt: new Date().toISOString()
+      id: newId, text: text, date: dateStr, time: null, section: 1,
+      completed: false, done: false, displayScope: 'daily_only',
+      kind: 'scratch', createdAt: new Date().toISOString()
     });
     if (typeof saveAllTasks === 'function') saveAllTasks();
   }
@@ -17938,14 +17942,24 @@ document.addEventListener('DOMContentLoaded', function() {
 <div id="deepFocusModal" style="display:none;position:fixed;inset:0;background:#0a0a0a;z-index:10000;flex-direction:column;overflow:hidden;">
   <!-- ヘッダー -->
   <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #1a1a1a;flex-shrink:0;">
-    <div style="font-size:0.9em;font-weight:700;color:#a78bfa;">✦ 深考</div>
+    <div>
+      <div style="font-size:0.9em;font-weight:700;color:#a78bfa;">✦ 自分で深く考える</div>
+      <div style="font-size:0.7em;color:#333;margin-top:2px;">頭と知恵を、フル活用する。</div>
+    </div>
     <button onclick="closeDeepFocusMode()" style="background:none;border:none;color:#555;font-size:0.85em;cursor:pointer;">× 戻る</button>
   </div>
   <!-- ステップ1: 問いを立てる -->
-  <div id="dfm-step1" style="display:flex;flex-direction:column;flex:1;overflow-y:auto;padding:20px;gap:12px;">
-    <div style="font-size:0.78em;color:#555;">その問いが幸せに向かうなら、始めましょう。</div>
-    <textarea id="dfm-question" placeholder="問いを一つ、ここに書いてください。" rows="3" style="width:100%;padding:14px;background:#111;border:1px solid #222;border-radius:10px;color:#fff;font-size:0.95em;box-sizing:border-box;resize:none;font-family:inherit;"></textarea>
-    <button onclick="_dfmNext(1)" style="width:100%;padding:12px;background:#a78bfa;color:#fff;border:none;border-radius:10px;font-size:0.9em;font-weight:700;cursor:pointer;">この問いで深考を始める</button>
+  <div id="dfm-step1" style="display:flex;flex-direction:column;flex:1;overflow-y:auto;padding:24px 20px;gap:16px;">
+    <div style="text-align:center;padding:8px 0 4px;">
+      <div style="font-size:0.7em;color:#444;letter-spacing:0.15em;margin-bottom:8px;">— 自力と他力の両輪 —</div>
+      <div style="font-size:1em;font-weight:700;color:#a78bfa;letter-spacing:0.05em;margin-bottom:6px;">✦ 深考</div>
+      <div style="font-size:0.78em;color:#444;line-height:1.9;">
+        自分の力で考え抜く。それが最も深い答えを生む。<br>
+        その問いが幸せに向かうなら、始めましょう。
+      </div>
+    </div>
+    <textarea id="dfm-question" placeholder="問いを一つ、ここに書いてください。" rows="3" style="width:100%;padding:14px;background:#111;border:1px solid #2a2a2a;border-radius:10px;color:#fff;font-size:0.95em;box-sizing:border-box;resize:none;font-family:inherit;line-height:1.8;"></textarea>
+    <button onclick="_dfmNext(1)" style="width:100%;padding:13px;background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;border:none;border-radius:10px;font-size:0.9em;font-weight:700;cursor:pointer;letter-spacing:0.03em;">✦ この問いで深考を始める</button>
     <button onclick="_dfmShowHistory()" style="background:none;border:none;color:#333;font-size:0.78em;cursor:pointer;text-align:center;padding:4px;">過去の深考を見る</button>
   </div>
   <!-- ステップ2: 考えながら打ち込む -->
@@ -17969,21 +17983,20 @@ document.addEventListener('DOMContentLoaded', function() {
     <!-- テキストエリア（メイン） -->
     <textarea id="dfm-result" placeholder="考えながら、ここに打ち込んでください。" style="flex:1;width:100%;padding:16px 20px;background:#0a0a0a;border:none;color:#ddd;font-size:0.95em;box-sizing:border-box;resize:none;font-family:inherit;line-height:1.8;outline:none;"></textarea>
   </div>
-  <!-- ステップ3: 5分タイマー -->
-  <div id="dfm-step3" style="display:none;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:32px 24px;text-align:center;">
-    <div id="dfm-timer" style="font-size:4em;font-weight:700;color:#fff;margin-bottom:16px;">5:00</div>
-    <div style="font-size:0.82em;color:#555;line-height:2;margin-bottom:36px;">
-      脳が諦めた先に、見えるものがあります。<br>
-      <span style="color:#a78bfa;">あと5分だけ、スマホを伏せてください。</span>
+  <!-- ステップ3: 5分タイマー＋打ち込み可能 -->
+  <div id="dfm-step3" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+    <div style="flex-shrink:0;text-align:center;padding:16px 20px 10px;border-bottom:1px solid #1a1a1a;">
+      <div id="dfm-timer" style="font-size:3em;font-weight:700;color:#fff;margin-bottom:4px;">5:00</div>
+      <div style="font-size:0.78em;color:#555;">脳が諦めた先に、見えるものがあります。</div>
+      <button onclick="_dfmFinish()" style="margin-top:10px;padding:7px 24px;background:#1a1a1a;color:#555;border:1px solid #222;border-radius:8px;font-size:0.82em;cursor:pointer;">終わった</button>
     </div>
-    <button onclick="_dfmFinish()" style="padding:12px 32px;background:#1a1a1a;color:#555;border:1px solid #222;border-radius:10px;font-size:0.9em;cursor:pointer;">終わった</button>
+    <textarea id="dfm-result-timer" placeholder="まだ打ち込めます。あと5分、続けて。" style="flex:1;width:100%;padding:16px 20px;background:#0a0a0a;border:none;color:#ddd;font-size:0.95em;box-sizing:border-box;resize:none;font-family:inherit;line-height:1.8;outline:none;"></textarea>
   </div>
   <!-- ステップ4: 完了 -->
   <div id="dfm-step4" style="display:none;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:32px 24px;text-align:center;">
     <div style="font-size:1.1em;font-weight:700;color:#fff;margin-bottom:8px;">今日も、一歩深く考えた。</div>
     <div id="dfm-count" style="font-size:0.78em;color:#444;margin-bottom:32px;"></div>
     <button onclick="_dfmSaveToScratch()" style="width:100%;max-width:320px;padding:12px;background:#a78bfa;color:#fff;border:none;border-radius:10px;font-size:0.9em;font-weight:700;cursor:pointer;margin-bottom:10px;">雑記帳に送る</button>
-    <button onclick="_dfmReset()" style="width:100%;max-width:320px;padding:10px;background:#111;color:#555;border:1px solid #222;border-radius:10px;font-size:0.9em;cursor:pointer;margin-bottom:10px;">もう一問考える</button>
     <button onclick="closeDeepFocusMode()" style="background:none;border:none;color:#333;font-size:0.85em;cursor:pointer;">雑記帳に戻る</button>
   </div>
   <!-- 履歴 -->
