@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.35.15';
+    const APP_VERSION = 'v0.35.26';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -3510,14 +3510,9 @@
           onmouseleave="document.getElementById('_ganttBtnTip').style.display='none'"
           style="width:100%;padding:10px;background:#f5f5f5;border:1px dashed #ccc;border-radius:8px;font-size:0.9em;color:#666;cursor:pointer;">工程を刻む（例：第1ステップ、第2ステップ、第3ステップ）</button>
         <div id="_ganttBtnTip" style="display:none;position:absolute;left:16px;right:16px;top:56px;background:#fff;border:1.5px solid #a78bfa;border-radius:10px;padding:12px 14px;font-size:0.8em;color:#555;line-height:1.8;z-index:999;box-shadow:0 4px 16px rgba(0,0,0,0.1);">
-          🏗️ <b>工程</b>とは、志を達成するためのステップのことです。<br>
-          例えば「英語上達」なら…<br>
-          　第1ステップ：基礎固め<br>
-          　第2ステップ：毎日練習<br>
-          　第3ステップ：実践・仕上げ<br>
-          <span style="color:#a78bfa;font-size:0.9em;">細かくしすぎなくて大丈夫です。</span><br>
-          <span style="color:#888;font-size:0.9em;">✅ 工程の中にやること（タスク）を入れると、日次にも表示されるよ。</span><br>
-          <span style="color:#888;font-size:0.9em;">🎖️ グランドビジョンと紐づけると、大きな目標とつながるよ。</span><br>
+          🏰 <b>志</b>は工程を持てるよ。🏗️ <b>工程</b>はタスクを持てるよ。<br>
+          タスクを完了すると、日次にも造営にも反映されるよ。<br>
+          <span style="color:#a78bfa;font-size:0.9em;">まず第1ステップを作って、タスクを入れてみてね。</span><br>
           <span style="color:#888;font-size:0.9em;">タスクはあとから何度でも追加できるよ。</span>
         </div>
       </div>
@@ -3573,6 +3568,7 @@
       <div style="display:flex;gap:8px;padding:12px 24px 20px;border-top:1px solid #f0f0f0;border-radius:0 0 16px 16px;background:#fff;flex-shrink:0;">
         <button onclick="saveBlueprintEditor()" style="flex:1;padding:10px;background:#262626;color:#fff;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;font-weight:600;">保存</button>
         <button onclick="closeBlueprintEditor()" style="padding:10px 16px;background:#f5f5f5;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;">キャンセル</button>
+        <button id="blueprintHeavenBtn" onclick="sendBlueprintToHeaven()" style="padding:10px 16px;background:#fff;border:1px solid #a78bfa;color:#a78bfa;border-radius:8px;font-size:0.9em;cursor:pointer;display:none;">🌟 天国へ</button>
         <button id="blueprintDeleteBtn" onclick="deleteBlueprint()" style="padding:10px 16px;background:#fff;border:1px solid #ff3b30;color:#ff3b30;border-radius:8px;font-size:0.9em;cursor:pointer;display:none;">削除</button>
       </div>
     </div>
@@ -5299,7 +5295,7 @@
       allTasks
         .filter(t => {
           const sc = t.displayScope || (t.showInDaily && !t.showInWeekly ? 'daily_only' : t.showInDaily && t.showInWeekly ? 'both' : null);
-          if (!sc || sc === 'weekly_only') return false;
+          if (!sc || sc === 'weekly_only' || sc === 'heaven') return false;
           if (!isCalendarVisible(t.calendarId)) return false;
           if (sc === 'daily_only') return t.date === date;
           return (t.date === date); // both: その日だけ
@@ -5332,6 +5328,7 @@
       return allTasks
         .filter(t =>
           (t.displayScope === 'both' || t.displayScope === 'weekly_only' || (!t.displayScope && t.showInWeekly)) &&
+          t.displayScope !== 'heaven' &&
           t.time &&
           t.date >= startDate &&
           t.date <= endDate &&
@@ -7559,9 +7556,12 @@ function myDeckApply(idx) {
     }
 
     function getBlueprints() {
-      const all = allTasks.filter(t => t.kind === 'blueprint').sort((a,b) => (a.order||0)-(b.order||0));
+      const all = allTasks.filter(t => t.kind === 'blueprint' && !t.inHeaven).sort((a,b) => (a.order||0)-(b.order||0));
       if (!_selectedGrandVisionId) return all;
       return all.filter(b => b.grandvisionId === _selectedGrandVisionId);
+    }
+    function getHeavenBlueprints() {
+      return allTasks.filter(t => t.kind === 'blueprint' && t.inHeaven).sort((a,b) => (b.heavenAt||'').localeCompare(a.heavenAt||''));
     }
 
     function openGrandVisionEditor(id) {
@@ -7779,7 +7779,7 @@ function myDeckApply(idx) {
       if (p) p.style.display = p.style.display === 'none' ? 'block' : 'none';
     }
     // 志カードのホバーメッセージ生成
-    function _getBlueprintHoverMsg(bp, progress, ganttCount) {
+    function _getBlueprintHoverMsg(bp, progress, ganttCount, taskCount) {
       var encouragement;
       if (ganttCount === 0) encouragement = '工程をまだ刻んでいない。|最初の一歩を、ここに。';
       else if (progress === 0) encouragement = '王国の礎は整った。|あとは、動くだけ。';
@@ -7789,8 +7789,11 @@ function myDeckApply(idx) {
       else if (progress < 100) encouragement = '仕上げの時。|最後まで、丁寧に。';
       else encouragement = 'この志は、成し遂げられた。|次の王国を、描こう。';
       var gvLine = bp.grandvisionId ? 'この志、大きな夢とつながってるよ。' : 'グランドビジョンに紐づけると、もっと広い世界が見えるよ。|大きな夢と結んでみて。';
-      var taskLine = ganttCount === 0 ? 'タスクはあとから何度でも追加できるよ。' : 'タスクはあとから追加できるよ。';
-      return encouragement + '|' + gvLine + '|' + taskLine;
+      if (progress === 100) return encouragement + '|' + gvLine;
+      var taskLine = (taskCount === 0)
+        ? '具体的なタスクを作って時間を入れよう！'
+        : 'タスクはすでにあるから時間も入れちゃおう！';
+      return encouragement + '|' + gvLine + '|' + taskLine + '|よりよくなるといいね！';
     }
     function toggleBlueprintEmojiPicker() {
       var p = document.getElementById('blueprintEmojiPicker');
@@ -8047,7 +8050,8 @@ function myDeckApply(idx) {
         const isSelected = _gantSelectedBlueprintId === bp.id;
         const color = bp.color || '#3498db';
         const ganttCount = getGantsByBlueprint(bp.id).length;
-        const _bpMsg = _getBlueprintHoverMsg(bp, progress, ganttCount);
+        const taskCount = getGantsByBlueprint(bp.id).reduce(function(sum, g){ return sum + (g.taskIds||[]).length; }, 0);
+        const _bpMsg = _getBlueprintHoverMsg(bp, progress, ganttCount, taskCount);
         return `<div class="bp-card" data-bpid="${bp.id}" draggable="false" style="
           min-width:0; max-width:100%; padding:10px 14px;
           border-radius:12px; border:2px solid ${isSelected ? color : '#e8e8e8'};
@@ -8237,7 +8241,10 @@ function myDeckApply(idx) {
       const color = ctx.barColor || '#c5cae9';
       const done  = !!t.done;
       if (ctx.scale === 'day') {
-        if (!t.time) return '<div style="position:absolute;left:6px;top:50%;transform:translateY(-50%);font-size:9px;color:#bbb;white-space:nowrap;">まだ、時を刻んでいない</div>';
+        if (!t.time) return '<div style="position:absolute;left:6px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:6px;">'
+          + '<span style="font-size:9px;color:#bbb;white-space:nowrap;">まだ、時を刻んでいない</span>'
+          + '<button onclick="event.stopPropagation();openTaskEditModal(\'' + t.id + '\')" style="font-size:9px;padding:2px 6px;background:#f0edff;border:1px solid #c4b5fd;border-radius:4px;color:#7c3aed;cursor:pointer;white-space:nowrap;">⏰ 時を刻む</button>'
+          + '</div>';
         const [sh, sm] = t.time.split(':').map(Number);
         const sx = Math.round(((sh * 60 + sm) - (ctx.startH || 0) * 60) / 60 * ctx.colW);
         // endTimeで幅決定、なければ colW（1時間幅）をデフォルト
@@ -8833,12 +8840,14 @@ function myDeckApply(idx) {
       const startInput = document.getElementById('blueprintStartInput');
       const endInput = document.getElementById('blueprintEndInput');
       const deleteBtn = document.getElementById('blueprintDeleteBtn');
+      const heavenBtn = document.getElementById('blueprintHeavenBtn');
       if (!titleInput || !visionInput || !startInput || !endInput) return;
       titleInput.value  = bp ? bp.title : '';
       visionInput.value = bp ? (bp.vision || '') : '';
       startInput.value  = bp ? (bp.startDate || '') : '';
       endInput.value    = bp ? (bp.endDate   || '') : '';
       if (deleteBtn) deleteBtn.style.display = id ? '' : 'none';
+      if (heavenBtn) heavenBtn.style.display = id ? '' : 'none';
       // 絵文字ボタン初期化
       const _bpEmojiBtn = document.getElementById('blueprintEmojiBtn');
       if (_bpEmojiBtn) _bpEmojiBtn.textContent = (bp && bp.emoji) ? bp.emoji : '🏰';
@@ -8960,10 +8969,56 @@ function myDeckApply(idx) {
         showToast('王国に刻まれました ✅', {type:'success'});
       }
     }
-    function deleteBlueprint() {
+    function sendBlueprintToHeaven() {
       if (!_gantEditingBlueprintId) return;
-      const id = _gantEditingBlueprintId;
-      const bp = allTasks.find(t => t.id === id);
+      const bp = allTasks.find(t => t.id === _gantEditingBlueprintId);
+      if (!bp) return;
+      const progress = getBlueprintProgress(bp);
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+      var box = document.createElement('div');
+      box.style.cssText = 'background:#fff;border-radius:16px;padding:24px 20px;width:92vw;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.18);text-align:center;';
+      var warningLine = progress < 100
+        ? '<div style="font-size:0.8em;color:#f59e0b;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:8px 12px;margin-bottom:14px;">⚠️ まだ' + progress + '%だよ。本当に天国に送る？</div>'
+        : '';
+      box.innerHTML = '<div style="font-size:2.5em;margin-bottom:12px;">🌟</div>'
+        + '<div style="font-size:1em;font-weight:700;color:#333;margin-bottom:10px;">志の天国へ送るよ</div>'
+        + warningLine
+        + '<div style="font-size:0.83em;color:#666;line-height:1.8;margin-bottom:20px;">'
+        + '「' + bp.title + '」、よく頑張ったね。<br>'
+        + '造営からは消えるけど、図書館の「志の天国」にいつでも見に行けるよ。<br>'
+        + '自分の頑張ってきたこと、ちゃんと残ってるから安心してね。<br>'
+        + '<span style="color:#a78bfa;font-size:0.9em;">またやり直したくなったら、天国から戻せるよ。</span>'
+        + '</div>'
+        + '<div style="display:flex;flex-direction:column;gap:8px;">'
+        + '<button id="heavenConfirmBtn" style="width:100%;padding:12px;background:linear-gradient(135deg,#a78bfa,#6d28d9);color:#fff;border:none;border-radius:10px;font-size:0.9em;font-weight:700;cursor:pointer;">🌟 天国へ送る</button>'
+        + '<button id="heavenCancelBtn" style="width:100%;padding:10px;background:#f5f5f5;border:none;border-radius:10px;font-size:0.9em;cursor:pointer;">やっぱりやめとく</button>'
+        + '</div>';
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
+      overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
+      document.getElementById('heavenConfirmBtn').onclick = function() {
+        bp.inHeaven = true;
+        bp.heavenAt = new Date().toISOString();
+        bp.heavenProgress = getBlueprintProgress(bp);
+        // 配下タスクを日次・週間から非表示にする
+        const gants = getGantsByBlueprint(bp.id);
+        gants.forEach(function(g) {
+          (g.taskIds||[]).forEach(function(tid) {
+            const t = allTasks.find(function(x){ return x.id === tid; });
+            if (t) { t._preHeavenScope = t.displayScope; t.displayScope = 'heaven'; }
+          });
+        });
+        saveAllTasks();
+        overlay.remove();
+        closeBlueprintEditor();
+        renderGantView();
+        renderAllSections();
+        showToast('🌟 志の天国へ送りました。お疲れ様！', {type:'success', duration:4000});
+      };
+      document.getElementById('heavenCancelBtn').onclick = function(){ overlay.remove(); };
+    }
+    function deleteBlueprint() {
       if (!bp) return;
       const childGants   = allTasks.filter(t => t.kind === 'gantt' && t.blueprintId === id);
       const uniqueTaskIds = [...new Set(childGants.flatMap(g => g.taskIds || []))];
@@ -17325,7 +17380,11 @@ function _ycGoSlide(n) {
             <button onclick="hideTutorial();allSettings.flags.journalTourSeen=true;saveAllSettings();setTimeout(function(){switchView('journal');setTimeout(showJournalOnboarding,300);},200);" style="width:100%;text-align:left;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.25);border-radius:8px;padding:8px 12px;color:#a78bfa;font-size:0.85em;font-weight:bold;cursor:pointer;">📖 日誌の使い方</button>
           </div>
           <div style="margin-bottom:6px;">
-            <button onclick="toggleAbout('aboutPhilosophy')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#81c784;font-size:0.85em;font-weight:bold;cursor:pointer;">🌿 やることクラフトが大切にしていること</button>
+            <button onclick="toggleAbout('aboutHeaven')" style="width:100%;text-align:left;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.3);border-radius:8px;padding:8px 12px;color:#a78bfa;font-size:0.85em;font-weight:bold;cursor:pointer;">🌟 志の天国</button>
+            <div id="aboutHeaven" style="display:none;background:rgba(167,139,250,0.04);border:1px solid rgba(167,139,250,0.15);border-radius:0 0 8px 8px;padding:12px;font-size:0.82em;color:#ccc;line-height:1.7;" onshow="renderHeavenBlueprints()">
+              <div id="heavenBlueprintList" style="display:flex;flex-direction:column;gap:8px;"></div>
+            </div>
+          </div>
             <div id="aboutPhilosophy" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:14px 12px;font-size:0.82em;color:#ccc;line-height:1.7;">
               <div style="color:#ffd700;font-weight:bold;margin-bottom:10px;font-size:0.9em;">🏰 王国の心得</div>
               <div style="margin-bottom:12px;">
@@ -17672,10 +17731,62 @@ function toggleLibrary() {
   content.style.display = isOpen ? 'none' : 'block';
   btn.textContent = isOpen ? '🏰 王国の図書館 ▼' : '🏰 王国の図書館 ▲';
 }
+function renderHeavenBlueprints() {
+  var list = document.getElementById('heavenBlueprintList');
+  if (!list) return;
+  var bps = (typeof getHeavenBlueprints === 'function') ? getHeavenBlueprints() : [];
+  if (bps.length === 0) {
+    list.innerHTML = '<div style="color:#888;font-size:0.85em;text-align:center;padding:12px;">まだ天国にいる志はいないよ。</div>';
+    return;
+  }
+  list.innerHTML = bps.map(function(bp) {
+    var date = bp.heavenAt ? bp.heavenAt.slice(0,10) : '';
+    var prog = bp.heavenProgress !== undefined && bp.heavenProgress !== null ? bp.heavenProgress : '?';
+    return '<div style="background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);border-radius:10px;padding:10px 12px;">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">'
+      + '<div style="display:flex;align-items:center;gap:6px;min-width:0;">'
+      + '<span style="font-size:1em;">' + (bp.emoji||'🌟') + '</span>'
+      + '<span style="font-size:0.85em;font-weight:700;color:#e9d5ff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + bp.title + '</span>'
+      + '</div>'
+      + '<button onclick="reviveBlueprint(\'' + bp.id + '\')" style="font-size:0.75em;padding:4px 10px;background:rgba(167,139,250,0.3);border:1px solid rgba(167,139,250,0.5);border-radius:6px;color:#e9d5ff;cursor:pointer;white-space:nowrap;flex-shrink:0;">造営に戻す</button>'
+      + '</div>'
+      + '<div style="display:flex;gap:10px;margin-top:4px;">'
+      + (date ? '<span style="font-size:0.72em;color:#888;">🗓️ ' + date + '</span>' : '')
+      + '<span style="font-size:0.72em;color:#a78bfa;">✨ ' + prog + '%達成</span>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
+function reviveBlueprint(id) {
+  var bp = allTasks.find(function(t){ return t.id === id; });
+  if (!bp) return;
+  bp.inHeaven = false;
+  bp.heavenAt = null;
+  bp.heavenProgress = null;
+  // 配下タスクのdisplayScopeを元に戻す
+  var gants = allTasks.filter(function(t){ return t.kind === 'gantt' && t.blueprintId === id; });
+  gants.forEach(function(g) {
+    (g.taskIds||[]).forEach(function(tid) {
+      var t = allTasks.find(function(x){ return x.id === tid; });
+      if (t && t.displayScope === 'heaven') {
+        t.displayScope = t._preHeavenScope || 'daily_only';
+        delete t._preHeavenScope;
+      }
+    });
+  });
+  saveAllTasks();
+  renderHeavenBlueprints();
+  if (typeof renderGantView === 'function') renderGantView();
+  if (typeof renderAllSections === 'function') renderAllSections();
+  showToast('🏰 造営に戻ってきたよ！', {type:'success', duration:3000});
+}
 function toggleAbout(id) {
   var el = document.getElementById(id);
   if (!el) return;
   el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  if (id === 'aboutHeaven' && el.style.display === 'block') {
+    renderHeavenBlueprints();
+  }
   if (id === 'aboutIntro' && el.style.display === 'block') {
     var base = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=';
     var womenUrl  = 'https://kikumon-dev.github.io/lp-women/';
