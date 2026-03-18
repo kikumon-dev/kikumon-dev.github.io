@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.35.64-debug';
+    const APP_VERSION = 'v0.35.71';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -11359,7 +11359,6 @@ function myDeckApply(idx) {
       window.onerror = function(msg, src, line, col, err) {
         _dbgErrors.push({ msg: msg, src: src, line: line, col: col, stack: err ? err.stack : '' });
         try { localStorage.setItem('_dbg_errors', JSON.stringify(_dbgErrors)); } catch(e) {}
-        try { if(typeof showToast==='function') showToast('ERR L'+line+': '+String(msg).slice(0,80), {type:'error',duration:15000}); } catch(e2){}
         if (_origOnError) return _origOnError(msg, src, line, col, err);
         return false;
       };
@@ -12613,6 +12612,19 @@ window.addEventListener('afterprint', function() {
   setTimeout(function() {
     if (typeof switchView === 'function') switchView(localStorage.getItem('currentView') || 'daily');
   }, 100);
+  // 深考モードから使う関数をグローバルに公開
+  window.saveAllTasks = saveAllTasks;
+  window.switchView = switchView;
+  window.switchDailyTab = switchDailyTab;
+  window.generateTaskId = generateTaskId;
+  window.getLocalDateStr = getLocalDateStr;
+  window.showToast = showToast;
+  window.allTasks = allTasks;
+  // allTasksへの安全なpush（letのスコープ問題を回避）
+  window._pushToAllTasks = function(task) {
+    allTasks.push(task);
+    saveAllTasks();
+  };
 });</script>
   <!-- タスク編集モーダル -->
   <!-- 検索モーダル -->
@@ -16023,13 +16035,15 @@ function _dfmFinish() {
   if (_dfmTimerInterval) clearInterval(_dfmTimerInterval);
   var r = document.getElementById('dfm-result');
   var result = r ? r.value.trim() : '';
-  if (typeof allTasks !== 'undefined' && allTasks && typeof generateTaskId === 'function') {
+  var dateStr = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
+  var newId = (typeof generateTaskId === 'function') ? generateTaskId() : ('dfocus_' + Date.now());
+  if (typeof allTasks !== 'undefined' && allTasks) {
     var record = {
-      id: generateTaskId(),
+      id: newId,
       kind: 'deepfocus',
       question: _dfmCurrentQuestion,
       result: result,
-      date: (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10),
+      date: dateStr,
       createdAt: new Date().toISOString()
     };
     allTasks.push(record);
@@ -16043,15 +16057,32 @@ function _dfmFinish() {
 function _dfmSaveToScratch() {
   var r = document.getElementById('dfm-result');
   var result = r ? r.value.trim() : '';
-  var text = '【深考】' + _dfmCurrentQuestion + '\n' + result;
-  if (typeof createTask === 'function' && typeof getLocalDateStr === 'function') {
-    var dateStr = getLocalDateStr(new Date());
-    createTask(text, dateStr, null, 1, 'daily_only');
-    if (typeof saveAllTasks === 'function') saveAllTasks();
-    if (typeof renderAllSections === 'function') renderAllSections();
-  }
-  showToast('雑記帳に送りました！', {type:'success', duration:3000});
+  var text = '【深考】' + _dfmCurrentQuestion + (result ? '\n' + result : '');
+  var dateStr = window.getLocalDateStr ? window.getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
+  var newId = window.generateTaskId ? window.generateTaskId() : ('df_' + Date.now());
+  var newTask = {
+    id: newId,
+    text: text,
+    date: dateStr,
+    time: null,
+    section: 1,
+    completed: false,
+    done: false,
+    displayScope: 'daily_only',
+    kind: 'task',
+    createdAt: new Date().toISOString()
+  };
+  try {
+    if (window._pushToAllTasks) window._pushToAllTasks(newTask);
+  } catch(e) {}
   closeDeepFocusMode();
+  try {
+    if (window.switchView) {
+      window.switchView('daily');
+      setTimeout(function(){ if (window.switchDailyTab) window.switchDailyTab('scratch'); }, 150);
+    }
+  } catch(e) {}
+  showToast('雑記帳に送りました！', {type:'success', duration:3000});
 }
 function _dfmReset() {
   _dfmCurrentQuestion = '';
@@ -16084,18 +16115,17 @@ function _dfmRenderHistory() {
       + '</div>';
   }).join('');
 }
-  var modal = document.getElementById('deepFocusModal');
-  if (!modal) return;
-  modal.style.display = 'flex';
-  modal.style.flexDirection = 'column';
-  var history = _dfmGetHistory();
-  if (history.length > 0) {
-    _dfmShowHistory();
-  } else {
-    _dfmShowStep(1);
-    showToast('深考へようこそ。\nたった一つの問いを立て、極限まで考え抜きましょう。\n自分の幸せ、誰かの幸せに向かう問いを。', {type:'info', duration:8000});
-  }
-}
+// グローバルに公開
+window.openDeepFocusMode = openDeepFocusMode;
+window.closeDeepFocusMode = closeDeepFocusMode;
+window._dfmNext = _dfmNext;
+window._dfmShowHint = _dfmShowHint;
+window._dfmShowQuestion = _dfmShowQuestion;
+window._dfmFinish = _dfmFinish;
+window._dfmSaveToScratch = _dfmSaveToScratch;
+window._dfmReset = _dfmReset;
+window._dfmShowHistory = _dfmShowHistory;
+window._dfmShowStep = _dfmShowStep;
 function toggleLibrary() {
   var content = document.getElementById('libraryContent');
   var btn = document.getElementById('libraryToggleBtn');
