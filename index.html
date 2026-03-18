@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.35.75';
+    const APP_VERSION = 'v0.35.77';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -15610,6 +15610,19 @@ function _ycGoSlide(n) {
               </div>
             </div>
           </div>
+          <div style="margin-bottom:6px;">
+            <button onclick="toggleAbout('aboutDeepFocus')" style="width:100%;text-align:left;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.25);border-radius:8px;padding:8px 12px;color:#a78bfa;font-size:0.85em;font-weight:bold;cursor:pointer;">✦ 深考とは</button>
+            <div id="aboutDeepFocus" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(167,139,250,0.15);border-radius:0 0 8px 8px;padding:14px 12px;font-size:0.82em;color:#ccc;line-height:1.9;">
+              <div style="color:#a78bfa;font-weight:700;margin-bottom:8px;">アインシュタインの思考法</div>
+              <div style="margin-bottom:10px;">人より長く問題に向き合ったから、相対性理論が生まれた。</div>
+              <div style="color:#a78bfa;font-weight:700;margin-bottom:6px;">深考の3ステップ</div>
+              <div style="margin-bottom:4px;">① 外部の刺激を、徹底的に遮断する。</div>
+              <div style="margin-bottom:4px;">② たった一つの問いを立てる。</div>
+              <div style="margin-bottom:10px;">③ 脳が飽きたと悲鳴をあげても、あと5分考え続ける。</div>
+              <div style="color:#555;margin-bottom:10px;">その5分の先に、普通では見えない境地がある。</div>
+              <div style="color:#a78bfa;font-size:0.9em;">その問いが幸せに向かうなら、始めましょう。</div>
+            </div>
+          </div>
           <!-- 王国について -->
           <div style="margin-bottom:6px;">
             <button onclick="toggleAbout('aboutKingdom')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#a78bfa;font-size:0.85em;font-weight:bold;cursor:pointer;">🏰 王国について</button>
@@ -15885,25 +15898,44 @@ var _dfmTimerInterval = null;
 var _dfmCurrentQuestion = '';
 var _dfmHintIdx = 0;
 var _dfmQuestionIdx = 0;
-var _dfmHints = [
-  '誰と誰が喜びますか？',
-  '5W1H で考える：Who · What · When · Where · Why · How',
-  '「なぜ？」を5回繰り返す。\n表面の答えに「なぜ？」を重ねると本質が見えてくる。',
-  '「もし〇〇だったら？」\n制約を外した問いが、新しい視点を生む。'
-];
 var _dfmDeepQuestions = [
+  // 動機・目的
   'なぜその問いを立てたのですか？',
-  '誰の幸せに繋がりますか？',
-  'いつのことですか？',
-  'どこでのことですか？',
-  '誰が関係していますか？',
-  '何が本質ですか？',
   '何のためですか？',
-  'どうやって解決したいですか？',
+  '誰の幸せに繋がりますか？',
+  '誰と誰が喜びますか？',
+  // SALUTE: Size
+  '規模はどのくらいですか？（人数・影響範囲）',
+  // SALUTE: Activity
+  '今、何が起きていますか？（Activity）',
+  // SALUTE: Location
+  'どこでのことですか？（Location）',
+  // SALUTE: Unit
+  '誰が関係していますか？（Unit）',
+  // SALUTE: Time
+  'いつのことですか？（Time）',
+  // SALUTE: Equipment
+  '何を武器・ツールにできますか？（Equipment）',
+  // 5W1H
+  '5W1H で整理すると？\nWho · What · When · Where · Why · How',
+  // なぜ5回
+  'なぜ？（1回目）',
+  'なぜ？（2回目）——その答えをさらに問い返す。',
+  'なぜ？（3回目）——もう一度深く。',
+  'なぜ？（4回目）——本質が見えてきた？',
+  'なぜ？（5回目）——これが根っこだ。',
+  // 本質・関係
+  '何が本質ですか？',
+  '何と何が関係していますか？',
   '名前をつけるとしたら何ですか？',
   '今の状態はどうですか？',
-  '何と何が関係していますか？',
-  '時間軸で見るとどうですか？'
+  '時間軸で見るとどうですか？',
+  // 制約外し
+  '「もし〇〇だったら？」\n制約を外したら、どうなりますか？',
+  // 解決
+  'どうやって解決したいですか？',
+  // 最終
+  'この問いから逃げたくなっていますか？なぜ？'
 ];
 
 function openDeepFocusMode() {
@@ -16090,14 +16122,64 @@ function _dfmRenderHistory() {
     return;
   }
   list.innerHTML = history.map(function(r) {
+    var eid = 'dfm-edit-' + r.id;
     return '<div style="background:#111;border:1px solid #1a1a1a;border-radius:10px;padding:14px;">'
       + '<div style="font-size:0.72em;color:#333;margin-bottom:6px;">' + (r.date||'') + '</div>'
-      + '<div style="font-size:0.88em;font-weight:700;color:#a78bfa;margin-bottom:8px;">「' + (r.question||'') + '」</div>'
-      + '<div style="font-size:0.82em;color:#555;line-height:1.7;">' + (r.result||'') + '</div>'
+      + '<div style="font-size:0.88em;font-weight:700;color:#a78bfa;margin-bottom:6px;">「' + (r.question||'') + '」</div>'
+      + '<div id="' + eid + '-disp" style="font-size:0.82em;color:#555;line-height:1.7;margin-bottom:10px;">' + (r.result||'（記録なし）') + '</div>'
+      + '<textarea id="' + eid + '-input" style="display:none;width:100%;padding:8px;background:#0a0a0a;border:1px solid #333;border-radius:6px;color:#ddd;font-size:0.82em;box-sizing:border-box;resize:none;font-family:inherit;" rows="3">' + (r.result||'') + '</textarea>'
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap;">'
+      + '<button onclick="_dfmHistoryEdit(\'' + r.id + '\')" id="' + eid + '-btn" style="flex:1;padding:5px 8px;background:#1a1a1a;border:1px solid #333;border-radius:6px;color:#888;font-size:0.75em;cursor:pointer;">✏️ 編集</button>'
+      + '<button onclick="_dfmHistorySend(\'' + r.id + '\')" style="flex:1;padding:5px 8px;background:#1a1a1a;border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#a78bfa;font-size:0.75em;cursor:pointer;">📝 雑記帳へ</button>'
+      + '<button onclick="_dfmHistoryDelete(\'' + r.id + '\')" style="flex:1;padding:5px 8px;background:#1a1a1a;border:1px solid rgba(255,100,100,0.3);border-radius:6px;color:#f87171;font-size:0.75em;cursor:pointer;">🗑 削除</button>'
+      + '</div>'
       + '</div>';
   }).join('');
 }
 // グローバルに公開
+function _dfmHistoryEdit(id) {
+  var r = allTasks.find(function(t){ return t.id === id && t.kind === 'deepfocus'; });
+  if (!r) return;
+  var disp = document.getElementById('dfm-edit-' + id + '-disp');
+  var input = document.getElementById('dfm-edit-' + id + '-input');
+  var btn = document.getElementById('dfm-edit-' + id + '-btn');
+  if (!disp || !input || !btn) return;
+  if (input.style.display === 'none') {
+    disp.style.display = 'none';
+    input.style.display = 'block';
+    btn.textContent = '💾 保存';
+  } else {
+    r.result = input.value.trim();
+    if (typeof saveAllTasks === 'function') saveAllTasks();
+    disp.textContent = r.result || '（記録なし）';
+    disp.style.display = 'block';
+    input.style.display = 'none';
+    btn.textContent = '✏️ 編集';
+    showToast('保存しました', {type:'success', duration:2000});
+  }
+}
+function _dfmHistoryDelete(id) {
+  var idx = allTasks.findIndex(function(t){ return t.id === id && t.kind === 'deepfocus'; });
+  if (idx === -1) return;
+  allTasks.splice(idx, 1);
+  if (typeof saveAllTasks === 'function') saveAllTasks();
+  _dfmRenderHistory();
+  showToast('削除しました', {type:'info', duration:2000});
+}
+function _dfmHistorySend(id) {
+  var r = allTasks.find(function(t){ return t.id === id && t.kind === 'deepfocus'; });
+  if (!r) return;
+  var text = '【深考】' + (r.question||'') + (r.result ? '\n' + r.result : '');
+  var dateStr = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
+  var newId = (typeof generateTaskId === 'function') ? generateTaskId() : ('df_' + Date.now());
+  allTasks.push({
+    id: newId, text: text, date: dateStr, time: null, section: 1,
+    completed: false, done: false, displayScope: 'daily_only',
+    kind: 'scratch', createdAt: new Date().toISOString()
+  });
+  if (typeof saveAllTasks === 'function') saveAllTasks();
+  showToast('雑記帳に送りました！', {type:'success', duration:3000});
+}
 window.openDeepFocusMode = openDeepFocusMode;
 window.closeDeepFocusMode = closeDeepFocusMode;
 window._dfmNext = _dfmNext;
@@ -16108,6 +16190,9 @@ window._dfmSaveToScratch = _dfmSaveToScratch;
 window._dfmReset = _dfmReset;
 window._dfmShowHistory = _dfmShowHistory;
 window._dfmShowStep = _dfmShowStep;
+window._dfmHistoryEdit = _dfmHistoryEdit;
+window._dfmHistoryDelete = _dfmHistoryDelete;
+window._dfmHistorySend = _dfmHistorySend;
 function toggleLibrary() {
   var content = document.getElementById('libraryContent');
   var btn = document.getElementById('libraryToggleBtn');
@@ -17849,32 +17934,24 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
   <!-- ステップ2: 考えながら打ち込む -->
   <div id="dfm-step2" style="display:none;flex-direction:column;flex:1;overflow:hidden;position:relative;">
-    <!-- 問いの表示 -->
-    <div id="dfm-question-display" style="font-size:0.88em;font-weight:700;color:#a78bfa;padding:14px 20px 10px;flex-shrink:0;line-height:1.5;border-bottom:1px solid #1a1a1a;"></div>
+    <!-- 問いの表示 + 深掘りボタン（上部） -->
+    <div style="flex-shrink:0;border-bottom:1px solid #1a1a1a;">
+      <div id="dfm-question-display" style="font-size:0.88em;font-weight:700;color:#a78bfa;padding:12px 20px 8px;line-height:1.5;"></div>
+      <div style="display:flex;gap:8px;padding:8px 20px 10px;">
+        <button onclick="_dfmShowQuestion()" style="flex:1;padding:8px;background:#111;border:1px solid #333;border-radius:8px;color:#a78bfa;font-size:0.82em;cursor:pointer;font-weight:600;">❓ 深掘り</button>
+        <button onclick="_dfmNext(2)" style="flex:2;padding:8px;background:#a78bfa;border:none;border-radius:8px;color:#fff;font-size:0.82em;font-weight:700;cursor:pointer;">あと5分考える →</button>
+      </div>
+    </div>
+    <!-- 深掘りポップアップ（上部に表示） -->
+    <div id="dfm-question-popup" style="display:none;position:absolute;top:90px;left:20px;right:20px;background:#1a1a2e;border:1px solid #a78bfa;border-radius:10px;padding:16px;z-index:10;box-shadow:0 4px 20px rgba(0,0,0,0.6);">
+      <div id="dfm-question-text" style="font-size:0.9em;color:#e9d5ff;font-weight:700;line-height:1.9;"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;">
+        <span id="dfm-question-index" style="font-size:0.72em;color:#555;">タップで次へ</span>
+        <button onclick="document.getElementById('dfm-question-popup').style.display='none'" style="background:none;border:1px solid #333;color:#555;font-size:0.78em;cursor:pointer;padding:3px 10px;border-radius:6px;">閉じる</button>
+      </div>
+    </div>
     <!-- テキストエリア（メイン） -->
-    <textarea id="dfm-result" placeholder="考えながら、ここに打ち込んでください。" style="flex:1;width:100%;padding:16px 20px;background:#0a0a0a;border:none;border-bottom:1px solid #1a1a1a;color:#ddd;font-size:0.95em;box-sizing:border-box;resize:none;font-family:inherit;line-height:1.8;outline:none;"></textarea>
-    <!-- ヒント・深掘りボタン行 -->
-    <div style="display:flex;gap:8px;padding:10px 20px;flex-shrink:0;">
-      <button onclick="_dfmShowHint()" style="flex:1;padding:8px;background:#111;border:1px solid #222;border-radius:8px;color:#888;font-size:0.8em;cursor:pointer;">💡 ヒント</button>
-      <button onclick="_dfmShowQuestion()" style="flex:1;padding:8px;background:#111;border:1px solid #222;border-radius:8px;color:#888;font-size:0.8em;cursor:pointer;">❓ 深掘り</button>
-      <button onclick="_dfmNext(2)" style="flex:2;padding:8px;background:#a78bfa;border:none;border-radius:8px;color:#fff;font-size:0.8em;font-weight:700;cursor:pointer;">あと5分考える →</button>
-    </div>
-    <!-- ヒントポップアップ -->
-    <div id="dfm-hint-popup" style="display:none;position:absolute;bottom:60px;left:20px;right:20px;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:16px;z-index:10;">
-      <div id="dfm-hint-text" style="font-size:0.85em;color:#a78bfa;font-weight:700;line-height:1.8;"></div>
-      <div style="display:flex;justify-content:space-between;margin-top:10px;">
-        <span id="dfm-hint-index" style="font-size:0.72em;color:#444;"></span>
-        <button onclick="document.getElementById('dfm-hint-popup').style.display='none'" style="background:none;border:none;color:#555;font-size:0.78em;cursor:pointer;">閉じる</button>
-      </div>
-    </div>
-    <!-- 深掘りポップアップ -->
-    <div id="dfm-question-popup" style="display:none;position:absolute;bottom:60px;left:20px;right:20px;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:16px;z-index:10;">
-      <div id="dfm-question-text" style="font-size:0.85em;color:#a78bfa;font-weight:700;line-height:1.8;"></div>
-      <div style="display:flex;justify-content:space-between;margin-top:10px;">
-        <span id="dfm-question-index" style="font-size:0.72em;color:#444;"></span>
-        <button onclick="document.getElementById('dfm-question-popup').style.display='none'" style="background:none;border:none;color:#555;font-size:0.78em;cursor:pointer;">閉じる</button>
-      </div>
-    </div>
+    <textarea id="dfm-result" placeholder="考えながら、ここに打ち込んでください。" style="flex:1;width:100%;padding:16px 20px;background:#0a0a0a;border:none;color:#ddd;font-size:0.95em;box-sizing:border-box;resize:none;font-family:inherit;line-height:1.8;outline:none;"></textarea>
   </div>
   <!-- ステップ3: 5分タイマー -->
   <div id="dfm-step3" style="display:none;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:32px 24px;text-align:center;">
