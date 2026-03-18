@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.35.27';
+    const APP_VERSION = 'v0.35.48';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -3457,20 +3457,31 @@
   <!-- 造営ビュー -->
   <div id="gantView" style="display:none; flex-direction:column; height:calc(100vh - 50px); background:#fafafa; overflow:hidden;">
     <!-- グランドビジョン表示エリア -->
-    <div id="grandVisionBanner" style="display:none;flex-shrink:0;background:linear-gradient(135deg,#2d1b69 0%,#1a0f3c 100%);padding:12px 16px;border-bottom:1px solid rgba(167,139,250,0.3);">
-      <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1;">
+    <div id="grandVisionBanner" style="display:none;flex-shrink:0;background:linear-gradient(135deg,#2d1b69 0%,#1a0f3c 100%);padding:10px 16px;border-bottom:1px solid rgba(167,139,250,0.3);">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <!-- 左：GV情報＋操作ボタン -->
+        <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1;">
           <span id="gvBannerEmoji" style="font-size:1.4em;flex-shrink:0;">🎖️</span>
           <div style="min-width:0;flex:1;">
             <div id="gvBannerTitle" style="font-size:0.95em;font-weight:700;color:#e9d5ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
             <div id="gvBannerVision" style="font-size:0.75em;color:#c4b5fd;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
           </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+            <select id="gvBannerSelect" onchange="_onGvBannerChange(this.value)" style="background:rgba(255,255,255,0.1);border:1px solid rgba(167,139,250,0.4);border-radius:8px;color:#e9d5ff;font-size:0.75em;padding:4px 6px;cursor:pointer;max-width:100px;"></select>
+            <div style="position:relative;display:inline-block;">
+              <button onclick="openGrandVisionEditor(document.getElementById('gvBannerSelect').value||null)" onmouseenter="this.nextElementSibling.style.display='block'" onmouseleave="this.nextElementSibling.style.display='none'" style="background:rgba(255,255,255,0.1);border:1px solid rgba(167,139,250,0.3);border-radius:8px;font-size:0.75em;color:#c4b5fd;cursor:pointer;padding:4px 8px;">✏️</button>
+              <div style="display:none;position:absolute;left:0;top:30px;background:#1a1a2e;color:#fff;font-size:10px;font-weight:600;padding:5px 10px;border-radius:7px;white-space:nowrap;pointer-events:none;z-index:999;box-shadow:0 2px 8px rgba(0,0,0,0.2);">グランドビジョンを編集</div>
+            </div>
+            <div style="position:relative;display:inline-block;">
+              <button onclick="openGrandVisionEditor(null)" onmouseenter="this.nextElementSibling.style.display='block'" onmouseleave="this.nextElementSibling.style.display='none'" style="background:rgba(167,139,250,0.3);border:none;border-radius:8px;font-size:0.75em;color:#fff;cursor:pointer;padding:4px 8px;font-weight:700;">＋</button>
+              <div style="display:none;position:absolute;left:0;top:30px;background:#1a1a2e;color:#fff;font-size:10px;font-weight:600;padding:5px 10px;border-radius:7px;white-space:nowrap;pointer-events:none;z-index:999;box-shadow:0 2px 8px rgba(0,0,0,0.2);">グランドビジョンを追加</div>
+            </div>
+          </div>
         </div>
-        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:8px;">
-          <select id="gvBannerSelect" onchange="_onGvBannerChange(this.value)" style="background:rgba(255,255,255,0.1);border:1px solid rgba(167,139,250,0.4);border-radius:8px;color:#e9d5ff;font-size:0.75em;padding:4px 6px;cursor:pointer;max-width:100px;">
-          </select>
-          <button onclick="openGrandVisionEditor(document.getElementById('gvBannerSelect').value||null)" style="background:rgba(255,255,255,0.1);border:1px solid rgba(167,139,250,0.3);border-radius:8px;font-size:0.75em;color:#c4b5fd;cursor:pointer;padding:4px 8px;">✏️</button>
-          <button onclick="openGrandVisionEditor(null)" style="background:rgba(167,139,250,0.3);border:none;border-radius:8px;font-size:0.75em;color:#fff;cursor:pointer;padding:4px 8px;font-weight:700;">＋</button>
+        <!-- 右端：天国ボタン（独立） -->
+        <div style="position:relative;display:inline-block;flex-shrink:0;">
+          <button onclick="openHeavenFromBanner()" onmouseenter="this.nextElementSibling.style.display='block'" onmouseleave="this.nextElementSibling.style.display='none'" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;font-size:0.72em;color:rgba(255,255,255,0.45);cursor:pointer;padding:4px 10px;">🌟 天国</button>
+          <div style="display:none;position:absolute;right:0;top:30px;background:#1a1a2e;color:#fff;font-size:10px;font-weight:600;padding:5px 10px;border-radius:7px;white-space:nowrap;pointer-events:none;z-index:999;box-shadow:0 2px 8px rgba(0,0,0,0.2);">達成した志を見る</div>
         </div>
       </div>
     </div>
@@ -3500,6 +3511,7 @@
         </label>
         <div style="position:relative;display:inline-block;"><button onclick="showGantTour()" onmouseenter="this.nextElementSibling.style.display='block'" onmouseleave="this.nextElementSibling.style.display='none'" style="padding:4px 8px;border-radius:50%;border:1px solid #ddd;background:#fff;color:#888;font-size:0.85em;cursor:pointer;width:28px;height:28px;line-height:1;font-weight:700;">?</button><div style="display:none;position:absolute;right:0;top:34px;background:#1a1a2e;color:#fff;font-size:10px;font-weight:600;padding:5px 10px;border-radius:7px;white-space:nowrap;pointer-events:none;z-index:999;box-shadow:0 2px 8px rgba(0,0,0,0.2);">はじめての王国建築</div></div>
         <button onclick="openBlueprintEditor(null)" style="padding:4px 12px; border-radius:12px; border:none; background:#262626; color:#fff; font-size:0.8em; cursor:pointer;">＋ 造営計画</button>
+        <button id="gantAddGanttBarBtn" onclick="openGanttEditor(null)" style="display:none;padding:4px 12px; border-radius:12px; border:none; background:#a78bfa; color:#fff; font-size:0.8em; cursor:pointer; font-weight:600;">＋ 工程を刻む</button>
       </div>
     </div>
     <!-- 下部70%：ガントチャート -->
@@ -3508,7 +3520,7 @@
         <button onclick="openGanttEditor(null)"
           onmouseenter="document.getElementById('_ganttBtnTip').style.display='block'"
           onmouseleave="document.getElementById('_ganttBtnTip').style.display='none'"
-          style="width:100%;padding:10px;background:#f5f5f5;border:1px dashed #ccc;border-radius:8px;font-size:0.9em;color:#666;cursor:pointer;">工程を刻む（例：第1ステップ、第2ステップ、第3ステップ）</button>
+          style="width:100%;padding:10px;background:#f5f5f5;border:1px dashed #ccc;border-radius:8px;font-size:0.9em;color:#666;cursor:pointer;">＋ 工程を刻む（例：第1ステップ、第2ステップ、第3ステップ）</button>
         <div id="_ganttBtnTip" style="display:none;position:absolute;left:16px;right:16px;top:56px;background:#fff;border:1.5px solid #a78bfa;border-radius:10px;padding:12px 14px;font-size:0.8em;color:#555;line-height:1.8;z-index:999;box-shadow:0 4px 16px rgba(0,0,0,0.1);">
           🏰 <b>志</b>は工程を持てるよ。🏗️ <b>工程</b>はタスクを持てるよ。<br>
           タスクを完了すると、日次にも造営にも反映されるよ。<br>
@@ -8039,6 +8051,9 @@ function myDeckApply(idx) {
     function renderGantBlueprints() {
       const area = document.getElementById('gantBlueprintArea');
       if (!area) return;
+      // 志選択時のみ「＋工程を刻む」ボタンを表示
+      const _addGanttBarBtn = document.getElementById('gantAddGanttBarBtn');
+      if (_addGanttBarBtn) _addGanttBarBtn.style.display = _gantSelectedBlueprintId ? '' : 'none';
       const blueprints = getBlueprints();
       if (blueprints.length === 0) {
         area.innerHTML = '<div style="color:#aaa;font-size:0.85em;padding:8px;">＋ 造営計画を追加してください</div>';
@@ -8980,22 +8995,26 @@ function myDeckApply(idx) {
       const overlay = document.createElement('div');
       overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
       var box = document.createElement('div');
-      box.style.cssText = 'background:#fff;border-radius:16px;padding:24px 20px;width:92vw;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.18);text-align:center;';
+      box.style.cssText = 'background:#fff;border-radius:16px;padding:24px 20px;width:92vw;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.18);text-align:left;';
       var warningLine = progress < 100
         ? '<div style="font-size:0.8em;color:#f59e0b;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:8px 12px;margin-bottom:14px;">⚠️ まだ' + progress + '%だよ。本当に天国に送る？</div>'
         : '';
-      box.innerHTML = '<div style="font-size:2.5em;margin-bottom:12px;">🌟</div>'
-        + '<div style="font-size:1em;font-weight:700;color:#333;margin-bottom:10px;">志の天国へ送るよ</div>'
+      box.innerHTML = '<div style="text-align:center;font-size:2.2em;margin-bottom:10px;">🌟</div>'
+        + '<div style="text-align:center;font-size:1em;font-weight:700;color:#333;margin-bottom:12px;">志の天国へ送るよ</div>'
         + warningLine
-        + '<div style="font-size:0.83em;color:#666;line-height:1.8;margin-bottom:20px;">'
+        + '<div style="font-size:0.85em;color:#444;line-height:1.9;margin-bottom:16px;">'
         + '「' + bp.title + '」、よく頑張ったね。<br>'
         + '造営からは消えるけど、図書館の「志の天国」にいつでも見に行けるよ。<br>'
-        + '自分の頑張ってきたこと、ちゃんと残ってるから安心してね。<br>'
-        + '<span style="color:#a78bfa;font-size:0.9em;">またやり直したくなったら、天国から戻せるよ。</span>'
+        + '自分の頑張ってきたこと、ちゃんと残ってるから安心してね。'
         + '</div>'
+        + '<div style="background:#f8f6ff;border-radius:10px;padding:12px 14px;margin-bottom:16px;line-height:1.8;">'
+        + '<div style="font-size:0.88em;font-weight:700;color:#a78bfa;">貢献感は、幸福の源泉。</div>'
+        + '<div style="font-size:0.78em;color:#888;margin-top:2px;">ここに来るたびに、自分の貢献を確かめてね。<br>自分の自分に対する貢献も、人に対する貢献も幸福の源泉だよ！</div>'
+        + '</div>'
+        + '<div style="font-size:0.82em;color:#a78bfa;margin-bottom:20px;">またやり直したくなったら、天国から戻せるよ。</div>'
         + '<div style="display:flex;flex-direction:column;gap:8px;">'
         + '<button id="heavenConfirmBtn" style="width:100%;padding:12px;background:linear-gradient(135deg,#a78bfa,#6d28d9);color:#fff;border:none;border-radius:10px;font-size:0.9em;font-weight:700;cursor:pointer;">🌟 天国へ送る</button>'
-        + '<button id="heavenCancelBtn" style="width:100%;padding:10px;background:#f5f5f5;border:none;border-radius:10px;font-size:0.9em;cursor:pointer;">やっぱりやめとく</button>'
+        + '<button id="heavenCancelBtn" style="width:100%;padding:10px;background:#f5f5f5;border:none;border-radius:10px;font-size:0.9em;cursor:pointer;color:#666;">やっぱりやめとく</button>'
         + '</div>';
       overlay.appendChild(box);
       document.body.appendChild(overlay);
@@ -17373,45 +17392,11 @@ function _ycGoSlide(n) {
       </button>
       <div id="libraryContent" style="display:none;margin-top:8px;">
         <div id="aboutAccordion">
-          <!-- Mission / Vision / Values -->
           <div style="margin-bottom:6px;">
             <button onclick="_ycShowMVVSplash()" style="width:100%;text-align:left;background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);border-radius:8px;padding:8px 12px;color:#ffd700;font-size:0.85em;font-weight:bold;cursor:pointer;">✨ やることクラフトをもっと知る</button>
           </div>
           <div style="margin-bottom:6px;">
-            <button onclick="hideTutorial();allSettings.flags.scratchTourSeen=true;saveAllSettings();setTimeout(function(){switchView('daily');setTimeout(function(){switchDailyTab('scratch');setTimeout(showScratchOnboarding,300);},200);},200);" style="width:100%;text-align:left;background:rgba(79,172,254,0.08);border:1px solid rgba(79,172,254,0.25);border-radius:8px;padding:8px 12px;color:#4facfe;font-size:0.85em;font-weight:bold;cursor:pointer;">✏️ 雑記帳の使い方</button>
-          </div>
-          <div style="margin-bottom:6px;">
-            <button onclick="hideTutorial();allSettings.flags.journalTourSeen=true;saveAllSettings();setTimeout(function(){switchView('journal');setTimeout(showJournalOnboarding,300);},200);" style="width:100%;text-align:left;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.25);border-radius:8px;padding:8px 12px;color:#a78bfa;font-size:0.85em;font-weight:bold;cursor:pointer;">📖 日誌の使い方</button>
-          </div>
-          <div style="margin-bottom:6px;">
-            <button onclick="toggleAbout('aboutHeaven')" style="width:100%;text-align:left;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.3);border-radius:8px;padding:8px 12px;color:#a78bfa;font-size:0.85em;font-weight:bold;cursor:pointer;">🌟 志の天国</button>
-            <div id="aboutHeaven" style="display:none;background:rgba(167,139,250,0.04);border:1px solid rgba(167,139,250,0.15);border-radius:0 0 8px 8px;padding:12px;font-size:0.82em;color:#ccc;line-height:1.7;" onshow="renderHeavenBlueprints()">
-              <div id="heavenBlueprintList" style="display:flex;flex-direction:column;gap:8px;"></div>
-            </div>
-          </div>
-            <div id="aboutPhilosophy" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:14px 12px;font-size:0.82em;color:#ccc;line-height:1.7;">
-              <div style="color:#ffd700;font-weight:bold;margin-bottom:10px;font-size:0.9em;">🏰 王国の心得</div>
-              <div style="margin-bottom:12px;">
-                <div style="color:#4facfe;font-weight:bold;margin-bottom:3px;">🌾 動いていると、楽しくなっていく</div>
-                <div>小さな一歩。まずは楽しく。<br>動き出せば、次が見えてくる。</div>
-              </div>
-              <div style="margin-bottom:12px;">
-                <div style="color:#a78bfa;font-weight:bold;margin-bottom:3px;">🪣 自分の分を、決めて守る</div>
-                <div>詰め込みすぎない。全部やろうとしない。<br>今日の自分にできることだけを、丁寧に。<br>それが長く続く王国の秘訣です。</div>
-              </div>
-              <div style="margin-bottom:12px;">
-                <div style="color:#f8bbd0;font-weight:bold;margin-bottom:3px;">🎁 余ったら、誰かに渡す</div>
-                <div>うまくいったやり方、続けられたルーティン。<br>デッキにして誰かに贈ってみてください。<br>渡したとき、あなたの王国はもっと豊かになります。</div>
-              </div>
-              <div style="margin-bottom:4px;">
-                <div style="color:#ffd700;font-weight:bold;margin-bottom:3px;">🕯️ 在るも、接するも、まごころで</div>
-                <div>単なる「正直」ではなく、まごころ。<br>頭で考えるだけでなく、行動で示す誠実さ。<br>影日向なく、見ていなくても出来ることをやろう。<br>自分自身への誠実さも含まれるよ！<br>まずは楽しく、まごころで！</div>
-              </div>
-            </div>
-          </div>
-          <!-- やることクラフトを紹介する -->
-          <div style="margin-bottom:6px;">
-            <button onclick="toggleAbout('aboutIntro')" style="width:100%;text-align:left;background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.25);border-radius:8px;padding:8px 12px;color:#ffd700;font-size:0.85em;font-weight:bold;cursor:pointer;">🏰 やることクラフトを紹介する</button>
+            <button onclick="toggleAbout('aboutIntro')" style="width:100%;text-align:left;background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.25);border-radius:8px;padding:8px 12px;color:#ffd700;font-size:0.85em;font-weight:bold;cursor:pointer;">🏰 やることクラフトを紹介して限定特典をもらう</button>
             <div id="aboutIntro" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,215,0,0.15);border-radius:0 0 8px 8px;padding:16px 12px;font-size:0.82em;color:#ccc;line-height:1.7;">
               <div style="color:#ffd700;font-size:0.88em;margin-bottom:16px;line-height:1.7;">
                 やることクラフトを紹介してくれた方に、<br>
@@ -17454,6 +17439,43 @@ function _ycGoSlide(n) {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+          <div style="margin-bottom:6px;">
+            <button onclick="hideTutorial();allSettings.flags.scratchTourSeen=true;saveAllSettings();setTimeout(function(){switchView('daily');setTimeout(function(){switchDailyTab('scratch');setTimeout(showScratchOnboarding,300);},200);},200);" style="width:100%;text-align:left;background:rgba(79,172,254,0.08);border:1px solid rgba(79,172,254,0.25);border-radius:8px;padding:8px 12px;color:#4facfe;font-size:0.85em;font-weight:bold;cursor:pointer;">✏️ 雑記帳の使い方</button>
+          </div>
+          <div style="margin-bottom:6px;">
+            <button onclick="hideTutorial();allSettings.flags.journalTourSeen=true;saveAllSettings();setTimeout(function(){switchView('journal');setTimeout(showJournalOnboarding,300);},200);" style="width:100%;text-align:left;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.25);border-radius:8px;padding:8px 12px;color:#a78bfa;font-size:0.85em;font-weight:bold;cursor:pointer;">📖 日誌の使い方</button>
+          </div>
+          <div style="margin-bottom:6px;">
+            <button onclick="toggleAbout('aboutPhilosophy')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#81c784;font-size:0.85em;font-weight:bold;cursor:pointer;">🌿 やることクラフトが大切にしていること</button>
+            <div id="aboutPhilosophy" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:14px 12px;font-size:0.82em;color:#ccc;line-height:1.7;">
+              <div style="color:#ffd700;font-weight:bold;margin-bottom:10px;font-size:0.9em;">🏰 王国の心得</div>
+              <div style="margin-bottom:12px;">
+                <div style="color:#4facfe;font-weight:bold;margin-bottom:3px;">🌾 動いていると、楽しくなっていく</div>
+                <div>小さな一歩。まずは楽しく。<br>動き出せば、次が見えてくる。</div>
+              </div>
+              <div style="margin-bottom:12px;">
+                <div style="color:#a78bfa;font-weight:bold;margin-bottom:3px;">🪣 自分の分を、決めて守る</div>
+                <div>詰め込みすぎない。全部やろうとしない。<br>今日の自分にできることだけを、丁寧に。<br>それが長く続く王国の秘訣です。</div>
+              </div>
+              <div style="margin-bottom:12px;">
+                <div style="color:#f8bbd0;font-weight:bold;margin-bottom:3px;">🎁 余ったら、誰かに渡す</div>
+                <div>うまくいったやり方、続けられたルーティン。<br>デッキにして誰かに贈ってみてください。<br>渡したとき、あなたの王国はもっと豊かになります。</div>
+              </div>
+              <div style="margin-bottom:4px;">
+                <div style="color:#ffd700;font-weight:bold;margin-bottom:3px;">🕯️ 在るも、接するも、まごころで</div>
+                <div>単なる「正直」ではなく、まごころ。<br>頭で考えるだけでなく、行動で示す誠実さ。<br>影日向なく、見ていなくても出来ることをやろう。<br>自分自身への誠実さも含まれるよ！<br>まずは楽しく、まごころで！</div>
+              </div>
+              <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);color:#a78bfa;font-weight:bold;font-size:0.9em;">🌟 貢献感は、幸福の源泉。<br><span style="font-weight:normal;color:#888;font-size:0.9em;">ここに来るたびに、自分の貢献を確かめてね。<br>自分の自分に対する貢献も、人に対する貢献も幸福の源泉だよ！<br>やることクラフトは、あなたの貢献を記録し続けます。</span></div>
+            </div>
+          </div>
+          <div style="margin-bottom:6px;">
+            <button onclick="toggleAbout('aboutHeaven')" style="width:100%;text-align:left;background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.3);border-radius:8px;padding:8px 12px;color:#ffd700;font-size:0.85em;font-weight:bold;cursor:pointer;">🌟 志の天国</button>
+            <div id="aboutHeaven" style="display:none;background:rgba(167,139,250,0.04);border:1px solid rgba(167,139,250,0.15);border-radius:0 0 8px 8px;padding:12px;font-size:0.82em;color:#ccc;line-height:1.7;">
+              <div id="heavenBlueprintList" style="display:flex;flex-direction:column;gap:8px;">
+                <div style="font-size:0.78em;color:#a78bfa;line-height:1.7;padding:8px 0 4px 0;border-bottom:1px solid rgba(167,139,250,0.15);margin-bottom:8px;">貢献感は、幸福の源泉。<br><span style="color:#888;">ここに来るたびに、自分の貢献を確かめてね。</span></div>
               </div>
             </div>
           </div>
@@ -17735,28 +17757,107 @@ function toggleLibrary() {
   content.style.display = isOpen ? 'none' : 'block';
   btn.textContent = isOpen ? '🏰 王国の図書館 ▼' : '🏰 王国の図書館 ▲';
 }
+function openHeavenFromBanner() {
+  // 図書館を開いて志の天国を展開する
+  var tutorial = document.getElementById('tutorialOverlay');
+  if (tutorial) {
+    var splash = document.getElementById('tutorialSplash');
+    var main = document.getElementById('tutorialMain');
+    if (splash) splash.style.display = 'none';
+    if (main) main.style.display = 'flex';
+    tutorial.style.display = 'flex';
+    if (typeof _ycWelcomeAnim === 'function') setTimeout(_ycWelcomeAnim, 80);
+  }
+  // 図書館を開いて天国セクションを展開
+  setTimeout(function() {
+    var lib = document.getElementById('libraryContent');
+    var btn = document.getElementById('libraryToggleBtn');
+    if (lib) lib.style.display = 'block';
+    if (btn) btn.textContent = '🏰 王国の図書館 ▲';
+    var heaven = document.getElementById('aboutHeaven');
+    if (heaven && heaven.style.display === 'none') {
+      heaven.style.display = 'block';
+      renderHeavenBlueprints();
+    }
+    // 天国セクションにスクロール
+    setTimeout(function(){
+      if (heaven) heaven.scrollIntoView({behavior:'smooth', block:'start'});
+    }, 200);
+  }, 300);
+}
+function openHeavenFromBanner() {
+  // チュートリアルを開いて図書館→志の天国を展開
+  var tutorial = document.getElementById('tutorialOverlay');
+  if (tutorial) {
+    var splash = document.getElementById('tutorialSplash');
+    var main = document.getElementById('tutorialMain');
+    if (splash) splash.style.display = 'none';
+    if (main) main.style.display = 'flex';
+    tutorial.style.display = 'flex';
+    // 図書館を開く
+    setTimeout(function() {
+      var lib = document.getElementById('libraryContent');
+      var btn = document.getElementById('libraryToggleBtn');
+      if (lib) lib.style.display = 'block';
+      if (btn) btn.textContent = '🏰 王国の図書館 ▲';
+      // 志の天国を展開
+      var heaven = document.getElementById('aboutHeaven');
+      if (heaven) {
+        heaven.style.display = 'block';
+        renderHeavenBlueprints();
+        heaven.scrollIntoView({behavior:'smooth', block:'start'});
+      }
+    }, 100);
+  }
+}
 function renderHeavenBlueprints() {
   var list = document.getElementById('heavenBlueprintList');
   if (!list) return;
+  var header = '<div style="line-height:1.9;padding:8px 0 10px 0;border-bottom:1px solid rgba(255,215,0,0.2);margin-bottom:10px;">'
+    + '<div style="font-size:1em;font-weight:700;color:#ffd700;">貢献感は、幸福の源泉。</div>'
+    + '<div style="font-size:0.82em;color:#ccc;margin-top:2px;">ここに来るたびに、自分の貢献を確かめてね。</div>'
+    + '<div style="font-size:0.82em;color:#ccc;">自分の自分に対する貢献も、人に対する貢献も幸福の源泉だよ！</div>'
+    + '</div>';
   var bps = (typeof getHeavenBlueprints === 'function') ? getHeavenBlueprints() : [];
   if (bps.length === 0) {
-    list.innerHTML = '<div style="color:#888;font-size:0.85em;text-align:center;padding:12px;">まだ天国にいる志はいないよ。</div>';
+    list.innerHTML = header + '<div style="color:#888;font-size:0.85em;text-align:center;padding:12px;">まだ天国にいる志はいないよ。</div>';
     return;
   }
-  list.innerHTML = bps.map(function(bp) {
+  list.innerHTML = header + bps.map(function(bp) {
     var date = bp.heavenAt ? bp.heavenAt.slice(0,10) : '';
     var prog = bp.heavenProgress !== undefined && bp.heavenProgress !== null ? bp.heavenProgress : '?';
+    var gv = bp.grandvisionId ? allTasks.find(function(t){ return t.id === bp.grandvisionId && t.kind === 'grandvision'; }) : null;
+    var gants = allTasks.filter(function(t){ return t.kind==='gantt' && t.blueprintId===bp.id; });
+    var taskIds = gants.reduce(function(arr,g){ return arr.concat(g.taskIds||[]); },[]);
+    var tasks = taskIds.map(function(tid){ return allTasks.find(function(t){ return t.id===tid; }); }).filter(Boolean);
+    var doneCount = tasks.filter(function(t){ return t.done; }).length;
+    var taskHtml = tasks.length === 0
+      ? '<div style="font-size:0.75em;color:#666;padding:4px 0;">タスクの記録はないよ。</div>'
+      : tasks.map(function(t){
+          return '<div style="font-size:0.75em;padding:3px 0;display:flex;align-items:flex-start;gap:5px;color:' + (t.done ? '#c4b5fd' : '#777') + ';">'
+            + (t.done ? '✅' : '⬜') + '<span>' + t.text + '</span></div>';
+        }).join('');
+    var expandId = 'heaven-expand-' + bp.id;
     return '<div style="background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);border-radius:10px;padding:10px 12px;">'
       + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">'
-      + '<div style="display:flex;align-items:center;gap:6px;min-width:0;">'
+      + '<div style="display:flex;align-items:center;gap:6px;min-width:0;flex:1;">'
       + '<span style="font-size:1em;">' + (bp.emoji||'🌟') + '</span>'
       + '<span style="font-size:0.85em;font-weight:700;color:#e9d5ff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + bp.title + '</span>'
       + '</div>'
-      + '<button onclick="reviveBlueprint(\'' + bp.id + '\')" style="font-size:0.75em;padding:4px 10px;background:rgba(167,139,250,0.3);border:1px solid rgba(167,139,250,0.5);border-radius:6px;color:#e9d5ff;cursor:pointer;white-space:nowrap;flex-shrink:0;">造営に戻す</button>'
+      + '<div style="display:flex;gap:4px;flex-shrink:0;">'
+      + (tasks.length > 0 ? '<button onclick="var el=document.getElementById(\'' + expandId + '\');el.style.display=el.style.display===\'none\'?\'block\':\'none\';" style="font-size:0.75em;padding:4px 8px;background:rgba(167,139,250,0.2);border:1px solid rgba(167,139,250,0.4);border-radius:6px;color:#e9d5ff;cursor:pointer;">記録を見る</button>' : '')
+      + '<button onclick="reviveBlueprint(\'' + bp.id + '\')" style="font-size:0.75em;padding:4px 10px;background:rgba(167,139,250,0.3);border:1px solid rgba(167,139,250,0.5);border-radius:6px;color:#e9d5ff;cursor:pointer;">造営に戻す</button>'
       + '</div>'
-      + '<div style="display:flex;gap:10px;margin-top:4px;">'
+      + '</div>'
+      + (gv ? '<div style="font-size:0.72em;color:#ffd700;margin-top:4px;">🎖️ ' + (gv.emoji||'') + ' ' + gv.title + '</div>' : '')
+      + (bp.vision ? '<div style="font-size:0.75em;color:#c4b5fd;margin-top:3px;line-height:1.5;">' + bp.vision + '</div>' : '')
+      + '<div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap;">'
       + (date ? '<span style="font-size:0.72em;color:#888;">🗓️ ' + date + '</span>' : '')
       + '<span style="font-size:0.72em;color:#a78bfa;">✨ ' + prog + '%達成</span>'
+      + (tasks.length > 0 ? '<span style="font-size:0.72em;color:#888;">' + doneCount + '/' + tasks.length + '件完了</span>' : '')
+      + '</div>'
+      + '<div id="' + expandId + '" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(167,139,250,0.15);">'
+      + taskHtml
       + '</div>'
       + '</div>';
   }).join('');
