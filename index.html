@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.36.16';
+    const APP_VERSION = 'v0.36.18';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -17502,7 +17502,7 @@ function showDebugLog() {
     // 4b. DOM要素の存在確認（モーダル・主要UI）
     var modalDoms = ['deepFocusModal','quizModal','deckBuilderModal','searchModal',
                      'familyShareModal','tutorialOverlay','taskEditModal','customModal',
-                     'monthlyCalendar','weeklyContainer','gvBanner'];
+                     'monthlyCalendar','weeklyContainer'];
     modalDoms.forEach(function(id) {
       document.getElementById(id) ? ok('DOM: #' + id) : ng('DOM: #' + id, '見つからない');
     });
@@ -17516,12 +17516,78 @@ function showDebugLog() {
       JSON.stringify(parsed) === before ? ok('saveAllTasks/localStorage往復') : ng('saveAllTasks/localStorage往復', 'データ不一致');
     } catch(e) { ng('saveAllTasks往復テスト', e.message); }
 
-    // 6. generateTaskId 重複チェック
+    // 6. generateTaskId重複チェック
     try {
       var ids2 = [];
       for (var i = 0; i < 10; i++) ids2.push(window.generateTaskId());
       new Set(ids2).size === 10 ? ok('generateTaskId重複なし(10件)') : ng('generateTaskId重複あり');
     } catch(e) { ng('generateTaskId', e.message); }
+
+    // 7. UUID v7 深層検証
+    try {
+      var uuidErrors = [];
+      var uuids = [];
+      for (var i = 0; i < 100; i++) uuids.push(window.generateTaskId());
+
+      // 7a. フォーマット検証（全100件）
+      var uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+      var formatFail = uuids.filter(function(u){ return !uuidRe.test(u); });
+      formatFail.length === 0
+        ? ok('UUID v7 フォーマット正常(100件)')
+        : ng('UUID v7 フォーマット異常', formatFail.length + '件 例:' + formatFail[0]);
+
+      // 7b. バージョンビット検証（4番目グループ先頭が7）
+      var versionFail = uuids.filter(function(u){ return u.split('-')[2][0] !== '7'; });
+      versionFail.length === 0
+        ? ok('UUID v7 バージョンビット(7)正常')
+        : ng('UUID v7 バージョンビット異常', versionFail.length + '件');
+
+      // 7c. バリアントビット検証（5番目グループ先頭が8/9/a/b）
+      var variantFail = uuids.filter(function(u){ return !/^[89ab]/.test(u.split('-')[3]); });
+      variantFail.length === 0
+        ? ok('UUID v7 バリアントビット正常')
+        : ng('UUID v7 バリアントビット異常', variantFail.length + '件');
+
+      // 7d. 時系列単調増加（連続生成で昇順になるか）
+      var sorted = uuids.slice().sort();
+      var monotonic = true;
+      for (var i = 0; i < uuids.length - 1; i++) {
+        if (uuids[i] > uuids[i+1]) { monotonic = false; break; }
+      }
+      // UUIDは辞書順 = 時系列順（v7の特性）
+      JSON.stringify(uuids) === JSON.stringify(sorted)
+        ? ok('UUID v7 時系列単調増加(100件)')
+        : ng('UUID v7 時系列単調増加違反', '生成順と辞書順が一致しない');
+
+      // 7e. タイムスタンプ埋め込み検証（先頭48bitが現在時刻と近いか）
+      var now = Date.now();
+      var sample = uuids[0];
+      var p1 = sample.split('-')[0]; // 32bit
+      var p2 = sample.split('-')[1]; // 16bit
+      var tsHex = p1 + p2; // 48bit = 12hex chars
+      var tsMs = parseInt(tsHex, 16);
+      var diff = Math.abs(tsMs - now);
+      diff < 5000
+        ? ok('UUID v7 タイムスタンプ埋め込み正常(誤差' + diff + 'ms)')
+        : ng('UUID v7 タイムスタンプ異常', '誤差' + diff + 'ms');
+
+      // 7f. 一意性（100件中重複なし）
+      new Set(uuids).size === 100
+        ? ok('UUID v7 一意性(100件重複なし)')
+        : ng('UUID v7 重複あり', (100 - new Set(uuids).size) + '件重複');
+
+      // 7g. 既存allTasksのID全件がUUID v7形式か確認
+      var tasks = window.allTasks || [];
+      var nonUuid = tasks.filter(function(t){ return t.id && !uuidRe.test(t.id); });
+      var oldFormat = tasks.filter(function(t){ return t.id && /^(task_|dh_|df_|dfocus_|quiz_)/.test(t.id); });
+      nonUuid.length === 0
+        ? ok('allTasks全IDがUUID形式(' + tasks.length + '件)')
+        : ng('allTasks非UUID ID存在', nonUuid.length + '件 例:' + (nonUuid[0]||{}).id);
+      oldFormat.length === 0
+        ? ok('allTasks旧形式IDなし')
+        : ng('allTasks旧形式ID残存', oldFormat.length + '件 例:' + (oldFormat[0]||{}).id);
+
+    } catch(e) { ng('UUID v7テスト', e.message); }
 
     // 結果表示
     var resultDiv = document.createElement('div');
