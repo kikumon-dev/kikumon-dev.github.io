@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.36.14';
+    const APP_VERSION = 'v0.36.16';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -10798,6 +10798,13 @@ function myDeckApply(idx) {
       localStorage.removeItem('_dbg_log');
     })();
     loadAllSettings();
+    // 旧キーの掃除（毎回実行・既存ユーザー対応）
+    try {
+      var _legacyKeys = ['dataVersion', 'taskIdCounter', 'simpleMode', 'craftModeEnabled',
+        'dailyViewMode', 'initialView', 'monthlyMode', 'weeklyDays', 'weeklyRowH',
+        'weeklyCellScale', 'weeklyTimeBar', 'tlScrollMode', 'wgScrollMode'];
+      _legacyKeys.forEach(function(k){ localStorage.removeItem(k); });
+    } catch(e) {}
     window._dbgLog('【解析完了】BOOT SEQUENCE INITIATED --- 主の記憶領域にアクセスします / 全システム、起動を開始します / ' + APP_VERSION);
     window._dbgLog('loadAllSettings done. craftMode=' + allSettings.ui.craftModeEnabled + ' renderMode=' + allSettings.ui.craftRenderMode + ' savedView=' + localStorage.getItem('currentView'));
     // gantEnabledをデフォルトtrue（既存ユーザー対応）
@@ -10910,7 +10917,7 @@ function myDeckApply(idx) {
     const KNOWN_KEYS = new Set([
       'allTasks', 'allSettings', 'deletedTaskIds',
       'tokuPoints', 'gouPoints', 'escapeLog', 'deviceId',
-      'currentView', 'wgLastScrollTop', '_dbg_log',
+      'currentView', 'wgLastScrollTop', '_dbg_log', '_dbg_errors',
       'mig_ids_to_uuid_v7', 'mig_show_in_daily_to_display_scope_v1',
       'mig_category_to_calendar_v170', 'mig_death_ghost_flags_v0_24_59',
       'mig_gant_enabled_default_v0_32',
@@ -17486,10 +17493,17 @@ function showDebugLog() {
       uniq.size === ids.length ? ok('ID重複なし') : ng('ID重複', (ids.length - uniq.size) + '件重複');
     }
 
-    // 4. DOM要素の存在確認
+    // 4. DOM要素の存在確認（ビュー）
     var doms = ['monthlyView','weeklyView','timelineView','scratchView',
                 'journalView','settingsView','gantView','notebookView'];
     doms.forEach(function(id) {
+      document.getElementById(id) ? ok('DOM: #' + id) : ng('DOM: #' + id, '見つからない');
+    });
+    // 4b. DOM要素の存在確認（モーダル・主要UI）
+    var modalDoms = ['deepFocusModal','quizModal','deckBuilderModal','searchModal',
+                     'familyShareModal','tutorialOverlay','taskEditModal','customModal',
+                     'monthlyCalendar','weeklyContainer','gvBanner'];
+    modalDoms.forEach(function(id) {
       document.getElementById(id) ? ok('DOM: #' + id) : ng('DOM: #' + id, '見つからない');
     });
 
