@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.36.06';
+    const APP_VERSION = 'v0.36.07';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -17372,6 +17372,85 @@ function showDebugLog() {
   box.appendChild(btnCopy);
   var btnRow = document.createElement('div');
   btnRow.style.cssText = 'display:flex;gap:8px;margin-top:6px;';
+  // ===== スモークテストボタン =====
+  var btnSmoke = document.createElement('button');
+  btnSmoke.textContent = '🧪 スモークテスト実行';
+  btnSmoke.style.cssText = 'width:100%;padding:10px;background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.5);border-radius:8px;color:#a78bfa;font-weight:700;cursor:pointer;margin-bottom:8px;';
+  btnSmoke.onclick = function() {
+    var results = [];
+    var pass = 0, fail = 0;
+    function ok(name)   { results.push('✅ ' + name); pass++; }
+    function ng(name, reason) { results.push('❌ ' + name + (reason ? ': ' + reason : '')); fail++; }
+
+    // 1. 主要関数の存在確認
+    var funcs = ['switchView','renderMonthlyView','renderWeeklyView','renderAllSections',
+                 'saveAllTasks','loadAllTasks','saveAllSettings','loadAllSettings',
+                 'generateTaskId','getLocalDateStr','showToast',
+                 'openDeepFocusMode','_dfmToggleQuestion'];
+    funcs.forEach(function(f) {
+      typeof window[f] === 'function' ? ok('関数: ' + f) : ng('関数: ' + f, '未定義');
+    });
+
+    // 2. allSettings 構造チェック
+    var as = window.allSettings;
+    if (!as) { ng('allSettings', '未定義'); }
+    else {
+      as.ui     ? ok('allSettings.ui') : ng('allSettings.ui', 'なし');
+      as.profile ? ok('allSettings.profile') : ng('allSettings.profile', 'なし');
+      as.flags  ? ok('allSettings.flags') : ng('allSettings.flags', 'なし');
+      as.meta   ? ok('allSettings.meta') : ng('allSettings.meta', 'なし');
+    }
+
+    // 3. allTasks 存在・配列確認
+    var at = window.allTasks;
+    if (!Array.isArray(at)) { ng('allTasks', '配列でない'); }
+    else {
+      ok('allTasks: ' + at.length + '件');
+      var kinds = {};
+      at.forEach(function(t){ kinds[t.kind||'?'] = (kinds[t.kind||'?']||0)+1; });
+      ok('kindチェック: ' + JSON.stringify(kinds));
+      // IDの重複チェック
+      var ids = at.map(function(t){ return t.id; });
+      var uniq = new Set(ids);
+      uniq.size === ids.length ? ok('ID重複なし') : ng('ID重複', (ids.length - uniq.size) + '件重複');
+    }
+
+    // 4. DOM要素の存在確認
+    var doms = ['monthlyView','weeklyView','timelineView','scratchView',
+                'journalView','settingsView','gantView','notebookView'];
+    doms.forEach(function(id) {
+      document.getElementById(id) ? ok('DOM: #' + id) : ng('DOM: #' + id, '見つからない');
+    });
+
+    // 5. saveAllTasks → loadAllTasks 往復テスト
+    try {
+      var before = JSON.stringify(window.allTasks);
+      window.saveAllTasks();
+      var saved = localStorage.getItem('allTasks');
+      var parsed = JSON.parse(saved);
+      JSON.stringify(parsed) === before ? ok('saveAllTasks/localStorage往復') : ng('saveAllTasks/localStorage往復', 'データ不一致');
+    } catch(e) { ng('saveAllTasks往復テスト', e.message); }
+
+    // 6. generateTaskId 重複チェック
+    try {
+      var ids2 = [];
+      for (var i = 0; i < 10; i++) ids2.push(window.generateTaskId());
+      new Set(ids2).size === 10 ? ok('generateTaskId重複なし(10件)') : ng('generateTaskId重複あり');
+    } catch(e) { ng('generateTaskId', e.message); }
+
+    // 結果表示
+    var resultDiv = document.createElement('div');
+    resultDiv.style.cssText = 'margin-top:10px;padding:12px;background:#0d1117;border:1px solid #30363d;border-radius:8px;font-size:0.72em;line-height:1.9;';
+    var summary = (fail === 0 ? '🎉 全テスト通過' : '⚠️ ' + fail + '件失敗') + ' (' + pass + '/' + (pass+fail) + ')';
+    resultDiv.innerHTML = '<div style="font-weight:700;color:' + (fail===0?'#3fb950':'#ff6b6b') + ';margin-bottom:6px;">' + summary + '</div>'
+      + results.map(function(r){ return '<div>' + r + '</div>'; }).join('');
+    // 既存の結果を入れ替え
+    var old = box.querySelector('.smoke-result');
+    if (old) old.remove();
+    resultDiv.className = 'smoke-result';
+    box.appendChild(resultDiv);
+  };
+  box.appendChild(btnSmoke);
   var btnClear = document.createElement('button');
   btnClear.textContent = 'ログ消去';
   btnClear.style.cssText = 'flex:1;padding:10px;background:#21262d;border:1px solid #30363d;border-radius:8px;color:#8b949e;cursor:pointer;';
