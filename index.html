@@ -7,14 +7,17 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.35.99';
+    const APP_VERSION = 'v0.36.05';
     function toggleCraftMode(enabled) {
-      allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
+      if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
+      if (typeof saveAllSettings === 'function') saveAllSettings();
       const btn = document.getElementById('navCraft');
       if (btn) btn.style.display = enabled ? '' : 'none';
       const modeDiv = document.getElementById('craftRenderModeSetting');
       if (modeDiv) modeDiv.style.display = enabled ? '' : 'none';
-      if (!enabled && currentView === 'craft') switchView('daily');
+      if (!enabled && typeof currentView !== 'undefined' && currentView === 'craft') {
+        if (typeof switchView === 'function') switchView('daily');
+      }
     }
     // 起動時クラフトタブ表示制御
     document.addEventListener('DOMContentLoaded', function() {
@@ -110,11 +113,11 @@
       // dataVersionはallSettings.meta.dataVersionで管理（独立キー廃止）
     }
   })();
-      if ((allSettings.ui.craftModeEnabled === true || allSettings.ui.craftModeEnabled === 'true')) {
+      if (((window.allSettings||{}).ui||{}).craftModeEnabled === true || ((window.allSettings||{}).ui||{}).craftModeEnabled === 'true') {
         const btn = document.getElementById('navCraft');
         if (btn) btn.style.display = '';
       }
-      if (allSettings.ui.gantEnabled === true) {
+      if (((window.allSettings||{}).ui||{}).gantEnabled === true) {
         const gantBtn = document.getElementById('navGant');
         if (gantBtn) gantBtn.style.display = '';
       }
@@ -12948,6 +12951,107 @@ function loadSettingsUI() {
       allSettings.flags.inspectionMode = inspectionMode; saveAllSettings();
     }
     window.switchView = switchView;
+  // ===== window公開（HTML onclickから呼ばれる全関数） =====
+  try {
+    window._gantAddTask = _gantAddTask;
+    window._gantEdit = _gantEdit;
+    window._gantEditTask = _gantEditTask;
+    window._gantToggle = _gantToggle;
+    window._gantToggleDone = _gantToggleDone;
+    window.addCalendarSetting = addCalendarSetting;
+    window.addStampSetting = addStampSetting;
+    window.adjustMonthlyWidth = adjustMonthlyWidth;
+    window.adjustTlRowHeight = adjustTlRowHeight;
+    window.changeMonth = changeMonth;
+    window.changeTimelineDate = changeTimelineDate;
+    window.changeWeek = changeWeek;
+    window.changeYear = changeYear;
+    window.clearAllData = clearAllData;
+    window.clearStampSelection = clearStampSelection;
+    window.clearTimeSelect = clearTimeSelect;
+    window.closeBlueprintEditor = closeBlueprintEditor;
+    window.closeCreateModal = closeCreateModal;
+    window.closeFamilyShareModal = closeFamilyShareModal;
+    window.closeGanttEditor = closeGanttEditor;
+    window.closeModal = closeModal;
+    window.closeMonthlyTaskModal = closeMonthlyTaskModal;
+    window.closeSearchModal = closeSearchModal;
+    window.closeTaskEditModal = closeTaskEditModal;
+    window.closeWeeklyEditModal = closeWeeklyEditModal;
+    window.closeWeeklyTaskModal = closeWeeklyTaskModal;
+    window.completeSetup = completeSetup;
+    window.confirmAddToWeekly = confirmAddToWeekly;
+    window.confirmDeleteFromEdit = confirmDeleteFromEdit;
+    window.confirmPurpose = confirmPurpose;
+    window.deleteBlueprint = deleteBlueprint;
+    window.deleteGantt = deleteGantt;
+    window.deleteMonthlyTask = deleteMonthlyTask;
+    window.deleteTaskFromEditModal = deleteTaskFromEditModal;
+    window.doFamilyImport = doFamilyImport;
+    window.editPurpose = editPurpose;
+    window.editStopCondition = editStopCondition;
+    window.exportData = exportData;
+    window.familyCopyCode = familyCopyCode;
+    window.familyGenerateCode = familyGenerateCode;
+    window.familyShareSwitchTab = familyShareSwitchTab;
+    window.goTimelineToday = goTimelineToday;
+    window.handleAvatarChange = handleAvatarChange;
+    window.handleTimerClick = handleTimerClick;
+    window.importData = importData;
+    window.linkGanttTask = linkGanttTask;
+    window.nbNewPage = nbNewPage;
+    window.nbShareClose = nbShareClose;
+    window.nbShareImportStep1 = nbShareImportStep1;
+    window.nbShareImportStep2 = nbShareImportStep2;
+    window.nbShareStep0 = nbShareStep0;
+    window.nbShareStep1Emotion = nbShareStep1Emotion;
+    window.nbShareStep2Method = nbShareStep2Method;
+    window.nbShareStep3 = nbShareStep3;
+    window.onYearlyCellClick = onYearlyCellClick;
+    window.openBlueprintEditor = openBlueprintEditor;
+    window.openDayInfoModal = openDayInfoModal;
+    window.openFamilyShareModal = openFamilyShareModal;
+    window.openGanttEditor = openGanttEditor;
+    window.openGanttQuickTask = openGanttQuickTask;
+    window.openSearchModal = openSearchModal;
+    window.removeAvatar = removeAvatar;
+    window.renderMonthlyView = renderMonthlyView;
+    window.renderSearchResults = renderSearchResults;
+    window.resetMonthlyWidth = resetMonthlyWidth;
+    window.resetTlRowHeight = resetTlRowHeight;
+    window.saveAllSettings = saveAllSettings;
+    window.saveAllTasks = saveAllTasks;
+    window.saveBlueprintEditor = saveBlueprintEditor;
+    window.saveCreateTask = saveCreateTask;
+    window.saveGantDayRange = saveGantDayRange;
+    window.saveGanttEditor = saveGanttEditor;
+    window.saveMonthlyTask = saveMonthlyTask;
+    window.saveProfileQuick = saveProfileQuick;
+    window.saveSenderName = saveSenderName;
+    window.saveSettings = saveSettings;
+    window.saveStopCondition = saveStopCondition;
+    window.saveTaskEdit = saveTaskEdit;
+    window.saveWeeklyEdit = saveWeeklyEdit;
+    window.searchGanttTasks = searchGanttTasks;
+    window.selectEraserMode = selectEraserMode;
+    window.selectGantBlueprint = selectGantBlueprint;
+    window.selectGender = selectGender;
+    window.sendTaskEditToScratch = sendTaskEditToScratch;
+    window.setGantTimeScale = setGantTimeScale;
+    window.showGantTour = showGantTour;
+    window.switchDailyTab = switchDailyTab;
+    window.toggleBlueprintEmojiPicker = toggleBlueprintEmojiPicker;
+    window.toggleColors = toggleColors;
+    window.toggleDeepDive = toggleDeepDive;
+    window.toggleGantAutoScrollNow = toggleGantAutoScrollNow;
+    window.toggleGantEnabled = toggleGantEnabled;
+    window.toggleGantShowCompleted = toggleGantShowCompleted;
+    window.toggleGanttEmojiPicker = toggleGanttEmojiPicker;
+    window.toggleSimpleModePreview = toggleSimpleModePreview;
+    window.unlinkGanttTask = unlinkGanttTask;
+    window.unlinkTaskFromGantt = unlinkTaskFromGantt;
+  } catch(e) { console.warn("[window公開-b3] エラー:", e); }
+
     // 状態の復元（ページロード時）
     const savedView = localStorage.getItem('currentView');
     // craftは起動時に即Three.jsロードが走るためmonthlyにフォールバック
@@ -16312,7 +16416,27 @@ function copyDeckCodeFromModal() {
   } else {
     var ta=document.createElement('textarea'); ta.value=code; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); done();
   }
-}</script>
+}
+// ===== window公開（block4関数） =====
+try {
+  window.closeApplyQR = closeApplyQR;
+  window.closeCraftShareModal = closeCraftShareModal;
+  window.closeCraftVisitModal = closeCraftVisitModal;
+  window.closeCraftVisitView = closeCraftVisitView;
+  window.closeDeckQR = closeDeckQR;
+  window.closeQRScanner = closeQRScanner;
+  window.copyApplyCodeFromModal = copyApplyCodeFromModal;
+  window.copyCraftCode = copyCraftCode;
+  window.copyDeckCodeFromModal = copyDeckCodeFromModal;
+  window.openCraftShareModal = openCraftShareModal;
+  window.openCraftVisitModal = openCraftVisitModal;
+  window.openDeckQRScanner = openDeckQRScanner;
+  window.openQRScanner = openQRScanner;
+  window.switchApplyTab = switchApplyTab;
+  window.switchDeckTab = switchDeckTab;
+  window.visitCraft = visitCraft;
+} catch(e) { console.warn("[window公開-b4]", e); }
+</script>
 <!-- ===== チュートリアルモーダル ===== -->
 <div id="tutorialOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;">
 
@@ -16660,7 +16784,13 @@ function _ycGoSlide(n) {
       }
     }
     _ycUpdateDots(0);
-    </script>
+    
+// ===== window公開（block5関数） =====
+try {
+  window._ycFireCracker = _ycFireCracker;
+  window._ycGoSlide = _ycGoSlide;
+} catch(e) { console.warn("[window公開-b5]", e); }
+</script>
   </div>
 
   <!-- 従来のチュートリアル -->
@@ -18756,6 +18886,51 @@ window._dfmSaveToScratch = _dfmSaveToScratch;
 window._dfmToggleQuestion = _dfmToggleQuestion;
 window._dfmNextQuestion = _dfmNextQuestion;
 window._dfmShowStep = _dfmShowStep;
+
+// ===== window公開（block6関数） =====
+try {
+  window._dfmHistoryDelete = _dfmHistoryDelete;
+  window._dfmHistoryEdit = _dfmHistoryEdit;
+  window._dfmHistorySend = _dfmHistorySend;
+  window._dfmShowHistory = _dfmShowHistory;
+  window.adminBadgeTap = adminBadgeTap;
+  window.applyGuildLicense = applyGuildLicense;
+  window.checkAdminPw = checkAdminPw;
+  window.closeDeckBuilder = closeDeckBuilder;
+  window.closeGuildMode = closeGuildMode;
+  window.closeLpModal = closeLpModal;
+  window.copyStarterDeckCode = copyStarterDeckCode;
+  window.deckBuilderAddTask = deckBuilderAddTask;
+  window.deckBuilderApply = deckBuilderApply;
+  window.deckBuilderCancelEdit = deckBuilderCancelEdit;
+  window.deckBuilderEditTask = deckBuilderEditTask;
+  window.deckBuilderMoveTask = deckBuilderMoveTask;
+  window.deckBuilderPublish = deckBuilderPublish;
+  window.deckBuilderRemoveTask = deckBuilderRemoveTask;
+  window.deckBuilderSave = deckBuilderSave;
+  window.deleteJournal = deleteJournal;
+  window.editJournal = editJournal;
+  window.generateDeckEntry = generateDeckEntry;
+  window.importDeckFromSettings = importDeckFromSettings;
+  window.issueGuildLicense = issueGuildLicense;
+  window.openDeckBuilder = openDeckBuilder;
+  window.openJournalDetail = openJournalDetail;
+  window.openLpModal = openLpModal;
+  window.openNewJournal = openNewJournal;
+  window.saveJournalEdit = saveJournalEdit;
+  window.saveNewJournal = saveNewJournal;
+  window.showDebugLog = showDebugLog;
+  window.showGantOnboarding = showGantOnboarding;
+  window.showTutorial = showTutorial;
+  window.textToThoughts = textToThoughts;
+  window.thoughtDelete = thoughtDelete;
+  window.thoughtToScratch = thoughtToScratch;
+  window.thoughtsToText = thoughtsToText;
+  window.toggleAbout = toggleAbout;
+  window.toggleAdminMode = toggleAdminMode;
+  window.toggleLibrary = toggleLibrary;
+  window.updateMemoPreview = updateMemoPreview;
+} catch(e) { console.warn("[window公開-b6] エラー:", e); }
 </script>
 <!-- ===== 商人ギルドモーダル ===== -->
 <!-- 深考モーダル -->
