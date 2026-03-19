@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.36.08';
+    const APP_VERSION = 'v0.36.09';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -17031,6 +17031,10 @@ try {
               <button onclick="showGantOnboarding()" style="width:100%;margin-top:12px;padding:11px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:10px;color:#fff;font-size:0.88em;font-weight:800;cursor:pointer;letter-spacing:0.04em;box-shadow:0 3px 12px rgba(79,172,254,0.3);">🏯 造営ビューのオンボーディングを見る →</button>
             </div>
           </div>
+          <!-- 使い方クイズ -->
+          <div style="margin-bottom:8px;">
+            <button onclick="openQuizMode()" style="width:100%;text-align:left;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.35);border-radius:8px;padding:8px 12px;color:#fbbf24;font-size:0.85em;font-weight:bold;cursor:pointer;">🎯 使い方クイズに挑戦する</button>
+          </div>
         </div><!-- /aboutAccordion -->
       </div><!-- /libraryContent -->
     </div><!-- /librarySection -->
@@ -18999,8 +19003,188 @@ window._dfmToggleQuestion = _dfmToggleQuestion;
 window._dfmNextQuestion = _dfmNextQuestion;
 window._dfmShowStep = _dfmShowStep;
 
+// ===== 使い方クイズ =====
+var _quizQuestions = [
+  { q:'タスクを完了するには？', c:['タップ','長押し','スワイプ','ダブルタップ'], a:0, hint:'日次ビューのタスクをタップしてみよう', toku:10 },
+  { q:'タスクを編集するには？', c:['タップ','長押し','スワイプ','ダブルタップ'], a:1, hint:'長押しで編集モーダルが開くよ', toku:10 },
+  { q:'雑記帳はどのビューにある？', c:['月間','週間','日次','年間'], a:2, hint:'日次ビューの上のタブを見てみよう', toku:10 },
+  { q:'徳ポイントは何で貯まる？', c:['ログイン','タスク完了','クイズ正解','デッキ受け取り'], a:1, hint:'タスクを完了するたびに徳が積まれる', toku:10 },
+  { q:'志（ビジョン）はどこで管理する？', c:['日次','月間','造営','設定'], a:2, hint:'造営ビューに志・工程・タスクの3階層がある', toku:10 },
+  { q:'デッキコードは何で始まる？', c:['ACK1:','DCK1:','QRZ1:','GLD1:'], a:1, hint:'Deck → DCK1: だよ', toku:10 },
+  { q:'深考モードはどこから開ける？', c:['設定','図書館','雑記帳ヘッダー','造営'], a:2, hint:'雑記帳の日付の右を見てみよう', toku:10 },
+  { q:'王国コードを発行する目的は？', c:['バックアップ','徳を贈る','デッキを作る','設定を共有する'], a:1, hint:'コードを渡すと相手に徳が積まれる', toku:10 },
+  { q:'貢献感は何の源泉？', c:['成長','幸福','創造','つながり'], a:1, hint:'アドラー心理学のキーワードだよ', toku:10 },
+  { q:'やることクラフトのタグラインは？', c:['夢を叶えよう','これが、あなたの造営だ','毎日を楽しく','タスクを制す者が人生を制す'], a:1, hint:'図書館の「大切にしていること」を見てみよう', toku:10 }
+];
+var _quizState = { idx: 0, score: 0, answered: false, timer: null, timeLeft: 10 };
+
+function openQuizMode() {
+  var modal = document.getElementById('quizModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  _quizState = { idx: 0, score: 0, answered: false, timer: null, timeLeft: 10 };
+  _quizShowStart();
+}
+function closeQuizMode() {
+  var modal = document.getElementById('quizModal');
+  if (modal) modal.style.display = 'none';
+  if (_quizState.timer) clearInterval(_quizState.timer);
+}
+function _quizShowStart() {
+  var content = document.getElementById('quiz-content');
+  if (!content) return;
+  // ベストスコアをallTasksから取得
+  var qRec = (window.allTasks||[]).find(function(t){ return t.kind === 'quiz'; });
+  var best = qRec ? (qRec.bestScore || 0) : 0;
+  var plays = qRec ? (qRec.playCount || 0) : 0;
+  content.innerHTML = '<div style="text-align:center;padding:16px 0;">'
+    + '<div style="font-size:2.5em;margin-bottom:12px;">🎯</div>'
+    + '<div style="font-size:1.1em;font-weight:700;color:#fff;margin-bottom:8px;">使い方クイズ</div>'
+    + '<div style="font-size:0.82em;color:#555;margin-bottom:24px;">全10問・各10秒制限</div>'
+    + (plays > 0 ? '<div style="background:#111;border:1px solid #222;border-radius:10px;padding:12px;margin-bottom:24px;">'
+      + '<div style="font-size:0.78em;color:#888;">最高スコア</div>'
+      + '<div style="font-size:1.8em;font-weight:700;color:#fbbf24;">' + best + '<span style="font-size:0.5em;color:#555;">/10</span></div>'
+      + '<div style="font-size:0.72em;color:#444;">' + plays + '回プレイ</div>'
+      + '</div>' : '')
+    + '<button onclick="_quizStart()" style="width:100%;padding:14px;background:linear-gradient(135deg,#f59e0b,#fbbf24);border:none;border-radius:12px;color:#1a0a00;font-size:1em;font-weight:800;cursor:pointer;letter-spacing:0.03em;">はじめる →</button>'
+    + '</div>';
+}
+function _quizStart() {
+  _quizState = { idx: 0, score: 0, answered: false, timer: null, timeLeft: 10 };
+  _quizShowQ();
+}
+function _quizShowQ() {
+  var q = _quizQuestions[_quizState.idx];
+  var content = document.getElementById('quiz-content');
+  if (!content || !q) return;
+  _quizState.answered = false;
+  _quizState.timeLeft = 10;
+
+  content.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">'
+    + '<div style="font-size:0.78em;color:#555;">Q' + (_quizState.idx+1) + ' / ' + _quizQuestions.length + '</div>'
+    + '<div id="quiz-timer" style="font-size:1.4em;font-weight:700;color:#fbbf24;">10</div>'
+    + '</div>'
+    + '<div style="font-size:0.95em;font-weight:700;color:#fff;line-height:1.6;margin-bottom:24px;padding:16px;background:#111;border-radius:10px;">' + q.q + '</div>'
+    + '<div style="display:flex;flex-direction:column;gap:10px;" id="quiz-choices">'
+    + q.c.map(function(c, i) {
+        return '<button onclick="_quizAnswer(' + i + ')" style="padding:12px 16px;background:#111;border:1.5px solid #222;border-radius:10px;color:#ddd;font-size:0.9em;text-align:left;cursor:pointer;transition:all 0.15s;" id="quiz-choice-' + i + '">'
+          + ['A','B','C','D'][i] + '　' + c + '</button>';
+      }).join('')
+    + '</div>';
+
+  // タイマー開始
+  if (_quizState.timer) clearInterval(_quizState.timer);
+  _quizState.timer = setInterval(function() {
+    _quizState.timeLeft--;
+    var timerEl = document.getElementById('quiz-timer');
+    if (timerEl) {
+      timerEl.textContent = _quizState.timeLeft;
+      timerEl.style.color = _quizState.timeLeft <= 3 ? '#ef4444' : '#fbbf24';
+    }
+    if (_quizState.timeLeft <= 0) {
+      clearInterval(_quizState.timer);
+      if (!_quizState.answered) _quizAnswer(-1); // タイムアウト
+    }
+  }, 1000);
+}
+function _quizAnswer(choice) {
+  if (_quizState.answered) return;
+  _quizState.answered = true;
+  if (_quizState.timer) clearInterval(_quizState.timer);
+
+  var q = _quizQuestions[_quizState.idx];
+  var correct = (choice === q.a);
+  if (correct) _quizState.score++;
+
+  // ボタンの色を変える
+  for (var i = 0; i < q.c.length; i++) {
+    var btn = document.getElementById('quiz-choice-' + i);
+    if (!btn) continue;
+    if (i === q.a) {
+      btn.style.background = 'rgba(52,211,153,0.2)';
+      btn.style.borderColor = '#34d399';
+      btn.style.color = '#34d399';
+    } else if (i === choice && !correct) {
+      btn.style.background = 'rgba(239,68,68,0.2)';
+      btn.style.borderColor = '#ef4444';
+      btn.style.color = '#ef4444';
+    }
+    btn.disabled = true;
+  }
+
+  // フィードバック表示
+  var timerEl = document.getElementById('quiz-timer');
+  if (timerEl) timerEl.textContent = correct ? '✅' : (choice === -1 ? '⏱' : '❌');
+
+  var feedback = document.createElement('div');
+  feedback.style.cssText = 'margin-top:16px;padding:14px;background:' + (correct ? 'rgba(52,211,153,0.1)' : 'rgba(239,68,68,0.08)') + ';border:1px solid ' + (correct ? 'rgba(52,211,153,0.3)' : 'rgba(239,68,68,0.2)') + ';border-radius:10px;';
+  feedback.innerHTML = '<div style="font-weight:700;color:' + (correct ? '#34d399' : '#f87171') + ';margin-bottom:4px;">'
+    + (choice === -1 ? '⏱ 時間切れ！' : (correct ? '✅ 正解！ +' + q.toku + '徳' : '❌ 不正解'))
+    + '</div>'
+    + '<div style="font-size:0.82em;color:#888;">💡 ' + q.hint + '</div>';
+
+  var choices = document.getElementById('quiz-choices');
+  if (choices) choices.after(feedback);
+
+  // 次へボタン
+  setTimeout(function() {
+    var nextBtn = document.createElement('button');
+    nextBtn.textContent = _quizState.idx + 1 < _quizQuestions.length ? '次の問題 →' : '結果を見る →';
+    nextBtn.style.cssText = 'width:100%;padding:12px;background:#fbbf24;border:none;border-radius:10px;color:#1a0a00;font-size:0.9em;font-weight:700;cursor:pointer;margin-top:12px;';
+    nextBtn.onclick = function() {
+      _quizState.idx++;
+      if (_quizState.idx < _quizQuestions.length) {
+        _quizShowQ();
+      } else {
+        _quizFinish();
+      }
+    };
+    var content = document.getElementById('quiz-content');
+    if (content) content.appendChild(nextBtn);
+  }, 600);
+}
+function _quizFinish() {
+  var score = _quizState.score;
+  var total = _quizQuestions.length;
+  var tokuEarned = _quizQuestions.slice(0, score).reduce(function(s, q) { return s + q.toku; }, 0);
+
+  // allTasksに記録
+  try {
+    var tasks = window.allTasks || [];
+    var rec = tasks.find(function(t){ return t.kind === 'quiz'; });
+    if (rec) {
+      rec.lastScore = score;
+      rec.bestScore = Math.max(rec.bestScore || 0, score);
+      rec.playCount = (rec.playCount || 0) + 1;
+      if (score === total) rec.clearedAt = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
+    } else {
+      tasks.push({ id: (typeof generateTaskId === 'function' ? generateTaskId() : 'quiz_' + Date.now()), kind: 'quiz', lastScore: score, bestScore: score, playCount: 1, clearedAt: score === total ? new Date().toISOString().slice(0,10) : null, createdAt: new Date().toISOString() });
+    }
+    if (typeof saveAllTasks === 'function') saveAllTasks();
+    // 徳ポイント付与
+    if (tokuEarned > 0 && typeof addToku === 'function') addToku(tokuEarned, 'クイズ正解');
+  } catch(e) { console.warn('[quiz]', e); }
+
+  var content = document.getElementById('quiz-content');
+  if (!content) return;
+  var perfect = score === total;
+  content.innerHTML = '<div style="text-align:center;padding:16px 0;">'
+    + '<div style="font-size:3em;margin-bottom:12px;">' + (perfect ? '🏆' : score >= 7 ? '🎉' : score >= 5 ? '👍' : '💪') + '</div>'
+    + '<div style="font-size:1.1em;font-weight:700;color:#fff;margin-bottom:4px;">' + score + ' / ' + total + ' 問正解</div>'
+    + '<div style="font-size:0.82em;color:#fbbf24;margin-bottom:24px;">+' + tokuEarned + '徳 獲得！</div>'
+    + (perfect ? '<div style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:10px;padding:12px;margin-bottom:20px;font-size:0.82em;color:#fbbf24;">🎊 全問正解！あなたはやることクラフトマスターだ！</div>' : '')
+    + '<div style="display:flex;flex-direction:column;gap:10px;">'
+    + '<button onclick="_quizStart()" style="padding:12px;background:linear-gradient(135deg,#f59e0b,#fbbf24);border:none;border-radius:10px;color:#1a0a00;font-size:0.9em;font-weight:700;cursor:pointer;">もう一度挑戦する</button>'
+    + '<button onclick="closeQuizMode()" style="padding:12px;background:transparent;border:1px solid #333;border-radius:10px;color:#555;font-size:0.9em;cursor:pointer;">図書館に戻る</button>'
+    + '</div></div>';
+}
+
 // ===== window公開（block6関数） =====
 try {
+  window.openQuizMode = openQuizMode;
+  window.closeQuizMode = closeQuizMode;
+  window._quizStart = _quizStart;
+  window._quizAnswer = _quizAnswer;
   window._dfmHistoryDelete = _dfmHistoryDelete;
   window._dfmHistoryEdit = _dfmHistoryEdit;
   window._dfmHistorySend = _dfmHistorySend;
@@ -19112,6 +19296,16 @@ try {
     </div>
     <div id="dfm-history-list" style="display:flex;flex-direction:column;gap:12px;"></div>
   </div>
+</div>
+<!-- クイズモーダル -->
+<div id="quizModal" style="display:none;position:fixed;inset:0;background:#0a0a0a;z-index:10000;flex-direction:column;overflow:hidden;">
+  <!-- ヘッダー -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #1a1a1a;flex-shrink:0;">
+    <div style="font-size:0.88em;font-weight:700;color:#fbbf24;letter-spacing:0.05em;">🎯 使い方クイズ</div>
+    <button onclick="closeQuizMode()" style="background:none;border:none;color:#555;font-size:1.2em;cursor:pointer;padding:4px 8px;">✕</button>
+  </div>
+  <!-- コンテンツエリア -->
+  <div id="quiz-content" style="display:flex;flex-direction:column;flex:1;overflow-y:auto;padding:24px 20px;gap:16px;"></div>
 </div>
 <div id="guildModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:10000;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;">
   <div style="background:linear-gradient(160deg,#1a1200,#2a1a00);border:2px solid #c8a200;border-radius:18px;padding:30px 24px;max-width:380px;width:100%;color:#fff;box-shadow:0 0 60px rgba(200,162,0,0.4);text-align:center;">
