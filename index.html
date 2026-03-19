@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.36.07';
+    const APP_VERSION = 'v0.36.08';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -17325,6 +17325,12 @@ function showDebugLog() {
   btnCopy.textContent = '📋 全文コピー';
   btnCopy.style.cssText = 'width:100%;padding:10px;background:#238636;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer;margin-top:14px;margin-bottom:6px;';
   btnCopy.onclick = function(){
+    // スモークテスト結果を取得
+    var smokeResult = '';
+    var smokeEl = box.querySelector('.smoke-result');
+    if (smokeEl) {
+      smokeResult = smokeEl.innerText || smokeEl.textContent || '';
+    }
     var text = [
       '=== デバッグパネル ' + v + ' ===',
       '',
@@ -17335,7 +17341,10 @@ function showDebugLog() {
       errArr.map(function(e){ return e.msg + ' src:' + (e.src||'?') + ' L' + (e.line||'?') + (e.stack ? '\n' + e.stack.slice(0,300) : ''); }).join('\n'),
       '',
       '--- localStorage ---',
-      lsInfo.join('\n')
+      lsInfo.join('\n'),
+      '',
+      '--- スモークテスト ---',
+      smokeResult || '(未実行・先にスモークテストを実行してください)'
     ].join('\n');
     // iOS Safari対応コピー処理
     function doFallbackCopy() {
