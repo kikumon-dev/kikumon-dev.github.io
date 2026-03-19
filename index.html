@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.36.11';
+    const APP_VERSION = 'v0.36.12';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -17402,6 +17402,42 @@ function showDebugLog() {
                  'openDeepFocusMode','_dfmToggleQuestion'];
     funcs.forEach(function(f) {
       typeof window[f] === 'function' ? ok('関数: ' + f) : ng('関数: ' + f, '未定義');
+    });
+
+    // 1b. 機能実在確認（スタブ・空関数でないか・DOM存在確認）
+    var featureChecks = [
+      // [機能名, 関数名, DOM確認ID or null, 最低行数]
+      ['AI計画モーダル', 'openAiPlanModal', null, 10],
+      ['深考モーダル', 'openDeepFocusMode', 'deepFocusModal', 5],
+      ['クイズモーダル', 'openQuizMode', 'quizModal', 5],
+      ['デッキビルダー', 'openDeckBuilder', 'deckBuilderModal', 3],
+      ['検索モーダル', 'openSearchModal', 'searchModal', 3],
+      ['家族共有モーダル', 'openFamilyShareModal', 'familyShareModal', 3],
+      ['チュートリアル', 'showTutorial', 'tutorialOverlay', 3],
+      ['月間ビュー', 'renderMonthlyView', 'monthlyCalendar', 10],
+      ['週間ビュー', 'renderWeeklyView', 'weeklyContainer', 10],
+      ['月切り替え', 'changeMonth', null, 3],
+    ];
+    featureChecks.forEach(function(fc) {
+      var name = fc[0], fnName = fc[1], domId = fc[2], minLines = fc[3];
+      var fn = window[fnName];
+      if (typeof fn !== 'function') {
+        ng('機能: ' + name, '関数未定義');
+        return;
+      }
+      // 関数の中身の行数チェック（スタブ検出）
+      var src = fn.toString();
+      var lines = src.split('\n').filter(function(l){ return l.trim().length > 0; }).length;
+      if (lines < minLines) {
+        ng('機能: ' + name, 'スタブの疑い(' + lines + '行)');
+        return;
+      }
+      // DOM存在確認
+      if (domId && !document.getElementById(domId)) {
+        ng('機能: ' + name, 'DOM #' + domId + ' が存在しない');
+        return;
+      }
+      ok('機能: ' + name + ' (' + lines + '行)');
     });
 
     // 2. allSettings 構造チェック
