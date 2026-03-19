@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.35.82';
+    const APP_VERSION = 'v0.35.83';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -15895,7 +15895,516 @@ function _ycShowMVVSplash() {
   _ycGoSlide(0);
   el.style.display = 'flex';
 }
-// ===== 深考モード =====
+// ===== 設定UI =====
+function loadSettingsUI() {
+      // クラフトモード
+      const craftCheck = document.getElementById('craftModeEnabled');
+      if (craftCheck) {
+        if (allSettings.ui.craftModeEnabled === false || allSettings.ui.craftModeEnabled === null) {
+          allSettings.ui.craftModeEnabled = true; saveAllSettings();
+        }
+        const enabled = (allSettings.ui.craftModeEnabled === true || allSettings.ui.craftModeEnabled === 'true');
+        craftCheck.checked = enabled;
+        craftCheck.onchange = function(){ toggleCraftMode(this.checked); };
+        // 描画モード設定の表示/非表示
+        const modeDiv = document.getElementById('craftRenderModeSetting');
+        if (modeDiv) modeDiv.style.display = enabled ? '' : 'none';
+      }
+      // 造営タブ
+      const gantCheck = document.getElementById('gantEnabled');
+      if (gantCheck) {
+        gantCheck.checked = allSettings.ui.gantEnabled === true;
+      }
+      // 描画モード
+      const renderMode = allSettings.ui.craftRenderMode || '2d';
+      const r2d = document.getElementById('craftMode2D');
+      const r3d = document.getElementById('craftMode3D');
+      if (r2d) r2d.checked = renderMode === '2d';
+      if (r3d) r3d.checked = renderMode === '3d';
+      // 描画モード切替：canvasを作り直してから再起動
+      var _switchRenderMode = function(mode) {
+        allSettings.ui.craftRenderMode = mode; saveAllSettings();
+        // アニメ停止
+        if (typeof _craftAnimFrame !== 'undefined' && _craftAnimFrame) {
+          cancelAnimationFrame(_craftAnimFrame); _craftAnimFrame = null;
+        }
+        _craftInitialized = false;
+        // canvasを作り直す（WebGL↔Canvas2Dのコンテキスト競合を回避）
+        var oldC = document.getElementById('craftCanvas');
+        if (oldC && oldC.parentNode) {
+          var par = oldC.parentNode;
+          var nc = document.createElement('canvas');
+          nc.id = 'craftCanvas';
+          nc.style.cssText = oldC.style.cssText || '';
+          nc.style.position = 'absolute';
+          nc.style.top = '0'; nc.style.left = '0';
+          nc.style.width = '100%'; nc.style.height = '100%';
+          nc.style.display = 'block';
+          par.replaceChild(nc, oldC);
+        }
+        // クラフトタブが表示中の場合のみ即再起動、非表示なら次回タブ表示時に初期化
+        var craftView = document.getElementById('craftView');
+        if (craftView && craftView.style.display !== 'none') {
+          setTimeout(function(){
+            if(typeof initCraftWorld === 'function') initCraftWorld();
+          }, 50);
+        }
+        // 非表示の場合は_craftInitialized=falseのままにしておく→タブ開時に自動初期化
+      }
+      if (r2d) r2d.onchange = function(){ if(this.checked) _switchRenderMode('2d'); };
+      if (r3d) r3d.onchange = function(){ if(this.checked) _switchRenderMode('3d'); };
+      loadCalendarSettingsUI();
+      // 初期ビュー
+      const initialView = allSettings.ui.initialView || 'monthly';
+      const radios = document.querySelectorAll('input[name="initialView"]');
+      radios.forEach(radio => {
+        radio.checked = (radio.value === initialView);
+      });
+      // 月間表示モード
+      const monthlyMode = allSettings.ui.monthlyMode || 'fixed';
+      const monthlyRadios = document.querySelectorAll('input[name="monthlyMode"]');
+      monthlyRadios.forEach(radio => {
+        radio.checked = (radio.value === monthlyMode);
+      });
+      // 週間ビュースクロールモード
+      const wgScrollMode = allSettings.ui.wgScrollMode || 'now';
+      const wgScrollRadios = document.querySelectorAll('input[name="wgScrollMode"]');
+      wgScrollRadios.forEach(radio => { radio.checked = (radio.value === wgScrollMode); });
+      // タイムラインスクロールモード
+      const tlScrollMode = allSettings.ui.tlScrollMode || 'now';
+      const tlScrollRadios = document.querySelectorAll('input[name="tlScrollMode"]');
+      tlScrollRadios.forEach(radio => { radio.checked = (radio.value === tlScrollMode); });
+      // 週間表示日数
+      const weeklyDays = allSettings.ui.weeklyDays || '7';
+      document.querySelectorAll('input[name="weeklyDays"]').forEach(radio => {
+        radio.checked = (radio.value === weeklyDays);
+      });
+      // 週間時刻バー
+      const weeklyTimeBar = allSettings.ui.weeklyTimeBar || 'show';
+      document.querySelectorAll('input[name="weeklyTimeBar"]').forEach(radio => {
+        radio.checked = (radio.value === weeklyTimeBar);
+      });
+      // 日次ビュー表示モード
+      const dailyMode = allSettings.ui.dailyViewMode || 'matrix';
+      const dailyRadios = document.querySelectorAll('input[name="dailyViewMode"]');
+      dailyRadios.forEach(radio => {
+        radio.checked = (radio.value === dailyMode);
+      });
+      // シンプルモード
+      const simpleMode = allSettings.ui.simpleMode === 'on';
+      const simpleToggle = document.getElementById('simpleModeToggle');
+      if (simpleToggle) simpleToggle.checked = simpleMode;
+      updateSimpleToggleUI(simpleMode);
+      const stampArea = document.getElementById('stampSettingsArea');
+      if (stampArea) stampArea.style.display = simpleMode ? 'block' : 'none';
+      if (simpleMode) loadStampSettingsUI();
+      // プロフィール
+      const savedName = allSettings.profile.name || '';
+      // 性別設定の初期化
+      const savedGender = allSettings.profile.gender || 'king';
+      updateGenderUI(savedGender);
+      const savedAvatar = allSettings.profile.avatar || '';
+      const _nameInput = document.getElementById('profileNameInput');
+      if (_nameInput) _nameInput.value = savedName;
+      const _avatarPreview = document.getElementById('profileAvatarPreview');
+      const _avatarPlaceholder = document.getElementById('profileAvatarPlaceholder');
+      const _avatarRemoveBtn = document.getElementById('avatarRemoveBtn');
+      if (savedAvatar) {
+        if (_avatarPreview) { _avatarPreview.src = savedAvatar; _avatarPreview.style.display = 'block'; }
+        if (_avatarPlaceholder) _avatarPlaceholder.style.display = 'none';
+        if (_avatarRemoveBtn) _avatarRemoveBtn.style.display = 'block';
+      } else {
+        if (_avatarPreview) _avatarPreview.style.display = 'none';
+        if (_avatarPlaceholder) _avatarPlaceholder.style.display = 'flex';
+        if (_avatarRemoveBtn) _avatarRemoveBtn.style.display = 'none';
+      }
+    }
+    // アバター画像変更
+    function handleAvatarChange(event) {
+      const file = event.target.files[0];
+      if (!file) {
+        return;
+      }
+      // ファイルサイズチェック（5MB以下に緩和）
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('画像サイズは5MB以下にしてください', {type:'warn'}); return;
+      }
+      // タイプチェックを緩和（iOSで空になる場合がある）
+      const validExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif'];
+      const fileName = file.name.toLowerCase();
+      const hasValidExt = validExtensions.some(ext => fileName.endsWith(ext));
+      if (file.type && !file.type.startsWith('image/') && !hasValidExt) {
+        showToast('画像ファイルを選択してください', {type:'warn'}); return;
+      }
+      const reader = new FileReader();
+      reader.onerror = function(err) {
+        showToast('画像の読み込みに失敗しました', {type:'error'});
+      };
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onerror = function(err) {
+          showToast('この画像形式は対応していません。\nJPGまたはPNG形式でお試しください。', {type:'error'});
+        };
+        img.onload = function() {
+          try {
+            const canvas = document.createElement('canvas');
+            const size = 200;
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            const minDim = Math.min(img.width, img.height);
+            const sx = (img.width - minDim) / 2;
+            const sy = (img.height - minDim) / 2;
+            ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
+            const resizedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+            const preview = document.getElementById('profileAvatarPreview');
+            preview.src = resizedBase64;
+            preview.style.display = 'block';
+            document.getElementById('profileAvatarPlaceholder').style.display = 'none';
+            document.getElementById('avatarRemoveBtn').style.display = 'block';
+            allSettings.profile.avatar = resizedBase64; saveAllSettings();
+            updateNavAvatar();
+          } catch (err) {
+            showToast('画像の処理に失敗しました', {type:'error'});
+          }
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+    // アバター削除
+    function removeAvatar() {
+      document.getElementById('profileAvatarPreview').src = '';
+      document.getElementById('profileAvatarPreview').style.display = 'none';
+      document.getElementById('profileAvatarPlaceholder').style.display = 'flex';
+      document.getElementById('avatarRemoveBtn').style.display = 'none';
+      document.getElementById('avatarInput').value = '';
+      // 即座にlocalStorageから削除＆ナビ更新
+      allSettings.profile.avatar = ''; saveAllSettings();
+      updateNavAvatar();
+    }
+    // ナビバーのアバターを更新
+    function updateNavAvatar() {
+      const savedAvatar = allSettings.profile.avatar;
+      const navAvatar = document.getElementById('navAvatar');
+      const navAvatarWrapper = document.getElementById('navAvatarWrapper');
+      const navPlaceholder = document.getElementById('navAvatarPlaceholder');
+      if (savedAvatar) {
+        navAvatar.src = savedAvatar;
+        navAvatarWrapper.style.display = 'flex';
+        navPlaceholder.style.display = 'none';
+      } else {
+        navAvatarWrapper.style.display = 'none';
+        navPlaceholder.style.display = 'inline';
+      }
+    }
+    // ===================================================
+    // カレンダー管理UI
+    // ===================================================
+    function loadCalendarSettingsUI() {
+      const list = document.getElementById('calendarSettingsList');
+      if (!list) return;
+      list.innerHTML = '';
+      let dragSrcIdx = null;
+      // メインカレンダーselectを更新
+      const mainSel = document.getElementById('mainCalendarSelect');
+      if (mainSel) {
+        const mainId = localStorage.getItem('mainCalendarId') || calendars[0]?.id;
+        mainSel.innerHTML = '';
+        calendars.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c.id;
+          opt.textContent = c.name;
+          if (c.id === mainId) opt.selected = true;
+          mainSel.appendChild(opt);
+        });
+      }
+      // 自動投入チェックの初期値
+      const autoCheck = document.getElementById('autoMainCalendarCheck');
+      if (autoCheck) {
+        autoCheck.checked = localStorage.getItem('autoMainCalendar') === 'true';
+      }
+      calendars.forEach(function(cal, idx) {
+        const row = document.createElement('div');
+        row.dataset.idx = idx;
+        row.draggable = true;
+        row.style.cssText = 'display:flex;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid #f5f5f5;cursor:default;transition:opacity 0.15s;min-width:0;';
+        // D&Dイベント
+        row.addEventListener('dragstart', function(e) {
+          dragSrcIdx = idx;
+          setTimeout(() => row.style.opacity = '0.4', 0);
+          e.dataTransfer.effectAllowed = 'move';
+        });
+        row.addEventListener('dragend', function() { row.style.opacity = '1'; });
+        row.addEventListener('dragover', function(e) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          row.style.borderTop = '2px solid #4facfe';
+        });
+        row.addEventListener('dragleave', function() { row.style.borderTop = ''; });
+        row.addEventListener('drop', function(e) {
+          e.preventDefault();
+          row.style.borderTop = '';
+          if (dragSrcIdx === null || dragSrcIdx === idx) return;
+          const moved = calendars.splice(dragSrcIdx, 1)[0];
+          calendars.splice(idx, 0, moved);
+          saveCalendars();
+          loadCalendarSettingsUI();
+          renderCalendarFilter('monthlyCalendarFilter', renderMonthlyView);
+          renderCalendarFilter('weeklyCalendarFilter', renderWeeklyView);
+        });
+        // ハンドル
+        const handle = document.createElement('div');
+        handle.textContent = '⠿';
+        handle.style.cssText = 'color:#ccc;cursor:grab;font-size:1.1em;flex-shrink:0;user-select:none;padding:0 2px;touch-action:none;';
+        // 色ピッカー
+        const colorInput = document.createElement('input');
+        colorInput.type = 'color';
+        colorInput.value = cal.color;
+        colorInput.style.cssText = 'width:28px;height:28px;border:none;border-radius:6px;cursor:pointer;padding:0;flex-shrink:0;';
+        colorInput.onchange = function() { updateCalendarField(idx, 'color', this.value); };
+        // 名前入力
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.value = cal.name;
+        nameInput.maxLength = 20;
+        nameInput.style.cssText = 'flex:1;min-width:0;padding:6px 8px;border:1.5px solid #eee;border-radius:8px;font-size:0.88em;';
+        nameInput.onchange = function() { updateCalendarField(idx, 'name', this.value); };
+        // 表示チェック
+        const visLabel = document.createElement('label');
+        visLabel.style.cssText = 'display:flex;align-items:center;gap:3px;font-size:0.78em;color:#555;cursor:pointer;flex-shrink:0;';
+        const visCheck = document.createElement('input');
+        visCheck.type = 'checkbox';
+        visCheck.checked = !!cal.visible;
+        visCheck.onchange = function() { updateCalendarField(idx, 'visible', this.checked); };
+        visLabel.appendChild(visCheck);
+        visLabel.appendChild(document.createTextNode('表示'));
+        // 共有可チェック
+        const shareLabel = document.createElement('label');
+        shareLabel.style.cssText = 'display:flex;align-items:center;gap:3px;font-size:0.78em;color:#555;cursor:pointer;flex-shrink:0;';
+        const shareCheck = document.createElement('input');
+        shareCheck.type = 'checkbox';
+        shareCheck.checked = !!cal.shareable;
+        shareCheck.onchange = function() { updateCalendarField(idx, 'shareable', this.checked); };
+        shareLabel.appendChild(shareCheck);
+        shareLabel.appendChild(document.createTextNode('共有可'));
+        row.appendChild(handle);
+        row.appendChild(colorInput);
+        row.appendChild(nameInput);
+        row.appendChild(visLabel);
+        row.appendChild(shareLabel);
+        // 削除ボタン（複数ある場合のみ）
+        if (calendars.length > 1) {
+          const delBtn = document.createElement('button');
+          delBtn.textContent = '✕';
+          delBtn.style.cssText = 'background:none;border:none;color:#ccc;font-size:1.1em;cursor:pointer;padding:0 2px;flex-shrink:0;transition:color 0.15s;';
+          delBtn.onmouseover = function(){ this.style.color='#e53935'; };
+          delBtn.onmouseout  = function(){ this.style.color='#ccc'; };
+          delBtn.addEventListener('click', (function(cId) {
+            return function() { removeCalendar(cId); };
+          })(cal.id));
+          row.appendChild(delBtn);
+        }
+        list.appendChild(row);
+      });
+    }
+    function updateCalendarField(idx, field, value) {
+      if (calendars[idx]) {
+        calendars[idx][field] = value;
+        saveCalendars();
+        if (field === 'visible') {
+          activeCalendarIds = null;
+          renderCalendarFilter('monthlyCalendarFilter', renderMonthlyView);
+          renderCalendarFilter('weeklyCalendarFilter', renderWeeklyView);
+        }
+        if (field === 'name') {
+          renderCalendarFilter('monthlyCalendarFilter', renderMonthlyView);
+          renderCalendarFilter('weeklyCalendarFilter', renderWeeklyView);
+        }
+      }
+    }
+    function addCalendarSetting() {
+      if (calendars.length >= 15) { showToast('カレンダーは最大15個です', {type:'warn'}); return; }
+      const colors = ['#f48fb1','#ffcc80','#fff176','#80deea','#b39ddb','#ef9a9a','#c5e1a5','#80cbc4'];
+      calendars.push({
+        id: (typeof generateTaskId === 'function') ? generateTaskId() : crypto.randomUUID(),
+        name: 'カレンダー' + (calendars.length + 1),
+        color: colors[calendars.length % colors.length],
+        visible: true,
+        shareable: true
+      });
+      saveCalendars();
+      loadCalendarSettingsUI();
+    }    function removeCalendar(calId) {
+      if (calendars.length <= 1) { showToast('最後のカレンダーは削除できません', {type:'warn'}); return; }
+      const idx = calendars.findIndex(c => c.id === calId);
+      if (idx < 0) return;
+      allTasks = allTasks.filter(t => t.calendarId !== calId);
+      saveAllTasks();
+      try {
+        const mainId = localStorage.getItem('mainCalendarId');
+        if (mainId === calId) {
+          const next = calendars.find(c => c.id !== calId);
+          if (next) localStorage.setItem('mainCalendarId', next.id);
+        }
+      } catch(e) {}
+      calendars.splice(idx, 1);
+      saveCalendars();
+      loadCalendarSettingsUI();
+      renderCalendarFilter('monthlyCalendarFilter', renderMonthlyView);
+      renderCalendarFilter('weeklyCalendarFilter', renderWeeklyView);
+    }    function renderCalendarFilter(containerId, onChangeCallback) {
+      const bar = document.getElementById(containerId);
+      if (!bar) return;
+      bar.innerHTML = '';
+      calendars.filter(c => c.visible).forEach(cal => {
+        const btn = document.createElement('button');
+        const isOn = activeCalendarIds === null || activeCalendarIds.has(cal.id);
+        // スタンプと同構造: color=薄背景, textColor=濃い文字色を導出
+        const hex = cal.color;
+        const r = parseInt(hex.slice(1,3),16);
+        const g = parseInt(hex.slice(3,5),16);
+        const b = parseInt(hex.slice(5,7),16);
+        // 薄い背景色（白に近づける）
+        const bgR = Math.round(r + (255-r)*0.6);
+        const bgG = Math.round(g + (255-g)*0.6);
+        const bgB = Math.round(b + (255-b)*0.6);
+        const bgColor = '#' + [bgR,bgG,bgB].map(v=>v.toString(16).padStart(2,'0')).join('');
+        // 濃い文字色（元の色を暗くする）
+        const txR = Math.round(r * 0.55);
+        const txG = Math.round(g * 0.55);
+        const txB = Math.round(b * 0.55);
+        const textColor = '#' + [txR,txG,txB].map(v=>v.toString(16).padStart(2,'0')).join('');
+        // ON: 薄背景+濃い文字+枠（スタンプと同じ）
+        // OFF: 白背景+薄枠+薄い文字
+        btn.style.cssText = `
+          padding:5px 12px;border-radius:14px;font-size:0.75em;font-weight:600;cursor:pointer;
+          border:2px solid ${isOn ? textColor : '#ddd'};
+          background:${isOn ? bgColor : '#f5f5f5'};
+          color:${isOn ? textColor : '#bbb'};
+          transition:all 0.15s;
+        `;
+        btn.textContent = cal.name;
+        btn.onclick = () => {
+          if (activeCalendarIds === null) {
+            activeCalendarIds = new Set(calendars.filter(c => c.visible).map(c => c.id));
+            activeCalendarIds.delete(cal.id);
+          } else if (!activeCalendarIds.has(cal.id)) {
+            activeCalendarIds.add(cal.id);
+            if (activeCalendarIds.size === calendars.filter(c => c.visible).length) {
+              activeCalendarIds = null;
+            }
+          } else {
+            activeCalendarIds.delete(cal.id);
+          }
+          renderCalendarFilter(containerId, onChangeCallback);
+          if (onChangeCallback) onChangeCallback();
+        };
+        bar.appendChild(btn);
+      });
+      // 「全て」ボタン
+      if (activeCalendarIds !== null) {
+        const allBtn = document.createElement('button');
+        allBtn.style.cssText = 'padding:3px 10px;border-radius:20px;font-size:0.75em;font-weight:600;cursor:pointer;border:1.5px solid #ccc;background:#fff;color:#888;';
+        allBtn.textContent = '全て';
+        allBtn.onclick = () => {
+          activeCalendarIds = null;
+          renderCalendarFilter(containerId, onChangeCallback);
+          if (onChangeCallback) onChangeCallback();
+        };
+        bar.appendChild(allBtn);
+      }
+    }
+    // プロフィール即時保存
+    function saveProfileQuick() {
+      var nameEl = document.getElementById('profileNameInput');
+      var name = nameEl ? nameEl.value.trim() : '';
+      if (name) allSettings.profile.name = name; saveAllSettings();
+      var gender = allSettings.profile.gender || 'king';
+      var gLabel = gender === 'princess' ? '姫' : '王';
+      // 設定保存トーストと同じ方式
+      var _toastEl = document.getElementById('settingsSaveToast');
+      if (!_toastEl) {
+        _toastEl = document.createElement('div');
+        _toastEl.id = 'settingsSaveToast';
+        _toastEl.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.85);color:#ffd700;padding:16px 28px;border-radius:14px;font-size:1em;font-weight:bold;z-index:99999;text-align:center;pointer-events:none;border:1px solid rgba(255,215,0,0.4);';
+        document.body.appendChild(_toastEl);
+      }
+      _toastEl.innerHTML = '✅ 保存しました！ ' + (name||'旅人') + '（' + gLabel + '）<br><span style="font-size:0.82em;color:#ffcc66;">⚠️ 名前や性別を変更した場合は、王国コードを再発行してください</span>';
+      _toastEl.style.display = 'block';
+      clearTimeout(_toastEl._t);
+      _toastEl._t = setTimeout(function(){ _toastEl.style.display = 'none'; }, 2500);
+    }
+    // 設定を保存
+    function saveSettings() {
+      try {
+        // カレンダー設定保存
+        saveCalendars();
+        activeCalendarIds = null;
+        // 各ラジオボタン（null安全）
+        var _sv = document.querySelector('input[name="initialView"]:checked');
+        if (_sv) allSettings.ui.initialView = _sv.value; saveAllSettings();
+        var _tlSm = document.querySelector('input[name="tlScrollMode"]:checked');
+        if (_tlSm) allSettings.ui.tlScrollMode = _tlSm.value; saveAllSettings();
+        var _wgSm = document.querySelector('input[name="wgScrollMode"]:checked');
+        if (_wgSm) allSettings.ui.wgScrollMode = _wgSm.value; saveAllSettings();
+        var _mm = document.querySelector('input[name="monthlyMode"]:checked');
+        if (_mm) allSettings.ui.monthlyMode = _mm.value; saveAllSettings();
+        var _wd = document.querySelector('input[name="weeklyDays"]:checked');
+        if (_wd) allSettings.ui.weeklyDays = _wd.value; saveAllSettings();
+        var _tb = document.querySelector('input[name="weeklyTimeBar"]:checked');
+        if (_tb) allSettings.ui.weeklyTimeBar = _tb.value; saveAllSettings();
+        var _dm = document.querySelector('input[name="dailyViewMode"]:checked');
+        if (_dm) allSettings.ui.dailyViewMode = _dm.value; saveAllSettings();
+        // シンプルモード
+        var simpleToggle = document.getElementById('simpleModeToggle');
+        if (simpleToggle) allSettings.ui.simpleMode = simpleToggle.checked ? 'on' : 'off'; saveAllSettings();
+        // スタンプ設定
+        saveStampSettings();
+        // プロフィール名
+        var profileNameEl = document.getElementById('profileNameInput');
+        if (profileNameEl) allSettings.profile.name = profileNameEl.value.trim(); saveAllSettings();
+        // 性別：selectGenderでlocalStorageに既に書き込み済みなので読むだけ
+        // （何も選択されていない場合のフォールバックのみ）
+        if (!allSettings.profile.gender) {
+          allSettings.profile.gender = 'king'; saveAllSettings();
+        }
+        // アバター
+        var avatarPreview = document.getElementById('profileAvatarPreview');
+        if (avatarPreview && avatarPreview.style.display !== 'none' && avatarPreview.src) {
+          allSettings.profile.avatar = avatarPreview.src; saveAllSettings();
+        } else {
+          allSettings.profile.avatar = ''; saveAllSettings();
+        }
+        // ナビバー更新・シンプルモード適用
+        updateNavAvatar();
+        applySimpleMode();
+        // 保存完了（alertの代わりにトースト表示）
+        var _toastEl = document.getElementById('settingsSaveToast');
+        if (!_toastEl) {
+          _toastEl = document.createElement('div');
+          _toastEl.id = 'settingsSaveToast';
+          _toastEl.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.85);color:#ffd700;padding:16px 28px;border-radius:14px;font-size:1em;font-weight:bold;z-index:99999;text-align:center;pointer-events:none;border:1px solid rgba(255,215,0,0.4);';
+          document.body.appendChild(_toastEl);
+        }
+        var _g = allSettings.profile.gender || 'king';
+        var _gLabel = _g === 'princess' ? '姫' : '王';
+        var _n = allSettings.profile.name || '旅人';
+        _toastEl.innerHTML = '✅ 保存しました！ ' + _n + '（' + _gLabel + '）<br><span style="font-size:0.82em;color:#ffcc66;">⚠️ 名前や性別を変更した場合は、王国コードを再発行してください</span>';
+        _toastEl.style.display = 'block';
+        setTimeout(function(){ _toastEl.style.display = 'none'; }, 2000);
+        if (typeof showCraftMessage === 'function') showCraftMessage('✅ 設定を保存しました！');
+        // 画面遷移
+        if (simpleToggle && simpleToggle.checked) {
+          switchView('monthly');
+        } else if (_sv) {
+          switchView(_sv.value);
+        }
+      } catch(e) {
+        showToast('保存エラー: ' + e.message, {type:'error'});
+      }
+    }
+
 var _dfmTimerInterval = null;
 var _dfmCurrentQuestion = '';
 var _dfmHintIdx = 0;
