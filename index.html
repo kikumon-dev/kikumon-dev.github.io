@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.35.83';
+    const APP_VERSION = 'v0.35.84';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -16736,34 +16736,6 @@ function toggleLibrary() {
   var isOpen = content.style.display !== 'none';
   content.style.display = isOpen ? 'none' : 'block';
   btn.textContent = isOpen ? '🏰 王国の図書館 ▼' : '🏰 王国の図書館 ▲';
-}
-function openHeavenFromBanner() {
-  // 図書館を開いて志の天国を展開する
-  var tutorial = document.getElementById('tutorialOverlay');
-  if (tutorial) {
-    var splash = document.getElementById('tutorialSplash');
-    var main = document.getElementById('tutorialMain');
-    if (splash) splash.style.display = 'none';
-    if (main) main.style.display = 'flex';
-    tutorial.style.display = 'flex';
-    if (typeof _ycWelcomeAnim === 'function') setTimeout(_ycWelcomeAnim, 80);
-  }
-  // 図書館を開いて天国セクションを展開
-  setTimeout(function() {
-    var lib = document.getElementById('libraryContent');
-    var btn = document.getElementById('libraryToggleBtn');
-    if (lib) lib.style.display = 'block';
-    if (btn) btn.textContent = '🏰 王国の図書館 ▲';
-    var heaven = document.getElementById('aboutHeaven');
-    if (heaven && heaven.style.display === 'none') {
-      heaven.style.display = 'block';
-      renderHeavenBlueprints();
-    }
-    // 天国セクションにスクロール
-    setTimeout(function(){
-      if (heaven) heaven.scrollIntoView({behavior:'smooth', block:'start'});
-    }, 200);
-  }, 300);
 }
 function openHeavenFromBanner() {
   // チュートリアルを開いて図書館→志の天国を展開
