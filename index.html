@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.36.05';
+    const APP_VERSION = 'v0.36.06';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -5762,6 +5762,8 @@ function myDeckApply(idx) {
     }
     // 色をブレンドするヘルパー関数    // 週間ビューを描画（バーチカル）
     function renderWeeklyView() {
+
+      try {
       const container = document.getElementById('weeklyContainer');
       container.innerHTML = '';
       renderCalendarFilter('weeklyCalendarFilter', renderWeeklyView);
@@ -6125,6 +6127,10 @@ function myDeckApply(idx) {
           });
         }
       }, 50);
+          } catch(e) {
+        console.error("[renderWeeklyView]", e);
+        showToast && showToast('renderWeeklyView エラー: ' + e.message, {type:'error'});
+      }
     }
     // 週間タスクの編集（ID版）
     let editingWeeklyTaskId = null; // 編集中のタスクID
@@ -6312,6 +6318,8 @@ function myDeckApply(idx) {
     }
     // ===== 月間ビュー関数 =====
     function renderMonthlyView() {
+
+      try {
       const calendar = document.getElementById('monthlyCalendar');
       calendar.innerHTML = '';
       // カレンダーフィルター描画
@@ -6688,6 +6696,10 @@ function myDeckApply(idx) {
           cell.style.overflow = 'visible';
         }
         calendar.appendChild(cell);
+      }
+          } catch(e) {
+        console.error("[renderMonthlyView]", e);
+        showToast && showToast('renderMonthlyView エラー: ' + e.message, {type:'error'});
       }
     }
     // ===== 月間ビュー：行リサイズ機能 =====
@@ -10179,7 +10191,13 @@ function myDeckApply(idx) {
     }
     // 全象限を再描画するヘルパー
     function renderAllSections(dateStr = null) {
+
+      try {
       for (let sec = 1; sec <= 4; sec++) renderTasks(sec, dateStr);
+          } catch(e) {
+        console.error("[renderAllSections]", e);
+        showToast && showToast('renderAllSections エラー: ' + e.message, {type:'error'});
+      }
     }
     // タスク表示（dateStrがnullなら今日）
     function renderTasks(sectionNum, dateStr = null) {
@@ -10955,6 +10973,8 @@ function myDeckApply(idx) {
     // 起動時ビュー適用はL11641のswitchView(startView)で一元管理
     // ビュー切り替え関数
     function switchView(view) {
+
+      try {
       window._dbgLog && window._dbgLog('【量子転移】SYSTEM ONLINE --- ' + view + ' へ転移 / 行きます！');
       window._dbgLog && window._dbgLog('switchView: ' + view);
       currentView = view;
@@ -11084,6 +11104,10 @@ function myDeckApply(idx) {
       // 状態を保存（設定画面以外）
       if (view !== 'settings') {
         localStorage.setItem('currentView', view);
+      }
+          } catch(e) {
+        console.error("[switchView]", e);
+        showToast && showToast('画面切り替えエラー: ' + e.message, {type:'error'});
       }
     }
     // ===================================================
