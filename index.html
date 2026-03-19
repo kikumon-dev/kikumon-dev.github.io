@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.35.96';
+    const APP_VERSION = 'v0.35.99';
     function toggleCraftMode(enabled) {
       allSettings.ui.craftModeEnabled = enabled; saveAllSettings();
       const btn = document.getElementById('navCraft');
@@ -18574,24 +18574,6 @@ function _dfmNext(step) {
     _dfmStartTimer(5 * 60);
   }
 }
-function _dfmShowHint() {
-  var popup = document.getElementById('dfm-hint-popup');
-  var text = document.getElementById('dfm-hint-text');
-  var idx = document.getElementById('dfm-hint-index');
-  var qpopup = document.getElementById('dfm-question-popup');
-  if (qpopup) qpopup.style.display = 'none';
-  if (!popup || !text) return;
-  text.textContent = _dfmHints[_dfmHintIdx];
-  if (idx) idx.textContent = (_dfmHintIdx + 1) + ' / ' + _dfmHints.length + '　（タップで次へ）';
-  popup.style.display = 'block';
-  popup.onclick = function(e) {
-    if (e.target === popup || e.target === text || e.target === idx) {
-      _dfmHintIdx = (_dfmHintIdx + 1) % _dfmHints.length;
-      text.textContent = _dfmHints[_dfmHintIdx];
-      if (idx) idx.textContent = (_dfmHintIdx + 1) + ' / ' + _dfmHints.length + '　（タップで次へ）';
-    }
-  };
-}
 function _dfmToggleQuestion() {
   var area = document.getElementById('dfm-question-area');
   var btn = document.getElementById('dfm-question-btn');
@@ -18617,32 +18599,6 @@ function _dfmNextQuestion() {
   if (text) text.textContent = _dfmDeepQuestions[_dfmQuestionIdx];
   if (idx) idx.textContent = (_dfmQuestionIdx + 1) + ' / ' + _dfmDeepQuestions.length;
 }
-function _dfmToggleQuestion() {
-  var area = document.getElementById('dfm-question-area');
-  var btn = document.getElementById('dfm-question-btn');
-  if (!area) return;
-  if (area.style.display === 'none') {
-    // 開く
-    var text = document.getElementById('dfm-question-text');
-    var idx = document.getElementById('dfm-question-index');
-    if (text) text.textContent = _dfmDeepQuestions[_dfmQuestionIdx];
-    if (idx) idx.textContent = (_dfmQuestionIdx + 1) + ' / ' + _dfmDeepQuestions.length;
-    area.style.display = 'block';
-    if (btn) btn.textContent = '❓ 閉じる';
-  } else {
-    // 閉じる
-    area.style.display = 'none';
-    if (btn) btn.textContent = '❓ 深掘り';
-  }
-}
-function _dfmNextQuestion() {
-  _dfmQuestionIdx = (_dfmQuestionIdx + 1) % _dfmDeepQuestions.length;
-  var text = document.getElementById('dfm-question-text');
-  var idx = document.getElementById('dfm-question-index');
-  if (text) text.textContent = _dfmDeepQuestions[_dfmQuestionIdx];
-  if (idx) idx.textContent = (_dfmQuestionIdx + 1) + ' / ' + _dfmDeepQuestions.length;
-}
-function _dfmShowQuestion() { _dfmToggleQuestion(); }
 function _dfmStartTimer(seconds) {
   if (_dfmTimerInterval) clearInterval(_dfmTimerInterval);
   var remaining = seconds;
@@ -18792,8 +18748,9 @@ function _dfmHistorySend(id) {
 window.openDeepFocusMode = openDeepFocusMode;
 window.closeDeepFocusMode = closeDeepFocusMode;
 window._dfmNext = _dfmNext;
-window._dfmShowHint = _dfmShowHint;
-window._dfmShowQuestion = _dfmShowQuestion;
+window._dfmShowQuestion = _dfmToggleQuestion;
+function _dfmShowHint() { _dfmToggleQuestion(); }
+function _dfmShowQuestion() { _dfmToggleQuestion(); }
 window._dfmFinish = _dfmFinish;
 window._dfmSaveToScratch = _dfmSaveToScratch;
 window._dfmToggleQuestion = _dfmToggleQuestion;
