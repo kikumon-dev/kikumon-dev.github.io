@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.36.09';
+    const APP_VERSION = 'v0.36.11';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -19179,12 +19179,82 @@ function _quizFinish() {
     + '</div></div>';
 }
 
+    function openAiPlanModal() {
+      var overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+      var box = document.createElement('div');
+      box.style.cssText = 'background:#fff;border-radius:16px;padding:24px 20px;width:92vw;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.18);max-height:90vh;overflow-y:auto;';
+      box.innerHTML = '<div style="font-size:1em;font-weight:700;color:#333;margin-bottom:6px;">✨ AIに計画を作ってもらう</div>'
+        + '<div style="font-size:0.78em;color:#888;margin-bottom:10px;">やりたいことを入力してプロンプトをコピー→ChatGPTやClaudeに貼り付けてください。出力を雑記帳に入れたら「造営に」を押してください。</div>'
+        + '<div style="font-size:0.8em;color:#666;margin-bottom:4px;">やりたいこと</div>'
+        + '<input id="aiPlanInput" type="text" placeholder="例：部屋を片付ける、英語上達" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:0.9em;box-sizing:border-box;margin-bottom:10px;">'
+        + '<div style="display:flex;gap:8px;margin-bottom:10px;">'
+        + '<div style="flex:1;"><div style="font-size:0.8em;color:#666;margin-bottom:4px;">開始日</div><input id="aiPlanStart" type="date" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:0.85em;box-sizing:border-box;"></div>'
+        + '<div style="flex:1;"><div style="font-size:0.8em;color:#666;margin-bottom:4px;">終了日</div><input id="aiPlanEnd" type="date" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:0.85em;box-sizing:border-box;"></div>'
+        + '</div>'
+        + '<div style="display:flex;gap:8px;margin-bottom:10px;">'
+        + '<div style="flex:1;"><div style="font-size:0.8em;color:#666;margin-bottom:4px;">開始時刻</div><select id="aiPlanStartH" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:0.85em;box-sizing:border-box;">'
+        + Array.from({length:24},function(_,i){ return '<option value="'+i+'">'+(i<10?'0':'')+i+':00</option>'; }).join('')
+        + '</select></div>'
+        + '<div style="flex:1;"><div style="font-size:0.8em;color:#666;margin-bottom:4px;">終了時刻</div><select id="aiPlanEndH" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:0.85em;box-sizing:border-box;">'
+        + Array.from({length:24},function(_,i){ return '<option value="'+i+'">'+(i<10?'0':'')+i+':00</option>'; }).join('')
+        + '</select></div>'
+        + '</div>'
+        + '<div style="background:#f8f6ff;border:1px solid #e9d5ff;border-radius:8px;padding:12px;margin-bottom:12px;font-size:0.78em;color:#555;line-height:1.6;white-space:pre-wrap;" id="aiPlanPreview">やりたいことを入力すると、プロンプトが生成されます</div>'
+        + '<div style="font-size:0.75em;color:#bbb;margin-bottom:8px;padding:8px;background:#f9f9f9;border-radius:8px;line-height:1.6;">💡 各タスクの時刻は自動で入りません。造営に登録した後、タスクの ✏️ を押して時刻を入れてください。</div>'
+        + '<div style="display:flex;gap:8px;margin-bottom:8px;">'
+        + '<button id="aiPlanCloseBtn" style="flex:1;padding:10px;background:#f0f0f0;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;">閉じる</button>'
+        + '<button id="aiPlanCopyBtn" style="flex:1;padding:10px;background:linear-gradient(135deg,#a78bfa,#6d28d9);color:#fff;border:none;border-radius:8px;font-size:0.9em;font-weight:700;cursor:pointer;">📋 コピー</button>'
+        + '</div>'
+        + '';
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
+      overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
+      document.getElementById('aiPlanCloseBtn').addEventListener('click', function(){ overlay.remove(); });
+      var input = document.getElementById('aiPlanInput');
+      if (input) {
+        input.focus();
+        input.addEventListener('input', function(){ updateAiPlanPreview(this.value); });
+      }
+      document.getElementById('aiPlanCopyBtn').addEventListener('click', copyAiPlanPrompt);
+      // 今日の日付・現在時刻をデフォルトに
+      var today = getLocalDateStr(new Date());
+      var nowH = new Date().getHours();
+      var startEl = document.getElementById('aiPlanStart');
+      var endEl   = document.getElementById('aiPlanEnd');
+      var startHEl = document.getElementById('aiPlanStartH');
+      var endHEl   = document.getElementById('aiPlanEndH');
+      if (startEl) startEl.value = today;
+      if (endEl)   endEl.value   = today;
+      if (startHEl) startHEl.value = nowH;
+      if (endHEl)   endHEl.value   = Math.min(nowH + 1, 23);
+      // 時刻変更時もプレビュー更新
+      [startHEl, endHEl, startEl, endEl].forEach(function(el){
+        if (el) el.addEventListener('change', function(){ updateAiPlanPreview(document.getElementById('aiPlanInput').value); });
+      });
+    }
+
+    function updateAiPlanPreview(goal) {
+      var preview = document.getElementById('aiPlanPreview');
+      if (!preview) return;
+      if (!goal.trim()) {
+        preview.textContent = 'やりたいことを入力すると、プロンプトが生成されます';
+        return;
+      }
+      var start   = (document.getElementById('aiPlanStart')||{}).value  || '';
+      var end     = (document.getElementById('aiPlanEnd')||{}).value    || '';
+      var startH  = (document.getElementById('aiPlanStartH')||{}).value;
+      var endH    = (document.getElementById('aiPlanEndH')||{}).value;
+      preview.textContent = _buildAiPlanPrompt(goal.trim(), start, end, startH, endH);
+    }
+
 // ===== window公開（block6関数） =====
 try {
   window.openQuizMode = openQuizMode;
   window.closeQuizMode = closeQuizMode;
   window._quizStart = _quizStart;
   window._quizAnswer = _quizAnswer;
+  window.openAiPlanModal = openAiPlanModal;
   window._dfmHistoryDelete = _dfmHistoryDelete;
   window._dfmHistoryEdit = _dfmHistoryEdit;
   window._dfmHistorySend = _dfmHistorySend;
