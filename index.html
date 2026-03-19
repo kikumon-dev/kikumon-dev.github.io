@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.36.12';
+    const APP_VERSION = 'v0.36.14';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -12975,6 +12975,8 @@ function loadSettingsUI() {
       allSettings.flags.inspectionMode = inspectionMode; saveAllSettings();
     }
     window.switchView = switchView;
+    window.renderCalendarFilter = renderCalendarFilter;
+    window.isCalendarVisible = isCalendarVisible;
   // ===== window公開（HTML onclickから呼ばれる全関数） =====
   try {
     window._gantAddTask = _gantAddTask;
@@ -17440,6 +17442,26 @@ function showDebugLog() {
       ok('機能: ' + name + ' (' + lines + '行)');
     });
 
+    // 1c. 依存関数チェック（関数が内部で呼んでいる関数が存在するか）
+    var depChecks = [
+      ['AI計画モーダル', 'openAiPlanModal',  ['copyAiPlanPrompt', '_buildAiPlanPrompt', 'updateAiPlanPreview', 'showToast', 'getLocalDateStr']],
+      ['深考モード',     'openDeepFocusMode', ['_dfmShowStep', '_dfmToggleQuestion', '_dfmFinish', '_dfmSaveToScratch']],
+      ['クイズ',         'openQuizMode',      ['_quizStart', '_quizShowQ', '_quizAnswer', '_quizFinish']],
+      ['タスク保存',     'saveAllTasks',      ['saveAllSettings']],
+      ['ビュー切替',     'switchView',        ['renderMonthlyView', 'renderWeeklyView', 'renderAllSections', 'switchDailyTab']],
+      ['月間ビュー',     'renderMonthlyView', ['renderCalendarFilter', 'isCalendarVisible', 'getLocalDateStr']],
+      ['週間ビュー',     'renderWeeklyView',  ['renderCalendarFilter', 'isCalendarVisible', 'getLocalDateStr']],
+    ];
+    depChecks.forEach(function(dc) {
+      var name = dc[0], fnName = dc[1], deps = dc[2];
+      var missing = deps.filter(function(d){ return typeof window[d] !== 'function'; });
+      if (missing.length === 0) {
+        ok('依存: ' + name + ' (' + deps.length + '個OK)');
+      } else {
+        ng('依存: ' + name, '未定義: ' + missing.join(', '));
+      }
+    });
+
     // 2. allSettings 構造チェック
     var as = window.allSettings;
     if (!as) { ng('allSettings', '未定義'); }
@@ -19284,6 +19306,41 @@ function _quizFinish() {
       preview.textContent = _buildAiPlanPrompt(goal.trim(), start, end, startH, endH);
     }
 
+    function copyAiPlanPrompt() {
+      var input   = document.getElementById('aiPlanInput');
+      var goal    = (input ? input.value : '').trim();
+      if (!goal) { showToast('やりたいことを入力してください', {type:'warn'}); return; }
+      var start   = (document.getElementById('aiPlanStart')||{}).value  || '';
+      var end     = (document.getElementById('aiPlanEnd')||{}).value    || '';
+      var startH  = (document.getElementById('aiPlanStartH')||{}).value;
+      var endH    = (document.getElementById('aiPlanEndH')||{}).value;
+      var prompt  = _buildAiPlanPrompt(goal, start, end, startH, endH);
+      var btn = document.getElementById('aiPlanCopyBtn');
+      function done() {
+        if (btn) { btn.textContent = '✅ コピー済み'; setTimeout(function(){ btn.textContent = '📋 コピー'; }, 2000); }
+        showToast('📋 プロンプトをコピーしました', {type:'success'});
+      }
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(prompt).then(done).catch(function(){
+          var ta = document.createElement('textarea');
+          ta.value = prompt; document.body.appendChild(ta); ta.select();
+          document.execCommand('copy'); document.body.removeChild(ta); done();
+        });
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = prompt; document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); document.body.removeChild(ta); done();
+      }
+    }
+    function _buildAiPlanPrompt(goal, start, end, startH, endH) {
+      var period = '';
+      var sh = startH !== undefined && startH !== '' ? (startH<10?'0':'')+startH+':00' : '';
+      var eh = endH   !== undefined && endH   !== '' ? (endH  <10?'0':'')+endH  +':00' : '';
+      if (start) period += '\n開始：' + start + (sh ? ' ' + sh : '');
+      if (end)   period += '\n終了：' + end   + (eh ? ' ' + eh : '');
+      return 'やりたいこと：' + goal + period + '\n\n以下の形式だけで返答してください。説明・前置き・番号は不要です。\n\n1行目：やりたいことの名前（20文字以内）\n2行目以降：そのためにやること（1行1つ・3〜5件）';
+    }
+
 // ===== window公開（block6関数） =====
 try {
   window.openQuizMode = openQuizMode;
@@ -19291,6 +19348,11 @@ try {
   window._quizStart = _quizStart;
   window._quizAnswer = _quizAnswer;
   window.openAiPlanModal = openAiPlanModal;
+  window.copyAiPlanPrompt = copyAiPlanPrompt;
+  window._buildAiPlanPrompt = _buildAiPlanPrompt;
+  window.updateAiPlanPreview = updateAiPlanPreview;
+  window._quizShowQ = _quizShowQ;
+  window._quizFinish = _quizFinish;
   window._dfmHistoryDelete = _dfmHistoryDelete;
   window._dfmHistoryEdit = _dfmHistoryEdit;
   window._dfmHistorySend = _dfmHistorySend;
