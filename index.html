@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.37.42';
+    const APP_VERSION = 'v0.37.44';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -13375,6 +13375,7 @@ function loadSettingsUI() {
     window.sendTaskEditToScratch = sendTaskEditToScratch;
     window.setGantTimeScale = setGantTimeScale;
     window.showGantTour = showGantTour;
+    window._buildTaskBar = _buildTaskBar;
     window.switchDailyTab = switchDailyTab;
     window.toggleBlueprintEmojiPicker = toggleBlueprintEmojiPicker;
     window.toggleColors = toggleColors;
@@ -18984,12 +18985,12 @@ function showDebugLog() {
 
     // 19. ⏰「時を刻む」ボタン
     // 状況：時間未設定タスクがテキストのみ表示→v0.37.40でボタン追加
-    // 意図：renderGantChart内に⏰ボタンHTMLが含まれることを確認
+    // 意図：_buildTaskBar内に⏰ボタンHTMLが含まれることを確認
     try {
-      var _rgcSrc2 = (window.renderGantChart || function(){}).toString();
-      _rgcSrc2.includes('⏰ 時を刻む') && _rgcSrc2.includes('openTaskEditModal')
-        ? ok('⏰時を刻むボタン: renderGantChart内に存在')
-        : ng('⏰時を刻むボタン', 'renderGantChart内に⏰ボタンなし');
+      var _btbSrc = (window._buildTaskBar || function(){}).toString();
+      _btbSrc.includes('⏰ 時を刻む') && _btbSrc.includes('openTaskEditModal')
+        ? ok('⏰時を刻むボタン: _buildTaskBar内に存在')
+        : ng('⏰時を刻むボタン', '_buildTaskBar内に⏰ボタンなし');
     } catch(e) { ng('⏰時を刻むボタン', e.message); }
 
     // 20. 志カードタイトル2行表示
@@ -20370,6 +20371,7 @@ document.addEventListener('DOMContentLoaded', function() {
       _showJournalToast(_toastMsg4);
     }
     // ===== 日誌・雑記帳 オンボーディング END =====
+    window.showScratchOnboarding = showScratchOnboarding;
 </script>
 
 <!-- 深考モーダル -->
