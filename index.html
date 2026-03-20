@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.37.63';
+    const APP_VERSION = 'v0.37.65';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -5525,6 +5525,28 @@ function myDeckApply(idx) {
       saveAllSettings();
       localStorage.setItem('mig_ids_to_uuid_v7', '1');
       window._dbgLog('【昇格儀式】' + allTasks.length + '件の識別子をUUID v7へ変換しました。');
+    }
+
+    function migrateRemainingNonUUIDIds() {
+      const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+      const nonUuidTasks = allTasks.filter(t => t.id && !uuidRe.test(t.id));
+      if (nonUuidTasks.length === 0) return;
+      const idMap = {};
+      nonUuidTasks.forEach(t => { idMap[t.id] = generateTaskId(); });
+      allTasks = allTasks.map(t => {
+        if (!idMap[t.id]) return t;
+        const n = Object.assign({}, t);
+        n.id = idMap[n.id];
+        if (n.calendarId && idMap[n.calendarId]) n.calendarId = idMap[n.calendarId];
+        if (Array.isArray(n.stampIds)) n.stampIds = n.stampIds.map(sid => idMap[sid] || sid);
+        if (n.deckId && idMap[n.deckId]) n.deckId = idMap[n.deckId];
+        if (n.blueprintId && idMap[n.blueprintId]) n.blueprintId = idMap[n.blueprintId];
+        if (n.parentId && idMap[n.parentId]) n.parentId = idMap[n.parentId];
+        if (n.grandvisionId && idMap[n.grandvisionId]) n.grandvisionId = idMap[n.grandvisionId];
+        return n;
+      });
+      saveAllTasks();
+      window._dbgLog('【昇格完了】残存非UUID ID ' + nonUuidTasks.length + '件をUUID v7へ変換しました。');
     }
     function migrateToDisplayScope() {
       if (localStorage.getItem('mig_show_in_daily_to_display_scope_v1')) return;
@@ -11079,6 +11101,7 @@ function reviveBlueprint(id) {
     // さらに古い命名も削除
     ['catMigrationDone_v170', 'migration_displayScope_v1', 'mig:uuidv7'].forEach(k => localStorage.removeItem(k));
     migrateToUUIDv7();
+    migrateRemainingNonUUIDIds();
     // ===== journalsキー→allTasks統合マイグレーション =====
     (function migrateJournalsToAllTasks() {
       if (localStorage.getItem('mig_journals_to_alltasks_v1')) return;
