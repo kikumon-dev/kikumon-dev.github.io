@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.37.27';
+    const APP_VERSION = 'v0.37.42';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -2070,6 +2070,7 @@
       height: calc(var(--vh, 1vh) * 100 - 50px);
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
+      background: #f5f5f5;
     }
     .settings-container {
       background: white;
@@ -3469,8 +3470,6 @@
     <div id="gantSplitter" style="height:10px;background:#f0f0f0;border-top:1px solid #e0e0e0;border-bottom:1px solid #e0e0e0;cursor:ns-resize;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
       <div style="width:32px;height:3px;background:#ccc;border-radius:2px;pointer-events:none;"></div>
     </div>
-            <!-- blueprintカードがJSで挿入される -->
-    </div>
     <!-- 時間スケール切替 -->
     <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 16px; background:#fff; border-bottom:1px solid #efefef;">
       <div style="display:flex; gap:4px;">
@@ -3620,7 +3619,7 @@
   </div>
   <div id="journalListArea"></div>
 </div>
-  <div id="notebookView" class="nb-view">
+  <div id="notebookView" class="nb-view" style="background:#f5f5f5;position:relative;z-index:1;">
     <div class="nb-shelf" id="nbShelf"></div>
     <div class="nb-spread" id="nbSpread">
       <!-- 左ページ・右ページはJSで生成 -->
@@ -3774,14 +3773,14 @@
   </div>
   <div style="position:absolute;bottom:22px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.14);font-size:0.58em;font-family:monospace;pointer-events:none;letter-spacing:0.08em;">ドラッグで視点回転 / スクロールでズーム</div>
 </div>
-<div id="shopView" class="settings-view" style="display:none;">
+<div id="shopView" class="settings-view" style="display:none;background:#f5f5f5;position:relative;z-index:1;">
   <div class="settings-container">
     <h2 style="margin:0 0 24px 0;color:#262626;font-size:1.4em;font-weight:700;">🛍️ デッキショップ</h2>
     <p style="margin:0 0 20px 0;font-size:0.88em;color:#8e8e8e;">公式デッキを受け取ろう。受け取ったタスクは今日の日次に追加されます。</p>
     <div id="deckShopList" style="display:flex;flex-direction:column;gap:14px;"></div>
   </div>
 </div>
-<div id="settingsView"  class="settings-view" style="display: none;">
+<div id="settingsView"  class="settings-view" style="display: none; background:#f5f5f5; position:relative; z-index:1;">
     <div class="settings-container">
       <h2 style="margin: 0 0 30px 0; color: #262626; font-size: 1.4em; font-weight: 700; letter-spacing: -0.01em;">設定</h2>
       <div style="margin-bottom:24px;">
@@ -7570,14 +7569,21 @@ function myDeckApply(idx) {
       if (p) p.style.display = p.style.display === 'none' ? 'block' : 'none';
     }
     // 志カードのホバーメッセージ生成
-    function _getBlueprintHoverMsg(bp, progress, ganttCount) {
-      if (ganttCount === 0) return '工程をまだ刻んでいない。|最初の一歩を、ここに。';
-      if (progress === 0) return '王国の礎は整った。|あとは、動くだけ。';
-      if (progress < 30) return '歩み始めた。|焦らずに、一歩ずつ。';
-      if (progress < 60) return '着実に前へ進んでいる。|積み重ねが、王国を育てる。';
-      if (progress < 90) return 'もう少しで完成する。|ここまで来た自分を信じろ。';
-      if (progress < 100) return '仕上げの時。|最後まで、丁寧に。';
-      return 'この志は、成し遂げられた。|次の王国を、描こう。';
+    function _getBlueprintHoverMsg(bp, progress, ganttCount, taskCount) {
+      var encouragement;
+      if (ganttCount === 0) encouragement = '工程をまだ刻んでいない。|最初の一歩を、ここに。';
+      else if (progress === 0) encouragement = '王国の礎は整った。|あとは、動くだけ。';
+      else if (progress < 30) encouragement = '歩み始めた。|焦らずに、一歩ずつ。';
+      else if (progress < 60) encouragement = '着実に前へ進んでいる。|積み重ねが、王国を育てる。';
+      else if (progress < 90) encouragement = 'もう少しで完成する。|ここまで来た自分を信じろ。';
+      else if (progress < 100) encouragement = '仕上げの時。|最後まで、丁寧に。';
+      else encouragement = 'この志は、成し遂げられた。|次の王国を、描こう。';
+      var gvLine = bp.grandvisionId ? 'この志、大きな夢とつながってるよ。' : 'グランドビジョンに紐づけると、もっと広い世界が見えるよ。|大きな夢と結んでみて。';
+      if (progress === 100) return encouragement + '|' + gvLine;
+      var taskLine = (taskCount === 0)
+        ? '具体的なタスクを作って時間を入れよう！'
+        : 'タスクはすでにあるから時間も入れちゃおう！';
+      return encouragement + '|' + gvLine + '|' + taskLine + '|よりよくなるといいね！';
     }
     function toggleBlueprintEmojiPicker() {
       var p = document.getElementById('blueprintEmojiPicker');
@@ -7817,7 +7823,8 @@ function myDeckApply(idx) {
         const isSelected = _gantSelectedBlueprintId === bp.id;
         const color = bp.color || '#3498db';
         const ganttCount = getGantsByBlueprint(bp.id).length;
-        const _bpMsg = _getBlueprintHoverMsg(bp, progress, ganttCount);
+        const taskCount = getGantsByBlueprint(bp.id).reduce(function(sum, g){ return sum + (g.taskIds||[]).length; }, 0);
+        const _bpMsg = _getBlueprintHoverMsg(bp, progress, ganttCount, taskCount);
         return `<div style="
           min-width:170px; max-width:220px; padding:10px 14px;
           border-radius:12px; border:2px solid ${isSelected ? color : '#e8e8e8'};
@@ -7831,7 +7838,7 @@ function myDeckApply(idx) {
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
             <div style="display:flex;align-items:center;gap:4px;min-width:0;">
               <span style="font-size:1em;flex-shrink:0;">${bp.emoji||'🏰'}</span>
-              <div style="font-size:0.85em;font-weight:600;color:#262626;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;">${bp.title}</div>
+              <div style="font-size:0.85em;font-weight:600;color:#262626;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3;max-height:2.6em;">${bp.title}</div>
             </div>
             <button onclick="event.stopPropagation();openBlueprintEditor('${bp.id}')" style="background:none;border:none;font-size:0.75em;color:#aaa;cursor:pointer;padding:2px;">✏️</button>
           </div>
@@ -7985,7 +7992,10 @@ function myDeckApply(idx) {
       const color = ctx.barColor || '#c5cae9';
       const done  = !!t.done;
       if (ctx.scale === 'day') {
-        if (!t.time) return '<div style="position:absolute;left:6px;top:50%;transform:translateY(-50%);font-size:9px;color:#bbb;white-space:nowrap;">まだ、時を刻んでいない</div>';
+        if (!t.time) return '<div style="position:absolute;left:6px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:6px;">'
+          + '<span style="font-size:9px;color:#bbb;white-space:nowrap;">まだ、時を刻んでいない</span>'
+          + '<button onclick="event.stopPropagation();openTaskEditModal(\'' + t.id + '\')" style="font-size:9px;padding:2px 6px;background:#f0edff;border:1px solid #c4b5fd;border-radius:4px;color:#7c3aed;cursor:pointer;white-space:nowrap;">⏰ 時を刻む</button>'
+          + '</div>';
         const [sh, sm] = t.time.split(':').map(Number);
         const sx = Math.round(((sh * 60 + sm) - (ctx.startH || 0) * 60) / 60 * ctx.colW);
         // endTimeで幅決定、なければ colW（1時間幅）をデフォルト
@@ -8421,7 +8431,15 @@ function myDeckApply(idx) {
       const scale = allSettings.ui.gantTimeScale || 'day';
       let gants = _gantSelectedBlueprintId
         ? getGantsByBlueprint(_gantSelectedBlueprintId)
-        : allTasks.filter(t => t.kind === 'gantt');
+        : _selectedGrandVisionId
+          ? getGantsAll().filter(function(g){
+              var bp = allTasks.find(function(t){ return t.id === g.blueprintId; });
+              return bp && !bp.inHeaven && bp.grandvisionId === _selectedGrandVisionId;
+            })
+          : getGantsAll().filter(function(g){
+              var bp = allTasks.find(function(t){ return t.id === g.blueprintId; });
+              return !bp || !bp.inHeaven;
+            });
       if (!allSettings.ui.gantShowCompleted) gants = gants.filter(g => !g.achieved);
       const addGanttBtn = document.getElementById('gantAddGanttBtn');
       if (addGanttBtn) addGanttBtn.style.display = 'block';
@@ -8634,7 +8652,13 @@ function reviveBlueprint(id) {
           bp.emoji = _newBpEmoji;
           // グランドビジョン紐づけ
           const _gvSelSave = document.getElementById('blueprintGvSelect');
+          const _oldGvId = bp.grandvisionId;
           bp.grandvisionId = _gvSelSave ? (_gvSelSave.value || null) : bp.grandvisionId;
+          // 新たにGVに紐づいた かつ visionが空 → GVのvisionを継承
+          if (bp.grandvisionId && bp.grandvisionId !== _oldGvId && !bp.vision) {
+            const _gv = allTasks.find(t => t.id === bp.grandvisionId);
+            if (_gv && _gv.vision) bp.vision = _gv.vision;
+          }
         }
       } else {
         const blueprints = getBlueprints();
@@ -9715,12 +9739,12 @@ function reviveBlueprint(id) {
       // 管理者パターン
       if (_genderSeq.length === _ADMIN_PATTERN.length) {
         var matchAdmin = _ADMIN_PATTERN.every(function(v,i){ return v === _genderSeq[i]; });
-        if (matchAdmin) { _genderSeq = []; toggleAdminMode(); return; }
+        if (matchAdmin) { _genderSeq = []; if(typeof window.toggleAdminMode==='function') window.toggleAdminMode(); return; }
       }
       // 商人ギルドパターン
       if (_genderSeq.length === _GUILD_PATTERN.length) {
         var matchGuild = _GUILD_PATTERN.every(function(v,i){ return v === _genderSeq[i]; });
-        if (matchGuild) { _genderSeq = []; openGuildMode(); }
+        if (matchGuild) { _genderSeq = []; if(typeof window.openGuildMode==='function') window.openGuildMode(); }
       }
     }    function updateGenderUI(val) {
       const kingLabel = document.getElementById('genderLabelKing');
@@ -10185,7 +10209,7 @@ function reviveBlueprint(id) {
       // タブのactive更新
       document.querySelectorAll('.daily-inner-tab').forEach(t => t.classList.remove('active'));
       var helpBtn = document.getElementById('tutorialHelpBtn');
-      if (helpBtn) helpBtn.style.display = (mode === 'scratch') ? 'none' : '';
+      if (helpBtn) helpBtn.style.display = (mode === 'scratch') ? 'none' : 'block';
       if (mode === 'scratch') {
         scratchView.style.display = 'flex';
         scratchView.style.flexDirection = 'column';
@@ -11210,13 +11234,19 @@ function reviveBlueprint(id) {
       document.getElementById('shopView').style.display = 'none';
       notebookView.style.display = 'none';
       if (craftView) craftView.style.display = 'none';
-      if (gantView) gantView.style.display = 'none';
+      if (gantView) {
+        gantView.style.display = 'none';
+        gantView.style.visibility = 'hidden';
+        // iOS Safari -webkit-overflow-scrolling ゴースト対策
+        var _gca = document.getElementById('gantChartArea');
+        if (_gca) { _gca.style.webkitOverflowScrolling = 'auto'; }
+      }
       document.getElementById('timelineView').style.display = 'none';
       document.getElementById('scratchView').style.display = 'none';
       var _jv = document.getElementById('journalView'); if (_jv) _jv.style.display = 'none';
       document.getElementById('dailyInnerTabBar').style.display = 'none';
       var _hb = document.getElementById('tutorialHelpBtn');
-      if (_hb) _hb.style.display = '';
+      if (_hb) _hb.style.display = 'block';
       // タブのアクティブ状態を更新
       document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
       if (view === 'daily') {
@@ -11262,6 +11292,7 @@ function reviveBlueprint(id) {
         if (typeof renderDeckHistory === 'function') renderDeckHistory();
       if (typeof renderMyDecks === 'function') renderMyDecks();
       } else if (view === 'settings') {
+        if (gantView) gantView.style.display = 'none';
         settingsView.style.display = 'block';
         if (typeof updateGuildUI === 'function') updateGuildUI();
         document.getElementById('navSettings').classList.add('active');
@@ -11274,7 +11305,12 @@ function reviveBlueprint(id) {
         // 初回のみObserver起動（以降は自動追従）
         if (!nbSpreadMode) { nbInitSpreadObserver(); } else { nbRender(); }
       } else if (view === 'gant') {
-        if (gantView) gantView.style.display = 'flex';
+        if (gantView) {
+          gantView.style.display = 'flex';
+          gantView.style.visibility = 'visible';
+          var _gca = document.getElementById('gantChartArea');
+          if (_gca) { _gca.style.webkitOverflowScrolling = 'touch'; }
+        }
         const ng = document.getElementById('navGant');
         if (ng) ng.classList.add('active');
         renderGantView();
@@ -13547,57 +13583,57 @@ function loadSettingsUI() {
     }
 
     function renderHeavenBlueprints() {
-      var list = document.getElementById('heavenBlueprintList');
-      if (!list) return;
-      var header = '<div style="line-height:1.9;padding:8px 0 10px 0;border-bottom:1px solid rgba(255,215,0,0.2);margin-bottom:10px;">'
-        + '<div style="font-size:1em;font-weight:700;color:#ffd700;">貢献感は、幸福の源泉。</div>'
-        + '<div style="font-size:0.82em;color:#ccc;margin-top:2px;">ここに来るたびに、自分の貢献を確かめてね。</div>'
-        + '<div style="font-size:0.82em;color:#ccc;">自分の自分に対する貢献も、人に対する貢献も幸福の源泉だよ！</div>'
-        + '</div>';
-      var bps = (typeof getHeavenBlueprints === 'function') ? getHeavenBlueprints() : [];
-      if (bps.length === 0) {
-        list.innerHTML = header + '<div style="color:#888;font-size:0.85em;text-align:center;padding:12px;">まだ天国にいる志はいないよ。</div>';
-        return;
-      }
-      list.innerHTML = header + bps.map(function(bp) {
-        var date = bp.heavenAt ? bp.heavenAt.slice(0,10) : '';
-        var prog = bp.heavenProgress !== undefined && bp.heavenProgress !== null ? bp.heavenProgress : '?';
-        var gv = bp.grandvisionId ? window.allTasks.find(function(t){ return t.id === bp.grandvisionId && t.kind === 'grandvision'; }) : null;
-        var gants = window.allTasks.filter(function(t){ return t.kind==='gantt' && t.blueprintId===bp.id; });
-        var taskIds = gants.reduce(function(arr,g){ return arr.concat(g.taskIds||[]); },[]);
-        var tasks = taskIds.map(function(tid){ return window.allTasks.find(function(t){ return t.id===tid; }); }).filter(Boolean);
-        var doneCount = tasks.filter(function(t){ return t.done; }).length;
-        var taskHtml = tasks.length === 0
-          ? '<div style="font-size:0.75em;color:#666;padding:4px 0;">タスクの記録はないよ。</div>'
-          : tasks.map(function(t){
-              return '<div style="font-size:0.75em;padding:3px 0;display:flex;align-items:flex-start;gap:5px;color:' + (t.done ? '#c4b5fd' : '#777') + ';">'
-                + (t.done ? '✅' : '⬜') + '<span>' + t.text + '</span></div>';
-            }).join('');
-        var expandId = 'heaven-expand-' + bp.id;
-        return '<div style="background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);border-radius:10px;padding:10px 12px;">'
-          + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">'
-          + '<div style="display:flex;align-items:center;gap:6px;min-width:0;flex:1;">'
-          + '<span style="font-size:1em;">' + (bp.emoji||'🌟') + '</span>'
-          + '<span style="font-size:0.85em;font-weight:700;color:#e9d5ff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + bp.title + '</span>'
-          + '</div>'
-          + '<div style="display:flex;gap:4px;flex-shrink:0;">'
-          + (tasks.length > 0 ? '<button onclick="var el=document.getElementById(\'' + expandId + '\');el.style.display=el.style.display===\'none\'?\'block\':\'none\';" style="font-size:0.75em;padding:4px 8px;background:rgba(167,139,250,0.2);border:1px solid rgba(167,139,250,0.4);border-radius:6px;color:#e9d5ff;cursor:pointer;">記録を見る</button>' : '')
-          + '<button onclick="reviveBlueprint(\'' + bp.id + '\')" style="font-size:0.75em;padding:4px 10px;background:rgba(167,139,250,0.3);border:1px solid rgba(167,139,250,0.5);border-radius:6px;color:#e9d5ff;cursor:pointer;">造営に戻す</button>'
-          + '</div>'
-          + '</div>'
-          + (gv ? '<div style="font-size:0.72em;color:#ffd700;margin-top:4px;">🎖️ ' + (gv.emoji||'') + ' ' + gv.title + '</div>' : '')
-          + (bp.vision ? '<div style="font-size:0.75em;color:#c4b5fd;margin-top:3px;line-height:1.5;">' + bp.vision + '</div>' : '')
-          + '<div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap;">'
-          + (date ? '<span style="font-size:0.72em;color:#888;">🗓️ ' + date + '</span>' : '')
-          + '<span style="font-size:0.72em;color:#a78bfa;">✨ ' + prog + '%達成</span>'
-          + (tasks.length > 0 ? '<span style="font-size:0.72em;color:#888;">' + doneCount + '/' + tasks.length + '件完了</span>' : '')
-          + '</div>'
-          + '<div id="' + expandId + '" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(167,139,250,0.15);">'
-          + taskHtml
-          + '</div>'
-          + '</div>';
-      }).join('');
-    }
+  var list = document.getElementById('heavenBlueprintList');
+  if (!list) return;
+  var header = '<div style="line-height:1.9;padding:8px 0 10px 0;border-bottom:1px solid rgba(255,215,0,0.2);margin-bottom:10px;">'
+    + '<div style="font-size:1em;font-weight:700;color:#ffd700;">貢献感は、幸福の源泉。</div>'
+    + '<div style="font-size:0.82em;color:#ccc;margin-top:2px;">ここに来るたびに、自分の貢献を確かめてね。</div>'
+    + '<div style="font-size:0.82em;color:#ccc;">自分の自分に対する貢献も、人に対する貢献も幸福の源泉だよ！</div>'
+    + '</div>';
+  var bps = (typeof getHeavenBlueprints === 'function') ? getHeavenBlueprints() : [];
+  if (bps.length === 0) {
+    list.innerHTML = header + '<div style="color:#888;font-size:0.85em;text-align:center;padding:12px;">まだ天国にいる志はいないよ。</div>';
+    return;
+  }
+  list.innerHTML = header + bps.map(function(bp) {
+    var date = bp.heavenAt ? bp.heavenAt.slice(0,10) : '';
+    var prog = bp.heavenProgress !== undefined && bp.heavenProgress !== null ? bp.heavenProgress : '?';
+    var gv = bp.grandvisionId ? allTasks.find(function(t){ return t.id === bp.grandvisionId && t.kind === 'grandvision'; }) : null;
+    var gants = allTasks.filter(function(t){ return t.kind==='gantt' && t.blueprintId===bp.id; });
+    var taskIds = gants.reduce(function(arr,g){ return arr.concat(g.taskIds||[]); },[]);
+    var tasks = taskIds.map(function(tid){ return allTasks.find(function(t){ return t.id===tid; }); }).filter(Boolean);
+    var doneCount = tasks.filter(function(t){ return t.done; }).length;
+    var taskHtml = tasks.length === 0
+      ? '<div style="font-size:0.75em;color:#666;padding:4px 0;">タスクの記録はないよ。</div>'
+      : tasks.map(function(t){
+          return '<div style="font-size:0.75em;padding:3px 0;display:flex;align-items:flex-start;gap:5px;color:' + (t.done ? '#c4b5fd' : '#777') + ';">'
+            + (t.done ? '✅' : '⬜') + '<span>' + t.text + '</span></div>';
+        }).join('');
+    var expandId = 'heaven-expand-' + bp.id;
+    return '<div style="background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);border-radius:10px;padding:10px 12px;">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">'
+      + '<div style="display:flex;align-items:center;gap:6px;min-width:0;flex:1;">'
+      + '<span style="font-size:1em;">' + (bp.emoji||'🌟') + '</span>'
+      + '<span style="font-size:0.85em;font-weight:700;color:#e9d5ff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + bp.title + '</span>'
+      + '</div>'
+      + '<div style="display:flex;gap:4px;flex-shrink:0;">'
+      + (tasks.length > 0 ? '<button onclick="var el=document.getElementById(\'' + expandId + '\');el.style.display=el.style.display===\'none\'?\'block\':\'none\';" style="font-size:0.75em;padding:4px 8px;background:rgba(167,139,250,0.2);border:1px solid rgba(167,139,250,0.4);border-radius:6px;color:#e9d5ff;cursor:pointer;">記録を見る</button>' : '')
+      + '<button onclick="reviveBlueprint(\'' + bp.id + '\')" style="font-size:0.75em;padding:4px 10px;background:rgba(167,139,250,0.3);border:1px solid rgba(167,139,250,0.5);border-radius:6px;color:#e9d5ff;cursor:pointer;">造営に戻す</button>'
+      + '</div>'
+      + '</div>'
+      + (gv ? '<div style="font-size:0.72em;color:#ffd700;margin-top:4px;">🎖️ ' + (gv.emoji||'') + ' ' + gv.title + '</div>' : '')
+      + (bp.vision ? '<div style="font-size:0.75em;color:#c4b5fd;margin-top:3px;line-height:1.5;">' + bp.vision + '</div>' : '')
+      + '<div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap;">'
+      + (date ? '<span style="font-size:0.72em;color:#888;">🗓️ ' + date + '</span>' : '')
+      + '<span style="font-size:0.72em;color:#a78bfa;">✨ ' + prog + '%達成</span>'
+      + (tasks.length > 0 ? '<span style="font-size:0.72em;color:#888;">' + doneCount + '/' + tasks.length + '件完了</span>' : '')
+      + '</div>'
+      + '<div id="' + expandId + '" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(167,139,250,0.15);">'
+      + taskHtml
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
 
     // 状態の復元（ページロード時）
     const savedView = localStorage.getItem('currentView');
@@ -16991,8 +17027,26 @@ try {
   <div id="tutorialSplash" style="max-width:390px;width:92%;margin:0 auto;position:relative;">
     <div id="_ycCard" style="background:#1a1a2e;border-radius:20px;color:#fff;box-shadow:0 0 50px rgba(255,215,0,0.15);overflow:hidden;width:100%;box-sizing:border-box;">
 
-      <!-- slide 0: MISSION -->
+      <!-- slide -1: キャッチコピー -->
       <div id="_ycS0" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 24px 28px;box-sizing:border-box;width:100%;">
+        <div style="font-size:3em;animation:_ycFloat 4.5s ease-in-out infinite,_ycBurst 1.1s cubic-bezier(0.16,1,0.3,1) both;">🏰</div>
+        <div style="font-size:1.08em;font-weight:800;color:#ffd700;letter-spacing:0.1em;margin:16px 0 6px;animation:_ycGlow 4.5s ease-in-out infinite,_ycFadeUp 1.2s 0.5s cubic-bezier(0.16,1,0.3,1) both;opacity:0;">やることクラフト</div>
+        <div style="width:50px;height:1px;background:linear-gradient(90deg,transparent,#ffd700,transparent);margin:12px auto 20px;animation:_ycFadeIn 1.2s 1.0s ease both;opacity:0;"></div>
+        <div style="font-size:1.1em;font-weight:800;color:#fff;line-height:1.9;animation:_ycReveal 1.4s 1.3s cubic-bezier(0.16,1,0.3,1) both;opacity:0;">
+          夢と、今日が<span style="color:#ffd700;">つながる。</span>
+        </div>
+        <div style="font-size:0.88em;color:#a78bfa;font-weight:700;margin-top:8px;animation:_ycReveal 1.4s 1.8s cubic-bezier(0.16,1,0.3,1) both;opacity:0;">
+          あなたの王国が、動き出す。
+        </div>
+        <div style="margin-top:16px;animation:_ycFadeIn 1.2s 2.3s ease both;opacity:0;">
+          <div style="font-size:0.78em;color:#888;line-height:2.0;">ぜんぶ、一本の線になる。</div>
+          <div style="font-size:0.78em;color:#888;line-height:2.0;">小さく始めて、大きくつながる。</div>
+        </div>
+        <button onclick="_ycGoSlide(1)" style="margin-top:28px;background:linear-gradient(135deg,#ffd700,#ffaa00);border:none;border-radius:30px;color:#7a4800;font-size:0.88em;font-weight:800;padding:11px 32px;cursor:pointer;box-shadow:0 4px 18px rgba(255,215,0,0.35);animation:_ycFadeUp 1.1s 2.9s ease both;opacity:0;">つぎへ →</button>
+      </div>
+
+      <!-- slide 1: MISSION -->
+      <div id="_ycS1" style="display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 24px 28px;box-sizing:border-box;width:100%;">
         <div style="font-size:3em;animation:_ycFloat 4.5s ease-in-out infinite,_ycBurst 1.1s cubic-bezier(0.16,1,0.3,1) both;">🏰</div>
         <div style="font-size:1.08em;font-weight:800;color:#ffd700;letter-spacing:0.1em;margin:16px 0 6px;animation:_ycGlow 4.5s ease-in-out infinite,_ycFadeUp 1.2s 0.5s cubic-bezier(0.16,1,0.3,1) both;opacity:0;">やることクラフト</div>
         <div style="font-size:0.68em;color:#888;font-weight:700;letter-spacing:0.16em;margin-bottom:18px;animation:_ycFadeIn 1.2s 1.0s ease both;opacity:0;">MISSION</div>
@@ -17004,11 +17058,11 @@ try {
         <div style="font-size:0.9em;color:#f0f0f0;font-weight:500;margin-top:10px;line-height:1.9;animation:_ycReveal 1.4s 2.2s cubic-bezier(0.16,1,0.3,1) both;opacity:0;">
           その創造物で、<br>みんなで遊ぼう。
         </div>
-        <button onclick="_ycGoSlide(1)" style="margin-top:28px;background:linear-gradient(135deg,#ffd700,#ffaa00);border:none;border-radius:30px;color:#7a4800;font-size:0.88em;font-weight:800;padding:11px 32px;cursor:pointer;box-shadow:0 4px 18px rgba(255,215,0,0.35);animation:_ycFadeUp 1.1s 2.9s ease both;opacity:0;">つぎへ →</button>
+        <button onclick="_ycGoSlide(2)" style="margin-top:28px;background:linear-gradient(135deg,#ffd700,#ffaa00);border:none;border-radius:30px;color:#7a4800;font-size:0.88em;font-weight:800;padding:11px 32px;cursor:pointer;box-shadow:0 4px 18px rgba(255,215,0,0.35);animation:_ycFadeUp 1.1s 2.9s ease both;opacity:0;">つぎへ →</button>
       </div>
 
-      <!-- slide 1: VISION -->
-      <div id="_ycS1" style="display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 24px 28px;box-sizing:border-box;width:100%;">
+      <!-- slide 2: VISION -->
+      <div id="_ycS2" style="display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 24px 28px;box-sizing:border-box;width:100%;">
         <div style="font-size:2.6em;animation:_ycFloat 5s ease-in-out infinite,_ycBurst 1.1s cubic-bezier(0.16,1,0.3,1) both;">🎨</div>
         <div style="font-size:0.68em;color:#888;font-weight:700;letter-spacing:0.16em;margin:14px 0 8px;animation:_ycFadeIn 1.2s 0.5s ease both;opacity:0;">VISION</div>
         <div style="width:50px;height:1px;background:linear-gradient(90deg,transparent,#a78bfa,transparent);margin-bottom:24px;animation:_ycFadeIn 1.2s 0.9s ease both;opacity:0;"></div>
@@ -17017,11 +17071,11 @@ try {
           <span style="color:#a78bfa;font-weight:700;">めぐりめぐって</span><br>
           誰かの明日を<span style="color:#ffd700;font-weight:700;">輝かす。</span>
         </div>
-        <button onclick="_ycGoSlide(2)" style="margin-top:32px;background:linear-gradient(135deg,#a78bfa,#4facfe);border:none;border-radius:30px;color:#fff;font-size:0.88em;font-weight:800;padding:11px 32px;cursor:pointer;box-shadow:0 4px 18px rgba(167,139,250,0.35);animation:_ycFadeUp 1.1s 2.4s ease both;opacity:0;">つぎへ →</button>
+        <button onclick="_ycGoSlide(3)" style="margin-top:32px;background:linear-gradient(135deg,#a78bfa,#4facfe);border:none;border-radius:30px;color:#fff;font-size:0.88em;font-weight:800;padding:11px 32px;cursor:pointer;box-shadow:0 4px 18px rgba(167,139,250,0.35);animation:_ycFadeUp 1.1s 2.4s ease both;opacity:0;">つぎへ →</button>
       </div>
 
-      <!-- slide 2: VALUES -->
-      <div id="_ycS2" style="display:none;flex-direction:column;align-items:center;padding:28px 20px 20px;box-sizing:border-box;width:100%;">
+      <!-- slide 3: VALUES -->
+      <div id="_ycS3" style="display:none;flex-direction:column;align-items:center;padding:28px 20px 20px;box-sizing:border-box;width:100%;">
         <div style="font-size:2.2em;text-align:center;margin-bottom:6px;animation:_ycFloat 4.5s ease-in-out infinite,_ycBurst 1.1s cubic-bezier(0.16,1,0.3,1) both;">🌟</div>
         <div style="font-size:0.68em;color:#888;font-weight:700;letter-spacing:0.16em;margin-bottom:14px;text-align:center;animation:_ycFadeIn 1.1s 0.3s ease both;opacity:0;">VALUES</div>
         <div style="width:100%;display:flex;flex-direction:column;gap:8px;">
@@ -17038,11 +17092,11 @@ try {
             <div style="font-size:0.75em;color:#ccc;line-height:1.6;">自分の創造物を、誰かへ。<br>渡したとき、王国はもっと豊かになる。</div>
           </div>
         </div>
-        <button onclick="_ycGoSlide(3)" style="margin-top:16px;background:linear-gradient(135deg,#a78bfa,#4facfe);border:none;border-radius:30px;color:#fff;font-size:0.88em;font-weight:800;padding:10px 0;cursor:pointer;width:100%;box-shadow:0 4px 16px rgba(167,139,250,0.3);animation:_ycFadeUp 1.1s 2.2s ease both;opacity:0;">つぎへ →</button>
+        <button onclick="_ycGoSlide(4)" style="margin-top:16px;background:linear-gradient(135deg,#a78bfa,#4facfe);border:none;border-radius:30px;color:#fff;font-size:0.88em;font-weight:800;padding:10px 0;cursor:pointer;width:100%;box-shadow:0 4px 16px rgba(167,139,250,0.3);animation:_ycFadeUp 1.1s 2.2s ease both;opacity:0;">つぎへ →</button>
       </div>
 
-      <!-- slide 3: TRUE VALUES -->
-      <div id="_ycS3" style="display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:36px 24px 28px;box-sizing:border-box;width:100%;position:relative;">
+      <!-- slide 4: TRUE VALUES -->
+      <div id="_ycS4" style="display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:36px 24px 28px;box-sizing:border-box;width:100%;position:relative;">
 
         <!-- くす玉コンフェッティ（ボタン押下後に出現） -->
         <div id="_ycCrackerWrap" style="position:absolute;top:30%;left:50%;transform:translateX(-50%);pointer-events:none;display:none;">
@@ -17154,7 +17208,7 @@ function _ycWelcomeAnim() {
     cy = rect.top + rect.height / 2;
   }
   // 王冠：🏰の中心に着地
-  var crown = sp('👑','position:fixed;font-size:2.8em;left:'+(cx-23)+'px;top:'+(cy-65)+'px;transform:translateX(-50%);animation:_ycCrownDrop 1.0s 0s cubic-bezier(0.34,1.4,0.64,1) both;');
+  var crown = sp('👑','position:fixed;font-size:2.8em;left:'+(cx-31)+'px;top:'+(cy-65)+'px;transform:translateX(-50%);animation:_ycCrownDrop 1.0s 0s cubic-bezier(0.34,1.4,0.64,1) both;');
   layer.appendChild(crown);
   // 波紋：着地点から広がる
   [0.95, 1.15].forEach(function(d){
@@ -17323,7 +17377,7 @@ function _ycGoSlide(n) {
       var dots=document.getElementById('_ycDots');
       if(!dots) return;
       dots.innerHTML='';
-      for(var i=0;i<4;i++){
+      for(var i=0;i<5;i++){
         var d=document.createElement('div');
         d.style.cssText='width:'+(i===active?'20':'8')+'px;height:8px;border-radius:4px;background:'+(i===active?'#ffd700':'rgba(255,255,255,0.25)')+';transition:all 0.3s;cursor:pointer;flex-shrink:0;';
         (function(idx){ d.onclick=function(){ _ycGoSlide(idx); }; })(i);
@@ -17331,49 +17385,299 @@ function _ycGoSlide(n) {
       }
     }
     _ycUpdateDots(0);
-    
-// ===== window公開（block5関数） =====
-try {
-  window._ycFireCracker = _ycFireCracker;
-  window._ycGoSlide = _ycGoSlide;
-} catch(e) { console.warn("[window公開-b5]", e); }
-</script>
+    </script>
   </div>
 
   <!-- 従来のチュートリアル -->
   <div id="tutorialMain" style="display:none;background:#1a1a2e;border:1px solid #4facfe;border-radius:20px;max-width:380px;width:92%;color:#fff;position:relative;box-shadow:0 0 40px rgba(79,172,254,0.3);max-height:90vh;overflow:hidden;flex-direction:column;">
-  <!-- 王国入場アニメレイヤー -->
-  <div id="_ycWelcomeAnim" style="position:fixed;inset:0;pointer-events:none;z-index:99999;display:none;"></div>
   <div style="overflow-y:auto;overflow-x:hidden;padding:28px 24px;-webkit-overflow-scrolling:touch;flex:1;">
     <div style="font-size:2em;text-align:center;margin-bottom:4px;">🏰</div>
-    <h2 style="text-align:center;color:#ffd700;font-size:1.1em;margin:0 0 6px 0;letter-spacing:0.05em;">王国へようこそ。</h2>
-    <div style="text-align:center;font-size:0.82em;color:#aaa;margin-bottom:20px;">まず、遊ぶように始めよう。</div>
+    <h2 style="text-align:center;color:#ffd700;font-size:1.1em;margin:0 0 4px 0;letter-spacing:0.05em;">王国へようこそ。</h2>
+    <div style="text-align:center;font-size:0.88em;color:#a78bfa;font-weight:700;margin-bottom:4px;">夢と、今日がつながる。</div>
+    <div style="text-align:center;font-size:0.75em;color:#666;margin-bottom:20px;">小さく始めて、大きくつながる。</div>
     <div style="margin-bottom:16px;">
       <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;">
         <div style="background:#4facfe;color:#fff;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.85em;flex-shrink:0;">1</div>
         <div>
-          <div style="font-weight:bold;color:#4facfe;margin-bottom:2px;">やることを、ひとつ入れてみて</div>
-          <div style="font-size:0.85em;color:#ccc;">タスクは全部、王国の素材になるよ！</div>
+          <div style="font-weight:bold;color:#4facfe;margin-bottom:2px;">✏️ まず、雑記帳に書き出してみてね</div>
+          <div style="font-size:0.85em;color:#ccc;">頭の中にあること、なんでも。完璧じゃなくていいよ。</div>
         </div>
       </div>
       <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;">
         <div style="background:#ffd700;color:#1a1a2e;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.85em;flex-shrink:0;">2</div>
         <div>
-          <div style="font-weight:bold;color:#ffd700;margin-bottom:2px;">こなすたびに、王国が育っていく</div>
-          <div style="font-size:0.85em;color:#ccc;">完了したら、クリックで線が引けるよ！</div>
+          <div style="font-weight:bold;color:#ffd700;margin-bottom:2px;">☑️ やったら完了にしてみてね</div>
+          <div style="font-size:0.85em;color:#ccc;">タスクをタップするだけ。こなすたびに王国が育っていくよ。</div>
         </div>
       </div>
       <div style="display:flex;gap:12px;align-items:flex-start;">
         <div style="background:#a78bfa;color:#fff;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.85em;flex-shrink:0;">3</div>
         <div>
-          <div style="font-weight:bold;color:#a78bfa;margin-bottom:2px;">いつの間にか、あなただけの王国ができてる</div>
-          <div style="font-size:0.85em;color:#ccc;">ちゃんとやれば、どんな仕事も王国の礎になる</div>
+          <div style="font-weight:bold;color:#a78bfa;margin-bottom:2px;">🌐 やることが、3Dの王国になる</div>
+          <div style="font-size:0.85em;color:#ccc;">こなすたびに王国が育っていくよ。あなたの行動が、リアルタイムで反映される。</div>
         </div>
       </div>
     </div>
+    <!-- 4階層解説 -->
+    <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px;margin-bottom:16px;">
+      <div style="font-size:0.78em;color:#888;margin-bottom:10px;letter-spacing:0.05em;">📐 やることクラフトの4つのつながり</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-size:1em;">🎖️</div>
+          <div>
+            <div style="font-size:0.82em;font-weight:700;color:#e9d5ff;">グランドビジョン</div>
+            <div style="font-size:0.72em;color:#aaa;">大切にしたいこと。自分らしい人生の方向性。</div>
+          </div>
+        </div>
+        <div style="padding-left:12px;color:#555;font-size:0.75em;">↓</div>
+        <div style="display:flex;align-items:center;gap:8px;padding-left:8px;">
+          <div style="font-size:1em;">🏰</div>
+          <div>
+            <div style="font-size:0.82em;font-weight:700;color:#a78bfa;">志（こころざし）</div>
+            <div style="font-size:0.72em;color:#aaa;">叶えたいこと。例：英語を話せるようになりたい</div>
+          </div>
+        </div>
+        <div style="padding-left:12px;color:#555;font-size:0.75em;">↓</div>
+        <div style="display:flex;align-items:center;gap:8px;padding-left:16px;">
+          <div style="font-size:1em;">🏗️</div>
+          <div>
+            <div style="font-size:0.82em;font-weight:700;color:#4facfe;">工程（ステップ）</div>
+            <div style="font-size:0.72em;color:#aaa;">どう進めるか。例：まず基礎固めから</div>
+          </div>
+        </div>
+        <div style="padding-left:12px;color:#555;font-size:0.75em;">↓</div>
+        <div style="display:flex;align-items:center;gap:8px;padding-left:24px;">
+          <div style="font-size:1em;">✅</div>
+          <div>
+            <div style="font-size:0.82em;font-weight:700;color:#ffd700;">やること（タスク）</div>
+            <div style="font-size:0.72em;color:#aaa;">今日、具体的に何をするか。</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:10px;font-size:0.75em;color:#666;line-height:1.6;">最初はタスクだけでOK。慣れてきたら、造営で上に積み上げていけばいいよ。</div>
+    </div>
     <div style="border-top:1px solid rgba(255,255,255,0.15);margin:16px 0 12px;"></div>
     <div id="librarySection">
-      <script>// ===== チュートリアル =====
+      <button onclick="toggleLibrary()" id="libraryToggleBtn"
+        style="width:100%;text-align:center;background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.2);border-radius:10px;padding:10px 12px;color:#ffd700;font-size:0.88em;font-weight:bold;cursor:pointer;letter-spacing:0.05em;">
+        🏰 王国の図書館 ▼
+      </button>
+      <div id="libraryContent" style="display:none;margin-top:8px;">
+        <div id="aboutAccordion">
+          <div style="margin-bottom:6px;">
+            <button onclick="_ycShowMVVSplash()" style="width:100%;text-align:left;background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);border-radius:8px;padding:8px 12px;color:#ffd700;font-size:0.85em;font-weight:bold;cursor:pointer;">✨ やることクラフトをもっと知る</button>
+          </div>
+          <div style="margin-bottom:6px;">
+            <button onclick="toggleAbout('aboutIntro')" style="width:100%;text-align:left;background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.25);border-radius:8px;padding:8px 12px;color:#ffd700;font-size:0.85em;font-weight:bold;cursor:pointer;">🏰 やることクラフトを紹介して限定特典をもらう</button>
+            <div id="aboutIntro" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,215,0,0.15);border-radius:0 0 8px 8px;padding:16px 12px;font-size:0.82em;color:#ccc;line-height:1.7;">
+              <div style="color:#ffd700;font-size:0.88em;margin-bottom:16px;line-height:1.7;">
+                やることクラフトを紹介してくれた方に、<br>
+                <strong style="color:#fff;">デッキをプレゼントします。</strong><br>
+                <span style="color:#aaa;font-size:0.9em;">紹介後、Discordでお知らせください。</span>
+              </div>
+              <div style="margin-bottom:20px;">
+                <div style="font-size:0.78em;color:#aaa;margin-bottom:10px;">📖 紹介ページを読む</div>
+                <div style="display:flex;gap:10px;">
+                  <button onclick="openLpModal('women')" style="flex:1;padding:10px 8px;background:rgba(248,187,208,0.12);border:1px solid rgba(248,187,208,0.3);border-radius:8px;color:#f8bbd0;font-size:0.82em;font-weight:bold;cursor:pointer;">🌸 女性向けを読む</button>
+                  <button onclick="openLpModal('men')" style="flex:1;padding:10px 8px;background:rgba(129,199,132,0.12);border:1px solid rgba(129,199,132,0.3);border-radius:8px;color:#81c784;font-size:0.82em;font-weight:bold;cursor:pointer;">🌿 男性向けを読む</button>
+                </div>
+              </div>
+              <div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:16px;margin-bottom:4px;">
+                <div style="font-size:0.78em;color:#aaa;margin-bottom:12px;">📲 QRコードで共有する</div>
+                <div style="display:flex;gap:16px;flex-wrap:wrap;">
+                  <div style="text-align:center;">
+                    <div style="font-size:0.75em;color:#f8bbd0;font-weight:bold;margin-bottom:6px;">🌸 女性向け</div>
+                    <div style="background:white;border-radius:6px;padding:6px;display:inline-block;">
+                      <img id="qrWomen" src="" alt="女性向けLP QR" style="width:100px;height:100px;display:block;">
+                    </div>
+                  </div>
+                  <div style="text-align:center;">
+                    <div style="font-size:0.75em;color:#81c784;font-weight:bold;margin-bottom:6px;">🌿 男性向け</div>
+                    <div style="background:white;border-radius:6px;padding:6px;display:inline-block;">
+                      <img id="qrMen" src="" alt="男性向けLP QR" style="width:100px;height:100px;display:block;">
+                    </div>
+                  </div>
+                  <div style="text-align:center;">
+                    <div style="font-size:0.75em;color:#a78bfa;font-weight:bold;margin-bottom:6px;">💬 Discord</div>
+                    <div style="background:white;border-radius:6px;padding:6px;display:inline-block;">
+                      <img id="qrDiscord" src="" alt="Discord QR" style="width:100px;height:100px;display:block;">
+                    </div>
+                  </div>
+                  <div style="text-align:center;">
+                    <div style="font-size:0.75em;color:#4caf50;font-weight:bold;margin-bottom:6px;">💚 LINE</div>
+                    <div style="background:white;border-radius:6px;padding:6px;display:inline-block;width:112px;height:112px;display:flex;align-items:center;justify-content:center;">
+                      <img id="qrLine" src="" alt="LINE QR" style="width:100px;height:100px;display:none;">
+                      <div id="qrLinePlaceholder" style="width:100px;height:100px;display:flex;align-items:center;justify-content:center;font-size:0.7em;color:#aaa;text-align:center;line-height:1.5;">準備中</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="margin-bottom:6px;">
+            <button onclick="hideTutorial();allSettings.flags.scratchTourSeen=true;saveAllSettings();setTimeout(function(){switchView('daily');setTimeout(function(){switchDailyTab('scratch');setTimeout(showScratchOnboarding,300);},200);},200);" style="width:100%;text-align:left;background:rgba(79,172,254,0.08);border:1px solid rgba(79,172,254,0.25);border-radius:8px;padding:8px 12px;color:#4facfe;font-size:0.85em;font-weight:bold;cursor:pointer;">✏️ 雑記帳の使い方</button>
+          </div>
+          <div style="margin-bottom:6px;">
+            <button onclick="hideTutorial();allSettings.flags.journalTourSeen=true;saveAllSettings();setTimeout(function(){switchView('journal');setTimeout(showJournalOnboarding,300);},200);" style="width:100%;text-align:left;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.25);border-radius:8px;padding:8px 12px;color:#a78bfa;font-size:0.85em;font-weight:bold;cursor:pointer;">📖 日誌の使い方</button>
+          </div>
+          <div style="margin-bottom:6px;">
+            <button onclick="toggleAbout('aboutPhilosophy')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#81c784;font-size:0.85em;font-weight:bold;cursor:pointer;">🌿 やることクラフトが大切にしていること</button>
+            <div id="aboutPhilosophy" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:14px 12px;font-size:0.82em;color:#ccc;line-height:1.7;">
+              <div style="color:#ffd700;font-weight:bold;margin-bottom:10px;font-size:0.9em;">🏰 王国の心得</div>
+              <div style="margin-bottom:12px;">
+                <div style="color:#4facfe;font-weight:bold;margin-bottom:3px;">🌾 動いていると、楽しくなっていく</div>
+                <div>小さな一歩。まずは楽しく。<br>動き出せば、次が見えてくる。</div>
+              </div>
+              <div style="margin-bottom:12px;">
+                <div style="color:#a78bfa;font-weight:bold;margin-bottom:3px;">🪣 自分の分を、決めて守る</div>
+                <div>詰め込みすぎない。全部やろうとしない。<br>今日の自分にできることだけを、丁寧に。<br>それが長く続く王国の秘訣です。</div>
+              </div>
+              <div style="margin-bottom:12px;">
+                <div style="color:#f8bbd0;font-weight:bold;margin-bottom:3px;">🎁 余ったら、誰かに渡す</div>
+                <div>うまくいったやり方、続けられたルーティン。<br>デッキにして誰かに贈ってみてください。<br>渡したとき、あなたの王国はもっと豊かになります。</div>
+              </div>
+              <div style="margin-bottom:4px;">
+                <div style="color:#ffd700;font-weight:bold;margin-bottom:3px;">🕯️ 在るも、接するも、まごころで</div>
+                <div>単なる「正直」ではなく、まごころ。<br>頭で考えるだけでなく、行動で示す誠実さ。<br>影日向なく、見ていなくても出来ることをやろう。<br>自分自身への誠実さも含まれるよ！<br>まずは楽しく、まごころで！</div>
+              </div>
+              <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);color:#a78bfa;font-weight:bold;font-size:0.9em;">🌟 貢献感は、幸福の源泉。<br><span style="font-weight:normal;color:#888;font-size:0.9em;">ここに来るたびに、自分の貢献を確かめてね。<br>自分の自分に対する貢献も、人に対する貢献も幸福の源泉だよ！<br>やることクラフトは、あなたの貢献を記録し続けます。</span></div>
+            </div>
+          </div>
+          <div style="margin-bottom:6px;">
+            <button onclick="toggleAbout('aboutHeaven')" style="width:100%;text-align:left;background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.3);border-radius:8px;padding:8px 12px;color:#ffd700;font-size:0.85em;font-weight:bold;cursor:pointer;">🌟 志の天国</button>
+            <div id="aboutHeaven" style="display:none;background:rgba(167,139,250,0.04);border:1px solid rgba(167,139,250,0.15);border-radius:0 0 8px 8px;padding:12px;font-size:0.82em;color:#ccc;line-height:1.7;">
+              <div id="heavenBlueprintList" style="display:flex;flex-direction:column;gap:8px;">
+                <div style="font-size:0.78em;color:#a78bfa;line-height:1.7;padding:8px 0 4px 0;border-bottom:1px solid rgba(167,139,250,0.15);margin-bottom:8px;">貢献感は、幸福の源泉。<br><span style="color:#888;">ここに来るたびに、自分の貢献を確かめてね。</span></div>
+              </div>
+            </div>
+          </div>
+          <div style="margin-bottom:6px;">
+            <button onclick="toggleAbout('aboutDeepFocus')" style="width:100%;text-align:left;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.25);border-radius:8px;padding:8px 12px;color:#a78bfa;font-size:0.85em;font-weight:bold;cursor:pointer;">✦ 深考とは</button>
+            <div id="aboutDeepFocus" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(167,139,250,0.15);border-radius:0 0 8px 8px;padding:14px 12px;font-size:0.82em;color:#ccc;line-height:1.9;">
+              <div style="color:#a78bfa;font-weight:700;margin-bottom:6px;">自分の力で、AIの力で。両輪で動かす。</div>
+              <div style="color:#555;margin-bottom:12px;">頭と知恵を、フル活用する。</div>
+              <div style="color:#a78bfa;font-weight:700;margin-bottom:6px;">アインシュタインの思考法</div>
+              <div style="margin-bottom:10px;">人より長く問題に向き合ったから、相対性理論が生まれた。</div>
+              <div style="color:#a78bfa;font-weight:700;margin-bottom:6px;">深考の3ステップ</div>
+              <div style="margin-bottom:4px;">① 外部の刺激を、徹底的に遮断する。</div>
+              <div style="margin-bottom:4px;">② たった一つの問いを立てる。</div>
+              <div style="margin-bottom:10px;">③ 脳が飽きたと悲鳴をあげても、あと5分考え続ける。</div>
+              <div style="color:#555;margin-bottom:10px;">その5分の先に、普通では見えない境地がある。</div>
+              <div style="color:#a78bfa;">その問いが幸せに向かうなら、始めましょう。</div>
+            </div>
+          </div>
+          <!-- 王国について -->
+          <div style="margin-bottom:6px;">
+            <button onclick="toggleAbout('aboutKingdom')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#a78bfa;font-size:0.85em;font-weight:bold;cursor:pointer;">🏰 王国について</button>
+            <div id="aboutKingdom" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:10px 12px;font-size:0.82em;color:#ccc;line-height:1.6;">
+              あなたのやることが王国を動かします。与え、動き、継続する。それが栄える王国の姿です。
+            </div>
+          </div>
+          <!-- GDP -->
+          <div style="margin-bottom:6px;">
+            <button onclick="toggleAbout('aboutGDP')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#ffd700;font-size:0.85em;font-weight:bold;cursor:pointer;">💰 GDPとは？</button>
+            <div id="aboutGDP" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:10px 12px;font-size:0.82em;color:#ccc;line-height:1.6;">
+              論語とそろばん。動いた分だけ王国は豊かになります。タスクを完了するたびにGDPが積み上がります。
+            </div>
+          </div>
+          <!-- 徳 -->
+          <div style="margin-bottom:6px;">
+            <button onclick="toggleAbout('aboutToku')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#f8bbd0;font-size:0.85em;font-weight:bold;cursor:pointer;">🌸 徳とは？</button>
+            <div id="aboutToku" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:10px 12px;font-size:0.82em;color:#ccc;line-height:1.6;">
+              与えることで積まれます。デッキを配布したり、タスクを家族と共有すると徳が積まれます。一度積まれた徳は消えません。<br><br>
+              徳と業の分かれ目は「人に喜んでもらえるかどうか」。喜んでもらえるように工夫した行動が、徳を積みます。
+            </div>
+          </div>
+          <!-- 業 -->
+          <div style="margin-bottom:6px;">
+            <button onclick="toggleAbout('aboutGou')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#ffb74d;font-size:0.85em;font-weight:bold;cursor:pointer;">🌙 業とは？</button>
+            <div id="aboutGou" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:10px 12px;font-size:0.82em;color:#ccc;line-height:1.6;">
+              王国には、与える力と受け取る力のバランスがあります。受け取るだけでは、少しずつ王国に影が差してくることも。<br><br>
+              公式デッキ（ショップ内のデッキ）はそのまま受け取って大丈夫です。安心して使ってください。
+            </div>
+          </div>
+          <!-- 徳分 -->
+          <div style="margin-bottom:6px;">
+            <button onclick="toggleAbout('aboutTokubun')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#e0e0e0;font-size:0.85em;font-weight:bold;cursor:pointer;">⚖️ 徳分とは？</button>
+            <div id="aboutTokubun" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:10px 12px;font-size:0.82em;color:#ccc;line-height:1.6;">
+              徳と業のバランスを示す値です。与えることを大切にしている王国ほど、徳分が高くなります。気にしすぎなくて大丈夫。与えることを楽しんでいれば、自然とプラスになっていきます。
+            </div>
+          </div>
+          <!-- 造営ビューの使い方 -->
+          <div style="margin-bottom:6px;">
+            <button onclick="toggleAbout('aboutGantView');if(document.getElementById('aboutGantView').style.display!=='none'){showGantOnboarding();}" style="width:100%;text-align:left;background:rgba(79,172,254,0.08);border:1px solid rgba(79,172,254,0.25);border-radius:8px;padding:8px 12px;color:#4facfe;font-size:0.85em;font-weight:bold;cursor:pointer;">🏯 造営ビューの使い方</button>
+            <div id="aboutGantView" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(79,172,254,0.15);border-radius:0 0 8px 8px;padding:14px 12px;font-size:0.82em;color:#ccc;line-height:1.7;">
+              <div style="color:#4facfe;font-weight:bold;margin-bottom:10px;font-size:0.88em;">🏯 3階層で王国の計画を動かす</div>
+              <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:14px;">
+                <div style="display:flex;gap:10px;align-items:flex-start;">
+                  <div style="width:24px;height:24px;border-radius:50%;background:#4facfe;color:#fff;font-size:0.8em;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</div>
+                  <div>
+                    <div style="color:#fff;font-weight:bold;margin-bottom:2px;">「＋ 造営計画」で志を作る</div>
+                    <div style="color:#aaa;">夢・目標・プロジェクト。なんでもいい。</div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:10px;align-items:flex-start;">
+                  <div style="width:24px;height:24px;border-radius:50%;background:#4facfe;color:#fff;font-size:0.8em;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</div>
+                  <div>
+                    <div style="color:#fff;font-weight:bold;margin-bottom:2px;">「工程を刻む」でステップを作る</div>
+                    <div style="color:#aaa;">志の中の段階・フェーズ。例：基礎固め、仕上げ。</div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:10px;align-items:flex-start;">
+                  <div style="width:24px;height:24px;border-radius:50%;background:#4facfe;color:#fff;font-size:0.8em;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</div>
+                  <div>
+                    <div style="color:#fff;font-weight:bold;margin-bottom:2px;">タスクに日付・時刻を入れる</div>
+                    <div style="color:#aaa;">タスクを工程に紐づけると、ガントバーが現れる。</div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:10px;align-items:flex-start;">
+                  <div style="width:24px;height:24px;border-radius:50%;background:#4facfe;color:#fff;font-size:0.8em;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">4</div>
+                  <div>
+                    <div style="color:#fff;font-weight:bold;margin-bottom:2px;">工程行の「○件」を押す</div>
+                    <div style="color:#aaa;">紐づいたタスクが展開される。日・週・月スケールで俯瞰できる。</div>
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
+                <div style="background:rgba(79,172,254,0.06);border-left:3px solid #4facfe;border-radius:0 6px 6px 0;padding:8px 10px;font-size:0.79em;color:#ccc;line-height:1.7;">
+                  <strong style="color:#4facfe;">⏰ 時刻のヒント</strong><br>
+                  タスクに「開始時刻」と「終了時刻」を入れると、バーに幅が生まれる。<br>
+                  幅があるバーほど、計画に厚みがある。
+                </div>
+                <div style="background:rgba(167,139,250,0.06);border-left:3px solid #a78bfa;border-radius:0 6px 6px 0;padding:8px 10px;font-size:0.79em;color:#ccc;line-height:1.7;">
+                  <strong style="color:#a78bfa;">🎨 工程のカスタマイズ</strong><br>
+                  工程の ✏️ を押すと色・絵文字を変えられる。<br>
+                  自分らしい王国の色に染めていこう。
+                </div>
+                <div style="background:rgba(248,187,208,0.06);border-left:3px solid #f8bbd0;border-radius:0 6px 6px 0;padding:8px 10px;font-size:0.79em;color:#ccc;line-height:1.7;">
+                  <strong style="color:#f8bbd0;">📅 スケールの使い分け</strong><br>
+                  <strong style="color:#fff;">日</strong>：今日のタスクを時間で管理する<br>
+                  <strong style="color:#fff;">週</strong>：この週の工程の流れを確認する<br>
+                  <strong style="color:#fff;">月</strong>：長期プロジェクトを俯瞰する
+                </div>
+                <div style="background:rgba(255,215,0,0.06);border-left:3px solid #ffd700;border-radius:0 6px 6px 0;padding:8px 10px;font-size:0.79em;color:#ccc;line-height:1.7;">
+                  <strong style="color:#ffd700;">🏯 志カードにホバーしてみよう</strong><br>
+                  進捗に応じて、王国からのメッセージが届く。<br>
+                  100%になったとき、次の志が始まる。
+                </div>
+              </div>
+              <div style="background:rgba(79,172,254,0.08);border-radius:8px;padding:10px;font-size:0.8em;color:#aaa;line-height:1.8;">
+                💡 <strong style="color:#ccc;">タスクがゴミなら夢が叶わない。</strong><br>
+                タスクに日付・時刻を刻むほど、バーが育っていく。<br>
+                造営ビューはその王国の地図です。<br>
+                <strong style="color:#4facfe;">本当に輝く王国の地図と工程は、あなたの手にあるよ！</strong>
+              </div>
+              <button onclick="showGantOnboarding()" style="width:100%;margin-top:12px;padding:11px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:10px;color:#fff;font-size:0.88em;font-weight:800;cursor:pointer;letter-spacing:0.04em;box-shadow:0 3px 12px rgba(79,172,254,0.3);">🏯 造営ビューのオンボーディングを見る →</button>
+            </div>
+          </div>
+        </div><!-- /aboutAccordion -->
+      </div><!-- /libraryContent -->
+    </div><!-- /librarySection -->
+    <button id="tutorialClose" style="width:100%;padding:12px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:8px;color:#fff;font-size:1em;font-weight:bold;cursor:pointer;margin-top:12px;">さあ、冒険へ旅立とう！ ✨</button>
+  </div>
+  </div>
+</div>
+<script>// ===== チュートリアル =====
 // ===== 王国スタートデッキ =====
 function receiveStarterDeck() {
   if (allSettings.deck.starterDone) return;
@@ -17460,7 +17764,7 @@ function showGantOnboarding() {
     var isSpecial = !!(s.isSpecial);
     var borderColor = '#ffd700';
     var glowColor   = 'rgba(255,215,0,0.25)';
-    return '<div style="background:#1a1a2e;border:1px solid '+borderColor+';border-radius:20px;max-width:380px;width:92%;color:#fff;box-shadow:0 0 40px '+glowColor+';max-height:90vh;overflow:hidden;display:flex;flex-direction:column;opacity:0;transition:opacity 0.25s;" id="_gOBCard">'
+    return '<div style="background:#1a1a2e;border:1px solid '+borderColor+';border-radius:20px;max-width:380px;width:92%;color:#fff;box-shadow:0 0 40px '+glowColor+';max-height:90vh;overflow:hidden;display:flex;flex-direction:column;transform:translateY(20px);opacity:0;transition:transform 0.3s cubic-bezier(0.34,1.4,0.64,1),opacity 0.25s;" id="_gOBCard">'
       +'<div style="overflow-y:auto;padding:28px 24px 16px;flex:1;">'
       +'<div style="font-size:2.2em;text-align:center;margin-bottom:6px;">'+s.emoji+'</div>'
       +'<h2 style="text-align:center;color:#ffd700;font-size:1.05em;margin:0 0 4px;letter-spacing:0.04em;">'+s.title+'</h2>'
@@ -17482,7 +17786,7 @@ function showGantOnboarding() {
     overlay.innerHTML = buildGantSlide(idx);
     requestAnimationFrame(function(){
       var card = document.getElementById('_gOBCard');
-      if (card) { card.style.opacity='1'; }
+      if (card) { card.style.transform='translateY(0)'; card.style.opacity='1'; }
     });
     var btn  = document.getElementById('_gOBBtn');
     var skip = document.getElementById('_gOBSkip');
@@ -17497,12 +17801,600 @@ function showTutorial() {
   if (!el) return;
   var splash = document.getElementById('tutorialSplash');
   var main   = document.getElementById('tutorialMain');
+  if (allSettings.flags.tutorialSeen) {
+    // 2回目以降：スプラッシュをスキップして王国へようこそから
+    if (splash) splash.style.display = 'none';
+    if (main)   main.style.display   = 'flex';
+    el.style.display = 'flex';
+    // レイアウト確定を待ってからアニメ起動
+    setTimeout(function() {
+      if (typeof _ycWelcomeAnim === 'function') _ycWelcomeAnim();
+    }, 80);
+  } else {
+    // 初回のみスプラッシュから
+    if (splash) splash.style.display = 'flex';
+    if (main)   main.style.display   = 'none';
+    _ycGoSlide(0);
+    el.style.display = 'flex';
+  }
+}
+// 図書館「やることクラフトをもっと知る」からスプラッシュを全部流す
+function _ycShowMVVSplash() {
+  var el = document.getElementById('tutorialOverlay');
+  if (!el) return;
+  var splash = document.getElementById('tutorialSplash');
+  var main   = document.getElementById('tutorialMain');
   if (splash) splash.style.display = 'flex';
   if (main)   main.style.display   = 'none';
-  // 毎回スライド0（MISSION）から
   _ycGoSlide(0);
   el.style.display = 'flex';
 }
+// ===== 深考モード =====
+var _dfmTimerInterval = null;
+var _dfmCurrentQuestion = '';
+var _dfmHintIdx = 0;
+var _dfmQuestionIdx = 0;
+var _dfmDeepQuestions = [
+  // 動機・目的
+  'なぜその問いを立てたのですか？',
+  '何のためですか？',
+  '誰の幸せに繋がりますか？',
+  '誰と誰が喜びますか？',
+  // RPM（アンソニー・ロビンズ）
+  '【RPM-R】本当に欲しい結果は何ですか？\n具体的・測定可能に答えてください。',
+  '【RPM-P】なぜそれが欲しいのですか？\n感情的な動機・compelling reasonを。',
+  '【RPM-M】それを得るために何をしますか？\n大量行動計画（Massive Action Plan）を。',
+  // 6ヒューマンニーズ（ロビンズ）
+  '【6ニーズ①】確実性：この問いの中で、確かなことは何ですか？',
+  '【6ニーズ②】不確実性：この問いの中で、まだ見えていないことは何ですか？',
+  '【6ニーズ③】重要感：この問いはあなたにとってなぜ重要ですか？',
+  '【6ニーズ④】つながり：この問いは誰とのつながりに関係していますか？',
+  '【6ニーズ⑤】成長：この問いを深めることで、あなたはどう成長しますか？',
+  '【6ニーズ⑥】貢献：この問いの答えは、誰かの役に立ちますか？',
+  // SALUTE（米陸軍）
+  '【SALUTE-S】規模はどのくらいですか？（人数・影響範囲）',
+  '【SALUTE-A】今、何が起きていますか？（Activity）',
+  '【SALUTE-L】どこでのことですか？（Location）',
+  '【SALUTE-U】誰が関係していますか？（Unit）',
+  '【SALUTE-T】いつのことですか？（Time）',
+  '【SALUTE-E】何を武器・ツールにできますか？（Equipment）',
+  // 5W1H
+  '5W1H で整理すると？\nWho · What · When · Where · Why · How',
+  // なぜ5回
+  'なぜ？（1回目）',
+  'なぜ？（2回目）——その答えをさらに問い返す。',
+  'なぜ？（3回目）——もう一度深く。',
+  'なぜ？（4回目）——本質が見えてきた？',
+  'なぜ？（5回目）——これが根っこだ。',
+  // デカルト座標法（NLP）
+  '【デカルト①】これをやったら、何が起きますか？',
+  '【デカルト②】これをやらなかったら、何が起きますか？',
+  '【デカルト③】これをやったら、何が起きなくなりますか？',
+  '【デカルト④】これをやらなかったら、何が起きなくなりますか？',
+  // ソクラテス式問答
+  '【ソクラテス①】それは本当ですか？確信できますか？',
+  '【ソクラテス②】その考えの反証は何ですか？',
+  '【ソクラテス③】その問いの前提は何ですか？',
+  '【ソクラテス④】もし前提が間違っていたら？',
+  // 本質・関係
+  '何が本質ですか？',
+  '何と何が関係していますか？',
+  '名前をつけるとしたら何ですか？',
+  '今の状態はどうですか？',
+  '時間軸で見るとどうですか？',
+  // 制約外し
+  '「もし〇〇だったら？」\n制約を外したら、どうなりますか？',
+  // 解決
+  'どうやって解決したいですか？',
+  // 最終
+  'この問いから逃げたくなっていますか？なぜ？'
+];
+
+function openDeepFocusMode() {
+  try {
+    var modal = document.getElementById('deepFocusModal');
+    if (!modal) { showToast('ERROR: modal not found', {type:'error'}); return; }
+    modal.style.display = 'flex';
+    modal.style.flexDirection = 'column';
+    var history = _dfmGetHistory();
+    if (history.length > 0) {
+      _dfmShowHistory();
+    } else {
+      _dfmShowStep(1);
+      showToast('深考へようこそ。たった一つの問いを立て、極限まで考え抜きましょう。', {type:'info', duration:8000});
+    }
+  } catch(e) {
+    showToast('ERROR: ' + e.message, {type:'error', duration:8000});
+  }
+}
+function closeDeepFocusMode() {
+  var modal = document.getElementById('deepFocusModal');
+  if (modal) modal.style.display = 'none';
+  if (_dfmTimerInterval) { clearInterval(_dfmTimerInterval); _dfmTimerInterval = null; }
+}
+function _dfmShowStep(n) {
+  ['1','2','3','4'].forEach(function(i){
+    var el = document.getElementById('dfm-step' + i);
+    if (el) el.style.display = 'none';
+  });
+  var hist = document.getElementById('dfm-history');
+  if (hist) hist.style.display = 'none';
+  var el = document.getElementById('dfm-step' + n);
+  if (el) el.style.display = 'flex';
+}
+function _dfmShowHistory() {
+  ['1','2','3','4'].forEach(function(i){
+    var el = document.getElementById('dfm-step' + i);
+    if (el) el.style.display = 'none';
+  });
+  var hist = document.getElementById('dfm-history');
+  if (hist) hist.style.display = 'flex';
+  _dfmRenderHistory();
+}
+function _dfmNext(step) {
+  if (step === 1) {
+    var q = document.getElementById('dfm-question');
+    if (!q || !q.value.trim()) { showToast('問いを入力してください', {type:'warn'}); return; }
+    _dfmCurrentQuestion = q.value.trim();
+    var disp = document.getElementById('dfm-question-display');
+    if (disp) disp.textContent = '「' + _dfmCurrentQuestion + '」';
+    _dfmHintIdx = 0;
+    _dfmQuestionIdx = 0;
+    _dfmShowStep(2);
+    setTimeout(function(){ var r = document.getElementById('dfm-result'); if(r) r.focus(); }, 200);
+  } else if (step === 2) {
+    var r = document.getElementById('dfm-result');
+    if (!r || !r.value.trim()) { showToast('気づきを書いてください', {type:'warn'}); return; }
+    _dfmShowStep(3);
+    _dfmStartTimer(5 * 60);
+  }
+}
+function _dfmShowHint() {
+  var popup = document.getElementById('dfm-hint-popup');
+  var text = document.getElementById('dfm-hint-text');
+  var idx = document.getElementById('dfm-hint-index');
+  var qpopup = document.getElementById('dfm-question-popup');
+  if (qpopup) qpopup.style.display = 'none';
+  if (!popup || !text) return;
+  text.textContent = _dfmHints[_dfmHintIdx];
+  if (idx) idx.textContent = (_dfmHintIdx + 1) + ' / ' + _dfmHints.length + '　（タップで次へ）';
+  popup.style.display = 'block';
+  popup.onclick = function(e) {
+    if (e.target === popup || e.target === text || e.target === idx) {
+      _dfmHintIdx = (_dfmHintIdx + 1) % _dfmHints.length;
+      text.textContent = _dfmHints[_dfmHintIdx];
+      if (idx) idx.textContent = (_dfmHintIdx + 1) + ' / ' + _dfmHints.length + '　（タップで次へ）';
+    }
+  };
+}
+function _dfmToggleQuestion() {
+  var area = document.getElementById('dfm-question-area');
+  var btn = document.getElementById('dfm-question-btn');
+  if (!area) return;
+  if (area.style.display === 'none') {
+    // 開く
+    var text = document.getElementById('dfm-question-text');
+    var idx = document.getElementById('dfm-question-index');
+    if (text) text.textContent = _dfmDeepQuestions[_dfmQuestionIdx];
+    if (idx) idx.textContent = (_dfmQuestionIdx + 1) + ' / ' + _dfmDeepQuestions.length;
+    area.style.display = 'block';
+    if (btn) btn.textContent = '❓ 閉じる';
+  } else {
+    // 閉じる
+    area.style.display = 'none';
+    if (btn) btn.textContent = '❓ 深掘り';
+  }
+}
+function _dfmNextQuestion() {
+  _dfmQuestionIdx = (_dfmQuestionIdx + 1) % _dfmDeepQuestions.length;
+  var text = document.getElementById('dfm-question-text');
+  var idx = document.getElementById('dfm-question-index');
+  if (text) text.textContent = _dfmDeepQuestions[_dfmQuestionIdx];
+  if (idx) idx.textContent = (_dfmQuestionIdx + 1) + ' / ' + _dfmDeepQuestions.length;
+}
+function _dfmShowQuestion() { _dfmToggleQuestion(); }
+function _dfmStartTimer(seconds) {
+  if (_dfmTimerInterval) clearInterval(_dfmTimerInterval);
+  var remaining = seconds;
+  var el = document.getElementById('dfm-timer');
+  function update() {
+    var m = Math.floor(remaining / 60);
+    var s = remaining % 60;
+    if (el) el.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+    if (remaining <= 0) { clearInterval(_dfmTimerInterval); _dfmFinish(); }
+    remaining--;
+  }
+  update();
+  _dfmTimerInterval = setInterval(update, 1000);
+}
+function _dfmFinish() {
+  if (_dfmTimerInterval) clearInterval(_dfmTimerInterval);
+  var r = document.getElementById('dfm-result');
+  var r2 = document.getElementById('dfm-result-timer');
+  var result = (r ? r.value.trim() : '');
+  var extra = (r2 ? r2.value.trim() : '');
+  if (extra) result = result ? result + '\n' + extra : extra;
+  var dateStr = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
+  var newId = (typeof generateTaskId === 'function') ? generateTaskId() : ('dfocus_' + Date.now());
+  if (typeof allTasks !== 'undefined' && allTasks) {
+    var record = {
+      id: newId,
+      kind: 'deepfocus',
+      question: _dfmCurrentQuestion,
+      result: result,
+      date: dateStr,
+      createdAt: new Date().toISOString()
+    };
+    allTasks.push(record);
+    if (typeof saveAllTasks === 'function') saveAllTasks();
+  }
+  var count = _dfmGetHistory().length;
+  var countEl = document.getElementById('dfm-count');
+  if (countEl) countEl.textContent = 'あなたは今日まで ' + count + ' 回、深く考えた。';
+  _dfmShowStep(4);
+}
+function _dfmSaveToScratch() {
+  var r = document.getElementById('dfm-result');
+  var r2 = document.getElementById('dfm-result-timer');
+  var result = (r ? r.value.trim() : '');
+  var extra = (r2 ? r2.value.trim() : '');
+  if (extra) result = result ? result + '\n' + extra : extra;
+  var text = '【深考】' + _dfmCurrentQuestion + (result ? '\n' + result : '');
+  var dateStr = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
+  var newId = (typeof generateTaskId === 'function') ? generateTaskId() : ('df_' + Date.now());
+  if (typeof allTasks !== 'undefined' && allTasks) {
+    allTasks.push({
+      id: newId, text: text, date: dateStr, time: null, section: 1,
+      completed: false, done: false, displayScope: 'daily_only',
+      kind: 'scratch', createdAt: new Date().toISOString()
+    });
+    if (typeof saveAllTasks === 'function') saveAllTasks();
+  }
+  closeDeepFocusMode();
+  if (typeof switchView === 'function') {
+    switchView('daily');
+    setTimeout(function(){ if (typeof switchDailyTab === 'function') switchDailyTab('scratch'); }, 150);
+  }
+  showToast('雑記帳に送りました！', {type:'success', duration:3000});
+}
+function _dfmReset() {
+  _dfmCurrentQuestion = '';
+  _dfmHintIdx = 0;
+  _dfmQuestionIdx = 0;
+  var q = document.getElementById('dfm-question');
+  if (q) q.value = '';
+  var r = document.getElementById('dfm-result');
+  if (r) r.value = '';
+  _dfmShowStep(1);
+}
+function _dfmGetHistory() {
+  if (typeof allTasks === 'undefined' || !allTasks) return [];
+  return allTasks.filter(function(t){ return t.kind === 'deepfocus'; })
+    .sort(function(a,b){ return (b.createdAt||'').localeCompare(a.createdAt||''); });
+}
+function _dfmRenderHistory() {
+  var list = document.getElementById('dfm-history-list');
+  if (!list) return;
+  var history = _dfmGetHistory();
+  if (history.length === 0) {
+    list.innerHTML = '<div style="color:#333;font-size:0.85em;text-align:center;padding:24px;">まだ深考の記録はないよ。</div>';
+    return;
+  }
+  list.innerHTML = history.map(function(r) {
+    var eid = 'dfm-edit-' + r.id;
+    return '<div style="background:#111;border:1px solid #1a1a1a;border-radius:10px;padding:14px;">'
+      + '<div style="font-size:0.72em;color:#333;margin-bottom:6px;">' + (r.date||'') + '</div>'
+      + '<div style="font-size:0.88em;font-weight:700;color:#a78bfa;margin-bottom:6px;">「' + (r.question||'') + '」</div>'
+      + '<div id="' + eid + '-disp" style="font-size:0.82em;color:#555;line-height:1.7;margin-bottom:10px;">' + (r.result||'（記録なし）') + '</div>'
+      + '<textarea id="' + eid + '-input" style="display:none;width:100%;padding:8px;background:#0a0a0a;border:1px solid #333;border-radius:6px;color:#ddd;font-size:0.82em;box-sizing:border-box;resize:none;font-family:inherit;" rows="3">' + (r.result||'') + '</textarea>'
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap;">'
+      + '<button onclick="_dfmHistoryEdit(\'' + r.id + '\')" id="' + eid + '-btn" style="flex:1;padding:5px 8px;background:#1a1a1a;border:1px solid #333;border-radius:6px;color:#888;font-size:0.75em;cursor:pointer;">✏️ 編集</button>'
+      + '<button onclick="_dfmHistorySend(\'' + r.id + '\')" style="flex:1;padding:5px 8px;background:#1a1a1a;border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#a78bfa;font-size:0.75em;cursor:pointer;">📝 雑記帳へ</button>'
+      + '<button onclick="_dfmHistoryDelete(\'' + r.id + '\')" style="flex:1;padding:5px 8px;background:#1a1a1a;border:1px solid rgba(255,100,100,0.3);border-radius:6px;color:#f87171;font-size:0.75em;cursor:pointer;">🗑 削除</button>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
+// グローバルに公開
+function _dfmHistoryEdit(id) {
+  var r = allTasks.find(function(t){ return t.id === id && t.kind === 'deepfocus'; });
+  if (!r) return;
+  var disp = document.getElementById('dfm-edit-' + id + '-disp');
+  var input = document.getElementById('dfm-edit-' + id + '-input');
+  var btn = document.getElementById('dfm-edit-' + id + '-btn');
+  if (!disp || !input || !btn) return;
+  if (input.style.display === 'none') {
+    disp.style.display = 'none';
+    input.style.display = 'block';
+    btn.textContent = '💾 保存';
+  } else {
+    r.result = input.value.trim();
+    if (typeof saveAllTasks === 'function') saveAllTasks();
+    disp.textContent = r.result || '（記録なし）';
+    disp.style.display = 'block';
+    input.style.display = 'none';
+    btn.textContent = '✏️ 編集';
+    showToast('保存しました', {type:'success', duration:2000});
+  }
+}
+function _dfmHistoryDelete(id) {
+  var idx = allTasks.findIndex(function(t){ return t.id === id && t.kind === 'deepfocus'; });
+  if (idx === -1) return;
+  allTasks.splice(idx, 1);
+  if (typeof saveAllTasks === 'function') saveAllTasks();
+  _dfmRenderHistory();
+  showToast('削除しました', {type:'info', duration:2000});
+}
+function _dfmHistorySend(id) {
+  var r = allTasks.find(function(t){ return t.id === id && t.kind === 'deepfocus'; });
+  if (!r) return;
+  var text = '【深考】' + (r.question||'') + (r.result ? '\n' + r.result : '');
+  var dateStr = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
+  var newId = (typeof generateTaskId === 'function') ? generateTaskId() : ('df_' + Date.now());
+  allTasks.push({
+    id: newId, text: text, date: dateStr, time: null, section: 1,
+    completed: false, done: false, displayScope: 'daily_only',
+    kind: 'scratch', createdAt: new Date().toISOString()
+  });
+  if (typeof saveAllTasks === 'function') saveAllTasks();
+  showToast('雑記帳に送りました！', {type:'success', duration:3000});
+}
+function _dfmCopyForAI() {
+  var r = document.getElementById('dfm-result');
+  var r2 = document.getElementById('dfm-result-timer');
+  var result = (r ? r.value.trim() : '');
+  var extra = (r2 ? r2.value.trim() : '');
+  if (extra) result = result ? result + '\n' + extra : extra;
+  var history = _dfmGetHistory();
+  var latest = history.length > 0 ? history[history.length - 1] : null;
+  var q = _dfmCurrentQuestion || (latest ? latest.question : '');
+  var ans = result || (latest ? latest.result : '');
+  var dateStr = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
+  var text = ['【深考ログ】' + dateStr, '', '■ 問い', q || '（問い未記入）', '', '■ 考えたこと', ans || '（内容未記入）', '', '---', 'このログをベースに、さらに深めるアドバイスをください。', '私が気づいていない視点や、次に考えるべき問いがあれば教えてください。'].join('\n');
+  function done() { if (typeof showToast === 'function') showToast('📋 AIに投げるテキストをコピーしました', {type:'success', duration:2500}); }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(function() {
+      var ta = document.createElement('textarea'); ta.value = text; ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;'; document.body.appendChild(ta); ta.focus(); ta.select(); try { document.execCommand('copy'); done(); } catch(e) {} document.body.removeChild(ta);
+    });
+  } else {
+    var ta = document.createElement('textarea'); ta.value = text; ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;'; document.body.appendChild(ta); ta.focus(); ta.select(); try { document.execCommand('copy'); done(); } catch(e) {} document.body.removeChild(ta);
+  }
+}
+function openQuizMode() {
+  var modal = document.getElementById('quizModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  _quizState = { idx: 0, score: 0, answered: false, timer: null, timeLeft: 10 };
+  _quizShowStart();
+}
+function closeQuizMode() {
+  var modal = document.getElementById('quizModal');
+  if (modal) modal.style.display = 'none';
+  if (_quizState.timer) clearInterval(_quizState.timer);
+}
+function _quizShowStart() {
+  var content = document.getElementById('quiz-content');
+  if (!content) return;
+  // ベストスコアをallTasksから取得
+  var qRec = (window.allTasks||[]).find(function(t){ return t.kind === 'quiz'; });
+  var best = qRec ? (qRec.bestScore || 0) : 0;
+  var plays = qRec ? (qRec.playCount || 0) : 0;
+  content.innerHTML = '<div style="text-align:center;padding:16px 0;">'
+    + '<div style="font-size:2.5em;margin-bottom:12px;">🎯</div>'
+    + '<div style="font-size:1.1em;font-weight:700;color:#fff;margin-bottom:8px;">使い方クイズ</div>'
+    + '<div style="font-size:0.82em;color:#555;margin-bottom:24px;">全10問・各10秒制限</div>'
+    + (plays > 0 ? '<div style="background:#111;border:1px solid #222;border-radius:10px;padding:12px;margin-bottom:24px;">'
+      + '<div style="font-size:0.78em;color:#888;">最高スコア</div>'
+      + '<div style="font-size:1.8em;font-weight:700;color:#fbbf24;">' + best + '<span style="font-size:0.5em;color:#555;">/10</span></div>'
+      + '<div style="font-size:0.72em;color:#444;">' + plays + '回プレイ</div>'
+      + '</div>' : '')
+    + '<button onclick="_quizStart()" style="width:100%;padding:14px;background:linear-gradient(135deg,#f59e0b,#fbbf24);border:none;border-radius:12px;color:#1a0a00;font-size:1em;font-weight:800;cursor:pointer;letter-spacing:0.03em;">はじめる →</button>'
+    + '</div>';
+}
+function _quizStart() {
+  _quizState = { idx: 0, score: 0, answered: false, timer: null, timeLeft: 10 };
+  _quizShowQ();
+}
+function _quizShowQ() {
+  var q = _quizQuestions[_quizState.idx];
+  var content = document.getElementById('quiz-content');
+  if (!content || !q) return;
+  _quizState.answered = false;
+  _quizState.timeLeft = 10;
+
+  content.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">'
+    + '<div style="font-size:0.78em;color:#555;">Q' + (_quizState.idx+1) + ' / ' + _quizQuestions.length + '</div>'
+    + '<div id="quiz-timer" style="font-size:1.4em;font-weight:700;color:#fbbf24;">10</div>'
+    + '</div>'
+    + '<div style="font-size:0.95em;font-weight:700;color:#fff;line-height:1.6;margin-bottom:24px;padding:16px;background:#111;border-radius:10px;">' + q.q + '</div>'
+    + '<div style="display:flex;flex-direction:column;gap:10px;" id="quiz-choices">'
+    + q.c.map(function(c, i) {
+        return '<button onclick="_quizAnswer(' + i + ')" style="padding:12px 16px;background:#111;border:1.5px solid #222;border-radius:10px;color:#ddd;font-size:0.9em;text-align:left;cursor:pointer;transition:all 0.15s;" id="quiz-choice-' + i + '">'
+          + ['A','B','C','D'][i] + '　' + c + '</button>';
+      }).join('')
+    + '</div>';
+
+  // タイマー開始
+  if (_quizState.timer) clearInterval(_quizState.timer);
+  _quizState.timer = setInterval(function() {
+    _quizState.timeLeft--;
+    var timerEl = document.getElementById('quiz-timer');
+    if (timerEl) {
+      timerEl.textContent = _quizState.timeLeft;
+      timerEl.style.color = _quizState.timeLeft <= 3 ? '#ef4444' : '#fbbf24';
+    }
+    if (_quizState.timeLeft <= 0) {
+      clearInterval(_quizState.timer);
+      if (!_quizState.answered) _quizAnswer(-1); // タイムアウト
+    }
+  }, 1000);
+}
+function _quizAnswer(choice) {
+  if (_quizState.answered) return;
+  _quizState.answered = true;
+  if (_quizState.timer) clearInterval(_quizState.timer);
+
+  var q = _quizQuestions[_quizState.idx];
+  var correct = (choice === q.a);
+  if (correct) _quizState.score++;
+
+  // ボタンの色を変える
+  for (var i = 0; i < q.c.length; i++) {
+    var btn = document.getElementById('quiz-choice-' + i);
+    if (!btn) continue;
+    if (i === q.a) {
+      btn.style.background = 'rgba(52,211,153,0.2)';
+      btn.style.borderColor = '#34d399';
+      btn.style.color = '#34d399';
+    } else if (i === choice && !correct) {
+      btn.style.background = 'rgba(239,68,68,0.2)';
+      btn.style.borderColor = '#ef4444';
+      btn.style.color = '#ef4444';
+    }
+    btn.disabled = true;
+  }
+
+  // フィードバック表示
+  var timerEl = document.getElementById('quiz-timer');
+  if (timerEl) timerEl.textContent = correct ? '✅' : (choice === -1 ? '⏱' : '❌');
+
+  var feedback = document.createElement('div');
+  feedback.style.cssText = 'margin-top:16px;padding:14px;background:' + (correct ? 'rgba(52,211,153,0.1)' : 'rgba(239,68,68,0.08)') + ';border:1px solid ' + (correct ? 'rgba(52,211,153,0.3)' : 'rgba(239,68,68,0.2)') + ';border-radius:10px;';
+  feedback.innerHTML = '<div style="font-weight:700;color:' + (correct ? '#34d399' : '#f87171') + ';margin-bottom:4px;">'
+    + (choice === -1 ? '⏱ 時間切れ！' : (correct ? '✅ 正解！ +' + q.toku + '徳' : '❌ 不正解'))
+    + '</div>'
+    + '<div style="font-size:0.82em;color:#888;">💡 ' + q.hint + '</div>';
+
+  var choices = document.getElementById('quiz-choices');
+  if (choices) choices.after(feedback);
+
+  // 次へボタン
+  setTimeout(function() {
+    var nextBtn = document.createElement('button');
+    nextBtn.textContent = _quizState.idx + 1 < _quizQuestions.length ? '次の問題 →' : '結果を見る →';
+    nextBtn.style.cssText = 'width:100%;padding:12px;background:#fbbf24;border:none;border-radius:10px;color:#1a0a00;font-size:0.9em;font-weight:700;cursor:pointer;margin-top:12px;';
+    nextBtn.onclick = function() {
+      _quizState.idx++;
+      if (_quizState.idx < _quizQuestions.length) {
+        _quizShowQ();
+      } else {
+        _quizFinish();
+      }
+    };
+    var content = document.getElementById('quiz-content');
+    if (content) content.appendChild(nextBtn);
+  }, 600);
+}
+function _quizFinish() {
+  var score = _quizState.score;
+  var total = _quizQuestions.length;
+  var tokuEarned = _quizQuestions.slice(0, score).reduce(function(s, q) { return s + q.toku; }, 0);
+
+  // allTasksに記録
+  try {
+    var tasks = window.allTasks || [];
+    var rec = tasks.find(function(t){ return t.kind === 'quiz'; });
+    if (rec) {
+      rec.lastScore = score;
+      rec.bestScore = Math.max(rec.bestScore || 0, score);
+      rec.playCount = (rec.playCount || 0) + 1;
+      if (score === total) rec.clearedAt = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
+    } else {
+      tasks.push({ id: (typeof generateTaskId === 'function' ? generateTaskId() : 'quiz_' + Date.now()), kind: 'quiz', lastScore: score, bestScore: score, playCount: 1, clearedAt: score === total ? new Date().toISOString().slice(0,10) : null, createdAt: new Date().toISOString() });
+    }
+    if (typeof saveAllTasks === 'function') saveAllTasks();
+    // 徳ポイント付与
+    if (tokuEarned > 0 && typeof addToku === 'function') addToku(tokuEarned, 'クイズ正解');
+  } catch(e) { console.warn('[quiz]', e); }
+
+  var content = document.getElementById('quiz-content');
+  if (!content) return;
+  var perfect = score === total;
+  content.innerHTML = '<div style="text-align:center;padding:16px 0;">'
+    + '<div style="font-size:3em;margin-bottom:12px;">' + (perfect ? '🏆' : score >= 7 ? '🎉' : score >= 5 ? '👍' : '💪') + '</div>'
+    + '<div style="font-size:1.1em;font-weight:700;color:#fff;margin-bottom:4px;">' + score + ' / ' + total + ' 問正解</div>'
+    + '<div style="font-size:0.82em;color:#fbbf24;margin-bottom:24px;">+' + tokuEarned + '徳 獲得！</div>'
+    + (perfect ? '<div style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:10px;padding:12px;margin-bottom:20px;font-size:0.82em;color:#fbbf24;">🎊 全問正解！あなたはやることクラフトマスターだ！</div>' : '')
+    + '<div style="display:flex;flex-direction:column;gap:10px;">'
+    + '<button onclick="_quizStart()" style="padding:12px;background:linear-gradient(135deg,#f59e0b,#fbbf24);border:none;border-radius:10px;color:#1a0a00;font-size:0.9em;font-weight:700;cursor:pointer;">もう一度挑戦する</button>'
+    + '<button onclick="closeQuizMode()" style="padding:12px;background:transparent;border:1px solid #333;border-radius:10px;color:#555;font-size:0.9em;cursor:pointer;">図書館に戻る</button>'
+    + '</div></div>';
+}
+
+window.openDeepFocusMode = openDeepFocusMode;
+window.closeDeepFocusMode = closeDeepFocusMode;
+window._dfmNext = _dfmNext;
+window._dfmShowHint = _dfmShowHint;
+window._dfmShowQuestion = _dfmShowQuestion;
+window._dfmFinish = _dfmFinish;
+window._dfmSaveToScratch = _dfmSaveToScratch;
+window._dfmReset = _dfmReset;
+window._dfmShowHistory = _dfmShowHistory;
+window._dfmShowStep = _dfmShowStep;
+window._dfmToggleQuestion = _dfmToggleQuestion;
+window._dfmNextQuestion = _dfmNextQuestion;
+window._dfmHistoryEdit = _dfmHistoryEdit;
+window._dfmHistoryDelete = _dfmHistoryDelete;
+window._dfmHistorySend = _dfmHistorySend;
+window.openQuizMode = openQuizMode;
+window.closeQuizMode = closeQuizMode;
+window._quizStart = _quizStart;
+window._quizShowQ = _quizShowQ;
+window._quizAnswer = _quizAnswer;
+window._quizFinish = _quizFinish;
+window._dfmCopyForAI = _dfmCopyForAI;
+// ===== window公開（挿入scriptブロック関数） =====
+try {
+  window._deleteGrandVision = _deleteGrandVision;
+  window._onGvBannerChange = _onGvBannerChange;
+  window._saveGrandVision = _saveGrandVision;
+  window._ycFireCracker = _ycFireCracker;
+  window._ycGoSlide = _ycGoSlide;
+  window._ycShowMVVSplash = _ycShowMVVSplash;
+  window.adminBadgeTap = adminBadgeTap;
+  window.applyGuildLicense = applyGuildLicense;
+  window.checkAdminPw = checkAdminPw;
+  window.closeDeckBuilder = closeDeckBuilder;
+  window.closeGuildMode = closeGuildMode;
+  window.copyStarterDeckCode = copyStarterDeckCode;
+  window.deckBuilderAddTask = deckBuilderAddTask;
+  window.deckBuilderApply = deckBuilderApply;
+  window.deckBuilderCancelEdit = deckBuilderCancelEdit;
+  window.deckBuilderEditTask = deckBuilderEditTask;
+  window.deckBuilderMoveTask = deckBuilderMoveTask;
+  window.deckBuilderPublish = deckBuilderPublish;
+  window.deckBuilderRemoveTask = deckBuilderRemoveTask;
+  window.deckBuilderSave = deckBuilderSave;
+  window.deleteJournal = deleteJournal;
+  window.editJournal = editJournal;
+  window.generateDeckEntry = generateDeckEntry;
+  window.hideTutorial = hideTutorial;
+  window.importDeckFromSettings = importDeckFromSettings;
+  window.initAdminMode = initAdminMode;
+  window.issueGuildLicense = issueGuildLicense;
+  window.openAiPlanModal = openAiPlanModal;
+  window.openDeckBuilder = openDeckBuilder;
+  window.openGrandVisionEditor = openGrandVisionEditor;
+  window.openHeavenFromBanner = openHeavenFromBanner;
+  window.openGuildMode = openGuildMode;
+  window.openJournalDetail = openJournalDetail;
+  window.openLpModal = openLpModal;
+  window.openNewJournal = openNewJournal;
+  window.receiveStarterDeck = receiveStarterDeck;
+  window.saveJournalEdit = saveJournalEdit;
+  window.saveNewJournal = saveNewJournal;
+  window.showDebugLog = showDebugLog;
+  window.showGantOnboarding = showGantOnboarding;
+  window.showTutorial = showTutorial;
+  window.textToThoughts = textToThoughts;
+  window.thoughtDelete = thoughtDelete;
+  window.thoughtToScratch = thoughtToScratch;
+  window.thoughtsToText = thoughtsToText;
+  window.toggleAbout = toggleAbout;
+  window.toggleAdminMode = toggleAdminMode;
+  window.toggleLibrary = toggleLibrary;
+  window.updateGuildUI = updateGuildUI;
+} catch(e) { console.warn('[window公開-inserted]', e); }
 function toggleLibrary() {
   var content = document.getElementById('libraryContent');
   var btn = document.getElementById('libraryToggleBtn');
@@ -17515,6 +18407,9 @@ function toggleAbout(id) {
   var el = document.getElementById(id);
   if (!el) return;
   el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  if (id === 'aboutHeaven' && el.style.display === 'block') {
+    renderHeavenBlueprints();
+  }
   if (id === 'aboutIntro' && el.style.display === 'block') {
     var base = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=';
     var womenUrl  = 'https://kikumon-dev.github.io/lp-women/';
@@ -17709,6 +18604,30 @@ function showDebugLog() {
   box.appendChild(btnCopy);
   var btnRow = document.createElement('div');
   btnRow.style.cssText = 'display:flex;gap:8px;margin-top:6px;';
+  var btnClear = document.createElement('button');
+  btnClear.textContent = 'ログ消去';
+  btnClear.style.cssText = 'flex:1;padding:10px;background:#21262d;border:1px solid #30363d;border-radius:8px;color:#8b949e;cursor:pointer;';
+  btnClear.onclick = function(){
+    localStorage.removeItem('_dbg_log');
+    localStorage.removeItem('_dbg_errors');
+    wrap.remove();
+  };
+  var btnTestMove = document.createElement('button');
+  btnTestMove.textContent = '🔄 日付変更テスト';
+  btnTestMove.style.cssText = 'width:100%;padding:9px;background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);border-radius:8px;color:#ffd700;font-size:0.82em;cursor:pointer;margin-bottom:8px;';
+  btnTestMove.onclick = function(){
+    var yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    var yStr = yesterday.getFullYear() + '-' + String(yesterday.getMonth()+1).padStart(2,'0') + '-' + String(yesterday.getDate()).padStart(2,'0');
+    var changed = 0;
+    allTasks.forEach(function(t){ if (t.kind === 'scratch') { t.date = yStr; changed++; } });
+    if (changed === 0) { showToast('雑記帳にアイテムがありません', {type:'warn'}); return; }
+    saveAllTasks();
+    localStorage.removeItem('_lastScratchMoveDate');
+    moveScratchToThoughts();
+    wrap.remove();
+    showToast('🔄 テスト実行（' + changed + '件移動）', {type:'info'});
+  };
   // ===== スモークテストボタン =====
   var btnSmoke = document.createElement('button');
   btnSmoke.textContent = '🧪 スモークテスト実行';
@@ -18010,6 +18929,107 @@ function showDebugLog() {
       }
     } catch(e) { ng('Key Purify Absolute Green テスト', e.message); }
 
+    // 15. 天国送り機能（sendBlueprintToHeaven）
+    // 状況：3/18実装→復旧作業で一時消滅→v0.37.40で復元
+    // 意図：displayScopeをheavenに変更する処理と貢献感テキストが存在することを確認
+    try {
+      var _stbh = window.sendBlueprintToHeaven;
+      if (typeof _stbh !== 'function') { ng('天国送り機能', '関数未定義'); }
+      else {
+        var _stbhSrc = _stbh.toString();
+        var _stbhOk = _stbhSrc.includes('displayScope') && _stbhSrc.includes('heaven') && _stbhSrc.includes('貢献');
+        _stbhOk ? ok('天国送り機能: displayScope・heaven・貢献感 含む') : ng('天国送り機能', 'displayScope/heaven/貢献感いずれか欠落');
+      }
+    } catch(e) { ng('天国送り機能', e.message); }
+
+    // 16. 天国リスト（renderHeavenBlueprints）
+    // 状況：関数は存在したが貢献感テキストが欠落していた→v0.37.40で復元
+    // 意図：貢献感ヘッダーが存在することを確認
+    try {
+      var _rhb = window.renderHeavenBlueprints;
+      if (typeof _rhb !== 'function') { ng('天国リスト', '関数未定義'); }
+      else {
+        var _rhbSrc = _rhb.toString();
+        _rhbSrc.includes('貢献感は、幸福の源泉')
+          ? ok('天国リスト: 貢献感ヘッダー含む')
+          : ng('天国リスト', '貢献感ヘッダー欠落');
+      }
+    } catch(e) { ng('天国リスト', e.message); }
+
+    // 17. ガントチャート天国除外（renderGantChart inHeaven）
+    // 状況：allTasks.filter直接参照でinHeavenフィルタなし→v0.37.40で修正
+    // 意図：gants取得にinHeavenフィルタが含まれることを確認
+    try {
+      var _rgcSrc = (window.renderGantChart || function(){}).toString();
+      _rgcSrc.includes('inHeaven')
+        ? ok('renderGantChart: inHeaven除外フィルタ含む')
+        : ng('renderGantChart', 'inHeavenフィルタ欠落 — 天国の志の工程が表示される');
+    } catch(e) { ng('renderGantChart inHeaven', e.message); }
+
+    // 18. ホバーメッセージ taskCount分岐
+    // 状況：_getBlueprintHoverMsgがtaskCountを引数に取らず分岐なし→v0.37.40で修正
+    // 意図：関数がtaskCountを引数に取り、renderGantBlueprintsがtaskCountを計算して渡すことを確認
+    try {
+      var _gbhm = window._getBlueprintHoverMsg;
+      if (typeof _gbhm !== 'function') { ng('ホバーメッセージtaskCount', '関数未定義'); }
+      else {
+        var _gbhmSrc = _gbhm.toString();
+        var _gbhmParams = _gbhmSrc.match(/function[^(]*\(([^)]*)\)/);
+        var _hasTaskCount = _gbhmSrc.includes('taskCount');
+        _hasTaskCount
+          ? ok('_getBlueprintHoverMsg: taskCount引数・分岐含む')
+          : ng('_getBlueprintHoverMsg', 'taskCount引数なし');
+      }
+    } catch(e) { ng('ホバーメッセージtaskCount', e.message); }
+
+    // 19. ⏰「時を刻む」ボタン
+    // 状況：時間未設定タスクがテキストのみ表示→v0.37.40でボタン追加
+    // 意図：renderGantChart内に⏰ボタンHTMLが含まれることを確認
+    try {
+      var _rgcSrc2 = (window.renderGantChart || function(){}).toString();
+      _rgcSrc2.includes('⏰ 時を刻む') && _rgcSrc2.includes('openTaskEditModal')
+        ? ok('⏰時を刻むボタン: renderGantChart内に存在')
+        : ng('⏰時を刻むボタン', 'renderGantChart内に⏰ボタンなし');
+    } catch(e) { ng('⏰時を刻むボタン', e.message); }
+
+    // 20. 志カードタイトル2行表示
+    // 状況：white-space:nowrapで1行切り捨て→v0.37.40で-webkit-line-clamp:2に変更
+    // 意図：renderGantBlueprintsのHTMLに-webkit-line-clampが含まれることを確認
+    try {
+      var _rgb = window.renderGantBlueprints;
+      if (typeof _rgb !== 'function') { ng('志カード2行表示', '関数未定義'); }
+      else {
+        _rgb.toString().includes('-webkit-line-clamp')
+          ? ok('志カードタイトル2行表示: -webkit-line-clamp含む')
+          : ng('志カード2行表示', '-webkit-line-clamp欠落 — タイトルが1行で切れる');
+      }
+    } catch(e) { ng('志カード2行表示', e.message); }
+
+    // 21. スプリッター（_initGantSplitter）
+    // 状況：スプリッターDOMと関数の両方が必要
+    // 意図：関数存在とDOM存在を確認
+    try {
+      var _igs = window._initGantSplitter;
+      var _gsEl = document.getElementById('gantSplitter');
+      if (typeof _igs !== 'function') { ng('スプリッター', '_initGantSplitter未定義'); }
+      else if (!_gsEl) { ng('スプリッター', '#gantSplitter DOMなし'); }
+      else { ok('スプリッター: 関数・DOM両方存在'); }
+    } catch(e) { ng('スプリッター', e.message); }
+
+    // 22. openHeavenFromBanner
+    // 状況：GVバナーの天国ボタンから図書館の志の天国を開く
+    // 意図：関数存在と天国展開処理が含まれることを確認
+    try {
+      var _ohfb = window.openHeavenFromBanner;
+      if (typeof _ohfb !== 'function') { ng('openHeavenFromBanner', '関数未定義'); }
+      else {
+        var _ohfbSrc = _ohfb.toString();
+        _ohfbSrc.includes('aboutHeaven') && _ohfbSrc.includes('renderHeavenBlueprints')
+          ? ok('openHeavenFromBanner: 天国展開処理含む')
+          : ng('openHeavenFromBanner', 'aboutHeaven/renderHeavenBlueprints欠落');
+      }
+    } catch(e) { ng('openHeavenFromBanner', e.message); }
+
     var resultDiv = document.createElement('div');
     resultDiv.style.cssText = 'margin-top:10px;padding:12px;background:#0d1117;border:1px solid #30363d;border-radius:8px;font-size:0.72em;line-height:1.9;';
     var allGreen = fail === 0;
@@ -18028,30 +19048,7 @@ function showDebugLog() {
     box.appendChild(resultDiv);
   };
   box.appendChild(btnSmoke);
-  var btnClear = document.createElement('button');
-  btnClear.textContent = 'ログ消去';
-  btnClear.style.cssText = 'flex:1;padding:10px;background:#21262d;border:1px solid #30363d;border-radius:8px;color:#8b949e;cursor:pointer;';
-  btnClear.onclick = function(){
-    localStorage.removeItem('_dbg_log');
-    localStorage.removeItem('_dbg_errors');
-    wrap.remove();
-  };
-  var btnTestMove = document.createElement('button');
-  btnTestMove.textContent = '🔄 日付変更テスト';
-  btnTestMove.style.cssText = 'width:100%;padding:9px;background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);border-radius:8px;color:#ffd700;font-size:0.82em;cursor:pointer;margin-bottom:8px;';
-  btnTestMove.onclick = function(){
-    var yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    var yStr = yesterday.getFullYear() + '-' + String(yesterday.getMonth()+1).padStart(2,'0') + '-' + String(yesterday.getDate()).padStart(2,'0');
-    var changed = 0;
-    window.allTasks.forEach(function(t){ if (t.kind === 'scratch') { t.date = yStr; changed++; } });
-    if (changed === 0) { showToast('雑記帳にアイテムがありません', {type:'warn'}); return; }
-    saveAllTasks();
-    localStorage.removeItem('_lastScratchMoveDate');
-    moveScratchToThoughts();
-    wrap.remove();
-    showToast('🔄 テスト実行（' + changed + '件移動）', {type:'info'});
-  };
+
   box.appendChild(btnTestMove);
   var btnClose = document.createElement('button');
   btnClose.textContent = '閉じる';
@@ -18129,11 +19126,11 @@ function closeLpModal() {
 // 共通：繰り返しタスクの将来分を削除
 function deleteRepeatFutureTasks(groupId, fromDate) {
   var today = fromDate || getLocalDateStr(new Date());
-  var before = window.allTasks.length;
-  window.allTasks = window.allTasks.filter(function(t) {
-    return t.repeatGroupId !== groupId || t.date < today;
-  });
-  return before - window.allTasks.length;
+  var before = allTasks.length;
+  for (var i = allTasks.length - 1; i >= 0; i--) {
+    if (allTasks[i].repeatGroupId === groupId && allTasks[i].date >= today) allTasks.splice(i, 1);
+  }
+  return before - allTasks.length;
 }
 // 共通：繰り返しタスク生成
 function generateRepeatTasks(baseTask, repeat, repeatEnd, startDate, groupId) {
@@ -18152,7 +19149,7 @@ function generateRepeatTasks(baseTask, repeat, repeatEnd, startDate, groupId) {
     else if (repeat === 'weekly') ok = (dow === sd.getDay());
     else if (repeat === 'monthly') ok = (cur.getDate() === sd.getDate());
     if (ok) {
-      window.allTasks.push(Object.assign({}, baseTask, {
+      allTasks.push(Object.assign({}, baseTask, {
         id: generateTaskId(),
         date: ds,
         completed: false,
@@ -18169,7 +19166,7 @@ function generateRepeatTasks(baseTask, repeat, repeatEnd, startDate, groupId) {
 }
 // 共通：繰り返し保存処理（全モーダル共通）
 function applyRepeatSave(taskId, task, repeat, repeatEnd, date) {
-  var baseTask = window.allTasks.find(function(t){ return t.id === taskId; });
+  var baseTask = allTasks.find(function(t){ return t.id === taskId; });
   var prevRepeat = baseTask ? (baseTask.repeat || 'none') : 'none';
   var groupId = (baseTask && baseTask.repeatGroupId) || taskId;
   if (repeat !== 'none') {
@@ -18178,7 +19175,7 @@ function applyRepeatSave(taskId, task, repeat, repeatEnd, date) {
     generateRepeatTasks(baseTask || task, repeat, repeatEnd, date, groupId);
   } else if (prevRepeat !== 'none') {
     // 繰り返し解除→将来タスク削除
-    var count = window.allTasks.filter(function(t){
+    var count = allTasks.filter(function(t){
       return t.repeatGroupId === groupId && t.date >= date && t.id !== taskId;
     }).length;
     if (count > 0) {
@@ -18246,12 +19243,12 @@ function toggleAdminMode() {
   if (allSettings.flags.adminMode) {
     allSettings.flags.adminMode = false; saveAllSettings();
     if (el) el.style.display = 'none';
-    showAdminToast('🔒 \u89E3\u9664\u3057\u307E\u3057\u305F');
+    showAdminToast('\u{1F512} \u89E3\u9664\u3057\u307E\u3057\u305F');
   } else {
     allSettings.flags.adminMode = true; saveAllSettings();
     _adminModeActive = true;
     if (el) el.style.display = 'block';
-    showAdminToast('👑 \u30E2\u30FC\u30C9\uFF1AON');
+    showAdminToast('\u{1F451} \u30E2\u30FC\u30C9\uFF1AON');
   }
 }
 // ===== 商人ギルドモード =====
@@ -18261,7 +19258,7 @@ function openGuildMode() {
   document.getElementById('guildLicenseInput').value = '';
   modal.style.display = 'flex';
   // 既にライセンス保持なら案内を変える
-  if (window.allTasks.some(function(t){ return t.kind === 'guildLicense'; })) {
+  if (allTasks.some(function(t){ return t.kind === 'guildLicense'; })) {
     document.getElementById('guildLicenseInput').placeholder = '既に行動貿易ライセンスを持っています。新しいコードで上書きできます。';
   }
 }
@@ -18282,11 +19279,11 @@ function applyGuildLicense() {
   catch(e) { showToast('コードの形式が正しくありません', {type:'warn'}); return; }
   if (data.kind !== 'guildLicense') { showToast('コードの形式が正しくありません', {type:'warn'}); return; }
   // ライセンス保存（allTasks統合）
-  var _glIdx2 = window.allTasks.findIndex(function(t){ return t.kind === 'guildLicense'; });
-  if (_glIdx2 >= 0) window.allTasks.splice(_glIdx2, 1);
-  data.id = data.id || (typeof generateTaskId === 'function' ? generateTaskId() : 'gl_' + Date.now());
+  var _glIdx2 = allTasks.findIndex(function(t){ return t.kind === 'guildLicense'; });
+  if (_glIdx2 >= 0) allTasks.splice(_glIdx2, 1);
+  data.id = data.id || generateTaskId();
   data.createdAt = data.createdAt || new Date().toISOString();
-  window.allTasks.push(data);
+  allTasks.push(data);
   saveAllTasks();
   closeGuildMode();
   // トースト
@@ -18346,7 +19343,7 @@ function issueGuildLicense() {
 }
 function updateGuildUI() {
   // ギルドライセンス保持者のみデッキビルダーを表示
-  var hasLicense = window.allTasks.some(function(t){ return t.kind === 'guildLicense'; });
+  var hasLicense = allTasks.some(function(t){ return t.kind === 'guildLicense'; });
   var btn = document.getElementById('guildDeckBuilderBtn');
   if (btn) btn.style.display = hasLicense ? 'block' : 'none';
 }
@@ -18366,7 +19363,7 @@ function deckBuilderSave() {
     var decks = getMyDecks();
     var orig = decks[window._editingMyDeckIdx];
     if (orig) {
-      var origInAll = window.allTasks.find(function(t){ return t.id === orig.id; });
+      var origInAll = allTasks.find(function(t){ return t.id === orig.id; });
       if (origInAll) {
         origInAll.title = title; origInAll.desc = desc;
         origInAll.tasks = _deckBuilderTasks.slice();
@@ -18383,7 +19380,7 @@ function deckBuilderSave() {
   window._editingMyDeckIdx = -1;
   var deckId = (typeof generateTaskId === 'function') ? generateTaskId() : crypto.randomUUID();
   var deck = { id: deckId, deckId: deckId, kind: 'myDeck', title: title, desc: desc, tasks: _deckBuilderTasks.slice(), createdBy: myName, createdAt: today, savedAt: today };
-  window.allTasks.push(deck);
+  allTasks.push(deck);
   saveAllTasks();
   // トースト
   var toast = document.getElementById('settingsSaveToast');
@@ -18701,7 +19698,7 @@ function importDeckFromSettings() {
     buttons: [
       { label: '受け取る', style: 'primary', onClick: function() {
         var today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
-        var _deckId = deck.deckId || ('manual_' + Date.now());
+        var _deckId = deck.deckId || generateTaskId();
         deck.tasks.forEach(function(d) {
           var t = (typeof createTask === 'function') ? createTask(d.text, today, null, d.section||1, 'both') : null;
           if (t) {
@@ -18738,10 +19735,10 @@ function buildStarterDeckCode() {
   var myName = allSettings.profile.name || 'admin';
   var deck = [
     { text: '\u2705 \u3053\u306E\u30BF\u30B9\u30AF\u3092\u5B8C\u4E86\u3057\u3066\u307F\u3088\u3046\uFF08\u30BF\u30C3\u30D7\u3067\u5B8C\u4E86\uFF01\uFF09', section: 1, memo: '\u30BF\u30C3\u30D7\u3059\u308B\u3068\u53D6\u308A\u6D88\u3057\u7DDA\u3067\u5B8C\u4E86\uFF01\u5B8C\u4E86\u3059\u308B\u3068\u738B\u56FD\u306E\u5EFA\u6750\u304C\u8C4A\u307E\u308B\u3088\u3002\u2698\uFE0F\u9577\u62BC\u3057\u2192\u7DE8\u96C6\u3067\u30BF\u30B9\u30AF\u306E\u8A73\u7D30\u3092\u898B\u308C\u308B\uFF01' },
-    { text: '🏰 \u57CE\u30A2\u30A4\u30B3\u30F3\u3092\u30BF\u30C3\u30D7\u3057\u3066\u738B\u56FD\u3092\u773A\u3081\u3088\u3046', section: 1, memo: '\u4E0A\u306E\u30CA\u30D3\u304B\u3089\u57CE\u30A2\u30A4\u30B3\u30F3\u3092\u30BF\u30C3\u30D7\uFF01\u30BF\u30B9\u30AF\u3092\u3053\u306A\u3059\u307B\u3069\u738B\u56FD\u304C\u5EFA\u3066\u5BC4\u3089\u308C\u308B\u3002\u5B63\u7BC0\u3084\u591C\u3082\u5909\u308F\u308B\u3088\u3002' },
-    { text: '📅 \u30BF\u30B9\u30AF\u306B\u65E5\u4ED8\u3068\u6642\u523B\u3092\u5165\u308C\u3066\u307F\u3088\u3046', section: 1, memo: '\u30BF\u30B9\u30AF\u3092\u9577\u62BC\u3057\u2192\u7DE8\u96C6\u3067\u65E5\u6642\u8A2D\u5B9A\u3002\u9031\u9593\u30BF\u30D6\u306B\u4E88\u5B9A\u304C\u73FE\u308C\u308B\u3088\uFF01\u30BF\u30A4\u30E0\u30E9\u30A4\u30F3\u30C3\u307D\u304F\u306A\u308B\u3002' },
+    { text: '\u{1F3F0} \u57CE\u30A2\u30A4\u30B3\u30F3\u3092\u30BF\u30C3\u30D7\u3057\u3066\u738B\u56FD\u3092\u773A\u3081\u3088\u3046', section: 1, memo: '\u4E0A\u306E\u30CA\u30D3\u304B\u3089\u57CE\u30A2\u30A4\u30B3\u30F3\u3092\u30BF\u30C3\u30D7\uFF01\u30BF\u30B9\u30AF\u3092\u3053\u306A\u3059\u307B\u3069\u738B\u56FD\u304C\u5EFA\u3066\u5BC4\u3089\u308C\u308B\u3002\u5B63\u7BC0\u3084\u591C\u3082\u5909\u308F\u308B\u3088\u3002' },
+    { text: '\u{1F4C5} \u30BF\u30B9\u30AF\u306B\u65E5\u4ED8\u3068\u6642\u523B\u3092\u5165\u308C\u3066\u307F\u3088\u3046', section: 1, memo: '\u30BF\u30B9\u30AF\u3092\u9577\u62BC\u3057\u2192\u7DE8\u96C6\u3067\u65E5\u6642\u8A2D\u5B9A\u3002\u9031\u9593\u30BF\u30D6\u306B\u4E88\u5B9A\u304C\u73FE\u308C\u308B\u3088\uFF01\u30BF\u30A4\u30E0\u30E9\u30A4\u30F3\u30C3\u307D\u304F\u306A\u308B\u3002' },
     { text: '\u2699\uFE0F \u8A2D\u5B9A\u3067\u540D\u524D\u3068\u738B\u30FB\u59EB\u3092\u8A2D\u5B9A\u3057\u3088\u3046', section: 1, memo: '\u8A2D\u5B9A\uFF08\u6B6F\u8ECA\u30A2\u30A4\u30B3\u30F3\uFF09\u2192\u30D7\u30ED\u30D5\u30A3\u30FC\u30EB\u3002\u738B\u30FB\u59EB\u3067\u738B\u56FD\u306E\u30BB\u30EA\u30D5\u304C\u5909\u308F\u308B\uFF01Lv.5\u3067\u738B\u56FD\u30B3\u30FC\u30C9\u3082\u767A\u884C\u3067\u304D\u308B\u3088\u3002' },
-    { text: '👑 \u4ECA\u65E5\u306E\u300C\u3084\u308B\u3053\u3068\u300D\u3092\u3053\u3053\u306B\u66F8\u3053\u3046', section: 1, memo: '\u6700\u4E0A\u306E\u5165\u529B\u6B04\u306B\u30BF\u30B9\u30AF\u3092\u5165\u529B\u3057\u3066Enter\u3002\u7B2C1\u8C61\u9650\uFF08\u7D1A\u6025\u304B\u3064\u91CD\u8981\uFF09\u306B\u306F\u4ECA\u65E5\u5FC5\u305A\u3084\u308B\u3053\u3068\u3092\u3002\u5B8C\u4E86\u3057\u305F\u3089\u738B\u56FD\u304C\u80B2\u3064\uFF01' },
+    { text: '\u{1F451} \u4ECA\u65E5\u306E\u300C\u3084\u308B\u3053\u3068\u300D\u3092\u3053\u3053\u306B\u66F8\u3053\u3046', section: 1, memo: '\u6700\u4E0A\u306E\u5165\u529B\u6B04\u306B\u30BF\u30B9\u30AF\u3092\u5165\u529B\u3057\u3066Enter\u3002\u7B2C1\u8C61\u9650\uFF08\u7D1A\u6025\u304B\u3064\u91CD\u8981\uFF09\u306B\u306F\u4ECA\u65E5\u5FC5\u305A\u3084\u308B\u3053\u3068\u3092\u3002\u5B8C\u4E86\u3057\u305F\u3089\u738B\u56FD\u304C\u80B2\u3064\uFF01' },
   ];
   var deckId = (typeof generateTaskId === 'function') ? generateTaskId() : crypto.randomUUID();
   var payload = JSON.stringify({
@@ -18765,7 +19762,7 @@ function copyStarterDeckCode() {
       t.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.85);color:#ffd700;padding:16px 28px;border-radius:14px;font-size:1em;font-weight:bold;z-index:99999;text-align:center;pointer-events:none;border:1px solid rgba(255,215,0,0.4);';
       document.body.appendChild(t);
     }
-    t.innerHTML = '📋 \u30B3\u30D4\u30FC\u3057\u307E\u3057\u305F';
+    t.innerHTML = '\u{1F4CB} \u30B3\u30D4\u30FC\u3057\u307E\u3057\u305F';
     t.style.display = 'block';
     clearTimeout(t._t);
     t._t = setTimeout(function(){ t.style.display = 'none'; }, 2000);
@@ -18805,7 +19802,7 @@ document.addEventListener('DOMContentLoaded', function() {
       return y + '年' + m + '月' + d + '日（' + w + '）';
     }
     function loadJournals() {
-      return window.allTasks.filter(function(t){ return t.kind === 'journal'; })
+      return allTasks.filter(function(t){ return t.kind === 'journal'; })
         .sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
     }
     function saveJournals(arr) {
@@ -18833,6 +19830,111 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.appendChild(t);
         setTimeout(function() { t.remove(); }, 2500);
       }
+
+    function openAiPlanModal() {
+      var overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+      var box = document.createElement('div');
+      box.style.cssText = 'background:#fff;border-radius:16px;padding:24px 20px;width:92vw;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.18);max-height:90vh;overflow-y:auto;';
+      box.innerHTML = '<div style="font-size:1em;font-weight:700;color:#333;margin-bottom:6px;">✨ AIに計画を作ってもらう</div>'
+        + '<div style="font-size:0.78em;color:#888;margin-bottom:10px;">やりたいことを入力してプロンプトをコピー→ChatGPTやClaudeに貼り付けてください。出力を雑記帳に入れたら「造営に」を押してください。</div>'
+        + '<div style="font-size:0.8em;color:#666;margin-bottom:4px;">やりたいこと</div>'
+        + '<input id="aiPlanInput" type="text" placeholder="例：部屋を片付ける、英語上達" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:0.9em;box-sizing:border-box;margin-bottom:10px;">'
+        + '<div style="display:flex;gap:8px;margin-bottom:10px;">'
+        + '<div style="flex:1;"><div style="font-size:0.8em;color:#666;margin-bottom:4px;">開始日</div><input id="aiPlanStart" type="date" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:0.85em;box-sizing:border-box;"></div>'
+        + '<div style="flex:1;"><div style="font-size:0.8em;color:#666;margin-bottom:4px;">終了日</div><input id="aiPlanEnd" type="date" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:0.85em;box-sizing:border-box;"></div>'
+        + '</div>'
+        + '<div style="display:flex;gap:8px;margin-bottom:10px;">'
+        + '<div style="flex:1;"><div style="font-size:0.8em;color:#666;margin-bottom:4px;">開始時刻</div><select id="aiPlanStartH" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:0.85em;box-sizing:border-box;">'
+        + Array.from({length:24},function(_,i){ return '<option value="'+i+'">'+(i<10?'0':'')+i+':00</option>'; }).join('')
+        + '</select></div>'
+        + '<div style="flex:1;"><div style="font-size:0.8em;color:#666;margin-bottom:4px;">終了時刻</div><select id="aiPlanEndH" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:0.85em;box-sizing:border-box;">'
+        + Array.from({length:24},function(_,i){ return '<option value="'+i+'">'+(i<10?'0':'')+i+':00</option>'; }).join('')
+        + '</select></div>'
+        + '</div>'
+        + '<div style="background:#f8f6ff;border:1px solid #e9d5ff;border-radius:8px;padding:12px;margin-bottom:12px;font-size:0.78em;color:#555;line-height:1.6;white-space:pre-wrap;" id="aiPlanPreview">やりたいことを入力すると、プロンプトが生成されます</div>'
+        + '<div style="font-size:0.75em;color:#bbb;margin-bottom:8px;padding:8px;background:#f9f9f9;border-radius:8px;line-height:1.6;">💡 各タスクの時刻は自動で入りません。造営に登録した後、タスクの ✏️ を押して時刻を入れてください。</div>'
+        + '<div style="display:flex;gap:8px;margin-bottom:8px;">'
+        + '<button id="aiPlanCloseBtn" style="flex:1;padding:10px;background:#f0f0f0;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;">閉じる</button>'
+        + '<button id="aiPlanCopyBtn" style="flex:1;padding:10px;background:linear-gradient(135deg,#a78bfa,#6d28d9);color:#fff;border:none;border-radius:8px;font-size:0.9em;font-weight:700;cursor:pointer;">📋 コピー</button>'
+        + '</div>'
+        + '';
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
+      overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
+      document.getElementById('aiPlanCloseBtn').addEventListener('click', function(){ overlay.remove(); });
+      var input = document.getElementById('aiPlanInput');
+      if (input) {
+        input.focus();
+        input.addEventListener('input', function(){ updateAiPlanPreview(this.value); });
+      }
+      document.getElementById('aiPlanCopyBtn').addEventListener('click', copyAiPlanPrompt);
+      // 今日の日付・現在時刻をデフォルトに
+      var today = getLocalDateStr(new Date());
+      var nowH = new Date().getHours();
+      var startEl = document.getElementById('aiPlanStart');
+      var endEl   = document.getElementById('aiPlanEnd');
+      var startHEl = document.getElementById('aiPlanStartH');
+      var endHEl   = document.getElementById('aiPlanEndH');
+      if (startEl) startEl.value = today;
+      if (endEl)   endEl.value   = today;
+      if (startHEl) startHEl.value = nowH;
+      if (endHEl)   endHEl.value   = Math.min(nowH + 1, 23);
+      // 時刻変更時もプレビュー更新
+      [startHEl, endHEl, startEl, endEl].forEach(function(el){
+        if (el) el.addEventListener('change', function(){ updateAiPlanPreview(document.getElementById('aiPlanInput').value); });
+      });
+    }
+
+    function updateAiPlanPreview(goal) {
+      var preview = document.getElementById('aiPlanPreview');
+      if (!preview) return;
+      if (!goal.trim()) {
+        preview.textContent = 'やりたいことを入力すると、プロンプトが生成されます';
+        return;
+      }
+      var start   = (document.getElementById('aiPlanStart')||{}).value  || '';
+      var end     = (document.getElementById('aiPlanEnd')||{}).value    || '';
+      var startH  = (document.getElementById('aiPlanStartH')||{}).value;
+      var endH    = (document.getElementById('aiPlanEndH')||{}).value;
+      preview.textContent = _buildAiPlanPrompt(goal.trim(), start, end, startH, endH);
+    }
+
+    function _buildAiPlanPrompt(goal, start, end, startH, endH) {
+      var period = '';
+      var sh = startH !== undefined && startH !== '' ? (startH<10?'0':'')+startH+':00' : '';
+      var eh = endH   !== undefined && endH   !== '' ? (endH  <10?'0':'')+endH  +':00' : '';
+      if (start) period += '\n開始：' + start + (sh ? ' ' + sh : '');
+      if (end)   period += '\n終了：' + end   + (eh ? ' ' + eh : '');
+      return 'やりたいこと：' + goal + period + '\n\n以下の形式だけで返答してください。説明・前置き・番号は不要です。\n\n1行目：やりたいことの名前（20文字以内）\n2行目以降：そのためにやること（1行1つ・3〜5件）';
+    }
+
+    function copyAiPlanPrompt() {
+      var input   = document.getElementById('aiPlanInput');
+      var goal    = (input ? input.value : '').trim();
+      if (!goal) { showToast('やりたいことを入力してください', {type:'warn'}); return; }
+      var start   = (document.getElementById('aiPlanStart')||{}).value  || '';
+      var end     = (document.getElementById('aiPlanEnd')||{}).value    || '';
+      var startH  = (document.getElementById('aiPlanStartH')||{}).value;
+      var endH    = (document.getElementById('aiPlanEndH')||{}).value;
+      var prompt  = _buildAiPlanPrompt(goal, start, end, startH, endH);
+      var btn = document.getElementById('aiPlanCopyBtn');
+      function done() {
+        if (btn) { btn.textContent = '✅ コピー済み'; setTimeout(function(){ btn.textContent = '📋 コピー'; }, 2000); }
+        showToast('📋 プロンプトをコピーしました', {type:'success'});
+      }
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(prompt).then(done).catch(function(){
+          var ta = document.createElement('textarea');
+          ta.value = prompt; document.body.appendChild(ta); ta.select();
+          document.execCommand('copy'); document.body.removeChild(ta); done();
+        });
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = prompt; document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); document.body.removeChild(ta); done();
+      }
+    }
     function saveScratchItemAsJournal(text, item) {
       const t = (text || '').trim();
       if (!t) return;
@@ -18843,18 +19945,19 @@ document.addEventListener('DOMContentLoaded', function() {
       const existing = journals.findIndex(function(j) { return j.date === dateStr; });
       var toastMsg;
       if (existing >= 0) {
-        // 既存の日誌のthoughtsに追加
-        if (!Array.isArray(journals[existing].thoughts)) journals[existing].thoughts = [];
-        journals[existing].thoughts.push({ id: generateTaskId(), text: t });
+        // 既存の日誌のthoughtsに追加（フラット構造）
+        addThought(journals[existing].id, t);
         journals[existing].savedAt = new Date().toISOString();
         toastMsg = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌に追加しました';
       } else {
-        window.allTasks.push({ id: generateTaskId(), kind: 'journal', date: dateStr, text: '', thoughts: [{ id: generateTaskId(), text: t }], mood: m.mood, condition: m.condition, weather: m.weather, savedAt: new Date().toISOString() });
+        var newJournal = { id: generateTaskId(), kind: 'journal', date: dateStr, text: '', mood: m.mood, condition: m.condition, weather: m.weather, savedAt: new Date().toISOString() };
+        allTasks.push(newJournal);
+        addThought(newJournal.id, t);
         toastMsg = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌を作成しました';
       }
       // 雑記帳のアイテムを削除
-      var delIdx = window.allTasks.findIndex(function(t){ return t.id === item.id; });
-      if (delIdx !== -1) window.allTasks.splice(delIdx, 1);
+      var delIdx = allTasks.findIndex(function(t){ return t.id === item.id; });
+      if (delIdx !== -1) allTasks.splice(delIdx, 1);
       saveAllTasks();
       renderScratchView();
       _showJournalToast(toastMsg);
@@ -18876,7 +19979,7 @@ document.addEventListener('DOMContentLoaded', function() {
         journals[existing].savedAt = new Date().toISOString();
         toastMsg2 = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌に追記しました';
       } else {
-        window.allTasks.push(entry);
+        allTasks.push(entry);
         toastMsg2 = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌を作成しました';
       }
       saveAllTasks();
@@ -18908,7 +20011,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         _toastMsg3 = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌を更新しました';
       } else {
-        window.allTasks.push({
+        allTasks.push({
           id: generateTaskId(),
           kind: 'journal',
           date: dateStr,
@@ -18936,7 +20039,7 @@ document.addEventListener('DOMContentLoaded', function() {
         + '<div style="font-size:0.8em;color:#aaa;margin-bottom:12px;font-weight:600;">王国日誌 — ' + journals.length + '件</div>'
         + journals.map(function(j) {
           const preview = (j.text || '').replace(/\n/g,' ').slice(0,60) + ((j.text||'').length > 60 ? '…' : '');
-          const _thoughts = Array.isArray(j.thoughts) ? j.thoughts : [];
+          const _thoughts = getThoughts(j.id);
           const _tBadge = _thoughts.length > 0 ? '<span style="font-size:0.68em;background:rgba(79,172,254,0.1);color:#4facfe;border:1px solid rgba(79,172,254,0.2);border-radius:4px;padding:1px 5px;margin-left:5px;">' + _thoughts.length + '件</span>' : '';
           return '<div class="jnl-card" onclick="openJournalDetail(\'' + j.id + '\')"'
             + ' style="background:#fff;border:1px solid #efefef;border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;">'
@@ -18945,7 +20048,7 @@ document.addEventListener('DOMContentLoaded', function() {
             + '<div style="display:flex;gap:4px;font-size:1em;">'
             + (j.weather || '') + (j.mood ? MOOD_E[j.mood] : '') + (j.condition ? COND_E[j.condition] : '')
             + '</div></div>'
-            + '<div style="font-size:0.82em;color:#666;line-height:1.6;">' + (preview || '<span style="color:#aaa;font-size:0.95em;">💭 今日考えたこと ' + (Array.isArray(j.thoughts) && j.thoughts.length > 0 ? j.thoughts.length + '件' : '') + '</span>') + '</div>'
+            + '<div style="font-size:0.82em;color:#666;line-height:1.6;">' + (preview || '<span style="color:#aaa;font-size:0.95em;">💭 今日考えたこと ' + (_thoughts.length > 0 ? _thoughts.length + '件' : '') + '</span>') + '</div>'
             + '</div>';
         }).join('')
         + '</div>';
@@ -18974,7 +20077,7 @@ document.addEventListener('DOMContentLoaded', function() {
       window._currentJournalId = id;
       const body = document.getElementById('journalDetailBody');
       if (!body) return;
-      const _jThoughts = Array.isArray(j.thoughts) ? j.thoughts : [];
+      const _jThoughts = getThoughts(j.id);
       const _thoughtsHtml = _jThoughts.length > 0
         ? '<div style="margin-top:16px;padding-top:14px;border-top:1px solid #f0f0f0;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"><div style="font-size:0.7em;color:#aaa;font-weight:600;letter-spacing:0.1em;">今日考えたこと</div><button onclick="thoughtsToText(\'' + j.id + '\')" style="font-size:0.68em;padding:2px 8px;border-radius:4px;border:1px solid #e0e0e0;background:#fff;color:#888;cursor:pointer;">↩ まとめて戻す</button></div>'
           + _jThoughts.map(function(th) {
@@ -19038,8 +20141,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (journals[idx].condition) journals[conflictIdx].condition = journals[idx].condition;
         if (journals[idx].weather)   journals[conflictIdx].weather   = journals[idx].weather;
         journals[conflictIdx].savedAt = new Date().toISOString();
-        var _jSpliceIdx = window.allTasks.findIndex(function(t){ return t.id === journals[idx].id; });
-        if (_jSpliceIdx !== -1) window.allTasks.splice(_jSpliceIdx, 1);
+        var _jSpliceIdx = allTasks.findIndex(function(t){ return t.id === journals[idx].id; });
+        if (_jSpliceIdx !== -1) allTasks.splice(_jSpliceIdx, 1);
         _showJournalToast('📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(newDate) + 'の日誌に統合しました');
       } else {
         journals[idx].date = newDate;
@@ -19054,70 +20157,61 @@ document.addEventListener('DOMContentLoaded', function() {
       renderJournalView();
     }
     function thoughtToScratch(journalId, thoughtId) {
-      var j = window.allTasks.find(function(t){ return t.id === journalId; });
-      if (!j || !Array.isArray(j.thoughts)) return;
-      var th = j.thoughts.find(function(t){ return t.id === thoughtId; });
+      var th = allTasks.find(function(t){ return t.id === thoughtId && t.kind === 'thought'; });
       if (!th) return;
       addScratchItem(th.text);
-      j.thoughts = j.thoughts.filter(function(t){ return t.id !== thoughtId; });
+      deleteThought(thoughtId);
       saveAllTasks();
       document.getElementById('journalDetailModal').style.display = 'none';
       renderJournalView();
       showToast('📝 雑記帳へ戻しました', {type:'success'});
     }
     function thoughtToTask(journalId, thoughtId) {
-      var j = window.allTasks.find(function(t){ return t.id === journalId; });
-      if (!j || !Array.isArray(j.thoughts)) return;
-      var th = j.thoughts.find(function(t){ return t.id === thoughtId; });
+      var th = allTasks.find(function(t){ return t.id === thoughtId && t.kind === 'thought'; });
       if (!th) return;
       var dateStr = (typeof currentDailyDate !== 'undefined' && currentDailyDate) || getLocalDateStr(new Date());
-      window.allTasks.push({ id: generateTaskId(), kind: 'scratch', text: th.text, date: dateStr, createdAt: new Date().toISOString() });
-      j.thoughts = j.thoughts.filter(function(t){ return t.id !== thoughtId; });
+      allTasks.push({ id: generateTaskId(), kind: 'scratch', text: th.text, date: dateStr, createdAt: new Date().toISOString() });
+      deleteThought(thoughtId);
       saveAllTasks();
       document.getElementById('journalDetailModal').style.display = 'none';
       renderJournalView();
       showToast('＋ 雑記帳に追加しました（タスクに上げてください）', {type:'success'});
     }
     function thoughtSaveEdit(journalId, thoughtId, newText) {
-      var j = window.allTasks.find(function(t){ return t.id === journalId; });
-      if (!j || !Array.isArray(j.thoughts)) return;
-      var th = j.thoughts.find(function(t){ return t.id === thoughtId; });
-      if (!th) return;
-      th.text = newText;
+      updateThoughtText(thoughtId, newText);
       saveAllTasks();
     }
     function textToThoughts(journalId) {
-      var j = window.allTasks.find(function(t){ return t.id === journalId; });
+      var j = allTasks.find(function(t){ return t.id === journalId; });
       if (!j || !j.text) return;
       var lines = j.text.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
       if (lines.length === 0) return;
-      if (!Array.isArray(j.thoughts)) j.thoughts = [];
-      lines.forEach(function(line){
-        j.thoughts.push({ id: generateTaskId(), text: line });
-      });
+      lines.forEach(function(line){ addThought(journalId, line); });
       j.text = '';
       saveAllTasks();
-      openJournalDetail(journalId);
+      renderJournalView();
+      requestAnimationFrame(function(){ openJournalDetail(journalId); });
     }
     function thoughtsToText(journalId) {
-      var j = window.allTasks.find(function(t){ return t.id === journalId; });
-      if (!j || !Array.isArray(j.thoughts) || j.thoughts.length === 0) return;
-      var lines = j.thoughts.map(function(t){ return t.text; }).filter(Boolean);
+      var j = allTasks.find(function(t){ return t.id === journalId; });
+      var thoughts = getThoughts(journalId);
+      if (!j || thoughts.length === 0) return;
+      var lines = thoughts.map(function(t){ return t.text; }).filter(Boolean);
       j.text = (j.text ? j.text + '\n' : '') + lines.join('\n');
-      j.thoughts = [];
+      deleteThoughtsByJournal(journalId);
       saveAllTasks();
-      openJournalDetail(journalId);
+      renderJournalView();
+      requestAnimationFrame(function(){ openJournalDetail(journalId); });
     }
     function thoughtDelete(journalId, thoughtId) {
-      var j = window.allTasks.find(function(t){ return t.id === journalId; });
-      if (!j || !Array.isArray(j.thoughts)) return;
-      j.thoughts = j.thoughts.filter(function(t){ return t.id !== thoughtId; });
+      deleteThought(thoughtId);
       saveAllTasks();
       openJournalDetail(journalId);
     }
     function deleteJournal(id) {
-      const jIdx = window.allTasks.findIndex(function(t){ return t.id === id && t.kind === 'journal'; });
-      if (jIdx !== -1) window.allTasks.splice(jIdx, 1);
+      const jIdx = allTasks.findIndex(function(t){ return t.id === id && t.kind === 'journal'; });
+      if (jIdx !== -1) allTasks.splice(jIdx, 1);
+      deleteThoughtsByJournal(id); // フラット構造のthoughtsも削除
       saveAllTasks();
       var dm = document.getElementById('journalDetailModal');
       if (dm) dm.style.display = 'none';
@@ -19265,7 +20359,7 @@ document.addEventListener('DOMContentLoaded', function() {
         Object.assign(journals[existing], { mood: m.mood, condition: m.condition, weather: m.weather, savedAt: new Date().toISOString() });
         _toastMsg4 = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌に追記しました';
       } else {
-        window.allTasks.push({ id: generateTaskId(), kind: 'journal', date: dateStr, text: text, mood: m.mood, condition: m.condition, weather: m.weather, savedAt: new Date().toISOString() });
+        allTasks.push({ id: generateTaskId(), kind: 'journal', date: dateStr, text: text, mood: m.mood, condition: m.condition, weather: m.weather, savedAt: new Date().toISOString() });
         _toastMsg4 = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌を作成しました';
       }
       saveAllTasks();
@@ -19276,762 +20370,8 @@ document.addEventListener('DOMContentLoaded', function() {
       _showJournalToast(_toastMsg4);
     }
     // ===== 日誌・雑記帳 オンボーディング END =====
-
-var _dfmTimerInterval = null;
-var _dfmCurrentQuestion = '';
-var _dfmHintIdx = 0;
-var _dfmQuestionIdx = 0;
-var _dfmDeepQuestions = [
-  'なぜその問いを立てたのですか？',
-  '何のためですか？',
-  '誰の幸せに繋がりますか？',
-  '誰と誰が喜びますか？',
-  '【RPM-R】本当に欲しい結果は何ですか？\n具体的・測定可能に答えてください。',
-  '【RPM-P】なぜそれが欲しいのですか？\n感情的な動機・compelling reasonを。',
-  '【RPM-M】それを得るために何をしますか？\n大量行動計画（Massive Action Plan）を。',
-  '【6ニーズ①】確実性：この問いの中で、確かなことは何ですか？',
-  '【6ニーズ②】不確実性：この問いの中で、まだ見えていないことは何ですか？',
-  '【6ニーズ③】重要感：この問いはあなたにとってなぜ重要ですか？',
-  '【6ニーズ④】つながり：この問いは誰とのつながりに関係していますか？',
-  '【6ニーズ⑤】成長：この問いを深めることで、あなたはどう成長しますか？',
-  '【6ニーズ⑥】貢献：この問いの答えは、誰かの役に立ちますか？',
-  '【SALUTE-S】規模はどのくらいですか？（人数・影響範囲）',
-  '【SALUTE-A】今、何が起きていますか？（Activity）',
-  '【SALUTE-L】どこでのことですか？（Location）',
-  '【SALUTE-U】誰が関係していますか？（Unit）',
-  '【SALUTE-T】いつのことですか？（Time）',
-  '【SALUTE-E】何を武器・ツールにできますか？（Equipment）',
-  '5W1H で整理すると？\nWho · What · When · Where · Why · How',
-  'なぜ？（1回目）',
-  'なぜ？（2回目）——その答えをさらに問い返す。',
-  'なぜ？（3回目）——もう一度深く。',
-  'なぜ？（4回目）——本質が見えてきた？',
-  'なぜ？（5回目）——これが根っこだ。',
-  '【デカルト①】これをやったら、何が起きますか？',
-  '【デカルト②】これをやらなかったら、何が起きますか？',
-  '【デカルト③】これをやったら、何が起きなくなりますか？',
-  '【デカルト④】これをやらなかったら、何が起きなくなりますか？',
-  '【ソクラテス①】それは本当ですか？確信できますか？',
-  '【ソクラテス②】その考えの反証は何ですか？',
-  '【ソクラテス③】その問いの前提は何ですか？',
-  '【ソクラテス④】もし前提が間違っていたら？',
-  '何が本質ですか？',
-  '何と何が関係していますか？',
-  '名前をつけるとしたら何ですか？',
-  '今の状態はどうですか？',
-  '時間軸で見るとどうですか？',
-  '「もし〇〇だったら？」\n制約を外したら、どうなりますか？',
-  'どうやって解決したいですか？',
-  'この問いから逃げたくなっていますか？なぜ？'
-];
-
-function openDeepFocusMode() {
-  try {
-    var modal = document.getElementById('deepFocusModal');
-    if (!modal) { showToast('ERROR: modal not found', {type:'error'}); return; }
-    // デバッグ：呼び出しスタックをログ
-    try { throw new Error('openDeepFocusMode stack'); } catch(e) { _dbgLog('[DFM開かれた] ' + e.stack.split('\n').slice(1,4).join(' | ')); }
-    modal.style.display = 'flex';
-    modal.style.flexDirection = 'column';
-    var history = _dfmGetHistory();
-    if (history.length > 0) {
-      _dfmShowHistory();
-    } else {
-      _dfmShowStep(1);
-      showToast('深考へようこそ。たった一つの問いを立て、極限まで考え抜きましょう。', {type:'info', duration:8000});
-    }
-  } catch(e) {
-    showToast('ERROR: ' + e.message, {type:'error', duration:8000});
-  }
-}
-function closeDeepFocusMode() {
-  var modal = document.getElementById('deepFocusModal');
-  if (modal) modal.style.display = 'none';
-  if (_dfmTimerInterval) { clearInterval(_dfmTimerInterval); _dfmTimerInterval = null; }
-}
-function _dfmShowStep(n) {
-  ['1','2','3','4'].forEach(function(i){
-    var el = document.getElementById('dfm-step' + i);
-    if (el) el.style.display = 'none';
-  });
-  var hist = document.getElementById('dfm-history');
-  if (hist) hist.style.display = 'none';
-  var el = document.getElementById('dfm-step' + n);
-  if (el) el.style.display = 'flex';
-}
-function _dfmShowHistory() {
-  ['1','2','3','4'].forEach(function(i){
-    var el = document.getElementById('dfm-step' + i);
-    if (el) el.style.display = 'none';
-  });
-  var hist = document.getElementById('dfm-history');
-  if (hist) hist.style.display = 'flex';
-  _dfmRenderHistory();
-}
-function _dfmNext(step) {
-  if (step === 1) {
-    var q = document.getElementById('dfm-question');
-    if (!q || !q.value.trim()) { showToast('問いを入力してください', {type:'warn'}); return; }
-    _dfmCurrentQuestion = q.value.trim();
-    var disp = document.getElementById('dfm-question-display');
-    if (disp) disp.textContent = '「' + _dfmCurrentQuestion + '」';
-    _dfmHintIdx = 0;
-    _dfmQuestionIdx = 0;
-    _dfmShowStep(2);
-    setTimeout(function(){ var r = document.getElementById('dfm-result'); if(r) r.focus(); }, 200);
-  } else if (step === 2) {
-    var r = document.getElementById('dfm-result');
-    if (!r || !r.value.trim()) { showToast('気づきを書いてください', {type:'warn'}); return; }
-    _dfmShowStep(3);
-    _dfmStartTimer(5 * 60);
-  }
-}
-function _dfmToggleQuestion() {
-  var area = document.getElementById('dfm-question-area');
-  var btn = document.getElementById('dfm-question-btn');
-  if (!area) return;
-  if (area.style.display === 'none') {
-    // 開く
-    var text = document.getElementById('dfm-question-text');
-    var idx = document.getElementById('dfm-question-index');
-    if (text) text.textContent = _dfmDeepQuestions[_dfmQuestionIdx];
-    if (idx) idx.textContent = (_dfmQuestionIdx + 1) + ' / ' + _dfmDeepQuestions.length;
-    area.style.display = 'block';
-    if (btn) btn.textContent = '❓ 閉じる';
-  } else {
-    // 閉じる
-    area.style.display = 'none';
-    if (btn) btn.textContent = '❓ 深掘り';
-  }
-}
-function _dfmNextQuestion() {
-  _dfmQuestionIdx = (_dfmQuestionIdx + 1) % _dfmDeepQuestions.length;
-  var text = document.getElementById('dfm-question-text');
-  var idx = document.getElementById('dfm-question-index');
-  if (text) text.textContent = _dfmDeepQuestions[_dfmQuestionIdx];
-  if (idx) idx.textContent = (_dfmQuestionIdx + 1) + ' / ' + _dfmDeepQuestions.length;
-}
-function _dfmStartTimer(seconds) {
-  if (_dfmTimerInterval) clearInterval(_dfmTimerInterval);
-  var remaining = seconds;
-  var el = document.getElementById('dfm-timer');
-  function update() {
-    var m = Math.floor(remaining / 60);
-    var s = remaining % 60;
-    if (el) el.textContent = m + ':' + (s < 10 ? '0' : '') + s;
-    if (remaining <= 0) { clearInterval(_dfmTimerInterval); _dfmFinish(); }
-    remaining--;
-  }
-  update();
-  _dfmTimerInterval = setInterval(update, 1000);
-}
-function _dfmFinish() {
-  if (_dfmTimerInterval) clearInterval(_dfmTimerInterval);
-  var r = document.getElementById('dfm-result');
-  var r2 = document.getElementById('dfm-result-timer');
-  var result = (r ? r.value.trim() : '');
-  var extra = (r2 ? r2.value.trim() : '');
-  if (extra) result = result ? result + '\n' + extra : extra;
-  var dateStr = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
-  var newId = (typeof generateTaskId === 'function') ? generateTaskId() : ('dfocus_' + Date.now());
-  if (typeof window.allTasks !== 'undefined' && window.allTasks) {
-    var record = {
-      id: newId,
-      kind: 'deepfocus',
-      question: _dfmCurrentQuestion,
-      result: result,
-      date: dateStr,
-      createdAt: new Date().toISOString()
-    };
-    window.allTasks.push(record);
-    if (typeof saveAllTasks === 'function') saveAllTasks();
-  }
-  var count = _dfmGetHistory().length;
-  var countEl = document.getElementById('dfm-count');
-  if (countEl) countEl.textContent = 'あなたは今日まで ' + count + ' 回、深く考えた。';
-  _dfmShowStep(4);
-}
-function _dfmSaveToScratch() {
-  var r = document.getElementById('dfm-result');
-  var r2 = document.getElementById('dfm-result-timer');
-  var result = (r ? r.value.trim() : '');
-  var extra = (r2 ? r2.value.trim() : '');
-  if (extra) result = result ? result + '\n' + extra : extra;
-  var text = '【深考】' + _dfmCurrentQuestion + (result ? '\n' + result : '');
-  var dateStr = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
-  var newId = (typeof generateTaskId === 'function') ? generateTaskId() : ('df_' + Date.now());
-  if (typeof window.allTasks !== 'undefined' && window.allTasks) {
-    window.allTasks.push({
-      id: newId, text: text, date: dateStr, time: null, section: 1,
-      completed: false, done: false, displayScope: 'daily_only',
-      kind: 'scratch', createdAt: new Date().toISOString()
-    });
-    if (typeof saveAllTasks === 'function') saveAllTasks();
-  }
-  closeDeepFocusMode();
-  if (typeof switchView === 'function') {
-    switchView('daily');
-    setTimeout(function(){ if (typeof switchDailyTab === 'function') switchDailyTab('scratch'); }, 150);
-  }
-  showToast('雑記帳に送りました！', {type:'success', duration:3000});
-}
-function _dfmReset() {
-  _dfmCurrentQuestion = '';
-  _dfmHintIdx = 0;
-  _dfmQuestionIdx = 0;
-  var q = document.getElementById('dfm-question');
-  if (q) q.value = '';
-  var r = document.getElementById('dfm-result');
-  if (r) r.value = '';
-  _dfmShowStep(1);
-}
-function _dfmCopyForAI() {
-  var r = document.getElementById('dfm-result');
-  var r2 = document.getElementById('dfm-result-timer');
-  var result = (r ? r.value.trim() : '');
-  var extra = (r2 ? r2.value.trim() : '');
-  if (extra) result = result ? result + '\n' + extra : extra;
-  var history = _dfmGetHistory();
-  var latest = history.length > 0 ? history[history.length - 1] : null;
-  var q = _dfmCurrentQuestion || (latest ? latest.question : '');
-  var ans = result || (latest ? latest.result : '');
-  var dateStr = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
-  var text = ['【深考ログ】' + dateStr, '', '■ 問い', q || '（問い未記入）', '', '■ 考えたこと', ans || '（内容未記入）', '', '---', 'このログをベースに、さらに深めるアドバイスをください。', '私が気づいていない視点や、次に考えるべき問いがあれば教えてください。'].join('\n');
-  function done() { if (typeof showToast === 'function') showToast('📋 AIに投げるテキストをコピーしました', {type:'success', duration:2500}); }
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(done).catch(function() {
-      var ta = document.createElement('textarea'); ta.value = text; ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;'; document.body.appendChild(ta); ta.focus(); ta.select(); try { document.execCommand('copy'); done(); } catch(e) {} document.body.removeChild(ta);
-    });
-  } else {
-    var ta = document.createElement('textarea'); ta.value = text; ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;'; document.body.appendChild(ta); ta.focus(); ta.select(); try { document.execCommand('copy'); done(); } catch(e) {} document.body.removeChild(ta);
-  }
-}
-function _dfmGetHistory() {
-  if (typeof window.allTasks === 'undefined' || !window.allTasks) return [];
-  return window.allTasks.filter(function(t){ return t.kind === 'deepfocus'; })
-    .sort(function(a,b){ return (b.createdAt||'').localeCompare(a.createdAt||''); });
-}
-function _dfmRenderHistory() {
-  var list = document.getElementById('dfm-history-list');
-  if (!list) return;
-  var history = _dfmGetHistory();
-  if (history.length === 0) {
-    list.innerHTML = '<div style="color:#333;font-size:0.85em;text-align:center;padding:24px;">まだ深考の記録はないよ。</div>';
-    return;
-  }
-  list.innerHTML = history.map(function(r) {
-    var eid = 'dfm-edit-' + r.id;
-    return '<div style="background:#111;border:1px solid #1a1a1a;border-radius:10px;padding:14px;">'
-      + '<div style="font-size:0.72em;color:#333;margin-bottom:6px;">' + (r.date||'') + '</div>'
-      + '<div style="font-size:0.88em;font-weight:700;color:#a78bfa;margin-bottom:6px;">「' + (r.question||'') + '」</div>'
-      + '<div id="' + eid + '-disp" style="font-size:0.82em;color:#555;line-height:1.7;margin-bottom:10px;">' + (r.result||'（記録なし）') + '</div>'
-      + '<textarea id="' + eid + '-input" style="display:none;width:100%;padding:8px;background:#0a0a0a;border:1px solid #333;border-radius:6px;color:#ddd;font-size:0.82em;box-sizing:border-box;resize:none;font-family:inherit;" rows="3">' + (r.result||'') + '</textarea>'
-      + '<div style="display:flex;gap:6px;flex-wrap:wrap;">'
-      + '<button onclick="_dfmHistoryEdit(\'' + r.id + '\')" id="' + eid + '-btn" style="flex:1;padding:5px 8px;background:#1a1a1a;border:1px solid #333;border-radius:6px;color:#888;font-size:0.75em;cursor:pointer;">✏️ 編集</button>'
-      + '<button onclick="_dfmHistorySend(\'' + r.id + '\')" style="flex:1;padding:5px 8px;background:#1a1a1a;border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#a78bfa;font-size:0.75em;cursor:pointer;">📝 雑記帳へ</button>'
-      + '<button onclick="_dfmHistoryDelete(\'' + r.id + '\')" style="flex:1;padding:5px 8px;background:#1a1a1a;border:1px solid rgba(255,100,100,0.3);border-radius:6px;color:#f87171;font-size:0.75em;cursor:pointer;">🗑 削除</button>'
-      + '</div>'
-      + '</div>';
-  }).join('');
-}
-// グローバルに公開
-function _dfmHistoryEdit(id) {
-  var r = window.allTasks.find(function(t){ return t.id === id && t.kind === 'deepfocus'; });
-  if (!r) return;
-  var disp = document.getElementById('dfm-edit-' + id + '-disp');
-  var input = document.getElementById('dfm-edit-' + id + '-input');
-  var btn = document.getElementById('dfm-edit-' + id + '-btn');
-  if (!disp || !input || !btn) return;
-  if (input.style.display === 'none') {
-    disp.style.display = 'none';
-    input.style.display = 'block';
-    btn.textContent = '💾 保存';
-  } else {
-    r.result = input.value.trim();
-    if (typeof saveAllTasks === 'function') saveAllTasks();
-    disp.textContent = r.result || '（記録なし）';
-    disp.style.display = 'block';
-    input.style.display = 'none';
-    btn.textContent = '✏️ 編集';
-    showToast('保存しました', {type:'success', duration:2000});
-  }
-}
-function _dfmHistoryDelete(id) {
-  var idx = window.allTasks.findIndex(function(t){ return t.id === id && t.kind === 'deepfocus'; });
-  if (idx === -1) return;
-  window.allTasks.splice(idx, 1);
-  if (typeof saveAllTasks === 'function') saveAllTasks();
-  _dfmRenderHistory();
-  showToast('削除しました', {type:'info', duration:2000});
-}
-function _dfmHistorySend(id) {
-  var r = window.allTasks.find(function(t){ return t.id === id && t.kind === 'deepfocus'; });
-  if (!r) return;
-  var text = '【深考】' + (r.question||'') + (r.result ? '\n' + r.result : '');
-  var dateStr = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
-  var newId = (typeof generateTaskId === 'function') ? generateTaskId() : ('df_' + Date.now());
-  window.allTasks.push({
-    id: newId, text: text, date: dateStr, time: null, section: 1,
-    completed: false, done: false, displayScope: 'daily_only',
-    kind: 'scratch', createdAt: new Date().toISOString()
-  });
-  if (typeof saveAllTasks === 'function') saveAllTasks();
-  showToast('雑記帳に送りました！', {type:'success', duration:3000});
-}
-window.openDeepFocusMode = openDeepFocusMode;
-window.closeDeepFocusMode = closeDeepFocusMode;
-window._dfmNext = _dfmNext;
-window._dfmShowQuestion = _dfmToggleQuestion;
-function _dfmShowHint() { _dfmToggleQuestion(); }
-function _dfmShowQuestion() { _dfmToggleQuestion(); }
-window._dfmFinish = _dfmFinish;
-window._dfmSaveToScratch = _dfmSaveToScratch;
-window._dfmCopyForAI = _dfmCopyForAI;
-window._dfmToggleQuestion = _dfmToggleQuestion;
-window._dfmNextQuestion = _dfmNextQuestion;
-window._dfmShowStep = _dfmShowStep;
-
-// ===== 使い方クイズ =====
-var _quizQuestions = [
-  { q:'タスクを完了するには？', c:['タップ','長押し','スワイプ','ダブルタップ'], a:0, hint:'日次ビューのタスクをタップしてみよう', toku:10 },
-  { q:'タスクを編集するには？', c:['タップ','長押し','スワイプ','ダブルタップ'], a:1, hint:'長押しで編集モーダルが開くよ', toku:10 },
-  { q:'雑記帳はどのビューにある？', c:['月間','週間','日次','年間'], a:2, hint:'日次ビューの上のタブを見てみよう', toku:10 },
-  { q:'徳ポイントは何で貯まる？', c:['ログイン','タスク完了','クイズ正解','デッキ受け取り'], a:1, hint:'タスクを完了するたびに徳が積まれる', toku:10 },
-  { q:'志（ビジョン）はどこで管理する？', c:['日次','月間','造営','設定'], a:2, hint:'造営ビューに志・工程・タスクの3階層がある', toku:10 },
-  { q:'デッキコードは何で始まる？', c:['ACK1:','DCK1:','QRZ1:','GLD1:'], a:1, hint:'Deck → DCK1: だよ', toku:10 },
-  { q:'深考モードはどこから開ける？', c:['設定','図書館','雑記帳ヘッダー','造営'], a:2, hint:'雑記帳の日付の右を見てみよう', toku:10 },
-  { q:'王国コードを発行する目的は？', c:['バックアップ','徳を贈る','デッキを作る','設定を共有する'], a:1, hint:'コードを渡すと相手に徳が積まれる', toku:10 },
-  { q:'貢献感は何の源泉？', c:['成長','幸福','創造','つながり'], a:1, hint:'アドラー心理学のキーワードだよ', toku:10 },
-  { q:'やることクラフトのタグラインは？', c:['夢を叶えよう','これが、あなたの造営だ','毎日を楽しく','タスクを制す者が人生を制す'], a:1, hint:'図書館の「大切にしていること」を見てみよう', toku:10 }
-];
-var _quizState = { idx: 0, score: 0, answered: false, timer: null, timeLeft: 10 };
-
-function openQuizMode() {
-  var modal = document.getElementById('quizModal');
-  if (!modal) return;
-  modal.style.display = 'flex';
-  _quizState = { idx: 0, score: 0, answered: false, timer: null, timeLeft: 10 };
-  _quizShowStart();
-}
-function closeQuizMode() {
-  var modal = document.getElementById('quizModal');
-  if (modal) modal.style.display = 'none';
-  if (_quizState.timer) clearInterval(_quizState.timer);
-}
-function _quizShowStart() {
-  var content = document.getElementById('quiz-content');
-  if (!content) return;
-  // ベストスコアをallTasksから取得
-  var qRec = (window.allTasks||[]).find(function(t){ return t.kind === 'quiz'; });
-  var best = qRec ? (qRec.bestScore || 0) : 0;
-  var plays = qRec ? (qRec.playCount || 0) : 0;
-  content.innerHTML = '<div style="text-align:center;padding:16px 0;">'
-    + '<div style="font-size:2.5em;margin-bottom:12px;">🎯</div>'
-    + '<div style="font-size:1.1em;font-weight:700;color:#fff;margin-bottom:8px;">使い方クイズ</div>'
-    + '<div style="font-size:0.82em;color:#555;margin-bottom:24px;">全10問・各10秒制限</div>'
-    + (plays > 0 ? '<div style="background:#111;border:1px solid #222;border-radius:10px;padding:12px;margin-bottom:24px;">'
-      + '<div style="font-size:0.78em;color:#888;">最高スコア</div>'
-      + '<div style="font-size:1.8em;font-weight:700;color:#fbbf24;">' + best + '<span style="font-size:0.5em;color:#555;">/10</span></div>'
-      + '<div style="font-size:0.72em;color:#444;">' + plays + '回プレイ</div>'
-      + '</div>' : '')
-    + '<button onclick="_quizStart()" style="width:100%;padding:14px;background:linear-gradient(135deg,#f59e0b,#fbbf24);border:none;border-radius:12px;color:#1a0a00;font-size:1em;font-weight:800;cursor:pointer;letter-spacing:0.03em;">はじめる →</button>'
-    + '</div>';
-}
-function _quizStart() {
-  _quizState = { idx: 0, score: 0, answered: false, timer: null, timeLeft: 10 };
-  _quizShowQ();
-}
-function _quizShowQ() {
-  var q = _quizQuestions[_quizState.idx];
-  var content = document.getElementById('quiz-content');
-  if (!content || !q) return;
-  _quizState.answered = false;
-  _quizState.timeLeft = 10;
-
-  content.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">'
-    + '<div style="font-size:0.78em;color:#555;">Q' + (_quizState.idx+1) + ' / ' + _quizQuestions.length + '</div>'
-    + '<div id="quiz-timer" style="font-size:1.4em;font-weight:700;color:#fbbf24;">10</div>'
-    + '</div>'
-    + '<div style="font-size:0.95em;font-weight:700;color:#fff;line-height:1.6;margin-bottom:24px;padding:16px;background:#111;border-radius:10px;">' + q.q + '</div>'
-    + '<div style="display:flex;flex-direction:column;gap:10px;" id="quiz-choices">'
-    + q.c.map(function(c, i) {
-        return '<button onclick="_quizAnswer(' + i + ')" style="padding:12px 16px;background:#111;border:1.5px solid #222;border-radius:10px;color:#ddd;font-size:0.9em;text-align:left;cursor:pointer;transition:all 0.15s;" id="quiz-choice-' + i + '">'
-          + ['A','B','C','D'][i] + '　' + c + '</button>';
-      }).join('')
-    + '</div>';
-
-  // タイマー開始
-  if (_quizState.timer) clearInterval(_quizState.timer);
-  _quizState.timer = setInterval(function() {
-    _quizState.timeLeft--;
-    var timerEl = document.getElementById('quiz-timer');
-    if (timerEl) {
-      timerEl.textContent = _quizState.timeLeft;
-      timerEl.style.color = _quizState.timeLeft <= 3 ? '#ef4444' : '#fbbf24';
-    }
-    if (_quizState.timeLeft <= 0) {
-      clearInterval(_quizState.timer);
-      if (!_quizState.answered) _quizAnswer(-1); // タイムアウト
-    }
-  }, 1000);
-}
-function _quizAnswer(choice) {
-  if (_quizState.answered) return;
-  _quizState.answered = true;
-  if (_quizState.timer) clearInterval(_quizState.timer);
-
-  var q = _quizQuestions[_quizState.idx];
-  var correct = (choice === q.a);
-  if (correct) _quizState.score++;
-
-  // ボタンの色を変える
-  for (var i = 0; i < q.c.length; i++) {
-    var btn = document.getElementById('quiz-choice-' + i);
-    if (!btn) continue;
-    if (i === q.a) {
-      btn.style.background = 'rgba(52,211,153,0.2)';
-      btn.style.borderColor = '#34d399';
-      btn.style.color = '#34d399';
-    } else if (i === choice && !correct) {
-      btn.style.background = 'rgba(239,68,68,0.2)';
-      btn.style.borderColor = '#ef4444';
-      btn.style.color = '#ef4444';
-    }
-    btn.disabled = true;
-  }
-
-  // フィードバック表示
-  var timerEl = document.getElementById('quiz-timer');
-  if (timerEl) timerEl.textContent = correct ? '✅' : (choice === -1 ? '⏱' : '❌');
-
-  var feedback = document.createElement('div');
-  feedback.style.cssText = 'margin-top:16px;padding:14px;background:' + (correct ? 'rgba(52,211,153,0.1)' : 'rgba(239,68,68,0.08)') + ';border:1px solid ' + (correct ? 'rgba(52,211,153,0.3)' : 'rgba(239,68,68,0.2)') + ';border-radius:10px;';
-  feedback.innerHTML = '<div style="font-weight:700;color:' + (correct ? '#34d399' : '#f87171') + ';margin-bottom:4px;">'
-    + (choice === -1 ? '⏱ 時間切れ！' : (correct ? '✅ 正解！ +' + q.toku + '徳' : '❌ 不正解'))
-    + '</div>'
-    + '<div style="font-size:0.82em;color:#888;">💡 ' + q.hint + '</div>';
-
-  var choices = document.getElementById('quiz-choices');
-  if (choices) choices.after(feedback);
-
-  // 次へボタン
-  setTimeout(function() {
-    var nextBtn = document.createElement('button');
-    nextBtn.textContent = _quizState.idx + 1 < _quizQuestions.length ? '次の問題 →' : '結果を見る →';
-    nextBtn.style.cssText = 'width:100%;padding:12px;background:#fbbf24;border:none;border-radius:10px;color:#1a0a00;font-size:0.9em;font-weight:700;cursor:pointer;margin-top:12px;';
-    nextBtn.onclick = function() {
-      _quizState.idx++;
-      if (_quizState.idx < _quizQuestions.length) {
-        _quizShowQ();
-      } else {
-        _quizFinish();
-      }
-    };
-    var content = document.getElementById('quiz-content');
-    if (content) content.appendChild(nextBtn);
-  }, 600);
-}
-function _quizFinish() {
-  var score = _quizState.score;
-  var total = _quizQuestions.length;
-  var tokuEarned = _quizQuestions.slice(0, score).reduce(function(s, q) { return s + q.toku; }, 0);
-
-  // allTasksに記録
-  try {
-    var tasks = window.allTasks || [];
-    var rec = tasks.find(function(t){ return t.kind === 'quiz'; });
-    if (rec) {
-      rec.lastScore = score;
-      rec.bestScore = Math.max(rec.bestScore || 0, score);
-      rec.playCount = (rec.playCount || 0) + 1;
-      if (score === total) rec.clearedAt = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
-    } else {
-      tasks.push({ id: (typeof generateTaskId === 'function' ? generateTaskId() : 'quiz_' + Date.now()), kind: 'quiz', lastScore: score, bestScore: score, playCount: 1, clearedAt: score === total ? new Date().toISOString().slice(0,10) : null, createdAt: new Date().toISOString() });
-    }
-    if (typeof saveAllTasks === 'function') saveAllTasks();
-    // 徳ポイント付与
-    if (tokuEarned > 0 && typeof addToku === 'function') addToku(tokuEarned, 'クイズ正解');
-  } catch(e) { console.warn('[quiz]', e); }
-
-  var content = document.getElementById('quiz-content');
-  if (!content) return;
-  var perfect = score === total;
-  content.innerHTML = '<div style="text-align:center;padding:16px 0;">'
-    + '<div style="font-size:3em;margin-bottom:12px;">' + (perfect ? '🏆' : score >= 7 ? '🎉' : score >= 5 ? '👍' : '💪') + '</div>'
-    + '<div style="font-size:1.1em;font-weight:700;color:#fff;margin-bottom:4px;">' + score + ' / ' + total + ' 問正解</div>'
-    + '<div style="font-size:0.82em;color:#fbbf24;margin-bottom:24px;">+' + tokuEarned + '徳 獲得！</div>'
-    + (perfect ? '<div style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:10px;padding:12px;margin-bottom:20px;font-size:0.82em;color:#fbbf24;">🎊 全問正解！あなたはやることクラフトマスターだ！</div>' : '')
-    + '<div style="display:flex;flex-direction:column;gap:10px;">'
-    + '<button onclick="_quizStart()" style="padding:12px;background:linear-gradient(135deg,#f59e0b,#fbbf24);border:none;border-radius:10px;color:#1a0a00;font-size:0.9em;font-weight:700;cursor:pointer;">もう一度挑戦する</button>'
-    + '<button onclick="closeQuizMode()" style="padding:12px;background:transparent;border:1px solid #333;border-radius:10px;color:#555;font-size:0.9em;cursor:pointer;">図書館に戻る</button>'
-    + '</div></div>';
-}
-
-    function openAiPlanModal() {
-      var overlay = document.createElement('div');
-      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
-      var box = document.createElement('div');
-      box.style.cssText = 'background:#fff;border-radius:16px;padding:24px 20px;width:92vw;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.18);max-height:90vh;overflow-y:auto;';
-      box.innerHTML = '<div style="font-size:1em;font-weight:700;color:#333;margin-bottom:6px;">✨ AIに計画を作ってもらう</div>'
-        + '<div style="font-size:0.78em;color:#888;margin-bottom:10px;">やりたいことを入力してプロンプトをコピー→ChatGPTやClaudeに貼り付けてください。出力を雑記帳に入れたら「造営に」を押してください。</div>'
-        + '<div style="font-size:0.8em;color:#666;margin-bottom:4px;">やりたいこと</div>'
-        + '<input id="aiPlanInput" type="text" placeholder="例：部屋を片付ける、英語上達" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:0.9em;box-sizing:border-box;margin-bottom:10px;">'
-        + '<div style="display:flex;gap:8px;margin-bottom:10px;">'
-        + '<div style="flex:1;"><div style="font-size:0.8em;color:#666;margin-bottom:4px;">開始日</div><input id="aiPlanStart" type="date" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:0.85em;box-sizing:border-box;"></div>'
-        + '<div style="flex:1;"><div style="font-size:0.8em;color:#666;margin-bottom:4px;">終了日</div><input id="aiPlanEnd" type="date" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:0.85em;box-sizing:border-box;"></div>'
-        + '</div>'
-        + '<div style="display:flex;gap:8px;margin-bottom:10px;">'
-        + '<div style="flex:1;"><div style="font-size:0.8em;color:#666;margin-bottom:4px;">開始時刻</div><select id="aiPlanStartH" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:0.85em;box-sizing:border-box;">'
-        + Array.from({length:24},function(_,i){ return '<option value="'+i+'">'+(i<10?'0':'')+i+':00</option>'; }).join('')
-        + '</select></div>'
-        + '<div style="flex:1;"><div style="font-size:0.8em;color:#666;margin-bottom:4px;">終了時刻</div><select id="aiPlanEndH" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:0.85em;box-sizing:border-box;">'
-        + Array.from({length:24},function(_,i){ return '<option value="'+i+'">'+(i<10?'0':'')+i+':00</option>'; }).join('')
-        + '</select></div>'
-        + '</div>'
-        + '<div style="background:#f8f6ff;border:1px solid #e9d5ff;border-radius:8px;padding:12px;margin-bottom:12px;font-size:0.78em;color:#555;line-height:1.6;white-space:pre-wrap;" id="aiPlanPreview">やりたいことを入力すると、プロンプトが生成されます</div>'
-        + '<div style="font-size:0.75em;color:#bbb;margin-bottom:8px;padding:8px;background:#f9f9f9;border-radius:8px;line-height:1.6;">💡 各タスクの時刻は自動で入りません。造営に登録した後、タスクの ✏️ を押して時刻を入れてください。</div>'
-        + '<div style="display:flex;gap:8px;margin-bottom:8px;">'
-        + '<button id="aiPlanCloseBtn" style="flex:1;padding:10px;background:#f0f0f0;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;">閉じる</button>'
-        + '<button id="aiPlanCopyBtn" style="flex:1;padding:10px;background:linear-gradient(135deg,#a78bfa,#6d28d9);color:#fff;border:none;border-radius:8px;font-size:0.9em;font-weight:700;cursor:pointer;">📋 コピー</button>'
-        + '</div>'
-        + '';
-      overlay.appendChild(box);
-      document.body.appendChild(overlay);
-      overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
-      document.getElementById('aiPlanCloseBtn').addEventListener('click', function(){ overlay.remove(); });
-      var input = document.getElementById('aiPlanInput');
-      if (input) {
-        input.focus();
-        input.addEventListener('input', function(){ updateAiPlanPreview(this.value); });
-      }
-      document.getElementById('aiPlanCopyBtn').addEventListener('click', copyAiPlanPrompt);
-      // 今日の日付・現在時刻をデフォルトに
-      var today = getLocalDateStr(new Date());
-      var nowH = new Date().getHours();
-      var startEl = document.getElementById('aiPlanStart');
-      var endEl   = document.getElementById('aiPlanEnd');
-      var startHEl = document.getElementById('aiPlanStartH');
-      var endHEl   = document.getElementById('aiPlanEndH');
-      if (startEl) startEl.value = today;
-      if (endEl)   endEl.value   = today;
-      if (startHEl) startHEl.value = nowH;
-      if (endHEl)   endHEl.value   = Math.min(nowH + 1, 23);
-      // 時刻変更時もプレビュー更新
-      [startHEl, endHEl, startEl, endEl].forEach(function(el){
-        if (el) el.addEventListener('change', function(){ updateAiPlanPreview(document.getElementById('aiPlanInput').value); });
-      });
-    }
-
-    function updateAiPlanPreview(goal) {
-      var preview = document.getElementById('aiPlanPreview');
-      if (!preview) return;
-      if (!goal.trim()) {
-        preview.textContent = 'やりたいことを入力すると、プロンプトが生成されます';
-        return;
-      }
-      var start   = (document.getElementById('aiPlanStart')||{}).value  || '';
-      var end     = (document.getElementById('aiPlanEnd')||{}).value    || '';
-      var startH  = (document.getElementById('aiPlanStartH')||{}).value;
-      var endH    = (document.getElementById('aiPlanEndH')||{}).value;
-      preview.textContent = _buildAiPlanPrompt(goal.trim(), start, end, startH, endH);
-    }
-
-    function copyAiPlanPrompt() {
-      var input   = document.getElementById('aiPlanInput');
-      var goal    = (input ? input.value : '').trim();
-      if (!goal) { showToast('やりたいことを入力してください', {type:'warn'}); return; }
-      var start   = (document.getElementById('aiPlanStart')||{}).value  || '';
-      var end     = (document.getElementById('aiPlanEnd')||{}).value    || '';
-      var startH  = (document.getElementById('aiPlanStartH')||{}).value;
-      var endH    = (document.getElementById('aiPlanEndH')||{}).value;
-      var prompt  = _buildAiPlanPrompt(goal, start, end, startH, endH);
-      var btn = document.getElementById('aiPlanCopyBtn');
-      function done() {
-        if (btn) { btn.textContent = '✅ コピー済み'; setTimeout(function(){ btn.textContent = '📋 コピー'; }, 2000); }
-        showToast('📋 プロンプトをコピーしました', {type:'success'});
-      }
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(prompt).then(done).catch(function(){
-          var ta = document.createElement('textarea');
-          ta.value = prompt; document.body.appendChild(ta); ta.select();
-          document.execCommand('copy'); document.body.removeChild(ta); done();
-        });
-      } else {
-        var ta = document.createElement('textarea');
-        ta.value = prompt; document.body.appendChild(ta); ta.select();
-        document.execCommand('copy'); document.body.removeChild(ta); done();
-      }
-    }
-    function _buildAiPlanPrompt(goal, start, end, startH, endH) {
-      var period = '';
-      var sh = startH !== undefined && startH !== '' ? (startH<10?'0':'')+startH+':00' : '';
-      var eh = endH   !== undefined && endH   !== '' ? (endH  <10?'0':'')+endH  +':00' : '';
-      if (start) period += '\n開始：' + start + (sh ? ' ' + sh : '');
-      if (end)   period += '\n終了：' + end   + (eh ? ' ' + eh : '');
-      return 'やりたいこと：' + goal + period + '\n\n以下の形式だけで返答してください。説明・前置き・番号は不要です。\n\n1行目：やりたいことの名前（20文字以内）\n2行目以降：そのためにやること（1行1つ・3〜5件）';
-    }
-
-
-
-
-
-
-
-
-
-
-// ===== window公開（block6関数） =====
-try {
-  window.openQuizMode = openQuizMode;
-  window.closeQuizMode = closeQuizMode;
-  window._quizStart = _quizStart;
-  window._quizAnswer = _quizAnswer;
-  window.openAiPlanModal = openAiPlanModal;
-  window.copyAiPlanPrompt = copyAiPlanPrompt;
-  window._buildAiPlanPrompt = _buildAiPlanPrompt;
-  window.updateAiPlanPreview = updateAiPlanPreview;
-  window._quizShowQ = _quizShowQ;
-  window._quizFinish = _quizFinish;
-  window._dfmHistoryDelete = _dfmHistoryDelete;
-  window._dfmHistoryEdit = _dfmHistoryEdit;
-  window._dfmHistorySend = _dfmHistorySend;
-  window._dfmShowHistory = _dfmShowHistory;
-  window.getGrandVisions = getGrandVisions;
-  window.renderGrandVisionBar = renderGrandVisionBar;
-  window.openGrandVisionEditor = openGrandVisionEditor;
-  window._saveGrandVision = _saveGrandVision;
-  window._deleteGrandVision = _deleteGrandVision;
-  window._onGvBannerChange = _onGvBannerChange;
-  window.openHeavenFromBanner = openHeavenFromBanner;
-  window.renderHeavenBlueprints = renderHeavenBlueprints;
-  window.adminBadgeTap = adminBadgeTap;
-  window.applyGuildLicense = applyGuildLicense;
-  window.checkAdminPw = checkAdminPw;
-  window.closeDeckBuilder = closeDeckBuilder;
-  window.closeGuildMode = closeGuildMode;
-  window.closeLpModal = closeLpModal;
-  window.copyStarterDeckCode = copyStarterDeckCode;
-  window.deckBuilderAddTask = deckBuilderAddTask;
-  window.deckBuilderApply = deckBuilderApply;
-  window.deckBuilderCancelEdit = deckBuilderCancelEdit;
-  window.deckBuilderEditTask = deckBuilderEditTask;
-  window.deckBuilderMoveTask = deckBuilderMoveTask;
-  window.deckBuilderPublish = deckBuilderPublish;
-  window.deckBuilderRemoveTask = deckBuilderRemoveTask;
-  window.deckBuilderSave = deckBuilderSave;
-  window.deleteJournal = deleteJournal;
-  window.editJournal = editJournal;
-  window.generateDeckEntry = generateDeckEntry;
-  window.importDeckFromSettings = importDeckFromSettings;
-  window.issueGuildLicense = issueGuildLicense;
-  window.openDeckBuilder = openDeckBuilder;
-  window.openJournalDetail = openJournalDetail;
-  window.openLpModal = openLpModal;
-  window.openNewJournal = openNewJournal;
-  window.saveJournalEdit = saveJournalEdit;
-  window.saveNewJournal = saveNewJournal;
-  window.showDebugLog = showDebugLog;
-  window.showGantOnboarding = showGantOnboarding;
-  window.showTutorial = showTutorial;
-  window.textToThoughts = textToThoughts;
-  window.thoughtDelete = thoughtDelete;
-  window.thoughtToScratch = thoughtToScratch;
-  window.thoughtsToText = thoughtsToText;
-  window.toggleAbout = toggleAbout;
-  window.toggleAdminMode = toggleAdminMode;
-  window.toggleLibrary = toggleLibrary;
-  window.updateMemoPreview = updateMemoPreview;
-} catch(e) { console.warn("[window公開-b6] エラー:", e); }
-// ===== window公開（block6関数） =====
-try {
-  window.openQuizMode = openQuizMode;
-  window.closeQuizMode = closeQuizMode;
-  window._quizStart = _quizStart;
-  window._quizAnswer = _quizAnswer;
-  window.openAiPlanModal = openAiPlanModal;
-  window.copyAiPlanPrompt = copyAiPlanPrompt;
-  window._buildAiPlanPrompt = _buildAiPlanPrompt;
-  window.updateAiPlanPreview = updateAiPlanPreview;
-  window._quizShowQ = _quizShowQ;
-  window._quizFinish = _quizFinish;
-  window._dfmHistoryDelete = _dfmHistoryDelete;
-  window._dfmHistoryEdit = _dfmHistoryEdit;
-  window._dfmHistorySend = _dfmHistorySend;
-  window._dfmShowHistory = _dfmShowHistory;
-  window.getGrandVisions = getGrandVisions;
-  window.renderGrandVisionBar = renderGrandVisionBar;
-  window.openGrandVisionEditor = openGrandVisionEditor;
-  window._saveGrandVision = _saveGrandVision;
-  window._deleteGrandVision = _deleteGrandVision;
-  window._onGvBannerChange = _onGvBannerChange;
-  window.openHeavenFromBanner = openHeavenFromBanner;
-  window.renderHeavenBlueprints = renderHeavenBlueprints;
-  window.adminBadgeTap = adminBadgeTap;
-  window.applyGuildLicense = applyGuildLicense;
-  window.checkAdminPw = checkAdminPw;
-  window.closeDeckBuilder = closeDeckBuilder;
-  window.closeGuildMode = closeGuildMode;
-  window.closeLpModal = closeLpModal;
-  window.copyStarterDeckCode = copyStarterDeckCode;
-  window.deckBuilderAddTask = deckBuilderAddTask;
-  window.deckBuilderApply = deckBuilderApply;
-  window.deckBuilderCancelEdit = deckBuilderCancelEdit;
-  window.deckBuilderEditTask = deckBuilderEditTask;
-  window.deckBuilderMoveTask = deckBuilderMoveTask;
-  window.deckBuilderPublish = deckBuilderPublish;
-  window.deckBuilderRemoveTask = deckBuilderRemoveTask;
-  window.deckBuilderSave = deckBuilderSave;
-  window.deleteJournal = deleteJournal;
-  window.editJournal = editJournal;
-  window.generateDeckEntry = generateDeckEntry;
-  window.importDeckFromSettings = importDeckFromSettings;
-  window.issueGuildLicense = issueGuildLicense;
-  window.openDeckBuilder = openDeckBuilder;
-  window.openJournalDetail = openJournalDetail;
-  window.openLpModal = openLpModal;
-  window.openNewJournal = openNewJournal;
-  window.saveJournalEdit = saveJournalEdit;
-  window.saveNewJournal = saveNewJournal;
-  window.showDebugLog = showDebugLog;
-  window.showGantOnboarding = showGantOnboarding;
-  window.showTutorial = showTutorial;
-  window.textToThoughts = textToThoughts;
-  window.thoughtDelete = thoughtDelete;
-  window.thoughtToScratch = thoughtToScratch;
-  window.thoughtsToText = thoughtsToText;
-  window.toggleAbout = toggleAbout;
-  window.toggleAdminMode = toggleAdminMode;
-  window.toggleLibrary = toggleLibrary;
-  window.updateMemoPreview = updateMemoPreview;
-} catch(e) { console.warn("[window公開-b6] エラー:", e); }
-
-// ===== デバッグ: deepFocusModal display変化を監視 =====
-(function() {
-  function _watchDFM() {
-    var modal = document.getElementById('deepFocusModal');
-    if (!modal) return;
-    var obs = new MutationObserver(function(muts) {
-      muts.forEach(function(m) {
-        if (m.attributeName === 'style') {
-          var disp = modal.style.display;
-          if (disp !== 'none' && disp !== '') {
-            try { throw new Error('DFM display changed'); } catch(e) {
-              var stack = e.stack.split('\n').slice(1,5).join(' | ');
-              if (typeof _dbgLog === 'function') _dbgLog('[DFM表示変化] display=' + disp + ' | ' + stack);
-              console.warn('[DFM表示変化]', disp, e.stack);
-            }
-          }
-        }
-      });
-    });
-    obs.observe(modal, { attributes: true, attributeFilter: ['style'] });
-  }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', _watchDFM);
-  } else { _watchDFM(); }
-})();
 </script>
-<!-- ===== 商人ギルドモーダル ===== -->
+
 <!-- 深考モーダル -->
 <div id="deepFocusModal" style="display:none;position:fixed;inset:0;background:linear-gradient(160deg,#1a1035 0%,#2d1b4e 50%,#1e1040 100%);z-index:10000;flex-direction:column;overflow:hidden;">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid rgba(196,181,253,0.15);flex-shrink:0;">
@@ -20414,7 +20754,11 @@ try {
     </div>
   </div>
 <!-- 右下？ボタン -->
-<button id="tutorialHelpBtn" onclick="showTutorial()" style="position:fixed;bottom:24px;right:20px;width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;color:#fff;font-size:1.3em;font-weight:bold;cursor:pointer;box-shadow:0 4px 15px rgba(79,172,254,0.5);z-index:99990;line-height:42px;text-align:center;"
+<!-- 王国入場アニメレイヤー（body直下・stacking context問題回避） -->
+<div id="_ycWelcomeAnim" style="position:fixed;inset:0;pointer-events:none;z-index:99999;display:none;"></div>
+<!-- 王国入場アニメレイヤー（body直下・stacking context問題回避） -->
+<div id="_ycWelcomeAnim" style="position:fixed;inset:0;pointer-events:none;z-index:99999;display:none;"></div>
+<button id="tutorialHelpBtn" onclick="showTutorial()" style="display:none;position:fixed;bottom:24px;right:20px;width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;color:#fff;font-size:1.3em;font-weight:bold;cursor:pointer;box-shadow:0 4px 15px rgba(79,172,254,0.5);z-index:99990;line-height:42px;text-align:center;"
   ontouchstart="this._t=setTimeout(function(){showDebugLog();},2000)"
   ontouchend="clearTimeout(this._t)"
   ontouchcancel="clearTimeout(this._t)">?</button>
