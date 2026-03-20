@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.37.44';
+    const APP_VERSION = 'v0.37.63';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -103,7 +103,7 @@
     // v0→v1: guildLicenseのtype→kind変換（allTasks内を対象に）
     if (version < 1) {
       try {
-        var _glEntry = allTasks.find(function(t){ return t.kind === 'guildLicense'; });
+        var _glEntry = (window.allTasks||[]).find(function(t){ return t.kind === 'guildLicense'; });
         if (_glEntry && _glEntry.type && !_glEntry.kind) {
           _glEntry.kind = 'guildLicense';
           delete _glEntry.type;
@@ -20764,5 +20764,60 @@ document.addEventListener('DOMContentLoaded', function() {
   ontouchstart="this._t=setTimeout(function(){showDebugLog();},2000)"
   ontouchend="clearTimeout(this._t)"
   ontouchcancel="clearTimeout(this._t)">?</button>
+
+
+<!-- 印刷処理（beforeprint / afterprint） -->
+<script>
+window.addEventListener('beforeprint', function() {
+  // 印刷時に不要な要素を強制非表示
+  const hideIds = ['dailyInnerTabBar','scratchView','timelineView','weeklyView',
+    'monthlyView','yearlyView','notebookView','shopView','craftView',
+    'craftHUD','craftGDPBadge','settingsView','setupOverlay','tutorialHelpBtn',
+    'escapeMessage','modal-root','lpModal'];
+  hideIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.dataset.printHidden = el.style.display;
+    if (el) el.style.setProperty('display','none','important');
+  });
+  // エクスポート・インポートボタンも非表示
+  document.querySelectorAll('.data-btn').forEach(el => {
+    el.dataset.printHidden = el.style.display;
+    el.style.setProperty('display','none','important');
+  });
+  // containerを強制表示・サイズ固定
+  const c = document.querySelector('.container');
+  if (c) {
+    c.style.setProperty('display','grid','important');
+    c.style.width = '297mm';
+    c.style.height = '210mm';
+    c.style.gridTemplateColumns = '1fr 1fr';
+    c.style.gridTemplateRows = '1fr 1fr';
+    c.style.margin = '0';
+    c.style.position = 'static';
+  }
+});
+window.addEventListener('afterprint', function() {
+  // 印刷後に元の状態に戻す
+  const hideIds = ['dailyInnerTabBar','scratchView','timelineView','weeklyView',
+    'monthlyView','yearlyView','notebookView','shopView','craftView',
+    'craftHUD','craftGDPBadge','settingsView','setupOverlay','tutorialHelpBtn',
+    'escapeMessage','modal-root','lpModal'];
+  hideIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.dataset.printHidden !== undefined) {
+      el.style.display = el.dataset.printHidden;
+      delete el.dataset.printHidden;
+    }
+  });
+  document.querySelectorAll('.data-btn').forEach(el => {
+    if (el.dataset.printHidden !== undefined) {
+      el.style.display = el.dataset.printHidden;
+      delete el.dataset.printHidden;
+    }
+  });
+  // containerを元に戻す（再描画）
+  if (typeof switchView === 'function') switchView(localStorage.getItem('currentView') || 'daily');
+});
+</script>
 </body>
 </html>
