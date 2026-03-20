@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.36.19';
+    const APP_VERSION = 'v0.37.22';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -420,6 +420,7 @@
     .scratch-item-actions .btn-save    { color: #2d2416; border-color: #2d2416; }
     .scratch-item-actions .btn-promote { color: #4facfe; border-color: #4facfe; }
     .scratch-item-actions .btn-del     { color: #f66;    border-color: #f66; }
+    .scratch-item-actions .btn-gant    { color: #a78bfa; border-color: #a78bfa; }
     .scratch-item-actions .btn-journal { color: #262626; border-color: #262626; }
     /* タップで選択中（旧） */
     .scratch-item.selected .scratch-item-dot { background: #4facfe; }
@@ -3427,9 +3428,42 @@
   <!-- 年間ビュー（YEARLY PLANNER型） -->
   <!-- 造営ビュー -->
   <div id="gantView" style="display:none; flex-direction:column; height:calc(100vh - 50px); background:#fafafa; overflow:hidden;">
-    <!-- 上部30%：blueprintカード一覧 -->
-    <div id="gantBlueprintArea" style="height:30%; min-height:120px; max-height:200px; overflow-x:auto; overflow-y:hidden; display:flex; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid #e8e8e8; background:#fff; -webkit-overflow-scrolling:touch; scrollbar-width:none;">
-      <!-- blueprintカードがJSで挿入される -->
+    <!-- グランドビジョン表示エリア -->
+    <div id="grandVisionBanner" style="display:none;flex-shrink:0;background:linear-gradient(135deg,#2d1b69 0%,#1a0f3c 100%);padding:10px 16px;border-bottom:1px solid rgba(167,139,250,0.3);">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <!-- 左：GV情報＋操作ボタン -->
+        <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1;">
+          <span id="gvBannerEmoji" style="font-size:1.4em;flex-shrink:0;">🎖️</span>
+          <div style="min-width:0;flex:1;">
+            <div id="gvBannerTitle" style="font-size:0.95em;font-weight:700;color:#e9d5ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+            <div id="gvBannerVision" style="font-size:0.75em;color:#c4b5fd;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+            <select id="gvBannerSelect" onchange="_onGvBannerChange(this.value)" style="background:rgba(255,255,255,0.1);border:1px solid rgba(167,139,250,0.4);border-radius:8px;color:#e9d5ff;font-size:0.75em;padding:4px 6px;cursor:pointer;max-width:100px;"></select>
+            <div style="position:relative;display:inline-block;">
+              <button onclick="openGrandVisionEditor(document.getElementById('gvBannerSelect').value||null)" onmouseenter="this.nextElementSibling.style.display='block'" onmouseleave="this.nextElementSibling.style.display='none'" style="background:rgba(255,255,255,0.1);border:1px solid rgba(167,139,250,0.3);border-radius:8px;font-size:0.75em;color:#c4b5fd;cursor:pointer;padding:4px 8px;">✏️</button>
+              <div style="display:none;position:absolute;left:0;top:30px;background:#1a1a2e;color:#fff;font-size:10px;font-weight:600;padding:5px 10px;border-radius:7px;white-space:nowrap;pointer-events:none;z-index:999;box-shadow:0 2px 8px rgba(0,0,0,0.2);">グランドビジョンを編集</div>
+            </div>
+            <div style="position:relative;display:inline-block;">
+              <button onclick="openGrandVisionEditor(null)" onmouseenter="this.nextElementSibling.style.display='block'" onmouseleave="this.nextElementSibling.style.display='none'" style="background:rgba(167,139,250,0.3);border:none;border-radius:8px;font-size:0.75em;color:#fff;cursor:pointer;padding:4px 8px;font-weight:700;">＋</button>
+              <div style="display:none;position:absolute;left:0;top:30px;background:#1a1a2e;color:#fff;font-size:10px;font-weight:600;padding:5px 10px;border-radius:7px;white-space:nowrap;pointer-events:none;z-index:999;box-shadow:0 2px 8px rgba(0,0,0,0.2);">グランドビジョンを追加</div>
+            </div>
+          </div>
+        </div>
+        <!-- 右端：天国ボタン（独立） -->
+        <div style="position:relative;display:inline-block;flex-shrink:0;">
+          <button onclick="openHeavenFromBanner()" onmouseenter="this.nextElementSibling.style.display='block'" onmouseleave="this.nextElementSibling.style.display='none'" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;font-size:0.72em;color:rgba(255,255,255,0.45);cursor:pointer;padding:4px 10px;">🌟 天国</button>
+          <div style="display:none;position:absolute;right:0;top:30px;background:#1a1a2e;color:#fff;font-size:10px;font-weight:600;padding:5px 10px;border-radius:7px;white-space:nowrap;pointer-events:none;z-index:999;box-shadow:0 2px 8px rgba(0,0,0,0.2);">達成した志を見る</div>
+        </div>
+      </div>
+    </div>
+    <!-- グランドビジョンがない場合の追加ボタン -->
+    <div id="grandVisionEmpty" style="display:none;flex-shrink:0;padding:6px 12px;background:#f8f6ff;border-bottom:1px solid #ede9fe;text-align:right;">
+      <button onclick="openGrandVisionEditor(null)" style="background:none;border:1px dashed #c4b5fd;border-radius:8px;color:#a78bfa;font-size:0.75em;padding:4px 10px;cursor:pointer;">🎖️ グランドビジョンを作る</button>
+    </div>
+    <!-- 上部：blueprintカード一覧 -->
+    <div id="gantBlueprintArea" style="overflow-x:hidden; overflow-y:auto; display:grid; grid-template-columns:repeat(2,1fr); gap:8px; padding:10px 12px; border-bottom:1px solid #e8e8e8; background:#fff; -webkit-overflow-scrolling:touch; height:280px; flex-shrink:0;">
+            <!-- blueprintカードがJSで挿入される -->
     </div>
     <!-- 時間スケール切替 -->
     <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 16px; background:#fff; border-bottom:1px solid #efefef;">
@@ -3469,6 +3503,12 @@
         <div id="blueprintEmojiGrid" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
       </div>
       <textarea id="blueprintVisionInput" placeholder="ビジョン（任意）" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:0.9em; box-sizing:border-box; margin-bottom:12px; height:60px; resize:none;"></textarea>
+      <div style="margin-bottom:12px;">
+        <label style="font-size:0.8em;color:#666;display:block;margin-bottom:4px;font-weight:600;">🎖️ グランドビジョンに紐づける</label>
+        <select id="blueprintGvSelect" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:0.88em;color:#333;background:#fff;">
+          <option value="">紐づけない</option>
+        </select>
+      </div>
       <div style="display:flex; gap:8px; margin-bottom:12px;">
         <div style="flex:1;">
           <label style="font-size:0.8em; color:#666; display:block; margin-bottom:4px;">開始日</label>
@@ -3498,6 +3538,7 @@
       <div style="display:flex;gap:8px;padding:12px 24px 20px;border-top:1px solid #f0f0f0;border-radius:0 0 16px 16px;background:#fff;flex-shrink:0;">
         <button onclick="saveBlueprintEditor()" style="flex:1;padding:10px;background:#262626;color:#fff;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;font-weight:600;">保存</button>
         <button onclick="closeBlueprintEditor()" style="padding:10px 16px;background:#f5f5f5;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;">キャンセル</button>
+        <button id="blueprintHeavenBtn" onclick="sendBlueprintToHeaven()" style="padding:10px 16px;background:#fff;border:1px solid #a78bfa;color:#a78bfa;border-radius:8px;font-size:0.9em;cursor:pointer;display:none;">🌟 天国へ</button>
         <button id="blueprintDeleteBtn" onclick="deleteBlueprint()" style="padding:10px 16px;background:#fff;border:1px solid #ff3b30;color:#ff3b30;border-radius:8px;font-size:0.9em;cursor:pointer;display:none;">削除</button>
       </div>
     </div>
@@ -4932,22 +4973,38 @@
      * - UUIDなら完全に防止可能
      */
     function generateTaskId() {
-      // UUID v7生成（タイムスタンプ+ランダム、時系列ソート可能）
-      // RFC 9562準拠
-      const now = Date.now(); // ミリ秒タイムスタンプ 48bit
-      const hi = Math.floor(now / 0x100000000);
-      const lo = now >>> 0;
-      // rand_a (12bit) + rand_b (62bit)
-      const ra = crypto.getRandomValues(new Uint8Array(10));
-      const rand_a = ((ra[0] & 0x0f) << 8) | ra[1];            // 12bit
-      const rand_b0 = ((ra[2] & 0x3f) | 0x80);                 // variant bits
-      const rand_b = [rand_b0, ra[3], ra[4], ra[5], ra[6], ra[7], ra[8], ra[9]];
+      // UUID v7生成（RFC 9562準拠）
+      // 同一ミリ秒内でも単調増加を保証、オーバーフロー時は次のミリ秒を待つ
+      if (!generateTaskId._lastMs) generateTaskId._lastMs = 0;
+      if (!generateTaskId._lastRandA) generateTaskId._lastRandA = 0;
+      let now = Date.now();
+      if (now === generateTaskId._lastMs) {
+        generateTaskId._lastRandA = (generateTaskId._lastRandA + 1) & 0x0fff;
+        // rand_aがオーバーフロー(0x000に戻った)したら次のミリ秒まで待つ
+        if (generateTaskId._lastRandA === 0) {
+          while (Date.now() === now) {}
+          now = Date.now();
+          generateTaskId._lastMs = now;
+          const ra = crypto.getRandomValues(new Uint8Array(2));
+          generateTaskId._lastRandA = ((ra[0] & 0x0f) << 8) | ra[1];
+        }
+      } else {
+        generateTaskId._lastMs = now;
+        const ra = crypto.getRandomValues(new Uint8Array(2));
+        generateTaskId._lastRandA = ((ra[0] & 0x0f) << 8) | ra[1];
+      }
+      // 48bitを上位32bit・下位16bitに分割
+      const hi32 = Math.floor(now / 0x10000);
+      const lo16 = now & 0xffff;
+      const rand_a = generateTaskId._lastRandA;
+      const rb = crypto.getRandomValues(new Uint8Array(8));
+      const rand_b0 = ((rb[0] & 0x3f) | 0x80); // variant bits
       const toHex = (n, len) => n.toString(16).padStart(len, '0');
-      const p1 = toHex(hi, 8).slice(-8);                        // time_high 32bit
-      const p2 = toHex((lo >>> 16) & 0xffff, 4);               // time_mid 16bit
-      const p3 = '7' + toHex(rand_a, 3);                       // ver=7 + rand_a
-      const p4 = rand_b.slice(0, 2).map(b => toHex(b, 2)).join('');
-      const p5 = rand_b.slice(2).map(b => toHex(b, 2)).join('');
+      const p1 = toHex(hi32, 8);
+      const p2 = toHex(lo16, 4);
+      const p3 = '7' + toHex(rand_a, 3);
+      const p4 = toHex(rand_b0, 2) + toHex(rb[1], 2);
+      const p5 = [rb[2],rb[3],rb[4],rb[5],rb[6],rb[7]].map(b=>toHex(b,2)).join('');
       return `${p1}-${p2}-${p3}-${p4}-${p5}`;
     }
     // ===== v0.28 初回セットアップ用カレンダーテンプレート =====
@@ -6181,7 +6238,7 @@ function myDeckApply(idx) {
       container.innerHTML = '';
       container.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
       // 自動投入ONかつメインカレンダーが選択されている場合は折りたたみ表示
-      var autoMain = localStorage.getItem('autoMainCalendar') === 'true';
+      var autoMain = localStorage.getItem('autoMainCalendar') !== 'false';
       var mainId = localStorage.getItem('mainCalendarId') || (calendars[0] && calendars[0].id);
       var visibleCals = calendars.filter(function(c) { return c.visible; });
       // selectedCalIdが存在しない場合はfallback
@@ -7686,6 +7743,7 @@ function myDeckApply(idx) {
       renderGantChart();
     }
     function renderGantView() {
+      if (typeof window.renderGrandVisionBar === 'function') window.renderGrandVisionBar();
       renderGantBlueprints();
       // display:'flex'直後はlayoutが未確定→RAFで遅延してareaWを正確に取得
       requestAnimationFrame(function() {
@@ -8354,6 +8412,90 @@ function myDeckApply(idx) {
     }
 
     // blueprintエディタ
+
+    function sendBlueprintToHeaven() {
+      if (!_gantEditingBlueprintId) return;
+      const bp = allTasks.find(t => t.id === _gantEditingBlueprintId);
+      if (!bp) return;
+      const progress = getBlueprintProgress(bp);
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+      var box = document.createElement('div');
+      box.style.cssText = 'background:#fff;border-radius:16px;padding:24px 20px;width:92vw;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.18);text-align:left;';
+      var warningLine = progress < 100
+        ? '<div style="font-size:0.8em;color:#f59e0b;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:8px 12px;margin-bottom:14px;">⚠️ まだ' + progress + '%だよ。本当に天国に送る？</div>'
+        : '';
+      box.innerHTML = '<div style="text-align:center;font-size:2.2em;margin-bottom:10px;">🌟</div>'
+        + '<div style="text-align:center;font-size:1em;font-weight:700;color:#333;margin-bottom:12px;">志の天国へ送るよ</div>'
+        + warningLine
+        + '<div style="font-size:0.85em;color:#444;line-height:1.9;margin-bottom:16px;">'
+        + '「' + bp.title + '」、よく頑張ったね。<br>'
+        + '造営からは消えるけど、図書館の「志の天国」にいつでも見に行けるよ。<br>'
+        + '自分の頑張ってきたこと、ちゃんと残ってるから安心してね。'
+        + '</div>'
+        + '<div style="background:#f8f6ff;border-radius:10px;padding:12px 14px;margin-bottom:16px;line-height:1.8;">'
+        + '<div style="font-size:0.88em;font-weight:700;color:#a78bfa;">貢献感は、幸福の源泉。</div>'
+        + '<div style="font-size:0.78em;color:#888;margin-top:2px;">ここに来るたびに、自分の貢献を確かめてね。<br>自分の自分に対する貢献も、人に対する貢献も幸福の源泉だよ！</div>'
+        + '</div>'
+        + '<div style="font-size:0.82em;color:#a78bfa;margin-bottom:20px;">またやり直したくなったら、天国から戻せるよ。</div>'
+        + '<div style="display:flex;flex-direction:column;gap:8px;">'
+        + '<button id="heavenConfirmBtn" style="width:100%;padding:12px;background:linear-gradient(135deg,#a78bfa,#6d28d9);color:#fff;border:none;border-radius:10px;font-size:0.9em;font-weight:700;cursor:pointer;">🌟 天国へ送る</button>'
+        + '<button id="heavenCancelBtn" style="width:100%;padding:10px;background:#f5f5f5;border:none;border-radius:10px;font-size:0.9em;cursor:pointer;color:#666;">やっぱりやめとく</button>'
+        + '</div>';
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
+      overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
+      document.getElementById('heavenConfirmBtn').onclick = function() {
+        bp.inHeaven = true;
+        bp.heavenAt = new Date().toISOString();
+        bp.heavenProgress = getBlueprintProgress(bp);
+        if (_gantSelectedBlueprintId === bp.id) _gantSelectedBlueprintId = null;
+        // 配下タスクを日次・週間から非表示にする
+        const gants = getGantsByBlueprint(bp.id);
+        gants.forEach(function(g) {
+          (g.taskIds||[]).forEach(function(tid) {
+            const t = allTasks.find(function(x){ return x.id === tid; });
+            if (t) { t._preHeavenScope = t.displayScope; t.displayScope = 'heaven'; }
+          });
+        });
+        saveAllTasks();
+        overlay.remove();
+        closeBlueprintEditor();
+        renderGantView();
+        renderAllSections();
+        showToast('🌟 志の天国へ送りました。お疲れ様！', {type:'success', duration:4000});
+      };
+      document.getElementById('heavenCancelBtn').onclick = function(){ overlay.remove(); };
+    }
+
+    function getHeavenBlueprints() {
+      return allTasks.filter(t => t.kind === 'blueprint' && t.inHeaven).sort((a,b) => (b.heavenAt||'').localeCompare(a.heavenAt||''));
+    }
+
+function reviveBlueprint(id) {
+  var bp = allTasks.find(function(t){ return t.id === id; });
+  if (!bp) return;
+  bp.inHeaven = false;
+  bp.heavenAt = null;
+  bp.heavenProgress = null;
+  // 配下タスクのdisplayScopeを元に戻す
+  var gants = allTasks.filter(function(t){ return t.kind === 'gantt' && t.blueprintId === id; });
+  gants.forEach(function(g) {
+    (g.taskIds||[]).forEach(function(tid) {
+      var t = allTasks.find(function(x){ return x.id === tid; });
+      if (t && t.displayScope === 'heaven') {
+        t.displayScope = t._preHeavenScope || 'daily_only';
+        delete t._preHeavenScope;
+      }
+    });
+  });
+  saveAllTasks();
+  renderHeavenBlueprints();
+  if (typeof renderGantView === 'function') renderGantView();
+  if (typeof renderAllSections === 'function') renderAllSections();
+  showToast('🏰 造営に戻ってきたよ！', {type:'success', duration:3000});
+}
+
     function openBlueprintEditor(id) {
       _gantEditingBlueprintId = id;
       const modal = document.getElementById('blueprintEditorModal');
@@ -8364,12 +8506,14 @@ function myDeckApply(idx) {
       const startInput = document.getElementById('blueprintStartInput');
       const endInput = document.getElementById('blueprintEndInput');
       const deleteBtn = document.getElementById('blueprintDeleteBtn');
+      const heavenBtn = document.getElementById('blueprintHeavenBtn');
       if (!titleInput || !visionInput || !startInput || !endInput) return;
       titleInput.value  = bp ? bp.title : '';
       visionInput.value = bp ? (bp.vision || '') : '';
       startInput.value  = bp ? (bp.startDate || '') : '';
       endInput.value    = bp ? (bp.endDate   || '') : '';
       if (deleteBtn) deleteBtn.style.display = id ? '' : 'none';
+      if (heavenBtn) heavenBtn.style.display = id ? '' : 'none';
       // 絵文字ボタン初期化
       const _bpEmojiBtn = document.getElementById('blueprintEmojiBtn');
       if (_bpEmojiBtn) _bpEmojiBtn.textContent = (bp && bp.emoji) ? bp.emoji : '🏰';
@@ -8409,6 +8553,15 @@ function myDeckApply(idx) {
         }).join('');
       }
       modal.style.display = 'flex';
+      // グランドビジョンセレクトを初期化
+      const _gvSel = document.getElementById('blueprintGvSelect');
+      if (_gvSel) {
+        const _gvs = allTasks.filter(function(t){ return t.kind === 'grandvision'; }).sort(function(a,b){ return (a.order||0)-(b.order||0); });
+        _gvSel.innerHTML = '<option value="">紐づけない</option>' + _gvs.map(function(gv){
+          return '<option value="' + gv.id + '">' + (gv.emoji||'🎖️') + ' ' + gv.title + '</option>';
+        }).join('');
+        _gvSel.value = (bp && bp.grandvisionId) ? bp.grandvisionId : '';
+      }
     }
     function saveBlueprintEditor() {
       const title = document.getElementById('blueprintTitleInput');
@@ -8437,6 +8590,9 @@ function myDeckApply(idx) {
               .forEach(g => { g.emoji = _newBpEmoji; });
           }
           bp.emoji = _newBpEmoji;
+          // グランドビジョン紐づけ
+          const _gvSelSave = document.getElementById('blueprintGvSelect');
+          bp.grandvisionId = _gvSelSave ? (_gvSelSave.value || null) : bp.grandvisionId;
         }
       } else {
         const blueprints = getBlueprints();
@@ -8450,6 +8606,7 @@ function myDeckApply(idx) {
           color:     (function(){ const e=document.getElementById('blueprintBgPicker');   return e?e.value:'#c5cae9'; })(),
           textColor: (function(){ const e=document.getElementById('blueprintTextPicker'); return e?e.value:'#283593'; })(),
           emoji:     (function(){ const e=document.getElementById('blueprintEmojiBtn'); return e?e.textContent.trim():'🏰'; })(),
+          grandvisionId: (function(){ const e=document.getElementById('blueprintGvSelect'); return e&&e.value?e.value:null; })(),
           order: blueprints.length,
           ganttIds: [],
           achieveMode: 'both',
@@ -9203,7 +9360,7 @@ function myDeckApply(idx) {
       document.getElementById('createTaskSection').value = '1';
       // カレンダー選択UI: 自動投入ONならメインを初期選択
       const _mainId = localStorage.getItem('mainCalendarId') || (calendars[0] && calendars[0].id) || 'work';
-      const _autoMain = localStorage.getItem('autoMainCalendar') === 'true';
+      const _autoMain = localStorage.getItem('autoMainCalendar') !== 'false';
       _createCalendarId = _autoMain ? _mainId : (_createCalendarId || _mainId);
       renderCalendarSelector('createCalendarBtns', _createCalendarId, function(id) { _createCalendarId = id; });
       // 時間を設定（hourが渡されていれば）
@@ -10060,12 +10217,14 @@ function myDeckApply(idx) {
       actions.innerHTML = `
         <button class="btn-promote">タスクに</button>
         <button class="btn-journal">日誌に</button>
+        <button class="btn-gant">造営に</button>
         <button class="btn-save">保存</button>
         <button class="btn-del">削除</button>
       `;
       actions.querySelector('.btn-save').onclick    = (e) => { e.stopPropagation(); saveInlineEdit(div, item, ta.value); };
       actions.querySelector('.btn-promote').onclick = (e) => { e.stopPropagation(); promoteInlineItem(div, item); };
       actions.querySelector('.btn-del').onclick     = (e) => { e.stopPropagation(); deleteInlineItem(div, item); };
+      actions.querySelector('.btn-gant').onclick    = (e) => { e.stopPropagation(); promoteScratchToGant(ta.value, item); };
       actions.querySelector('.btn-journal').onclick = (e) => { e.stopPropagation(); saveScratchItemAsJournal(ta.value, item); };
       div.appendChild(actions);
     }
@@ -10798,6 +10957,13 @@ function myDeckApply(idx) {
       localStorage.removeItem('_dbg_log');
     })();
     loadAllSettings();
+    // 旧キーの掃除（毎回実行・既存ユーザー対応）
+    try {
+      ['dataVersion','taskIdCounter','simpleMode','craftModeEnabled',
+       'dailyViewMode','initialView','monthlyMode','weeklyDays','weeklyRowH',
+       'weeklyCellScale','weeklyTimeBar','tlScrollMode','wgScrollMode'
+      ].forEach(function(k){ localStorage.removeItem(k); });
+    } catch(e) {}
     // 旧キーの掃除（毎回実行・既存ユーザー対応）
     try {
       var _legacyKeys = ['dataVersion', 'taskIdCounter', 'simpleMode', 'craftModeEnabled',
@@ -12567,10 +12733,11 @@ function loadSettingsUI() {
           mainSel.appendChild(opt);
         });
       }
-      // 自動投入チェックの初期値
+      // 自動投入チェックの初期値（未設定=初回はデフォルトON）
       const autoCheck = document.getElementById('autoMainCalendarCheck');
       if (autoCheck) {
-        autoCheck.checked = localStorage.getItem('autoMainCalendar') === 'true';
+        const _autoVal = localStorage.getItem('autoMainCalendar');
+        autoCheck.checked = _autoVal === null ? true : _autoVal === 'true';
       }
       calendars.forEach(function(cal, idx) {
         const row = document.createElement('div');
@@ -12981,6 +13148,58 @@ function loadSettingsUI() {
       // 状態を保存
       allSettings.flags.inspectionMode = inspectionMode; saveAllSettings();
     }
+
+        function promoteScratchToGant(text, item) {
+          const t = (text || '').trim();
+          if (!t) return;
+          // 改行・全角スペースで分割
+          const lines = t.split(/[\n　]/)
+            .map(function(l){ return l.replace(/^[\d]+[\.．、。\)）\]】]\s*/, '').trim(); })
+            .filter(Boolean);
+          const bpTitle = lines[0].slice(0, 30);
+          // 開始・終了・時刻をパース
+          var startDate = null, endDate = null, startTime = '', endTime = '';
+          var taskLines = [];
+          lines.slice(1).forEach(function(l) {
+            var mStart = l.match(/^開始[：:]\s*(\d{4}-\d{2}-\d{2})(?:\s*(\d{2}:\d{2}))?/);
+            var mEnd   = l.match(/^終了[：:]\s*(\d{4}-\d{2}-\d{2})(?:\s*(\d{2}:\d{2}))?/);
+            if (mStart) { startDate = mStart[1]; if (mStart[2]) startTime = mStart[2]; }
+            else if (mEnd) { endDate = mEnd[1]; if (mEnd[2]) endTime = mEnd[2]; }
+            else taskLines.push(l.replace(/^(目標|手段|装備|実行手順)[：:]\s*/, '').trim());
+          });
+          taskLines = taskLines.filter(Boolean);
+          // 志（blueprint）を作成
+          const bpId = generateTaskId();
+          const bp = { id: bpId, kind: 'blueprint', title: bpTitle, vision: '', color: '#a78bfa',
+            startDate: startDate, endDate: endDate, order: getBlueprints().length, createdAt: new Date().toISOString() };
+          allTasks.push(bp);
+          // 工程（gantt）を作成
+          const gantt = { id: generateTaskId(), kind: 'gantt', title: '第1ステップ', blueprintId: bpId,
+            taskIds: [], startDate: startDate, endDate: endDate,
+            startTime: startTime, endTime: endTime,
+            achieved: false, achievedAt: null,
+            progressMode: 'auto', progressManual: null, emoji: '🏰', createdAt: new Date().toISOString() };
+          allTasks.push(gantt);
+          // 残りの行をタスクとして生成し工程に紐づける
+          const today = getLocalDateStr(new Date());
+          taskLines.forEach(function(line) {
+            if (!line) return;
+            const task = { id: generateTaskId(), kind: 'task', text: line, date: startDate || today,
+              section: 1, completed: false, done: false, displayScope: 'daily_only',
+              createdAt: new Date().toISOString() };
+            allTasks.push(task);
+            gantt.taskIds.push(task.id);
+          });
+          // 雑記帳アイテムは削除しない（メモとして残す）
+          saveAllTasks();
+          showToast('🏰 造営に登録しました', {type:'success'});
+          setTimeout(function(){
+            if (allSettings.ui.gantEnabled) {
+              switchView('gant');
+              setTimeout(function(){ selectGantBlueprint(bpId); }, 300);
+            }
+          }, 300);
+        }
     window.switchView = switchView;
     window.renderCalendarFilter = renderCalendarFilter;
     window.isCalendarVisible = isCalendarVisible;
@@ -12999,6 +13218,7 @@ function loadSettingsUI() {
     window.changeTimelineDate = changeTimelineDate;
     window.changeWeek = changeWeek;
     window.changeYear = changeYear;
+    window.promoteScratchToGant = promoteScratchToGant;
     window.clearAllData = clearAllData;
     window.clearStampSelection = clearStampSelection;
     window.clearTimeSelect = clearTimeSelect;
@@ -13042,6 +13262,11 @@ function loadSettingsUI() {
     window.nbShareStep3 = nbShareStep3;
     window.onYearlyCellClick = onYearlyCellClick;
     window.openBlueprintEditor = openBlueprintEditor;
+    window.sendBlueprintToHeaven = sendBlueprintToHeaven;
+    window.getHeavenBlueprints = getHeavenBlueprints;
+    window.reviveBlueprint = reviveBlueprint;
+    window.getBlueprints = getBlueprints;
+    window.getBlueprintProgress = getBlueprintProgress;
     window.openDayInfoModal = openDayInfoModal;
     window.openFamilyShareModal = openFamilyShareModal;
     window.openGanttEditor = openGanttEditor;
@@ -13084,6 +13309,253 @@ function loadSettingsUI() {
     window.unlinkGanttTask = unlinkGanttTask;
     window.unlinkTaskFromGantt = unlinkTaskFromGantt;
   } catch(e) { console.warn("[window公開-b3] エラー:", e); }
+
+    var _selectedGrandVisionId = null; // null=全表示
+
+        function getGrandVisions() {
+          return window.allTasks.filter(t => t.kind === 'grandvision').sort((a,b) => (a.order||0)-(b.order||0));
+        }
+
+        function renderGrandVisionBar() {
+          const banner = document.getElementById('grandVisionBanner');
+          const empty  = document.getElementById('grandVisionEmpty');
+          if (!banner || !empty) return;
+          const gvs = getGrandVisions();
+          if (gvs.length === 0) {
+            banner.style.display = 'none';
+            empty.style.display  = 'block';
+            _selectedGrandVisionId = null;
+            return;
+          }
+          empty.style.display  = 'none';
+          banner.style.display = 'flex';
+          // 選択中GVが存在しなくなった場合だけリセット（nullは全表示として正常）
+          if (_selectedGrandVisionId && !gvs.find(g => g.id === _selectedGrandVisionId)) {
+            _selectedGrandVisionId = null;
+          }
+          const gv = _selectedGrandVisionId ? gvs.find(g => g.id === _selectedGrandVisionId) : null;
+          document.getElementById('gvBannerEmoji').textContent  = gv ? (gv.emoji || '🎖️') : '🎖️';
+          document.getElementById('gvBannerTitle').textContent  = gv ? (gv.title || '') : '全作戦';
+          document.getElementById('gvBannerVision').textContent = gv ? (gv.vision || '') : '全志を表示中';
+          const sel = document.getElementById('gvBannerSelect');
+          if (sel) {
+            sel.innerHTML = '<option value="">全作戦</option>' + gvs.map(g =>
+              `<option value="${g.id}" ${g.id===_selectedGrandVisionId?'selected':''}>${g.emoji||'🎖️'} ${g.title}</option>`
+            ).join('');
+          }
+        }
+
+        function openGrandVisionEditor(id) {
+          const gv = id ? window.allTasks.find(t => t.id === id) : null;
+          const allBps = window.allTasks.filter(t => t.kind === 'blueprint').sort((a,b) => (a.order||0)-(b.order||0));
+          const bpCheckList = allBps.length === 0 ? '<div style="font-size:0.8em;color:#aaa;">志がまだありません</div>' :
+            allBps.map(bp => `
+              <label style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f0f0f0;cursor:pointer;">
+                <input type="checkbox" class="gv-bp-check" value="${bp.id}" ${bp.grandvisionId===id&&id?'checked':''} style="width:16px;height:16px;cursor:pointer;">
+                <span style="font-size:0.85em;color:#333;">${bp.emoji||'🏰'} ${bp.title}</span>
+              </label>`).join('');
+          const overlay = document.createElement('div');
+          overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+          overlay.innerHTML = `
+            <div style="background:#fff;border-radius:16px;padding:24px 20px;width:92vw;max-width:360px;max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+              <div style="font-size:1em;font-weight:700;color:#333;margin-bottom:16px;">🎖️ グランドビジョン</div>
+              <input id="gvTitleInput" type="text" placeholder="タイトル（例：部屋の完全制圧）" value="${gv?gv.title:''}"
+                style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:0.9em;box-sizing:border-box;margin-bottom:10px;">
+              <textarea id="gvVisionInput" placeholder="なぜ戦うか（ビジョン）" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:0.85em;box-sizing:border-box;height:70px;resize:none;margin-bottom:10px;">${gv?gv.vision||'':''}</textarea>
+              <div style="display:flex;gap:8px;margin-bottom:12px;">
+                <select id="gvEmojiSelect" style="flex:1;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:0.9em;">
+                  ${['🎖️','🏰','⚔️','🛡️','🌟','🔥','🎯','👑','🗺️','🏆'].map(e=>`<option value="${e}" ${(gv&&gv.emoji===e)||(!gv&&e==='🎖️')?'selected':''}>${e}</option>`).join('')}
+                </select>
+                <input id="gvColorInput" type="color" value="${gv?gv.color||'#a78bfa':'#a78bfa'}" style="width:44px;height:38px;border:none;border-radius:8px;cursor:pointer;padding:0;">
+              </div>
+              <div style="font-size:0.8em;font-weight:600;color:#666;margin-bottom:8px;">紐づける志を選ぶ</div>
+              <div style="background:#fafafa;border:1px solid #eee;border-radius:8px;padding:8px 12px;margin-bottom:12px;max-height:160px;overflow-y:auto;">
+                ${bpCheckList}
+              </div>
+              <div style="font-size:0.75em;color:#aaa;margin-bottom:12px;">visionが空の志には、このビジョンを自動コピーします</div>
+              <div style="display:flex;gap:8px;">
+                ${gv?`<button onclick="_deleteGrandVision('${gv.id}')" style="padding:10px 14px;background:#fff;border:1px solid #f66;color:#f66;border-radius:8px;font-size:0.85em;cursor:pointer;">削除</button>`:''}
+                <button onclick="this.closest('div[style*=fixed]').remove()" style="flex:1;padding:10px;background:#f0f0f0;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;">キャンセル</button>
+                <button onclick="_saveGrandVision('${id||''}',this)" style="flex:1;padding:10px;background:#a78bfa;color:#fff;border:none;border-radius:8px;font-size:0.9em;font-weight:700;cursor:pointer;">保存</button>
+              </div>
+            </div>`;
+          document.body.appendChild(overlay);
+          overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
+          setTimeout(function(){ const el=document.getElementById('gvTitleInput'); if(el) el.focus(); }, 100);
+        }
+
+        function _saveGrandVision(id, btn) {
+          const title = (document.getElementById('gvTitleInput').value||'').trim();
+          if (!title) { showToast('タイトルを入力してください',{type:'warn'}); return; }
+          const vision = (document.getElementById('gvVisionInput').value||'').trim();
+          const emoji  = document.getElementById('gvEmojiSelect').value;
+          const color  = document.getElementById('gvColorInput').value;
+          // チェックされた志のIDを取得
+          const checkedIds = Array.from(document.querySelectorAll('.gv-bp-check:checked')).map(function(c){ return c.value; });
+          const gvId = id || generateTaskId();
+          if (id) {
+            const gv = window.allTasks.find(t => t.id === id);
+            if (gv) { gv.title=title; gv.vision=vision; gv.emoji=emoji; gv.color=color; }
+          } else {
+            const gvs = getGrandVisions();
+            window.allTasks.push({ id: gvId, kind:'grandvision', title, vision, emoji, color, order: gvs.length, createdAt: new Date().toISOString() });
+          }
+          // 全志のgrandvisionIdを更新
+          const linkedBps = window.allTasks.filter(t => t.kind==='blueprint' && checkedIds.includes(t.id));
+          const unlinkedBps = window.allTasks.filter(t => t.kind==='blueprint' && !checkedIds.includes(t.id) && t.grandvisionId === gvId);
+          // チェックを外した志は解除
+          unlinkedBps.forEach(function(bp){ bp.grandvisionId = null; });
+          // チェックした志のgrandvisionIdを更新
+          linkedBps.forEach(function(bp){ bp.grandvisionId = gvId; });
+    
+          // visionが空の志は無条件で継承
+          const emptyVisionBps = linkedBps.filter(function(bp){ return !bp.vision; });
+          emptyVisionBps.forEach(function(bp){ bp.vision = vision; });
+    
+          // visionが既にある志が存在する場合は選択モーダル
+          const hasVisionBps = linkedBps.filter(function(bp){ return bp.vision && vision; });
+          if (hasVisionBps.length > 0 && vision) {
+            saveAllTasks();
+            btn.closest('div[style*=fixed]').remove();
+            renderGrandVisionBar();
+            renderGantBlueprints();
+            showToast('🎖️ グランドビジョンを保存しました',{type:'success'});
+            // 選択モーダルを出す
+            var overlay2 = document.createElement('div');
+            overlay2.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+            var box2 = document.createElement('div');
+            box2.style.cssText = 'background:#fff;border-radius:16px;padding:24px 20px;width:92vw;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,0.18);';
+            box2.innerHTML = '<div style="font-size:1em;font-weight:700;color:#333;margin-bottom:8px;">🎖️ GVのビジョンが変わりました</div>'
+              + '<div style="font-size:0.82em;color:#888;margin-bottom:16px;">配下の志（' + hasVisionBps.length + '件）のビジョンをどうしますか？</div>'
+              + '<button id="gvVisionAppend" style="width:100%;padding:10px;background:#a78bfa;color:#fff;border:none;border-radius:8px;font-size:0.9em;font-weight:700;cursor:pointer;margin-bottom:8px;">追記する</button>'
+              + '<button id="gvVisionOverwrite" style="width:100%;padding:10px;background:#f66;color:#fff;border:none;border-radius:8px;font-size:0.9em;font-weight:700;cursor:pointer;margin-bottom:8px;">上書きする</button>'
+              + '<button id="gvVisionKeep" style="width:100%;padding:10px;background:#f0f0f0;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;">そのままにする</button>';
+            overlay2.appendChild(box2);
+            document.body.appendChild(overlay2);
+            document.getElementById('gvVisionAppend').onclick = function(){
+              hasVisionBps.forEach(function(bp){ bp.vision = bp.vision + '\n' + vision; });
+              saveAllTasks(); overlay2.remove();
+              showToast('📝 ビジョンを追記しました',{type:'success'});
+              renderGantBlueprints();
+            };
+            document.getElementById('gvVisionOverwrite').onclick = function(){
+              hasVisionBps.forEach(function(bp){ bp.vision = vision; });
+              saveAllTasks(); overlay2.remove();
+              showToast('📝 ビジョンを上書きしました',{type:'success'});
+              renderGantBlueprints();
+            };
+            document.getElementById('gvVisionKeep').onclick = function(){ overlay2.remove(); };
+            return;
+          }
+          saveAllTasks();
+          btn.closest('div[style*=fixed]').remove();
+          renderGrandVisionBar();
+          renderGantBlueprints();
+          showToast('🎖️ グランドビジョンを保存しました',{type:'success'});
+        }
+
+        function _deleteGrandVision(id) {
+          const linkedCount = window.allTasks.filter(t => t.kind==='blueprint' && t.grandvisionId===id).length;
+          window.allTasks.filter(t => t.kind==='blueprint' && t.grandvisionId===id).forEach(function(bp){ bp.grandvisionId = null; });
+          const idx = window.allTasks.findIndex(t => t.id === id);
+          if (idx !== -1) window.allTasks.splice(idx, 1);
+          if (_selectedGrandVisionId === id) _selectedGrandVisionId = null;
+          saveAllTasks();
+          document.querySelectorAll('div[style*=fixed]').forEach(function(el){ if(el.querySelector('#gvTitleInput')) el.remove(); });
+          renderGrandVisionBar();
+          renderGantBlueprints();
+          renderGantChart();
+          showToast('グランドビジョンを削除しました' + (linkedCount > 0 ? '（志' + linkedCount + '件の紐づきを解除）' : ''), {type:'success'});
+        }
+
+        function _onGvBannerChange(id) {
+          _selectedGrandVisionId = id || null;
+          renderGrandVisionBar();
+          renderGantBlueprints();
+          renderGantChart();
+        }
+
+    function openHeavenFromBanner() {
+      // 図書館を開いて志の天国を展開する
+      var tutorial = document.getElementById('tutorialOverlay');
+      if (tutorial) {
+        var splash = document.getElementById('tutorialSplash');
+        var main = document.getElementById('tutorialMain');
+        if (splash) splash.style.display = 'none';
+        if (main) main.style.display = 'flex';
+        tutorial.style.display = 'flex';
+        if (typeof _ycWelcomeAnim === 'function') setTimeout(_ycWelcomeAnim, 80);
+      }
+      // 図書館を開いて天国セクションを展開
+      setTimeout(function() {
+        var lib = document.getElementById('libraryContent');
+        var btn = document.getElementById('libraryToggleBtn');
+        if (lib) lib.style.display = 'block';
+        if (btn) btn.textContent = '🏰 王国の図書館 ▲';
+        var heaven = document.getElementById('aboutHeaven');
+        if (heaven && heaven.style.display === 'none') {
+          heaven.style.display = 'block';
+          renderHeavenBlueprints();
+        }
+        // 天国セクションにスクロール
+        setTimeout(function(){
+          if (heaven) heaven.scrollIntoView({behavior:'smooth', block:'start'});
+        }, 200);
+      }, 300);
+    }
+
+    function renderHeavenBlueprints() {
+      var list = document.getElementById('heavenBlueprintList');
+      if (!list) return;
+      var header = '<div style="line-height:1.9;padding:8px 0 10px 0;border-bottom:1px solid rgba(255,215,0,0.2);margin-bottom:10px;">'
+        + '<div style="font-size:1em;font-weight:700;color:#ffd700;">貢献感は、幸福の源泉。</div>'
+        + '<div style="font-size:0.82em;color:#ccc;margin-top:2px;">ここに来るたびに、自分の貢献を確かめてね。</div>'
+        + '<div style="font-size:0.82em;color:#ccc;">自分の自分に対する貢献も、人に対する貢献も幸福の源泉だよ！</div>'
+        + '</div>';
+      var bps = (typeof getHeavenBlueprints === 'function') ? getHeavenBlueprints() : [];
+      if (bps.length === 0) {
+        list.innerHTML = header + '<div style="color:#888;font-size:0.85em;text-align:center;padding:12px;">まだ天国にいる志はいないよ。</div>';
+        return;
+      }
+      list.innerHTML = header + bps.map(function(bp) {
+        var date = bp.heavenAt ? bp.heavenAt.slice(0,10) : '';
+        var prog = bp.heavenProgress !== undefined && bp.heavenProgress !== null ? bp.heavenProgress : '?';
+        var gv = bp.grandvisionId ? window.allTasks.find(function(t){ return t.id === bp.grandvisionId && t.kind === 'grandvision'; }) : null;
+        var gants = window.allTasks.filter(function(t){ return t.kind==='gantt' && t.blueprintId===bp.id; });
+        var taskIds = gants.reduce(function(arr,g){ return arr.concat(g.taskIds||[]); },[]);
+        var tasks = taskIds.map(function(tid){ return window.allTasks.find(function(t){ return t.id===tid; }); }).filter(Boolean);
+        var doneCount = tasks.filter(function(t){ return t.done; }).length;
+        var taskHtml = tasks.length === 0
+          ? '<div style="font-size:0.75em;color:#666;padding:4px 0;">タスクの記録はないよ。</div>'
+          : tasks.map(function(t){
+              return '<div style="font-size:0.75em;padding:3px 0;display:flex;align-items:flex-start;gap:5px;color:' + (t.done ? '#c4b5fd' : '#777') + ';">'
+                + (t.done ? '✅' : '⬜') + '<span>' + t.text + '</span></div>';
+            }).join('');
+        var expandId = 'heaven-expand-' + bp.id;
+        return '<div style="background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);border-radius:10px;padding:10px 12px;">'
+          + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">'
+          + '<div style="display:flex;align-items:center;gap:6px;min-width:0;flex:1;">'
+          + '<span style="font-size:1em;">' + (bp.emoji||'🌟') + '</span>'
+          + '<span style="font-size:0.85em;font-weight:700;color:#e9d5ff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + bp.title + '</span>'
+          + '</div>'
+          + '<div style="display:flex;gap:4px;flex-shrink:0;">'
+          + (tasks.length > 0 ? '<button onclick="var el=document.getElementById(\'' + expandId + '\');el.style.display=el.style.display===\'none\'?\'block\':\'none\';" style="font-size:0.75em;padding:4px 8px;background:rgba(167,139,250,0.2);border:1px solid rgba(167,139,250,0.4);border-radius:6px;color:#e9d5ff;cursor:pointer;">記録を見る</button>' : '')
+          + '<button onclick="reviveBlueprint(\'' + bp.id + '\')" style="font-size:0.75em;padding:4px 10px;background:rgba(167,139,250,0.3);border:1px solid rgba(167,139,250,0.5);border-radius:6px;color:#e9d5ff;cursor:pointer;">造営に戻す</button>'
+          + '</div>'
+          + '</div>'
+          + (gv ? '<div style="font-size:0.72em;color:#ffd700;margin-top:4px;">🎖️ ' + (gv.emoji||'') + ' ' + gv.title + '</div>' : '')
+          + (bp.vision ? '<div style="font-size:0.75em;color:#c4b5fd;margin-top:3px;line-height:1.5;">' + bp.vision + '</div>' : '')
+          + '<div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap;">'
+          + (date ? '<span style="font-size:0.72em;color:#888;">🗓️ ' + date + '</span>' : '')
+          + '<span style="font-size:0.72em;color:#a78bfa;">✨ ' + prog + '%達成</span>'
+          + (tasks.length > 0 ? '<span style="font-size:0.72em;color:#888;">' + doneCount + '/' + tasks.length + '件完了</span>' : '')
+          + '</div>'
+          + '<div id="' + expandId + '" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(167,139,250,0.15);">'
+          + taskHtml
+          + '</div>'
+          + '</div>';
+      }).join('');
+    }
 
     // 状態の復元（ページロード時）
     const savedView = localStorage.getItem('currentView');
@@ -16859,206 +17331,7 @@ try {
     </div>
     <div style="border-top:1px solid rgba(255,255,255,0.15);margin:16px 0 12px;"></div>
     <div id="librarySection">
-      <button onclick="toggleLibrary()" id="libraryToggleBtn"
-        style="width:100%;text-align:center;background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.2);border-radius:10px;padding:10px 12px;color:#ffd700;font-size:0.88em;font-weight:bold;cursor:pointer;letter-spacing:0.05em;">
-        🏰 王国の図書館 ▼
-      </button>
-      <div id="libraryContent" style="display:none;margin-top:8px;">
-        <div id="aboutAccordion">
-          <!-- やることクラフトが大切にしていること -->
-          <div style="margin-bottom:6px;">
-            <button onclick="toggleAbout('aboutPhilosophy')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#81c784;font-size:0.85em;font-weight:bold;cursor:pointer;">🌿 やることクラフトが大切にしていること</button>
-            <div id="aboutPhilosophy" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:14px 12px;font-size:0.82em;color:#ccc;line-height:1.7;">
-              <div style="color:#ffd700;font-weight:bold;margin-bottom:10px;font-size:0.9em;">🏰 王国の心得</div>
-              <div style="margin-bottom:12px;">
-                <div style="color:#4facfe;font-weight:bold;margin-bottom:3px;">🌾 動いていると、楽しくなっていく</div>
-                <div>小さな一歩。まずは楽しく。<br>動き出せば、次が見えてくる。</div>
-              </div>
-              <div style="margin-bottom:12px;">
-                <div style="color:#a78bfa;font-weight:bold;margin-bottom:3px;">🪣 自分の分を、決めて守る</div>
-                <div>詰め込みすぎない。全部やろうとしない。<br>今日の自分にできることだけを、丁寧に。<br>それが長く続く王国の秘訣です。</div>
-              </div>
-              <div style="margin-bottom:12px;">
-                <div style="color:#f8bbd0;font-weight:bold;margin-bottom:3px;">🎁 余ったら、誰かに渡す</div>
-                <div>うまくいったやり方、続けられたルーティン。<br>デッキにして誰かに贈ってみてください。<br>渡したとき、あなたの王国はもっと豊かになります。</div>
-              </div>
-              <div style="margin-bottom:4px;">
-                <div style="color:#ffd700;font-weight:bold;margin-bottom:3px;">🕯️ 在るも、接するも、まごころで</div>
-                <div>単なる「正直」ではなく、まごころ。<br>頭で考えるだけでなく、行動で示す誠実さ。<br>影日向なく、見ていなくても出来ることをやろう。<br>自分自身への誠実さも含まれるよ！<br>まずは楽しく、まごころで！</div>
-              </div>
-            </div>
-          </div>
-          <!-- やることクラフトを紹介する -->
-          <div style="margin-bottom:6px;">
-            <button onclick="toggleAbout('aboutIntro')" style="width:100%;text-align:left;background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.25);border-radius:8px;padding:8px 12px;color:#ffd700;font-size:0.85em;font-weight:bold;cursor:pointer;">🏰 やることクラフトを紹介する</button>
-            <div id="aboutIntro" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,215,0,0.15);border-radius:0 0 8px 8px;padding:16px 12px;font-size:0.82em;color:#ccc;line-height:1.7;">
-              <div style="color:#ffd700;font-size:0.88em;margin-bottom:16px;line-height:1.7;">
-                やることクラフトを紹介してくれた方に、<br>
-                <strong style="color:#fff;">デッキをプレゼントします。</strong><br>
-                <span style="color:#aaa;font-size:0.9em;">紹介後、Discordでお知らせください。</span>
-              </div>
-              <div style="margin-bottom:20px;">
-                <div style="font-size:0.78em;color:#aaa;margin-bottom:10px;">📖 紹介ページを読む</div>
-                <div style="display:flex;gap:10px;">
-                  <button onclick="openLpModal('women')" style="flex:1;padding:10px 8px;background:rgba(248,187,208,0.12);border:1px solid rgba(248,187,208,0.3);border-radius:8px;color:#f8bbd0;font-size:0.82em;font-weight:bold;cursor:pointer;">🌸 女性向けを読む</button>
-                  <button onclick="openLpModal('men')" style="flex:1;padding:10px 8px;background:rgba(129,199,132,0.12);border:1px solid rgba(129,199,132,0.3);border-radius:8px;color:#81c784;font-size:0.82em;font-weight:bold;cursor:pointer;">🌿 男性向けを読む</button>
-                </div>
-              </div>
-              <div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:16px;margin-bottom:4px;">
-                <div style="font-size:0.78em;color:#aaa;margin-bottom:12px;">📲 QRコードで共有する</div>
-                <div style="display:flex;gap:16px;flex-wrap:wrap;">
-                  <div style="text-align:center;">
-                    <div style="font-size:0.75em;color:#f8bbd0;font-weight:bold;margin-bottom:6px;">🌸 女性向け</div>
-                    <div style="background:white;border-radius:6px;padding:6px;display:inline-block;">
-                      <img id="qrWomen" src="" alt="女性向けLP QR" style="width:100px;height:100px;display:block;">
-                    </div>
-                  </div>
-                  <div style="text-align:center;">
-                    <div style="font-size:0.75em;color:#81c784;font-weight:bold;margin-bottom:6px;">🌿 男性向け</div>
-                    <div style="background:white;border-radius:6px;padding:6px;display:inline-block;">
-                      <img id="qrMen" src="" alt="男性向けLP QR" style="width:100px;height:100px;display:block;">
-                    </div>
-                  </div>
-                  <div style="text-align:center;">
-                    <div style="font-size:0.75em;color:#a78bfa;font-weight:bold;margin-bottom:6px;">💬 Discord</div>
-                    <div style="background:white;border-radius:6px;padding:6px;display:inline-block;">
-                      <img id="qrDiscord" src="" alt="Discord QR" style="width:100px;height:100px;display:block;">
-                    </div>
-                  </div>
-                  <div style="text-align:center;">
-                    <div style="font-size:0.75em;color:#4caf50;font-weight:bold;margin-bottom:6px;">💚 LINE</div>
-                    <div style="background:white;border-radius:6px;padding:6px;display:inline-block;width:112px;height:112px;display:flex;align-items:center;justify-content:center;">
-                      <img id="qrLine" src="" alt="LINE QR" style="width:100px;height:100px;display:none;">
-                      <div id="qrLinePlaceholder" style="width:100px;height:100px;display:flex;align-items:center;justify-content:center;font-size:0.7em;color:#aaa;text-align:center;line-height:1.5;">準備中</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- 王国について -->
-          <div style="margin-bottom:6px;">
-            <button onclick="toggleAbout('aboutKingdom')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#a78bfa;font-size:0.85em;font-weight:bold;cursor:pointer;">🏰 王国について</button>
-            <div id="aboutKingdom" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:10px 12px;font-size:0.82em;color:#ccc;line-height:1.6;">
-              あなたのやることが王国を動かします。与え、動き、継続する。それが栄える王国の姿です。
-            </div>
-          </div>
-          <!-- GDP -->
-          <div style="margin-bottom:6px;">
-            <button onclick="toggleAbout('aboutGDP')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#ffd700;font-size:0.85em;font-weight:bold;cursor:pointer;">💰 GDPとは？</button>
-            <div id="aboutGDP" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:10px 12px;font-size:0.82em;color:#ccc;line-height:1.6;">
-              論語とそろばん。動いた分だけ王国は豊かになります。タスクを完了するたびにGDPが積み上がります。
-            </div>
-          </div>
-          <!-- 徳 -->
-          <div style="margin-bottom:6px;">
-            <button onclick="toggleAbout('aboutToku')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#f8bbd0;font-size:0.85em;font-weight:bold;cursor:pointer;">🌸 徳とは？</button>
-            <div id="aboutToku" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:10px 12px;font-size:0.82em;color:#ccc;line-height:1.6;">
-              与えることで積まれます。デッキを配布したり、タスクを家族と共有すると徳が積まれます。一度積まれた徳は消えません。<br><br>
-              徳と業の分かれ目は「人に喜んでもらえるかどうか」。喜んでもらえるように工夫した行動が、徳を積みます。
-            </div>
-          </div>
-          <!-- 業 -->
-          <div style="margin-bottom:6px;">
-            <button onclick="toggleAbout('aboutGou')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#ffb74d;font-size:0.85em;font-weight:bold;cursor:pointer;">🌙 業とは？</button>
-            <div id="aboutGou" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:10px 12px;font-size:0.82em;color:#ccc;line-height:1.6;">
-              王国には、与える力と受け取る力のバランスがあります。受け取るだけでは、少しずつ王国に影が差してくることも。<br><br>
-              公式デッキ（ショップ内のデッキ）はそのまま受け取って大丈夫です。安心して使ってください。
-            </div>
-          </div>
-          <!-- 徳分 -->
-          <div style="margin-bottom:6px;">
-            <button onclick="toggleAbout('aboutTokubun')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#e0e0e0;font-size:0.85em;font-weight:bold;cursor:pointer;">⚖️ 徳分とは？</button>
-            <div id="aboutTokubun" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:10px 12px;font-size:0.82em;color:#ccc;line-height:1.6;">
-              徳と業のバランスを示す値です。与えることを大切にしている王国ほど、徳分が高くなります。気にしすぎなくて大丈夫。与えることを楽しんでいれば、自然とプラスになっていきます。
-            </div>
-          </div>
-          <!-- 造営ビューの使い方 -->
-          <div style="margin-bottom:6px;">
-            <button onclick="toggleAbout('aboutGantView');if(document.getElementById('aboutGantView').style.display!=='none'){showGantOnboarding();}" style="width:100%;text-align:left;background:rgba(79,172,254,0.08);border:1px solid rgba(79,172,254,0.25);border-radius:8px;padding:8px 12px;color:#4facfe;font-size:0.85em;font-weight:bold;cursor:pointer;">🏯 造営ビューの使い方</button>
-            <div id="aboutGantView" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(79,172,254,0.15);border-radius:0 0 8px 8px;padding:14px 12px;font-size:0.82em;color:#ccc;line-height:1.7;">
-              <div style="color:#4facfe;font-weight:bold;margin-bottom:10px;font-size:0.88em;">🏯 3階層で王国の計画を動かす</div>
-              <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:14px;">
-                <div style="display:flex;gap:10px;align-items:flex-start;">
-                  <div style="width:24px;height:24px;border-radius:50%;background:#4facfe;color:#fff;font-size:0.8em;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</div>
-                  <div>
-                    <div style="color:#fff;font-weight:bold;margin-bottom:2px;">「＋ 造営計画」で志を作る</div>
-                    <div style="color:#aaa;">夢・目標・プロジェクト。なんでもいい。</div>
-                  </div>
-                </div>
-                <div style="display:flex;gap:10px;align-items:flex-start;">
-                  <div style="width:24px;height:24px;border-radius:50%;background:#4facfe;color:#fff;font-size:0.8em;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</div>
-                  <div>
-                    <div style="color:#fff;font-weight:bold;margin-bottom:2px;">「工程を刻む」でステップを作る</div>
-                    <div style="color:#aaa;">志の中の段階・フェーズ。例：基礎固め、仕上げ。</div>
-                  </div>
-                </div>
-                <div style="display:flex;gap:10px;align-items:flex-start;">
-                  <div style="width:24px;height:24px;border-radius:50%;background:#4facfe;color:#fff;font-size:0.8em;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</div>
-                  <div>
-                    <div style="color:#fff;font-weight:bold;margin-bottom:2px;">タスクに日付・時刻を入れる</div>
-                    <div style="color:#aaa;">タスクを工程に紐づけると、ガントバーが現れる。</div>
-                  </div>
-                </div>
-                <div style="display:flex;gap:10px;align-items:flex-start;">
-                  <div style="width:24px;height:24px;border-radius:50%;background:#4facfe;color:#fff;font-size:0.8em;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">4</div>
-                  <div>
-                    <div style="color:#fff;font-weight:bold;margin-bottom:2px;">工程行の「○件」を押す</div>
-                    <div style="color:#aaa;">紐づいたタスクが展開される。日・週・月スケールで俯瞰できる。</div>
-                  </div>
-                </div>
-              </div>
-              <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
-                <div style="background:rgba(79,172,254,0.06);border-left:3px solid #4facfe;border-radius:0 6px 6px 0;padding:8px 10px;font-size:0.79em;color:#ccc;line-height:1.7;">
-                  <strong style="color:#4facfe;">⏰ 時刻のヒント</strong><br>
-                  タスクに「開始時刻」と「終了時刻」を入れると、バーに幅が生まれる。<br>
-                  幅があるバーほど、計画に厚みがある。
-                </div>
-                <div style="background:rgba(167,139,250,0.06);border-left:3px solid #a78bfa;border-radius:0 6px 6px 0;padding:8px 10px;font-size:0.79em;color:#ccc;line-height:1.7;">
-                  <strong style="color:#a78bfa;">🎨 工程のカスタマイズ</strong><br>
-                  工程の ✏️ を押すと色・絵文字を変えられる。<br>
-                  自分らしい王国の色に染めていこう。
-                </div>
-                <div style="background:rgba(248,187,208,0.06);border-left:3px solid #f8bbd0;border-radius:0 6px 6px 0;padding:8px 10px;font-size:0.79em;color:#ccc;line-height:1.7;">
-                  <strong style="color:#f8bbd0;">📅 スケールの使い分け</strong><br>
-                  <strong style="color:#fff;">日</strong>：今日のタスクを時間で管理する<br>
-                  <strong style="color:#fff;">週</strong>：この週の工程の流れを確認する<br>
-                  <strong style="color:#fff;">月</strong>：長期プロジェクトを俯瞰する
-                </div>
-                <div style="background:rgba(255,215,0,0.06);border-left:3px solid #ffd700;border-radius:0 6px 6px 0;padding:8px 10px;font-size:0.79em;color:#ccc;line-height:1.7;">
-                  <strong style="color:#ffd700;">🏯 志カードにホバーしてみよう</strong><br>
-                  進捗に応じて、王国からのメッセージが届く。<br>
-                  100%になったとき、次の志が始まる。
-                </div>
-              </div>
-              <div style="background:rgba(79,172,254,0.08);border-radius:8px;padding:10px;font-size:0.8em;color:#aaa;line-height:1.8;">
-                💡 <strong style="color:#ccc;">タスクがゴミなら夢が叶わない。</strong><br>
-                タスクに日付・時刻を刻むほど、バーが育っていく。<br>
-                造営ビューはその王国の地図です。<br>
-                <strong style="color:#4facfe;">本当に輝く王国の地図と工程は、あなたの手にあるよ！</strong>
-              </div>
-              <button onclick="showGantOnboarding()" style="width:100%;margin-top:12px;padding:11px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:10px;color:#fff;font-size:0.88em;font-weight:800;cursor:pointer;letter-spacing:0.04em;box-shadow:0 3px 12px rgba(79,172,254,0.3);">🏯 造営ビューのオンボーディングを見る →</button>
-            </div>
-          </div>
-          <!-- 使い方クイズ -->
-          <div style="margin-bottom:8px;">
-            <button onclick="openQuizMode()" style="width:100%;text-align:left;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.35);border-radius:8px;padding:8px 12px;color:#fbbf24;font-size:0.85em;font-weight:bold;cursor:pointer;">🎯 使い方クイズに挑戦する</button>
-          </div>
-        </div><!-- /aboutAccordion -->
-      </div><!-- /libraryContent -->
-    </div><!-- /librarySection -->
-    <button id="tutorialClose" style="width:100%;padding:12px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:8px;color:#fff;font-size:1em;font-weight:bold;cursor:pointer;margin-top:12px;">さあ、冒険へ旅立とう！ ✨</button>
-  </div>
-  </div>
-</div>
-<!-- LP閲覧モーダル -->
-<div id="lpModal" style="display:none;position:fixed;inset:0;z-index:9999;overflow:hidden;">
-  <!-- 閉じるボタン（小さく右上に浮かせる） -->
-  <button onclick="closeLpModal()" style="position:fixed;top:12px;right:12px;z-index:10000;background:rgba(0,0,0,0.5);border:none;border-radius:50%;color:#fff;width:36px;height:36px;font-size:1em;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
-  <!-- iframe フルスクリーン -->
-  <iframe id="lpModalFrame" src="" style="position:fixed;inset:0;width:100%;height:100%;border:none;background:#fff;display:none;"></iframe>
-</div>
-<script>// ===== チュートリアル =====
+      <script>// ===== チュートリアル =====
 // ===== 王国スタートデッキ =====
 function receiveStarterDeck() {
   if (allSettings.deck.starterDone) return;
@@ -17479,7 +17752,7 @@ function showDebugLog() {
       as.meta   ? ok('allSettings.meta') : ng('allSettings.meta', 'なし');
     }
 
-    // 3. allTasks 存在・配列確認
+    // 3. window.allTasks 存在・配列確認
     var at = window.allTasks;
     if (!Array.isArray(at)) { ng('allTasks', '配列でない'); }
     else {
@@ -17508,6 +17781,8 @@ function showDebugLog() {
     });
 
     // 5. saveAllTasks → loadAllTasks 往復テスト
+    // 状況：データが保存されない・リロード後に消える時
+    // 意図：saveAllTasksがlocalStorageに正確に書き込めるか確認
     try {
       var before = JSON.stringify(window.allTasks);
       window.saveAllTasks();
@@ -17516,84 +17791,193 @@ function showDebugLog() {
       JSON.stringify(parsed) === before ? ok('saveAllTasks/localStorage往復') : ng('saveAllTasks/localStorage往復', 'データ不一致');
     } catch(e) { ng('saveAllTasks往復テスト', e.message); }
 
-    // 6. generateTaskId重複チェック
+    // 6. UUID v7 深層検証
+    // 状況：IDが重複・時系列ソートがおかしい・旧形式IDが残存している時
+    // 意図：generateTaskIdがRFC 9562準拠のUUID v7を生成しているか全角度で確認
     try {
-      var ids2 = [];
-      for (var i = 0; i < 10; i++) ids2.push(window.generateTaskId());
-      new Set(ids2).size === 10 ? ok('generateTaskId重複なし(10件)') : ng('generateTaskId重複あり');
-    } catch(e) { ng('generateTaskId', e.message); }
-
-    // 7. UUID v7 深層検証
-    try {
-      var uuidErrors = [];
       var uuids = [];
       for (var i = 0; i < 100; i++) uuids.push(window.generateTaskId());
-
-      // 7a. フォーマット検証（全100件）
       var uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+      // 6a. フォーマット
       var formatFail = uuids.filter(function(u){ return !uuidRe.test(u); });
-      formatFail.length === 0
-        ? ok('UUID v7 フォーマット正常(100件)')
-        : ng('UUID v7 フォーマット異常', formatFail.length + '件 例:' + formatFail[0]);
-
-      // 7b. バージョンビット検証（4番目グループ先頭が7）
-      var versionFail = uuids.filter(function(u){ return u.split('-')[2][0] !== '7'; });
-      versionFail.length === 0
-        ? ok('UUID v7 バージョンビット(7)正常')
-        : ng('UUID v7 バージョンビット異常', versionFail.length + '件');
-
-      // 7c. バリアントビット検証（5番目グループ先頭が8/9/a/b）
-      var variantFail = uuids.filter(function(u){ return !/^[89ab]/.test(u.split('-')[3]); });
-      variantFail.length === 0
-        ? ok('UUID v7 バリアントビット正常')
-        : ng('UUID v7 バリアントビット異常', variantFail.length + '件');
-
-      // 7d. 時系列単調増加（連続生成で昇順になるか）
+      formatFail.length === 0 ? ok('UUID v7 フォーマット(100件)') : ng('UUID v7 フォーマット異常', formatFail.length + '件');
+      // 6b. バージョンビット
+      var vFail = uuids.filter(function(u){ return u.split('-')[2][0] !== '7'; });
+      vFail.length === 0 ? ok('UUID v7 バージョンビット') : ng('UUID v7 バージョンビット異常', vFail.length + '件');
+      // 6c. バリアントビット
+      var varFail = uuids.filter(function(u){ return !/^[89ab]/.test(u.split('-')[3]); });
+      varFail.length === 0 ? ok('UUID v7 バリアントビット') : ng('UUID v7 バリアントビット異常', varFail.length + '件');
+      // 6d. 時系列単調増加
       var sorted = uuids.slice().sort();
-      var monotonic = true;
-      for (var i = 0; i < uuids.length - 1; i++) {
-        if (uuids[i] > uuids[i+1]) { monotonic = false; break; }
-      }
-      // UUIDは辞書順 = 時系列順（v7の特性）
-      JSON.stringify(uuids) === JSON.stringify(sorted)
-        ? ok('UUID v7 時系列単調増加(100件)')
-        : ng('UUID v7 時系列単調増加違反', '生成順と辞書順が一致しない');
-
-      // 7e. タイムスタンプ埋め込み検証（先頭48bitが現在時刻と近いか）
+      JSON.stringify(uuids) === JSON.stringify(sorted) ? ok('UUID v7 時系列単調増加(100件)') : ng('UUID v7 時系列単調増加違反');
+      // 6e. タイムスタンプ
       var now = Date.now();
-      var sample = uuids[0];
-      var p1 = sample.split('-')[0]; // 32bit
-      var p2 = sample.split('-')[1]; // 16bit
-      var tsHex = p1 + p2; // 48bit = 12hex chars
+      var tsHex = uuids[0].split('-')[0] + uuids[0].split('-')[1];
       var tsMs = parseInt(tsHex, 16);
-      var diff = Math.abs(tsMs - now);
-      diff < 5000
-        ? ok('UUID v7 タイムスタンプ埋め込み正常(誤差' + diff + 'ms)')
-        : ng('UUID v7 タイムスタンプ異常', '誤差' + diff + 'ms');
-
-      // 7f. 一意性（100件中重複なし）
-      new Set(uuids).size === 100
-        ? ok('UUID v7 一意性(100件重複なし)')
-        : ng('UUID v7 重複あり', (100 - new Set(uuids).size) + '件重複');
-
-      // 7g. 既存allTasksのID全件がUUID v7形式か確認
+      Math.abs(tsMs - now) < 5000 ? ok('UUID v7 タイムスタンプ正常(誤差' + Math.abs(tsMs-now) + 'ms)') : ng('UUID v7 タイムスタンプ異常', '誤差' + Math.abs(tsMs-now) + 'ms');
+      // 6f. 一意性
+      new Set(uuids).size === 100 ? ok('UUID v7 一意性(100件)') : ng('UUID v7 重複あり');
+      // 6g. allTasksの全ID形式
       var tasks = window.allTasks || [];
       var nonUuid = tasks.filter(function(t){ return t.id && !uuidRe.test(t.id); });
-      var oldFormat = tasks.filter(function(t){ return t.id && /^(task_|dh_|df_|dfocus_|quiz_)/.test(t.id); });
-      nonUuid.length === 0
-        ? ok('allTasks全IDがUUID形式(' + tasks.length + '件)')
-        : ng('allTasks非UUID ID存在', nonUuid.length + '件 例:' + (nonUuid[0]||{}).id);
-      oldFormat.length === 0
-        ? ok('allTasks旧形式IDなし')
-        : ng('allTasks旧形式ID残存', oldFormat.length + '件 例:' + (oldFormat[0]||{}).id);
-
+      nonUuid.length === 0 ? ok('allTasks全IDがUUID形式(' + tasks.length + '件)') : ng('allTasks非UUID ID', nonUuid.length + '件');
     } catch(e) { ng('UUID v7テスト', e.message); }
 
-    // 結果表示
+    // 7. 機能・依存チェック
+    // 状況：機能が消えた・スタブに置き換わった疑いがある時
+    // 意図：関数の行数・DOM・依存関数の存在を確認
+    var featureDeepChecks = [
+      ['AI計画モーダル', 'openAiPlanModal', null, 10, ['copyAiPlanPrompt','_buildAiPlanPrompt']],
+      ['深考AIコピー', '_dfmCopyForAI', null, 5, ['_dfmGetHistory']],
+      ['グランドビジョン', 'renderGrandVisionBar', 'grandVisionBanner', 5, ['getGrandVisions']],
+      ['クイズ', 'openQuizMode', 'quizModal', 3, ['_quizStart','_quizShowQ','_quizFinish']],
+    ];
+    featureDeepChecks.forEach(function(fc) {
+      var name=fc[0], fnName=fc[1], domId=fc[2], minLines=fc[3], deps=fc[4];
+      var fn = window[fnName];
+      if (typeof fn !== 'function') { ng('機能: '+name, '関数未定義'); return; }
+      var lines = fn.toString().split('\n').filter(function(l){return l.trim().length>0;}).length;
+      if (lines < minLines) { ng('機能: '+name, 'スタブ疑い('+lines+'行)'); return; }
+      if (domId && !document.getElementById(domId)) { ng('機能: '+name, 'DOM#'+domId+'なし'); return; }
+      var missingDeps = deps.filter(function(d){return typeof window[d]!=='function';});
+      if (missingDeps.length > 0) { ng('機能: '+name, '依存未定義:'+missingDeps.join(',')); return; }
+      ok('機能: '+name+' ('+lines+'行, 依存'+deps.length+'個OK)');
+    });
+
+
+    // 9. renderScratchView 不変確認
+    // 状況：renderScratchViewに触れるとiOS IME二重登録バグが再発する
+    // 意図：関数が存在し十分な行数があり、IMEバグの痕跡がないことを確認
+    try {
+      var rsv = window.renderScratchView;
+      if (typeof rsv !== 'function') {
+        ng('renderScratchView不変確認', '関数未定義');
+      } else {
+        var rsvStr = rsv.toString();
+        var rsvLines = rsvStr.split('\n').filter(function(l){return l.trim().length>0;}).length;
+        rsvLines >= 20 ? ok('renderScratchView: 正常存在 (' + rsvLines + '行) — 不変') : ng('renderScratchView: 行数不足疑い', rsvLines + '行');
+        // IMEバグの痕跡チェック（compositionstartが二重登録されていないか）
+        var compCount = (rsvStr.match(/compositionstart/g)||[]).length;
+        compCount <= 1 ? ok('renderScratchView: IMEイベント登録正常 (' + compCount + '件)') : ng('renderScratchView: IMEイベント二重登録疑い', compCount + '件');
+      }
+    } catch(e) { ng('renderScratchView確認', e.message); }
+
+    // 10. promoteScratchToGant 動作確認
+    // 状況：雑記帳→造営ボタンが消えた・動かない時
+    // 意図：関数が定義され依存関数も存在することを確認
+    try {
+      var pstg = window.promoteScratchToGant;
+      if (typeof pstg !== 'function') {
+        ng('promoteScratchToGant', '関数未定義 — 雑記帳→造営ボタンが動かない');
+      } else {
+        var pstgLines = pstg.toString().split('\n').filter(function(l){return l.trim().length>0;}).length;
+        pstgLines >= 5 ? ok('promoteScratchToGant: 正常存在 (' + pstgLines + '行)') : ng('promoteScratchToGant: スタブ疑い', pstgLines + '行');
+        // 依存: saveAllTasks・generateTaskId
+        var deps10 = ['saveAllTasks','generateTaskId','showToast'];
+        var missing10 = deps10.filter(function(d){ return typeof window[d] !== 'function'; });
+        missing10.length === 0 ? ok('promoteScratchToGant: 依存関数OK (' + deps10.join(',') + ')') : ng('promoteScratchToGant: 依存未定義', missing10.join(','));
+      }
+    } catch(e) { ng('promoteScratchToGant確認', e.message); }
+
+    // 11. allTasks再代入禁止確認
+    // 状況：allTasks = [...] で再代入するとsplice/pushの変更が消える
+    // 意図：saveAllTasks・loadAllTasks以外でallTasks再代入が起きていないことをソース検査
+    try {
+      var saveFn = typeof window.saveAllTasks === 'function' ? window.saveAllTasks.toString() : '';
+      var loadFn = typeof window.loadAllTasks === 'function' ? window.loadAllTasks.toString() : '';
+      // saveAllTasksはJSON.stringify(allTasks)を使うが再代入しない
+      var saveHasReassign = /allTasks\s*=\s*(?!allTasks)/.test(saveFn.replace(/window\.allTasks\s*=\s*allTasks/g,''));
+      saveHasReassign ? ng('saveAllTasks: allTasks再代入疑い') : ok('saveAllTasks: allTasks再代入なし');
+      // allTasks自体が配列のままか
+      Array.isArray(window.allTasks) ? ok('allTasks: 配列型維持確認') : ng('allTasks: 配列でない', typeof window.allTasks);
+      // completed/done双方向同期（kindがtaskのものに両方あるか）
+      var tasks11 = (window.allTasks||[]).filter(function(t){return t.kind==='task';});
+      var syncOk = tasks11.every(function(t){ return ('completed' in t) || ('done' in t); });
+      tasks11.length === 0 ? ok('allTasks: taskなし（同期確認スキップ）') :
+        syncOk ? ok('allTasks: completed/done フィールド存在 (' + tasks11.length + '件)') : ng('allTasks: completed/doneフィールド欠損');
+    } catch(e) { ng('allTasks再代入確認', e.message); }
+
+    // 12. グランドビジョンバナーDOM確認
+    // 状況：グランドビジョンバナーが表示されない・造営ビューに混入する時
+    // 意図：バナーDOMがgantView内の正しい位置にあることを確認
+    try {
+      var gantView = document.getElementById('gantView');
+      var gvBanner = document.getElementById('grandVisionBanner');
+      var gvEmpty  = document.getElementById('grandVisionEmpty');
+      gvBanner ? ok('grandVisionBanner: DOM存在確認') : ng('grandVisionBanner: DOM見つからない');
+      gvEmpty  ? ok('grandVisionEmpty: DOM存在確認') : ng('grandVisionEmpty: DOM見つからない');
+      if (gantView && gvBanner) {
+        gantView.contains(gvBanner) ? ok('grandVisionBanner: gantView内に正しく配置') : ng('grandVisionBanner: gantView外に混入');
+      }
+      // renderGrandVisionBar関数の存在
+      typeof window.renderGrandVisionBar === 'function' ? ok('renderGrandVisionBar: 関数存在') : ng('renderGrandVisionBar: 関数未定義');
+    } catch(e) { ng('グランドビジョンDOM確認', e.message); }
+
+    // 13. window.allTasks直接汚染キーの不在確認（KPAG強化版）
+    // 状況：v0.36.27バグの再発 — window.allTasksキーに保存してしまう
+    // 意図：localStorage上に'window.allTasks'キーが存在しないことを直接確認
+    try {
+      var directPoisonKeys = ['window.allTasks','window.allSettings','window.currentView','window.deletedTaskIds'];
+      var foundPoison13 = directPoisonKeys.filter(function(k){ return localStorage.getItem(k) !== null; });
+      foundPoison13.length === 0
+        ? ok('直接汚染キー不在確認: ' + directPoisonKeys.length + '件チェック済 — 🟢 Absolute Green')
+        : ng('直接汚染キー検出', foundPoison13.join(', '));
+    } catch(e) { ng('直接汚染キー確認', e.message); }
+
+    // 14. Key Purify Absolute Green テスト
+    // 状況：自動置換でlocalStorageキー名が'window.xxx'に汚染された時（v0.36.27バグ再現防止）
+    // 意図：実際にlocalStorageに存在する全キーを検査し、汚染パターンを検知する
+    try {
+      var poisonPatterns = [
+        { pat: /^window\./, label: 'window.プレフィックス汚染' },
+        { pat: /^\s|\s$/, label: '空白文字混入' },
+        { pat: /^undefined$|^null$/, label: 'undefined/null文字列キー' },
+      ];
+      // 必須キーが正しいキー名で存在するか
+      var requiredKeys = ['allTasks', 'allSettings'];
+      var poisonFound = [];
+      var missingRequired = [];
+      // 全キーをスキャン
+      for (var ki = 0; ki < localStorage.length; ki++) {
+        var k = localStorage.key(ki);
+        if (!k) continue;
+        for (var pi = 0; pi < poisonPatterns.length; pi++) {
+          if (poisonPatterns[pi].pat.test(k)) {
+            poisonFound.push(k + ' [' + poisonPatterns[pi].label + ']');
+          }
+        }
+      }
+      // 必須キーの存在確認
+      requiredKeys.forEach(function(rk) {
+        if (localStorage.getItem(rk) === null) missingRequired.push(rk);
+      });
+      // window.allTasks / window.allSettings キーが存在しないか（汚染の直接証拠）
+      var directPoison = ['window.allTasks','window.allSettings','window.currentView']
+        .filter(function(pk){ return localStorage.getItem(pk) !== null; });
+
+      if (poisonFound.length === 0 && directPoison.length === 0) {
+        ok('Key Purify Absolute Green: キー名汚染なし (' + localStorage.length + 'キー全検査)');
+      } else {
+        if (poisonFound.length > 0) ng('Key Purify Absolute Green: 汚染検知', poisonFound.join(' / '));
+        if (directPoison.length > 0) ng('Key Purify Absolute Green: 直接汚染キー存在', directPoison.join(', '));
+      }
+      if (missingRequired.length > 0) {
+        ng('Key Purify Absolute Green: 必須キー消失', missingRequired.join(', '));
+      } else {
+        ok('Key Purify Absolute Green: 必須キー(' + requiredKeys.join(',') + ')正常存在 — 🟢 Absolute Green');
+      }
+    } catch(e) { ng('Key Purify Absolute Green テスト', e.message); }
+
     var resultDiv = document.createElement('div');
     resultDiv.style.cssText = 'margin-top:10px;padding:12px;background:#0d1117;border:1px solid #30363d;border-radius:8px;font-size:0.72em;line-height:1.9;';
-    var summary = (fail === 0 ? '🎉 全テスト通過' : '⚠️ ' + fail + '件失敗') + ' (' + pass + '/' + (pass+fail) + ')';
-    resultDiv.innerHTML = '<div style="font-weight:700;color:' + (fail===0?'#3fb950':'#ff6b6b') + ';margin-bottom:6px;">' + summary + '</div>'
+    var allGreen = fail === 0;
+    var summary = allGreen
+      ? '🟢 ALL GREEN — ' + pass + '/' + (pass+fail)
+      : '🔴 RED ALERT — ' + fail + '件失敗 (' + pass + '/' + (pass+fail) + ')';
+    var summaryStyle = allGreen
+      ? 'font-weight:700;font-size:1.05em;color:#3fb950;margin-bottom:10px;letter-spacing:0.03em;'
+      : 'font-weight:700;font-size:1.05em;color:#ff6b6b;margin-bottom:10px;letter-spacing:0.03em;';
+    resultDiv.innerHTML = '<div style="' + summaryStyle + '">' + summary + '</div>'
       + results.map(function(r){ return '<div>' + r + '</div>'; }).join('');
     // 既存の結果を入れ替え
     var old = box.querySelector('.smoke-result');
@@ -17618,7 +18002,7 @@ function showDebugLog() {
     yesterday.setDate(yesterday.getDate() - 1);
     var yStr = yesterday.getFullYear() + '-' + String(yesterday.getMonth()+1).padStart(2,'0') + '-' + String(yesterday.getDate()).padStart(2,'0');
     var changed = 0;
-    allTasks.forEach(function(t){ if (t.kind === 'scratch') { t.date = yStr; changed++; } });
+    window.allTasks.forEach(function(t){ if (t.kind === 'scratch') { t.date = yStr; changed++; } });
     if (changed === 0) { showToast('雑記帳にアイテムがありません', {type:'warn'}); return; }
     saveAllTasks();
     localStorage.removeItem('_lastScratchMoveDate');
@@ -17703,11 +18087,11 @@ function closeLpModal() {
 // 共通：繰り返しタスクの将来分を削除
 function deleteRepeatFutureTasks(groupId, fromDate) {
   var today = fromDate || getLocalDateStr(new Date());
-  var before = allTasks.length;
-  allTasks = allTasks.filter(function(t) {
+  var before = window.allTasks.length;
+  window.allTasks = window.allTasks.filter(function(t) {
     return t.repeatGroupId !== groupId || t.date < today;
   });
-  return before - allTasks.length;
+  return before - window.allTasks.length;
 }
 // 共通：繰り返しタスク生成
 function generateRepeatTasks(baseTask, repeat, repeatEnd, startDate, groupId) {
@@ -17726,7 +18110,7 @@ function generateRepeatTasks(baseTask, repeat, repeatEnd, startDate, groupId) {
     else if (repeat === 'weekly') ok = (dow === sd.getDay());
     else if (repeat === 'monthly') ok = (cur.getDate() === sd.getDate());
     if (ok) {
-      allTasks.push(Object.assign({}, baseTask, {
+      window.allTasks.push(Object.assign({}, baseTask, {
         id: generateTaskId(),
         date: ds,
         completed: false,
@@ -17743,7 +18127,7 @@ function generateRepeatTasks(baseTask, repeat, repeatEnd, startDate, groupId) {
 }
 // 共通：繰り返し保存処理（全モーダル共通）
 function applyRepeatSave(taskId, task, repeat, repeatEnd, date) {
-  var baseTask = allTasks.find(function(t){ return t.id === taskId; });
+  var baseTask = window.allTasks.find(function(t){ return t.id === taskId; });
   var prevRepeat = baseTask ? (baseTask.repeat || 'none') : 'none';
   var groupId = (baseTask && baseTask.repeatGroupId) || taskId;
   if (repeat !== 'none') {
@@ -17752,7 +18136,7 @@ function applyRepeatSave(taskId, task, repeat, repeatEnd, date) {
     generateRepeatTasks(baseTask || task, repeat, repeatEnd, date, groupId);
   } else if (prevRepeat !== 'none') {
     // 繰り返し解除→将来タスク削除
-    var count = allTasks.filter(function(t){
+    var count = window.allTasks.filter(function(t){
       return t.repeatGroupId === groupId && t.date >= date && t.id !== taskId;
     }).length;
     if (count > 0) {
@@ -17835,7 +18219,7 @@ function openGuildMode() {
   document.getElementById('guildLicenseInput').value = '';
   modal.style.display = 'flex';
   // 既にライセンス保持なら案内を変える
-  if (allTasks.some(function(t){ return t.kind === 'guildLicense'; })) {
+  if (window.allTasks.some(function(t){ return t.kind === 'guildLicense'; })) {
     document.getElementById('guildLicenseInput').placeholder = '既に行動貿易ライセンスを持っています。新しいコードで上書きできます。';
   }
 }
@@ -17856,11 +18240,11 @@ function applyGuildLicense() {
   catch(e) { showToast('コードの形式が正しくありません', {type:'warn'}); return; }
   if (data.kind !== 'guildLicense') { showToast('コードの形式が正しくありません', {type:'warn'}); return; }
   // ライセンス保存（allTasks統合）
-  var _glIdx2 = allTasks.findIndex(function(t){ return t.kind === 'guildLicense'; });
-  if (_glIdx2 >= 0) allTasks.splice(_glIdx2, 1);
+  var _glIdx2 = window.allTasks.findIndex(function(t){ return t.kind === 'guildLicense'; });
+  if (_glIdx2 >= 0) window.allTasks.splice(_glIdx2, 1);
   data.id = data.id || (typeof generateTaskId === 'function' ? generateTaskId() : 'gl_' + Date.now());
   data.createdAt = data.createdAt || new Date().toISOString();
-  allTasks.push(data);
+  window.allTasks.push(data);
   saveAllTasks();
   closeGuildMode();
   // トースト
@@ -17920,7 +18304,7 @@ function issueGuildLicense() {
 }
 function updateGuildUI() {
   // ギルドライセンス保持者のみデッキビルダーを表示
-  var hasLicense = allTasks.some(function(t){ return t.kind === 'guildLicense'; });
+  var hasLicense = window.allTasks.some(function(t){ return t.kind === 'guildLicense'; });
   var btn = document.getElementById('guildDeckBuilderBtn');
   if (btn) btn.style.display = hasLicense ? 'block' : 'none';
 }
@@ -17940,7 +18324,7 @@ function deckBuilderSave() {
     var decks = getMyDecks();
     var orig = decks[window._editingMyDeckIdx];
     if (orig) {
-      var origInAll = allTasks.find(function(t){ return t.id === orig.id; });
+      var origInAll = window.allTasks.find(function(t){ return t.id === orig.id; });
       if (origInAll) {
         origInAll.title = title; origInAll.desc = desc;
         origInAll.tasks = _deckBuilderTasks.slice();
@@ -17957,7 +18341,7 @@ function deckBuilderSave() {
   window._editingMyDeckIdx = -1;
   var deckId = (typeof generateTaskId === 'function') ? generateTaskId() : crypto.randomUUID();
   var deck = { id: deckId, deckId: deckId, kind: 'myDeck', title: title, desc: desc, tasks: _deckBuilderTasks.slice(), createdBy: myName, createdAt: today, savedAt: today };
-  allTasks.push(deck);
+  window.allTasks.push(deck);
   saveAllTasks();
   // トースト
   var toast = document.getElementById('settingsSaveToast');
@@ -18379,7 +18763,7 @@ document.addEventListener('DOMContentLoaded', function() {
       return y + '年' + m + '月' + d + '日（' + w + '）';
     }
     function loadJournals() {
-      return allTasks.filter(function(t){ return t.kind === 'journal'; })
+      return window.allTasks.filter(function(t){ return t.kind === 'journal'; })
         .sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
     }
     function saveJournals(arr) {
@@ -18423,12 +18807,12 @@ document.addEventListener('DOMContentLoaded', function() {
         journals[existing].savedAt = new Date().toISOString();
         toastMsg = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌に追加しました';
       } else {
-        allTasks.push({ id: generateTaskId(), kind: 'journal', date: dateStr, text: '', thoughts: [{ id: generateTaskId(), text: t }], mood: m.mood, condition: m.condition, weather: m.weather, savedAt: new Date().toISOString() });
+        window.allTasks.push({ id: generateTaskId(), kind: 'journal', date: dateStr, text: '', thoughts: [{ id: generateTaskId(), text: t }], mood: m.mood, condition: m.condition, weather: m.weather, savedAt: new Date().toISOString() });
         toastMsg = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌を作成しました';
       }
       // 雑記帳のアイテムを削除
-      var delIdx = allTasks.findIndex(function(t){ return t.id === item.id; });
-      if (delIdx !== -1) allTasks.splice(delIdx, 1);
+      var delIdx = window.allTasks.findIndex(function(t){ return t.id === item.id; });
+      if (delIdx !== -1) window.allTasks.splice(delIdx, 1);
       saveAllTasks();
       renderScratchView();
       _showJournalToast(toastMsg);
@@ -18450,7 +18834,7 @@ document.addEventListener('DOMContentLoaded', function() {
         journals[existing].savedAt = new Date().toISOString();
         toastMsg2 = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌に追記しました';
       } else {
-        allTasks.push(entry);
+        window.allTasks.push(entry);
         toastMsg2 = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌を作成しました';
       }
       saveAllTasks();
@@ -18482,7 +18866,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         _toastMsg3 = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌を更新しました';
       } else {
-        allTasks.push({
+        window.allTasks.push({
           id: generateTaskId(),
           kind: 'journal',
           date: dateStr,
@@ -18612,8 +18996,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (journals[idx].condition) journals[conflictIdx].condition = journals[idx].condition;
         if (journals[idx].weather)   journals[conflictIdx].weather   = journals[idx].weather;
         journals[conflictIdx].savedAt = new Date().toISOString();
-        var _jSpliceIdx = allTasks.findIndex(function(t){ return t.id === journals[idx].id; });
-        if (_jSpliceIdx !== -1) allTasks.splice(_jSpliceIdx, 1);
+        var _jSpliceIdx = window.allTasks.findIndex(function(t){ return t.id === journals[idx].id; });
+        if (_jSpliceIdx !== -1) window.allTasks.splice(_jSpliceIdx, 1);
         _showJournalToast('📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(newDate) + 'の日誌に統合しました');
       } else {
         journals[idx].date = newDate;
@@ -18628,7 +19012,7 @@ document.addEventListener('DOMContentLoaded', function() {
       renderJournalView();
     }
     function thoughtToScratch(journalId, thoughtId) {
-      var j = allTasks.find(function(t){ return t.id === journalId; });
+      var j = window.allTasks.find(function(t){ return t.id === journalId; });
       if (!j || !Array.isArray(j.thoughts)) return;
       var th = j.thoughts.find(function(t){ return t.id === thoughtId; });
       if (!th) return;
@@ -18640,12 +19024,12 @@ document.addEventListener('DOMContentLoaded', function() {
       showToast('📝 雑記帳へ戻しました', {type:'success'});
     }
     function thoughtToTask(journalId, thoughtId) {
-      var j = allTasks.find(function(t){ return t.id === journalId; });
+      var j = window.allTasks.find(function(t){ return t.id === journalId; });
       if (!j || !Array.isArray(j.thoughts)) return;
       var th = j.thoughts.find(function(t){ return t.id === thoughtId; });
       if (!th) return;
       var dateStr = (typeof currentDailyDate !== 'undefined' && currentDailyDate) || getLocalDateStr(new Date());
-      allTasks.push({ id: generateTaskId(), kind: 'scratch', text: th.text, date: dateStr, createdAt: new Date().toISOString() });
+      window.allTasks.push({ id: generateTaskId(), kind: 'scratch', text: th.text, date: dateStr, createdAt: new Date().toISOString() });
       j.thoughts = j.thoughts.filter(function(t){ return t.id !== thoughtId; });
       saveAllTasks();
       document.getElementById('journalDetailModal').style.display = 'none';
@@ -18653,7 +19037,7 @@ document.addEventListener('DOMContentLoaded', function() {
       showToast('＋ 雑記帳に追加しました（タスクに上げてください）', {type:'success'});
     }
     function thoughtSaveEdit(journalId, thoughtId, newText) {
-      var j = allTasks.find(function(t){ return t.id === journalId; });
+      var j = window.allTasks.find(function(t){ return t.id === journalId; });
       if (!j || !Array.isArray(j.thoughts)) return;
       var th = j.thoughts.find(function(t){ return t.id === thoughtId; });
       if (!th) return;
@@ -18661,7 +19045,7 @@ document.addEventListener('DOMContentLoaded', function() {
       saveAllTasks();
     }
     function textToThoughts(journalId) {
-      var j = allTasks.find(function(t){ return t.id === journalId; });
+      var j = window.allTasks.find(function(t){ return t.id === journalId; });
       if (!j || !j.text) return;
       var lines = j.text.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
       if (lines.length === 0) return;
@@ -18674,7 +19058,7 @@ document.addEventListener('DOMContentLoaded', function() {
       openJournalDetail(journalId);
     }
     function thoughtsToText(journalId) {
-      var j = allTasks.find(function(t){ return t.id === journalId; });
+      var j = window.allTasks.find(function(t){ return t.id === journalId; });
       if (!j || !Array.isArray(j.thoughts) || j.thoughts.length === 0) return;
       var lines = j.thoughts.map(function(t){ return t.text; }).filter(Boolean);
       j.text = (j.text ? j.text + '\n' : '') + lines.join('\n');
@@ -18683,15 +19067,15 @@ document.addEventListener('DOMContentLoaded', function() {
       openJournalDetail(journalId);
     }
     function thoughtDelete(journalId, thoughtId) {
-      var j = allTasks.find(function(t){ return t.id === journalId; });
+      var j = window.allTasks.find(function(t){ return t.id === journalId; });
       if (!j || !Array.isArray(j.thoughts)) return;
       j.thoughts = j.thoughts.filter(function(t){ return t.id !== thoughtId; });
       saveAllTasks();
       openJournalDetail(journalId);
     }
     function deleteJournal(id) {
-      const jIdx = allTasks.findIndex(function(t){ return t.id === id && t.kind === 'journal'; });
-      if (jIdx !== -1) allTasks.splice(jIdx, 1);
+      const jIdx = window.allTasks.findIndex(function(t){ return t.id === id && t.kind === 'journal'; });
+      if (jIdx !== -1) window.allTasks.splice(jIdx, 1);
       saveAllTasks();
       var dm = document.getElementById('journalDetailModal');
       if (dm) dm.style.display = 'none';
@@ -18839,7 +19223,7 @@ document.addEventListener('DOMContentLoaded', function() {
         Object.assign(journals[existing], { mood: m.mood, condition: m.condition, weather: m.weather, savedAt: new Date().toISOString() });
         _toastMsg4 = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌に追記しました';
       } else {
-        allTasks.push({ id: generateTaskId(), kind: 'journal', date: dateStr, text: text, mood: m.mood, condition: m.condition, weather: m.weather, savedAt: new Date().toISOString() });
+        window.allTasks.push({ id: generateTaskId(), kind: 'journal', date: dateStr, text: text, mood: m.mood, condition: m.condition, weather: m.weather, savedAt: new Date().toISOString() });
         _toastMsg4 = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌を作成しました';
       }
       saveAllTasks();
@@ -19006,7 +19390,7 @@ function _dfmFinish() {
   if (extra) result = result ? result + '\n' + extra : extra;
   var dateStr = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
   var newId = (typeof generateTaskId === 'function') ? generateTaskId() : ('dfocus_' + Date.now());
-  if (typeof allTasks !== 'undefined' && allTasks) {
+  if (typeof window.allTasks !== 'undefined' && window.allTasks) {
     var record = {
       id: newId,
       kind: 'deepfocus',
@@ -19015,62 +19399,13 @@ function _dfmFinish() {
       date: dateStr,
       createdAt: new Date().toISOString()
     };
-    allTasks.push(record);
+    window.allTasks.push(record);
     if (typeof saveAllTasks === 'function') saveAllTasks();
   }
   var count = _dfmGetHistory().length;
   var countEl = document.getElementById('dfm-count');
   if (countEl) countEl.textContent = 'あなたは今日まで ' + count + ' 回、深く考えた。';
   _dfmShowStep(4);
-}
-function _dfmCopyForAI() {
-  // 問い・考えた内容・使ったフレームワークを一括コピー
-  var r = document.getElementById('dfm-result');
-  var r2 = document.getElementById('dfm-result-timer');
-  var result = (r ? r.value.trim() : '');
-  var extra = (r2 ? r2.value.trim() : '');
-  if (extra) result = result ? result + '\n' + extra : extra;
-  // 最新の深考記録から取得
-  var history = _dfmGetHistory();
-  var latest = history.length > 0 ? history[history.length - 1] : null;
-  var q = _dfmCurrentQuestion || (latest ? latest.question : '');
-  var ans = result || (latest ? latest.result : '');
-  var text = [
-    '【深考ログ】',
-    '',
-    '■ 問い',
-    q || '（問い未記入）',
-    '',
-    '■ 考えたこと',
-    ans || '（内容未記入）',
-    '',
-    '---',
-    'このログをベースに、さらに深めるアドバイスをください。',
-    '私が気づいていない視点や、次に考えるべき問いがあれば教えてください。'
-  ].join('\n');
-  var btn = document.querySelector('#dfm-step4 button');
-  function done() {
-    if (typeof showToast === 'function') showToast('📋 AIに投げるテキストをコピーしました', {type:'success', duration:2500});
-  }
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(done).catch(function() {
-      var ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
-      document.body.appendChild(ta);
-      ta.focus(); ta.select();
-      try { document.execCommand('copy'); done(); } catch(e) {}
-      document.body.removeChild(ta);
-    });
-  } else {
-    var ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
-    document.body.appendChild(ta);
-    ta.focus(); ta.select();
-    try { document.execCommand('copy'); done(); } catch(e) {}
-    document.body.removeChild(ta);
-  }
 }
 function _dfmSaveToScratch() {
   var r = document.getElementById('dfm-result');
@@ -19081,8 +19416,8 @@ function _dfmSaveToScratch() {
   var text = '【深考】' + _dfmCurrentQuestion + (result ? '\n' + result : '');
   var dateStr = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
   var newId = (typeof generateTaskId === 'function') ? generateTaskId() : ('df_' + Date.now());
-  if (typeof allTasks !== 'undefined' && allTasks) {
-    allTasks.push({
+  if (typeof window.allTasks !== 'undefined' && window.allTasks) {
+    window.allTasks.push({
       id: newId, text: text, date: dateStr, time: null, section: 1,
       completed: false, done: false, displayScope: 'daily_only',
       kind: 'scratch', createdAt: new Date().toISOString()
@@ -19106,9 +19441,30 @@ function _dfmReset() {
   if (r) r.value = '';
   _dfmShowStep(1);
 }
+function _dfmCopyForAI() {
+  var r = document.getElementById('dfm-result');
+  var r2 = document.getElementById('dfm-result-timer');
+  var result = (r ? r.value.trim() : '');
+  var extra = (r2 ? r2.value.trim() : '');
+  if (extra) result = result ? result + '\n' + extra : extra;
+  var history = _dfmGetHistory();
+  var latest = history.length > 0 ? history[history.length - 1] : null;
+  var q = _dfmCurrentQuestion || (latest ? latest.question : '');
+  var ans = result || (latest ? latest.result : '');
+  var dateStr = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
+  var text = ['【深考ログ】' + dateStr, '', '■ 問い', q || '（問い未記入）', '', '■ 考えたこと', ans || '（内容未記入）', '', '---', 'このログをベースに、さらに深めるアドバイスをください。', '私が気づいていない視点や、次に考えるべき問いがあれば教えてください。'].join('\n');
+  function done() { if (typeof showToast === 'function') showToast('📋 AIに投げるテキストをコピーしました', {type:'success', duration:2500}); }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(function() {
+      var ta = document.createElement('textarea'); ta.value = text; ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;'; document.body.appendChild(ta); ta.focus(); ta.select(); try { document.execCommand('copy'); done(); } catch(e) {} document.body.removeChild(ta);
+    });
+  } else {
+    var ta = document.createElement('textarea'); ta.value = text; ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;'; document.body.appendChild(ta); ta.focus(); ta.select(); try { document.execCommand('copy'); done(); } catch(e) {} document.body.removeChild(ta);
+  }
+}
 function _dfmGetHistory() {
-  if (typeof allTasks === 'undefined' || !allTasks) return [];
-  return allTasks.filter(function(t){ return t.kind === 'deepfocus'; })
+  if (typeof window.allTasks === 'undefined' || !window.allTasks) return [];
+  return window.allTasks.filter(function(t){ return t.kind === 'deepfocus'; })
     .sort(function(a,b){ return (b.createdAt||'').localeCompare(a.createdAt||''); });
 }
 function _dfmRenderHistory() {
@@ -19136,7 +19492,7 @@ function _dfmRenderHistory() {
 }
 // グローバルに公開
 function _dfmHistoryEdit(id) {
-  var r = allTasks.find(function(t){ return t.id === id && t.kind === 'deepfocus'; });
+  var r = window.allTasks.find(function(t){ return t.id === id && t.kind === 'deepfocus'; });
   if (!r) return;
   var disp = document.getElementById('dfm-edit-' + id + '-disp');
   var input = document.getElementById('dfm-edit-' + id + '-input');
@@ -19157,20 +19513,20 @@ function _dfmHistoryEdit(id) {
   }
 }
 function _dfmHistoryDelete(id) {
-  var idx = allTasks.findIndex(function(t){ return t.id === id && t.kind === 'deepfocus'; });
+  var idx = window.allTasks.findIndex(function(t){ return t.id === id && t.kind === 'deepfocus'; });
   if (idx === -1) return;
-  allTasks.splice(idx, 1);
+  window.allTasks.splice(idx, 1);
   if (typeof saveAllTasks === 'function') saveAllTasks();
   _dfmRenderHistory();
   showToast('削除しました', {type:'info', duration:2000});
 }
 function _dfmHistorySend(id) {
-  var r = allTasks.find(function(t){ return t.id === id && t.kind === 'deepfocus'; });
+  var r = window.allTasks.find(function(t){ return t.id === id && t.kind === 'deepfocus'; });
   if (!r) return;
   var text = '【深考】' + (r.question||'') + (r.result ? '\n' + r.result : '');
   var dateStr = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10);
   var newId = (typeof generateTaskId === 'function') ? generateTaskId() : ('df_' + Date.now());
-  allTasks.push({
+  window.allTasks.push({
     id: newId, text: text, date: dateStr, time: null, section: 1,
     completed: false, done: false, displayScope: 'daily_only',
     kind: 'scratch', createdAt: new Date().toISOString()
@@ -19186,6 +19542,7 @@ function _dfmShowHint() { _dfmToggleQuestion(); }
 function _dfmShowQuestion() { _dfmToggleQuestion(); }
 window._dfmFinish = _dfmFinish;
 window._dfmSaveToScratch = _dfmSaveToScratch;
+window._dfmCopyForAI = _dfmCopyForAI;
 window._dfmToggleQuestion = _dfmToggleQuestion;
 window._dfmNextQuestion = _dfmNextQuestion;
 window._dfmShowStep = _dfmShowStep;
@@ -19470,6 +19827,15 @@ function _quizFinish() {
       return 'やりたいこと：' + goal + period + '\n\n以下の形式だけで返答してください。説明・前置き・番号は不要です。\n\n1行目：やりたいことの名前（20文字以内）\n2行目以降：そのためにやること（1行1つ・3〜5件）';
     }
 
+
+
+
+
+
+
+
+
+
 // ===== window公開（block6関数） =====
 try {
   window.openQuizMode = openQuizMode;
@@ -19482,11 +19848,80 @@ try {
   window.updateAiPlanPreview = updateAiPlanPreview;
   window._quizShowQ = _quizShowQ;
   window._quizFinish = _quizFinish;
-  window._dfmCopyForAI = _dfmCopyForAI;
   window._dfmHistoryDelete = _dfmHistoryDelete;
   window._dfmHistoryEdit = _dfmHistoryEdit;
   window._dfmHistorySend = _dfmHistorySend;
   window._dfmShowHistory = _dfmShowHistory;
+  window.getGrandVisions = getGrandVisions;
+  window.renderGrandVisionBar = renderGrandVisionBar;
+  window.openGrandVisionEditor = openGrandVisionEditor;
+  window._saveGrandVision = _saveGrandVision;
+  window._deleteGrandVision = _deleteGrandVision;
+  window._onGvBannerChange = _onGvBannerChange;
+  window.openHeavenFromBanner = openHeavenFromBanner;
+  window.renderHeavenBlueprints = renderHeavenBlueprints;
+  window.adminBadgeTap = adminBadgeTap;
+  window.applyGuildLicense = applyGuildLicense;
+  window.checkAdminPw = checkAdminPw;
+  window.closeDeckBuilder = closeDeckBuilder;
+  window.closeGuildMode = closeGuildMode;
+  window.closeLpModal = closeLpModal;
+  window.copyStarterDeckCode = copyStarterDeckCode;
+  window.deckBuilderAddTask = deckBuilderAddTask;
+  window.deckBuilderApply = deckBuilderApply;
+  window.deckBuilderCancelEdit = deckBuilderCancelEdit;
+  window.deckBuilderEditTask = deckBuilderEditTask;
+  window.deckBuilderMoveTask = deckBuilderMoveTask;
+  window.deckBuilderPublish = deckBuilderPublish;
+  window.deckBuilderRemoveTask = deckBuilderRemoveTask;
+  window.deckBuilderSave = deckBuilderSave;
+  window.deleteJournal = deleteJournal;
+  window.editJournal = editJournal;
+  window.generateDeckEntry = generateDeckEntry;
+  window.importDeckFromSettings = importDeckFromSettings;
+  window.issueGuildLicense = issueGuildLicense;
+  window.openDeckBuilder = openDeckBuilder;
+  window.openJournalDetail = openJournalDetail;
+  window.openLpModal = openLpModal;
+  window.openNewJournal = openNewJournal;
+  window.saveJournalEdit = saveJournalEdit;
+  window.saveNewJournal = saveNewJournal;
+  window.showDebugLog = showDebugLog;
+  window.showGantOnboarding = showGantOnboarding;
+  window.showTutorial = showTutorial;
+  window.textToThoughts = textToThoughts;
+  window.thoughtDelete = thoughtDelete;
+  window.thoughtToScratch = thoughtToScratch;
+  window.thoughtsToText = thoughtsToText;
+  window.toggleAbout = toggleAbout;
+  window.toggleAdminMode = toggleAdminMode;
+  window.toggleLibrary = toggleLibrary;
+  window.updateMemoPreview = updateMemoPreview;
+} catch(e) { console.warn("[window公開-b6] エラー:", e); }
+// ===== window公開（block6関数） =====
+try {
+  window.openQuizMode = openQuizMode;
+  window.closeQuizMode = closeQuizMode;
+  window._quizStart = _quizStart;
+  window._quizAnswer = _quizAnswer;
+  window.openAiPlanModal = openAiPlanModal;
+  window.copyAiPlanPrompt = copyAiPlanPrompt;
+  window._buildAiPlanPrompt = _buildAiPlanPrompt;
+  window.updateAiPlanPreview = updateAiPlanPreview;
+  window._quizShowQ = _quizShowQ;
+  window._quizFinish = _quizFinish;
+  window._dfmHistoryDelete = _dfmHistoryDelete;
+  window._dfmHistoryEdit = _dfmHistoryEdit;
+  window._dfmHistorySend = _dfmHistorySend;
+  window._dfmShowHistory = _dfmShowHistory;
+  window.getGrandVisions = getGrandVisions;
+  window.renderGrandVisionBar = renderGrandVisionBar;
+  window.openGrandVisionEditor = openGrandVisionEditor;
+  window._saveGrandVision = _saveGrandVision;
+  window._deleteGrandVision = _deleteGrandVision;
+  window._onGvBannerChange = _onGvBannerChange;
+  window.openHeavenFromBanner = openHeavenFromBanner;
+  window.renderHeavenBlueprints = renderHeavenBlueprints;
   window.adminBadgeTap = adminBadgeTap;
   window.applyGuildLicense = applyGuildLicense;
   window.checkAdminPw = checkAdminPw;
@@ -19529,50 +19964,40 @@ try {
 <!-- ===== 商人ギルドモーダル ===== -->
 <!-- 深考モーダル -->
 <div id="deepFocusModal" style="display:none;position:fixed;inset:0;background:linear-gradient(160deg,#1a1035 0%,#2d1b4e 50%,#1e1040 100%);z-index:10000;flex-direction:column;overflow:hidden;">
-  <!-- ヘッダー -->
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid rgba(196,181,253,0.15);flex-shrink:0;backdrop-filter:blur(8px);">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid rgba(196,181,253,0.15);flex-shrink:0;">
     <div>
       <div style="font-size:0.9em;font-weight:700;color:#e9d5ff;letter-spacing:0.05em;">✦ 自分で深く考える</div>
       <div style="font-size:0.65em;color:rgba(196,181,253,0.5);margin-top:2px;letter-spacing:0.1em;">— 自力と他力の両輪 —</div>
     </div>
-    <button onclick="closeDeepFocusMode()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#c4b5fd;font-size:0.78em;cursor:pointer;padding:6px 14px;border-radius:20px;letter-spacing:0.05em;">× 戻る</button>
+    <button onclick="closeDeepFocusMode()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#c4b5fd;font-size:0.78em;cursor:pointer;padding:6px 14px;border-radius:20px;">× 戻る</button>
   </div>
-  <!-- ステップ1: 問いを立てる -->
   <div id="dfm-step1" style="display:flex;flex-direction:column;flex:1;overflow-y:auto;padding:28px 20px;gap:20px;">
     <div style="text-align:center;padding:12px 0 8px;">
       <div style="font-size:2.4em;margin-bottom:10px;">🌌</div>
-      <div style="font-size:1.05em;font-weight:700;color:#e9d5ff;letter-spacing:0.03em;margin-bottom:8px;">今日の問いを、立てる。</div>
-      <div style="font-size:0.8em;color:rgba(196,181,253,0.6);line-height:2;">
-        自分の力で考え抜く。それが最も深い答えを生む。<br>
-        その問いが幸せに向かうなら、始めましょう。
-      </div>
+      <div style="font-size:1.05em;font-weight:700;color:#e9d5ff;margin-bottom:8px;">今日の問いを、立てる。</div>
+      <div style="font-size:0.8em;color:rgba(196,181,253,0.6);line-height:2;">自分の力で考え抜く。それが最も深い答えを生む。<br>その問いが幸せに向かうなら、始めましょう。</div>
     </div>
     <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(196,181,253,0.2);border-radius:16px;padding:4px;">
-      <textarea id="dfm-question" placeholder="問いを一つ、ここに書いてください。" rows="4" style="width:100%;padding:16px;background:transparent;border:none;color:#f0eeff;font-size:0.95em;box-sizing:border-box;resize:none;font-family:inherit;line-height:1.9;outline:none;placeholder-color:rgba(196,181,253,0.3);"></textarea>
+      <textarea id="dfm-question" placeholder="問いを一つ、ここに書いてください。" rows="4" style="width:100%;padding:16px;background:transparent;border:none;color:#f0eeff;font-size:0.95em;box-sizing:border-box;resize:none;font-family:inherit;line-height:1.9;outline:none;"></textarea>
     </div>
     <button onclick="_dfmNext(1)" style="width:100%;padding:14px;background:linear-gradient(135deg,#7c3aed,#a78bfa,#c084fc);color:#fff;border:none;border-radius:14px;font-size:0.92em;font-weight:700;cursor:pointer;letter-spacing:0.04em;box-shadow:0 4px 20px rgba(167,139,250,0.4);">✦ この問いで深考を始める</button>
     <button onclick="_dfmShowHistory()" style="background:none;border:none;color:rgba(196,181,253,0.4);font-size:0.78em;cursor:pointer;text-align:center;padding:4px;">過去の深考を見る</button>
   </div>
-  <!-- ステップ2: 考えながら打ち込む -->
   <div id="dfm-step2" style="display:none;flex-direction:column;flex:1;overflow:hidden;position:relative;">
-    <!-- 問いの表示 + 深掘りボタン（上部） -->
     <div style="flex-shrink:0;border-bottom:1px solid rgba(196,181,253,0.12);">
       <div id="dfm-question-display" style="font-size:0.88em;font-weight:700;color:#c4b5fd;padding:12px 20px 8px;line-height:1.5;"></div>
-      <!-- 深掘り質問（インライン） -->
       <div id="dfm-question-area" style="display:none;background:rgba(124,58,237,0.15);border-top:1px solid rgba(196,181,253,0.1);border-bottom:1px solid rgba(196,181,253,0.1);padding:12px 20px;cursor:pointer;" onclick="_dfmNextQuestion()">
-        <div style="font-size:0.68em;color:rgba(196,181,253,0.5);margin-bottom:5px;letter-spacing:0.06em;">❓ 深掘り質問　（タップで次へ）</div>
+        <div style="font-size:0.68em;color:rgba(196,181,253,0.5);margin-bottom:5px;">❓ 深掘り質問　（タップで次へ）</div>
         <div id="dfm-question-text" style="font-size:0.87em;color:#e9d5ff;font-weight:600;line-height:1.8;white-space:pre-wrap;"></div>
         <div id="dfm-question-index" style="font-size:0.68em;color:rgba(196,181,253,0.35);margin-top:6px;text-align:right;"></div>
       </div>
       <div style="display:flex;gap:8px;padding:8px 20px 12px;">
         <button onclick="_dfmToggleQuestion()" style="flex:1;padding:9px;background:rgba(255,255,255,0.06);border:1px solid rgba(196,181,253,0.25);border-radius:10px;color:#c4b5fd;font-size:0.82em;cursor:pointer;font-weight:600;" id="dfm-question-btn">❓ 深掘り</button>
-        <button onclick="_dfmNext(2)" style="flex:2;padding:9px;background:linear-gradient(135deg,#7c3aed,#a78bfa);border:none;border-radius:10px;color:#fff;font-size:0.82em;font-weight:700;cursor:pointer;box-shadow:0 2px 10px rgba(124,58,237,0.4);">あと5分考える →</button>
+        <button onclick="_dfmNext(2)" style="flex:2;padding:9px;background:linear-gradient(135deg,#7c3aed,#a78bfa);border:none;border-radius:10px;color:#fff;font-size:0.82em;font-weight:700;cursor:pointer;">あと5分考える →</button>
       </div>
     </div>
-    <!-- テキストエリア -->
     <textarea id="dfm-result" placeholder="考えながら、ここに打ち込んでください。" style="flex:1;width:100%;padding:18px 20px;background:transparent;border:none;color:#f0eeff;font-size:0.95em;box-sizing:border-box;resize:none;font-family:inherit;line-height:1.9;outline:none;"></textarea>
   </div>
-  <!-- ステップ3: 5分タイマー＋打ち込み可能 -->
   <div id="dfm-step3" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
     <div style="flex-shrink:0;text-align:center;padding:18px 20px 12px;border-bottom:1px solid rgba(196,181,253,0.12);">
       <div id="dfm-timer" style="font-size:3.2em;font-weight:700;color:#e9d5ff;margin-bottom:4px;text-shadow:0 0 20px rgba(196,181,253,0.5);">5:00</div>
@@ -19581,24 +20006,86 @@ try {
     </div>
     <textarea id="dfm-result-timer" placeholder="まだ打ち込めます。あと5分、続けて。" style="flex:1;width:100%;padding:18px 20px;background:transparent;border:none;color:#f0eeff;font-size:0.95em;box-sizing:border-box;resize:none;font-family:inherit;line-height:1.9;outline:none;"></textarea>
   </div>
-  <!-- ステップ4: 完了 -->
   <div id="dfm-step4" style="display:none;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:32px 24px;text-align:center;">
     <div style="font-size:2.8em;margin-bottom:12px;">🌟</div>
     <div style="font-size:1.1em;font-weight:700;color:#e9d5ff;margin-bottom:6px;">今日も、一歩深く考えた。</div>
     <div id="dfm-count" style="font-size:0.78em;color:rgba(196,181,253,0.4);margin-bottom:28px;"></div>
     <div style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:10px;">
-      <!-- AIに投げるボタン（メイン） -->
-      <button onclick="_dfmCopyForAI()" style="width:100%;padding:13px;background:linear-gradient(135deg,#f9a8d4,#c084fc,#818cf8);color:#fff;border:none;border-radius:14px;font-size:0.9em;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(249,168,212,0.35);letter-spacing:0.03em;">✨ この深考をAIに投げる</button>
-      <!-- 雑記帳に送る -->
+      <button onclick="_dfmCopyForAI()" style="width:100%;padding:13px;background:linear-gradient(135deg,#f9a8d4,#c084fc,#818cf8);color:#fff;border:none;border-radius:14px;font-size:0.9em;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(249,168,212,0.35);">✨ この深考をAIに投げる</button>
       <button onclick="_dfmSaveToScratch()" style="width:100%;padding:12px;background:rgba(167,139,250,0.2);color:#c4b5fd;border:1px solid rgba(167,139,250,0.35);border-radius:14px;font-size:0.88em;font-weight:600;cursor:pointer;">📝 雑記帳に送る</button>
       <button onclick="closeDeepFocusMode()" style="background:none;border:none;color:rgba(196,181,253,0.3);font-size:0.82em;cursor:pointer;padding:4px;">戻る</button>
     </div>
   </div>
-  <!-- 履歴 -->
   <div id="dfm-history" style="display:none;flex-direction:column;flex:1;overflow-y:auto;padding:18px 16px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
       <div style="font-size:0.9em;font-weight:700;color:#c4b5fd;">✦ 深考の記録</div>
       <button onclick="_dfmShowStep(1)" style="background:rgba(255,255,255,0.07);border:1px solid rgba(196,181,253,0.2);color:#c4b5fd;border-radius:20px;padding:5px 14px;font-size:0.78em;cursor:pointer;">＋ 新しい深考</button>
+    </div>
+    <div id="dfm-history-list" style="display:flex;flex-direction:column;gap:12px;"></div>
+  </div>
+</div>
+  <!-- ヘッダー -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #1a1a1a;flex-shrink:0;">
+    <div>
+      <div style="font-size:0.9em;font-weight:700;color:#a78bfa;">✦ 自分で深く考える</div>
+      <div style="font-size:0.7em;color:#333;margin-top:2px;">頭と知恵を、フル活用する。</div>
+    </div>
+    <button onclick="closeDeepFocusMode()" style="background:none;border:none;color:#555;font-size:0.85em;cursor:pointer;">× 戻る</button>
+  </div>
+  <!-- ステップ1: 問いを立てる -->
+  <div id="dfm-step1" style="display:flex;flex-direction:column;flex:1;overflow-y:auto;padding:24px 20px;gap:16px;">
+    <div style="text-align:center;padding:8px 0 4px;">
+      <div style="font-size:0.7em;color:#444;letter-spacing:0.15em;margin-bottom:8px;">— 自力と他力の両輪 —</div>
+      <div style="font-size:1em;font-weight:700;color:#a78bfa;letter-spacing:0.05em;margin-bottom:6px;">✦ 深考</div>
+      <div style="font-size:0.78em;color:#444;line-height:1.9;">
+        自分の力で考え抜く。それが最も深い答えを生む。<br>
+        その問いが幸せに向かうなら、始めましょう。
+      </div>
+    </div>
+    <textarea id="dfm-question" placeholder="問いを一つ、ここに書いてください。" rows="3" style="width:100%;padding:14px;background:#111;border:1px solid #2a2a2a;border-radius:10px;color:#fff;font-size:0.95em;box-sizing:border-box;resize:none;font-family:inherit;line-height:1.8;"></textarea>
+    <button onclick="_dfmNext(1)" style="width:100%;padding:13px;background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;border:none;border-radius:10px;font-size:0.9em;font-weight:700;cursor:pointer;letter-spacing:0.03em;">✦ この問いで深考を始める</button>
+    <button onclick="_dfmShowHistory()" style="background:none;border:none;color:#333;font-size:0.78em;cursor:pointer;text-align:center;padding:4px;">過去の深考を見る</button>
+  </div>
+  <!-- ステップ2: 考えながら打ち込む -->
+  <div id="dfm-step2" style="display:none;flex-direction:column;flex:1;overflow:hidden;position:relative;">
+    <!-- 問いの表示 + 深掘りボタン（上部） -->
+    <div style="flex-shrink:0;border-bottom:1px solid #1a1a1a;">
+      <div id="dfm-question-display" style="font-size:0.88em;font-weight:700;color:#a78bfa;padding:12px 20px 8px;line-height:1.5;"></div>
+      <!-- 深掘り質問（インライン・タップで切り替え） -->
+      <div id="dfm-question-area" style="display:none;background:#111;border-top:1px solid #1a1a1a;border-bottom:1px solid #1a1a1a;padding:10px 20px;cursor:pointer;" onclick="_dfmNextQuestion()">
+        <div style="font-size:0.7em;color:#555;margin-bottom:4px;letter-spacing:0.05em;">❓ 深掘り質問　（タップで次へ）</div>
+        <div id="dfm-question-text" style="font-size:0.85em;color:#c4b5fd;font-weight:600;line-height:1.7;white-space:pre-wrap;"></div>
+        <div id="dfm-question-index" style="font-size:0.68em;color:#444;margin-top:4px;text-align:right;"></div>
+      </div>
+      <div style="display:flex;gap:8px;padding:8px 20px 10px;">
+        <button onclick="_dfmToggleQuestion()" style="flex:1;padding:8px;background:#111;border:1px solid #333;border-radius:8px;color:#a78bfa;font-size:0.82em;cursor:pointer;font-weight:600;" id="dfm-question-btn">❓ 深掘り</button>
+        <button onclick="_dfmNext(2)" style="flex:2;padding:8px;background:#a78bfa;border:none;border-radius:8px;color:#fff;font-size:0.82em;font-weight:700;cursor:pointer;">あと5分考える →</button>
+      </div>
+    </div>
+    <!-- テキストエリア（メイン・常に触れる） -->
+    <textarea id="dfm-result" placeholder="考えながら、ここに打ち込んでください。" style="flex:1;width:100%;padding:16px 20px;background:#0a0a0a;border:none;color:#ddd;font-size:0.95em;box-sizing:border-box;resize:none;font-family:inherit;line-height:1.8;outline:none;"></textarea>
+  </div>
+  <!-- ステップ3: 5分タイマー＋打ち込み可能 -->
+  <div id="dfm-step3" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+    <div style="flex-shrink:0;text-align:center;padding:16px 20px 10px;border-bottom:1px solid #1a1a1a;">
+      <div id="dfm-timer" style="font-size:3em;font-weight:700;color:#fff;margin-bottom:4px;">5:00</div>
+      <div style="font-size:0.78em;color:#555;">脳が諦めた先に、見えるものがあります。</div>
+      <button onclick="_dfmFinish()" style="margin-top:10px;padding:7px 24px;background:#1a1a1a;color:#555;border:1px solid #222;border-radius:8px;font-size:0.82em;cursor:pointer;">終わった</button>
+    </div>
+    <textarea id="dfm-result-timer" placeholder="まだ打ち込めます。あと5分、続けて。" style="flex:1;width:100%;padding:16px 20px;background:#0a0a0a;border:none;color:#ddd;font-size:0.95em;box-sizing:border-box;resize:none;font-family:inherit;line-height:1.8;outline:none;"></textarea>
+  </div>
+  <!-- ステップ4: 完了 -->
+  <div id="dfm-step4" style="display:none;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:32px 24px;text-align:center;">
+    <div style="font-size:1.1em;font-weight:700;color:#fff;margin-bottom:8px;">今日も、一歩深く考えた。</div>
+    <div id="dfm-count" style="font-size:0.78em;color:#444;margin-bottom:32px;"></div>
+    <button onclick="_dfmSaveToScratch()" style="width:100%;max-width:320px;padding:12px;background:#a78bfa;color:#fff;border:none;border-radius:10px;font-size:0.9em;font-weight:700;cursor:pointer;margin-bottom:10px;">雑記帳に送る</button>
+    <button onclick="closeDeepFocusMode()" style="background:none;border:none;color:#333;font-size:0.85em;cursor:pointer;">雑記帳に戻る</button>
+  </div>
+  <!-- 履歴 -->
+  <div id="dfm-history" style="display:none;flex-direction:column;flex:1;overflow-y:auto;padding:16px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="font-size:0.9em;font-weight:700;color:#a78bfa;">✦ 深考の記録</div>
+      <button onclick="_dfmShowStep(1)" style="background:none;border:1px solid #222;color:#555;border-radius:8px;padding:4px 12px;font-size:0.78em;cursor:pointer;">＋ 新しい深考</button>
     </div>
     <div id="dfm-history-list" style="display:flex;flex-direction:column;gap:12px;"></div>
   </div>
