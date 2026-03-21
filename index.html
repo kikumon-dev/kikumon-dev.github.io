@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.37.73';
+    const APP_VERSION = 'v0.37.75';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -18531,7 +18531,6 @@ window.openSingleDeepFocus = openSingleDeepFocus;
 window.closeSingleDeepFocus = closeSingleDeepFocus;
 window._sdfNext = _sdfNext;
 window._sdfInsertHint = _sdfInsertHint;
-window._sdfAddHint = _sdfAddHint;
 window._sdfFinish = _sdfFinish;
 window._sdfShowHistory = _sdfShowHistory;
 window._sdfHistoryDelete = _sdfHistoryDelete;
@@ -20016,6 +20015,28 @@ document.addEventListener('DOMContentLoaded', function() {
       var w = ['日','月','火','水','木','金','土'][date.getDay()];
       return y + '年' + m + '月' + d + '日（' + w + '）';
     }
+    // ===== thoughtsヘルパー（kind:'thought' フラット構造） =====
+    function getThoughts(journalId) {
+      return allTasks.filter(function(t){ return t.kind === 'thought' && t.parentId === journalId; })
+        .sort(function(a,b){ return new Date(a.createdAt) - new Date(b.createdAt); });
+    }
+    function addThought(journalId, text) {
+      allTasks.push({ id: generateTaskId(), kind: 'thought', parentId: journalId, text: text, createdAt: new Date().toISOString() });
+    }
+    function deleteThought(thoughtId) {
+      var idx = allTasks.findIndex(function(t){ return t.id === thoughtId && t.kind === 'thought'; });
+      if (idx !== -1) allTasks.splice(idx, 1);
+    }
+    function updateThoughtText(thoughtId, newText) {
+      var th = allTasks.find(function(t){ return t.id === thoughtId && t.kind === 'thought'; });
+      if (th) th.text = newText;
+    }
+    function deleteThoughtsByJournal(journalId) {
+      for (var i = allTasks.length - 1; i >= 0; i--) {
+        if (allTasks[i].kind === 'thought' && allTasks[i].parentId === journalId) allTasks.splice(i, 1);
+      }
+    }
+
     function loadJournals() {
       return allTasks.filter(function(t){ return t.kind === 'journal'; })
         .sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
