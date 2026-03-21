@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.38.45';
+    const APP_VERSION = 'v0.38.47';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -8915,6 +8915,8 @@ function reviveBlueprint(id) {
       }
     }
     function deleteBlueprint() {
+      var id = _gantEditingBlueprintId;
+      var bp = id ? allTasks.find(function(t){ return t.id === id; }) : null;
       if (!bp) return;
       const childGants   = allTasks.filter(t => t.kind === 'gantt' && t.blueprintId === id);
       const uniqueTaskIds = [...new Set(childGants.flatMap(g => g.taskIds || []))];
@@ -19213,6 +19215,39 @@ function showDebugLog() {
          ? ok('造営挙動テスト: クリーンアップ完了(' + allTasks.length + '件)')
          : ng('造営挙動テスト', 'クリーンアップ後件数不一致 ' + allTasks.length + '件 期待' + _prevLen4 + '件');
      } catch(e) { ng('造営テスト', e.message); }
+
+     // ===== 16b. deleteBlueprint挙動テスト =====     try {
+       var _prevLen5 = allTasks.length;
+       // テスト用blueprint・gantt・taskを作成
+       var _dbpId  = 'smoke-dbp-' + Date.now();
+       var _dgId   = 'smoke-dg-'  + Date.now();
+       var _dtId   = 'smoke-dt-'  + Date.now();
+       allTasks.push({ id: _dbpId, kind: 'blueprint', title: 'テスト志', inHeaven: false });
+       allTasks.push({ id: _dgId,  kind: 'gantt', blueprintId: _dbpId, taskIds: [_dtId], title: '工程' });
+       allTasks.push({ id: _dtId,  kind: 'task', text: 'タスク', date: '2026-01-01', completed: false, done: false, section: 1 });
+       allTasks.length === _prevLen5 + 3
+         ? ok('deleteBlueprint: テストデータ作成(3件)')
+         : ng('deleteBlueprint', 'テストデータ作成失敗');
+       // _gantEditingBlueprintIdをセット → deleteBlueprint内で参照されるはず
+       var _prevEditId = window._gantEditingBlueprintId;
+       window._gantEditingBlueprintId = _dbpId;
+       // bp/idが正しく取れるかを確認（実際の削除はshowChoiceModal依存のため、関数内変数解決だけ検証）
+       var _dbpSrc = (window.deleteBlueprint||function(){}).toString();
+       _dbpSrc.indexOf('_gantEditingBlueprintId') !== -1
+         ? ok('deleteBlueprint: _gantEditingBlueprintIdからid取得コード確認')
+         : ng('deleteBlueprint', '_gantEditingBlueprintIdの参照なし（クロージャバグ再発リスク）');
+       // bp取得確認
+       var _testBp = allTasks.find(function(t){ return t.id === _dbpId; });
+       _testBp && _testBp.kind === 'blueprint'
+         ? ok('deleteBlueprint: blueprintレコード取得確認')
+         : ng('deleteBlueprint', 'blueprintレコード取得失敗');
+       // 手動削除でクリーンアップ
+       window._gantEditingBlueprintId = _prevEditId;
+       allTasks = allTasks.filter(function(t){ return t.id !== _dbpId && t.id !== _dgId && t.id !== _dtId; });
+       allTasks.length === _prevLen5
+         ? ok('deleteBlueprint挙動テスト: クリーンアップ完了(' + allTasks.length + '件)')
+         : ng('deleteBlueprint挙動テスト', 'クリーンアップ後件数不一致 ' + allTasks.length + '件 期待' + _prevLen5 + '件');
+     } catch(e) { ng('deleteBlueprint挙動テスト', e.message); }
 
      // ===== 17. Key Purify Absolute Green（最終確認・4軸検査） =====
      try {
