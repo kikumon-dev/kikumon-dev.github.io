@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.38.54';
+    const APP_VERSION = 'v0.38.55';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -321,9 +321,10 @@
       background: #faf8f3;
     }
     .scratch-date-label {
-      font-size: 0.7em;
-      color: #bbb;
+      font-size: 0.88em;
+      color: #8c7d6a;
       letter-spacing: 0.04em;
+      font-weight: 500;
     }
     /* リスト本体 */
     .scratch-body {
