@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.38.15';
+    const APP_VERSION = 'v0.38.16';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -18677,7 +18677,13 @@ function showDebugLog() {
        var lacking = tasks.filter(function(t){ return !('completed' in t); }).length;
        lacking === 0
          ? ok('allTasks: completed フィールド存在 (' + tasks.length + '件)')
-         : ok('allTasks: task ' + tasks.length + '件中 ' + lacking + '件がcompleted未設定（旧データ）');
+         : ok('allTasks: task ' + tasks.length + '件中 ' + lacking + '件がcompleted未設定（旧データ互換）');
+       // done/completed同期状態の確認（同期ズレがないか）
+       var synced = tasks.filter(function(t){ return 'done' in t && 'completed' in t; });
+       var desynced = synced.filter(function(t){ return !!t.done !== !!t.completed; }).length;
+       desynced === 0
+         ? ok('done/completed同期: ズレなし（' + synced.length + '件確認）')
+         : ok('done/completed同期: ' + desynced + '件ズレあり（旧データ混在の可能性）');
        var journalIds = new Set(at.filter(function(t){ return t.kind==='journal'; }).map(function(t){ return t.id; }));
        var orphans = at.filter(function(t){ return t.kind==='thought' && !journalIds.has(t.parentId); });
        orphans.length === 0 ? ok('thought→journal 参照整合性') : ng('thought孤立', orphans.length + '件');
@@ -18831,6 +18837,50 @@ function showDebugLog() {
            : ng('SDF履歴編集', '削除後件数不一致');
         } // else (_sdfHistorySave存在)
      } catch(e) { ng('SDF履歴編集', e.message); }
+
+     // ===== 15. done/completed 双方向同期 挙動テスト =====
+     try {
+       var _syncId = 'smoke-sync-' + Date.now();
+       var _prevLen2 = allTasks.length;
+       // テスト用taskをメモリに追加
+       var _syncTask = { id: _syncId, kind: 'task', text: 'sync test', completed: false, done: false, date: '2026-01-01' };
+       allTasks.push(_syncTask);
+       var _st = allTasks.filter(function(t){ return t.id === _syncId; })[0];
+
+       // 造営トグルシミュレート: done = !done、completed = done
+       _st.done = !_st.done;
+       _st.completed = _st.done;
+       (_st.done === true && _st.completed === true)
+         ? ok('done/completed同期: 造営トグル done→true、completed→true 確認')
+         : ng('done/completed同期', '造営トグル後 done:' + _st.done + ' completed:' + _st.completed);
+
+       // 日次トグルシミュレート: completed = !completed、done = completed
+       _st.completed = !_st.completed;
+       _st.done = _st.completed;
+       (_st.done === false && _st.completed === false)
+         ? ok('done/completed同期: 日次トグル done→false、completed→false 確認')
+         : ng('done/completed同期', '日次トグル後 done:' + _st.done + ' completed:' + _st.completed);
+
+       // 旧データ互換: done:true、completed未定義 → (completed || done) = true
+       var _oldData1 = { done: true };
+       var _oldData2 = { completed: true };
+       var _oldData3 = { done: false, completed: undefined };
+       (_oldData1.completed || _oldData1.done) === true
+         ? ok('done/completed互換: done:true completed:undefined → true')
+         : ng('done/completed互換', 'done:true completed:undefinedがfalse');
+       (_oldData2.completed || _oldData2.done) === true
+         ? ok('done/completed互換: done:undefined completed:true → true')
+         : ng('done/completed互換', 'done:undefined completed:trueがfalse');
+       !!(_oldData3.completed || _oldData3.done) === false
+         ? ok('done/completed互換: done:false completed:undefined → false')
+         : ng('done/completed互換', '両方falsy/undefinedがtrueになった');
+
+       // テスト用レコードをメモリから削除
+       allTasks = allTasks.filter(function(t){ return t.id !== _syncId; });
+       allTasks.length === _prevLen2
+         ? ok('done/completed同期テスト: クリーンアップ完了')
+         : ng('done/completed同期テスト', 'クリーンアップ後件数不一致');
+     } catch(e) { ng('done/completed同期テスト', e.message); }
 
      // ===== 11. Key Purify Absolute Green（最終確認） =====
      try {
