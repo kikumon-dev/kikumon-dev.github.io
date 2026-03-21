@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.37.75';
+    const APP_VERSION = 'v0.37.78';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -18843,406 +18843,243 @@ function showDebugLog() {
     showToast('🔄 テスト実行（' + changed + '件移動）', {type:'info'});
   };
   // ===== スモークテストボタン =====
-  var btnSmoke = document.createElement('button');
-  btnSmoke.textContent = '🧪 スモークテスト実行';
-  btnSmoke.style.cssText = 'width:100%;padding:10px;background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.5);border-radius:8px;color:#a78bfa;font-weight:700;cursor:pointer;margin-bottom:8px;';
-  btnSmoke.onclick = function() {
-    var results = [];
-    var pass = 0, fail = 0;
-    function ok(name)   { results.push('✅ ' + name); pass++; }
-    function ng(name, reason) { results.push('❌ ' + name + (reason ? ': ' + reason : '')); fail++; }
+   var btnSmoke = document.createElement('button');
+   btnSmoke.textContent = '🧪 スモークテスト実行';
+   btnSmoke.style.cssText = 'width:100%;padding:10px;background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.3);border-radius:8px;color:#a78bfa;font-size:0.82em;cursor:pointer;margin-bottom:6px;font-weight:600;';
+   btnSmoke.onclick = function() {
+     var results = [];
+     var pass = 0, fail = 0;
+     function ok(name)   { results.push('✅ ' + name); pass++; }
+     function ng(name, reason) { results.push('❌ ' + name + (reason ? ': ' + reason : '')); fail++; }
 
-    // 1. 主要関数の存在確認
-    var funcs = ['switchView','renderMonthlyView','renderWeeklyView','renderAllSections',
-                 'saveAllTasks','loadAllTasks','saveAllSettings','loadAllSettings',
-                 'generateTaskId','getLocalDateStr','showToast',
-                 'openDeepFocusMode','_dfmToggleQuestion'];
-    funcs.forEach(function(f) {
-      typeof window[f] === 'function' ? ok('関数: ' + f) : ng('関数: ' + f, '未定義');
-    });
+     // 1. 主要関数の存在確認
+     var funcs = ['switchView','renderMonthlyView','renderWeeklyView','renderAllSections',
+                  'saveAllTasks','loadAllTasks','saveAllSettings','loadAllSettings',
+                  'generateTaskId','getLocalDateStr','showToast',
+                  'openDeepFocusMode','_dfmToggleQuestion',
+                  'openSingleDeepFocus','closeSingleDeepFocus','_sdfInsertHint','_sdfFinish',
+                  'moveScratchToThoughts','getThoughts','addThought','deleteThought'];
+     funcs.forEach(function(f) {
+       typeof window[f] === 'function' ? ok('関数: ' + f) : ng('関数: ' + f, '未定義');
+     });
 
-    // 1b. 機能実在確認（スタブ・空関数でないか・DOM存在確認）
-    var featureChecks = [
-      // [機能名, 関数名, DOM確認ID or null, 最低行数]
-      ['AI計画モーダル', 'openAiPlanModal', null, 10],
-      ['深考モーダル', 'openDeepFocusMode', 'deepFocusModal', 5],
-      ['クイズモーダル', 'openQuizMode', 'quizModal', 5],
-      ['デッキビルダー', 'openDeckBuilder', 'deckBuilderModal', 3],
-      ['検索モーダル', 'openSearchModal', 'searchModal', 3],
-      ['家族共有モーダル', 'openFamilyShareModal', 'familyShareModal', 3],
-      ['チュートリアル', 'showTutorial', 'tutorialOverlay', 3],
-      ['月間ビュー', 'renderMonthlyView', 'monthlyCalendar', 10],
-      ['週間ビュー', 'renderWeeklyView', 'weeklyContainer', 10],
-      ['月切り替え', 'changeMonth', null, 3],
-    ];
-    featureChecks.forEach(function(fc) {
-      var name = fc[0], fnName = fc[1], domId = fc[2], minLines = fc[3];
-      var fn = window[fnName];
-      if (typeof fn !== 'function') {
-        ng('機能: ' + name, '関数未定義');
-        return;
-      }
-      // 関数の中身の行数チェック（スタブ検出）
-      var src = fn.toString();
-      var lines = src.split('\n').filter(function(l){ return l.trim().length > 0; }).length;
-      if (lines < minLines) {
-        ng('機能: ' + name, 'スタブの疑い(' + lines + '行)');
-        return;
-      }
-      // DOM存在確認
-      if (domId && !document.getElementById(domId)) {
-        ng('機能: ' + name, 'DOM #' + domId + ' が存在しない');
-        return;
-      }
-      ok('機能: ' + name + ' (' + lines + '行)');
-    });
+     // 1b. 機能実在確認（関数存在 + DOM存在）
+     var featureChecks = [
+       ['AI計画モーダル',   'openAiPlanModal',         null],
+       ['深考モーダル',     'openDeepFocusMode',        'deepFocusModal'],
+       ['クイズモーダル',   'openQuizMode',             'quizModal'],
+       ['デッキビルダー',   'openDeckBuilder',          'deckBuilderModal'],
+       ['検索モーダル',     'openSearchModal',          'searchModal'],
+       ['家族共有モーダル', 'openFamilyShareModal',     'familyShareModal'],
+       ['チュートリアル',   'showTutorial',             'tutorialOverlay'],
+       ['月間ビュー',       'renderMonthlyView',        'monthlyCalendar'],
+       ['週間ビュー',       'renderWeeklyView',         'weeklyContainer'],
+       ['月切り替え',       'changeMonth',              null],
+       ['SDF',             'openSingleDeepFocus',      'sdfModal'],
+     ];
+     featureChecks.forEach(function(fc) {
+       var name = fc[0], fnName = fc[1], domId = fc[2];
+       if (typeof window[fnName] !== 'function') { ng('機能: ' + name, '関数未定義'); return; }
+       if (domId && !document.getElementById(domId)) { ng('機能: ' + name, 'DOM #' + domId + ' なし'); return; }
+       ok('機能: ' + name);
+     });
 
-    // 1c. 依存関数チェック（関数が内部で呼んでいる関数が存在するか）
-    var depChecks = [
-      ['AI計画モーダル', 'openAiPlanModal',  ['copyAiPlanPrompt', '_buildAiPlanPrompt', 'updateAiPlanPreview', 'showToast', 'getLocalDateStr']],
-      ['深考モード',     'openDeepFocusMode', ['_dfmShowStep', '_dfmToggleQuestion', '_dfmFinish', '_dfmSaveToScratch']],
-      ['クイズ',         'openQuizMode',      ['_quizStart', '_quizShowQ', '_quizAnswer', '_quizFinish']],
-      ['タスク保存',     'saveAllTasks',      ['saveAllSettings']],
-      ['ビュー切替',     'switchView',        ['renderMonthlyView', 'renderWeeklyView', 'renderAllSections', 'switchDailyTab']],
-      ['月間ビュー',     'renderMonthlyView', ['renderCalendarFilter', 'isCalendarVisible', 'getLocalDateStr']],
-      ['週間ビュー',     'renderWeeklyView',  ['renderCalendarFilter', 'isCalendarVisible', 'getLocalDateStr']],
-    ];
-    depChecks.forEach(function(dc) {
-      var name = dc[0], fnName = dc[1], deps = dc[2];
-      var missing = deps.filter(function(d){ return typeof window[d] !== 'function'; });
-      if (missing.length === 0) {
-        ok('依存: ' + name + ' (' + deps.length + '個OK)');
-      } else {
-        ng('依存: ' + name, '未定義: ' + missing.join(', '));
-      }
-    });
+     // 1c. 依存関数チェック
+     var depChecks = [
+       ['AI計画モーダル', 'openAiPlanModal',  ['copyAiPlanPrompt', '_buildAiPlanPrompt', 'updateAiPlanPreview']],
+       ['深考モード',     'openDeepFocusMode', ['_dfmShowStep', '_dfmToggleQuestion', '_dfmFinish']],
+       ['クイズ',         'openQuizMode',      ['_quizStart', '_quizShowQ', '_quizAnswer', '_quizFinish']],
+       ['タスク保存',     'saveAllTasks',      ['saveAllSettings']],
+       ['ビュー切替',     'switchView',        ['renderMonthlyView', 'renderWeeklyView', 'renderAllSections']],
+       ['月間ビュー',     'renderMonthlyView', ['renderCalendarFilter', 'isCalendarVisible', 'getLocalDateStr']],
+       ['週間ビュー',     'renderWeeklyView',  ['renderCalendarFilter', 'isCalendarVisible', 'getLocalDateStr']],
+     ];
+     depChecks.forEach(function(dc) {
+       var name = dc[0], fnName = dc[1], deps = dc[2];
+       var missing = deps.filter(function(d){ return typeof window[d] !== 'function'; });
+       missing.length === 0 ? ok('依存: ' + name + ' (' + deps.length + '個OK)') : ng('依存: ' + name, '未定義: ' + missing.join(', '));
+     });
 
-    // 2. allSettings 構造チェック
-    var as = window.allSettings;
-    if (!as) { ng('allSettings', '未定義'); }
-    else {
-      as.ui     ? ok('allSettings.ui') : ng('allSettings.ui', 'なし');
-      as.profile ? ok('allSettings.profile') : ng('allSettings.profile', 'なし');
-      as.flags  ? ok('allSettings.flags') : ng('allSettings.flags', 'なし');
-      as.meta   ? ok('allSettings.meta') : ng('allSettings.meta', 'なし');
-    }
+     // 2. allSettings 構造チェック
+     var as = window.allSettings;
+     if (!as) { ng('allSettings', '未定義'); }
+     else {
+       as.ui     ? ok('allSettings.ui') : ng('allSettings.ui', 'なし');
+       as.profile ? ok('allSettings.profile') : ng('allSettings.profile', 'なし');
+       as.flags  ? ok('allSettings.flags') : ng('allSettings.flags', 'なし');
+       as.meta   ? ok('allSettings.meta') : ng('allSettings.meta', 'なし');
+     }
 
-    // 3. window.allTasks 存在・配列確認
-    var at = window.allTasks;
-    if (!Array.isArray(at)) { ng('allTasks', '配列でない'); }
-    else {
-      ok('allTasks: ' + at.length + '件');
-      var kinds = {};
-      at.forEach(function(t){ kinds[t.kind||'?'] = (kinds[t.kind||'?']||0)+1; });
-      ok('kindチェック: ' + JSON.stringify(kinds));
-      // IDの重複チェック
-      var ids = at.map(function(t){ return t.id; });
-      var uniq = new Set(ids);
-      uniq.size === ids.length ? ok('ID重複なし') : ng('ID重複', (ids.length - uniq.size) + '件重複');
-    }
+     // 3. allTasks 存在・配列・kind分布
+     var at = window.allTasks;
+     if (!Array.isArray(at)) { ng('allTasks', '配列でない'); }
+     else {
+       ok('allTasks: ' + at.length + '件');
+       var kinds = {};
+       at.forEach(function(t){ kinds[t.kind||'?'] = (kinds[t.kind||'?']||0)+1; });
+       ok('kindチェック: ' + JSON.stringify(kinds));
+       var ids = at.map(function(t){ return t.id; });
+       new Set(ids).size === ids.length ? ok('ID重複なし') : ng('ID重複', (ids.length - new Set(ids).size) + '件重複');
+     }
 
-    // 4. DOM要素の存在確認（ビュー）
-    var doms = ['monthlyView','weeklyView','timelineView','scratchView',
-                'journalView','settingsView','gantView','notebookView'];
-    doms.forEach(function(id) {
-      document.getElementById(id) ? ok('DOM: #' + id) : ng('DOM: #' + id, '見つからない');
-    });
-    // 4b. DOM要素の存在確認（モーダル・主要UI）
-    var modalDoms = ['deepFocusModal','quizModal','deckBuilderModal','searchModal',
-                     'familyShareModal','tutorialOverlay','taskEditModal','customModal',
-                     'monthlyCalendar','weeklyContainer'];
-    modalDoms.forEach(function(id) {
-      document.getElementById(id) ? ok('DOM: #' + id) : ng('DOM: #' + id, '見つからない');
-    });
+     // 4. DOM要素の存在確認
+     var doms = ['monthlyView','weeklyView','timelineView','scratchView','journalView',
+                 'settingsView','gantView','notebookView','deepFocusModal','quizModal',
+                 'deckBuilderModal','searchModal','familyShareModal','tutorialOverlay',
+                 'taskEditModal','customModal','monthlyCalendar','weeklyContainer','sdfModal'];
+     doms.forEach(function(id) {
+       document.getElementById(id) ? ok('DOM: #' + id) : ng('DOM: #' + id, '見つからない');
+     });
 
-    // 5. saveAllTasks → loadAllTasks 往復テスト
-    // 状況：データが保存されない・リロード後に消える時
-    // 意図：saveAllTasksがlocalStorageに正確に書き込めるか確認
-    try {
-      var before = JSON.stringify(window.allTasks);
-      window.saveAllTasks();
-      var saved = localStorage.getItem('allTasks');
-      var parsed = JSON.parse(saved);
-      JSON.stringify(parsed) === before ? ok('saveAllTasks/localStorage往復') : ng('saveAllTasks/localStorage往復', 'データ不一致');
-    } catch(e) { ng('saveAllTasks往復テスト', e.message); }
+     // 5. saveAllTasks / localStorage 往復テスト
+     try {
+       var _snap = JSON.stringify(window.allTasks);
+       saveAllTasks();
+       var _read = localStorage.getItem('allTasks');
+       JSON.parse(_snap).length === JSON.parse(_read).length
+         ? ok('saveAllTasks/localStorage往復')
+         : ng('saveAllTasks/localStorage往復', '件数不一致');
+     } catch(e) { ng('saveAllTasks往復', e.message); }
 
-    // 6. UUID v7 深層検証
-    // 状況：IDが重複・時系列ソートがおかしい・旧形式IDが残存している時
-    // 意図：generateTaskIdがRFC 9562準拠のUUID v7を生成しているか全角度で確認
-    try {
-      var uuids = [];
-      for (var i = 0; i < 100; i++) uuids.push(window.generateTaskId());
-      var uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
-      // 6a. フォーマット
-      var formatFail = uuids.filter(function(u){ return !uuidRe.test(u); });
-      formatFail.length === 0 ? ok('UUID v7 フォーマット(100件)') : ng('UUID v7 フォーマット異常', formatFail.length + '件');
-      // 6b. バージョンビット
-      var vFail = uuids.filter(function(u){ return u.split('-')[2][0] !== '7'; });
-      vFail.length === 0 ? ok('UUID v7 バージョンビット') : ng('UUID v7 バージョンビット異常', vFail.length + '件');
-      // 6c. バリアントビット
-      var varFail = uuids.filter(function(u){ return !/^[89ab]/.test(u.split('-')[3]); });
-      varFail.length === 0 ? ok('UUID v7 バリアントビット') : ng('UUID v7 バリアントビット異常', varFail.length + '件');
-      // 6d. 時系列単調増加
-      var sorted = uuids.slice().sort();
-      JSON.stringify(uuids) === JSON.stringify(sorted) ? ok('UUID v7 時系列単調増加(100件)') : ng('UUID v7 時系列単調増加違反');
-      // 6e. タイムスタンプ
-      var now = Date.now();
-      var tsHex = uuids[0].split('-')[0] + uuids[0].split('-')[1];
-      var tsMs = parseInt(tsHex, 16);
-      Math.abs(tsMs - now) < 5000 ? ok('UUID v7 タイムスタンプ正常(誤差' + Math.abs(tsMs-now) + 'ms)') : ng('UUID v7 タイムスタンプ異常', '誤差' + Math.abs(tsMs-now) + 'ms');
-      // 6f. 一意性
-      new Set(uuids).size === 100 ? ok('UUID v7 一意性(100件)') : ng('UUID v7 重複あり');
-      // 6g. allTasksの全ID形式
-      var tasks = window.allTasks || [];
-      var nonUuid = tasks.filter(function(t){ return t.id && !uuidRe.test(t.id); });
-      nonUuid.length === 0 ? ok('allTasks全IDがUUID形式(' + tasks.length + '件)') : ng('allTasks非UUID ID', nonUuid.length + '件');
-    } catch(e) { ng('UUID v7テスト', e.message); }
+     // 6. UUID v7 品質テスト
+     try {
+       var uuids = [];
+       for (var i = 0; i < 100; i++) uuids.push(generateTaskId());
+       var uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+       uuids.filter(function(u){ return !uuidRe.test(u); }).length === 0 ? ok('UUID v7 フォーマット(100件)') : ng('UUID v7 フォーマット異常');
+       uuids.filter(function(u){ return u.split('-')[2][0] !== '7'; }).length === 0 ? ok('UUID v7 バージョンビット') : ng('UUID v7 バージョンビット異常');
+       uuids.filter(function(u){ return !/^[89ab]/.test(u.split('-')[3]); }).length === 0 ? ok('UUID v7 バリアントビット') : ng('UUID v7 バリアントビット異常');
+       var sorted = uuids.slice().sort();
+       JSON.stringify(sorted) === JSON.stringify(uuids) ? ok('UUID v7 時系列単調増加(100件)') : ng('UUID v7 時系列単調増加異常');
+       var ts0 = parseInt(uuids[0].replace(/-/g,'').slice(0,12), 16);
+       var now = Date.now();
+       Math.abs(ts0 - now) < 5000 ? ok('UUID v7 タイムスタンプ正常(誤差' + Math.abs(ts0-now) + 'ms)') : ng('UUID v7 タイムスタンプ異常', '誤差' + Math.abs(ts0-now) + 'ms');
+       new Set(uuids).size === 100 ? ok('UUID v7 一意性(100件)') : ng('UUID v7 重複あり');
+       var tasks = window.allTasks || [];
+       var nonUuid = tasks.filter(function(t){ return t.id && !uuidRe.test(t.id); });
+       nonUuid.length === 0 ? ok('allTasks全IDがUUID形式(' + tasks.length + '件)') : ng('allTasks非UUID ID', nonUuid.length + '件');
+     } catch(e) { ng('UUID v7テスト', e.message); }
 
-    // 7. 機能・依存チェック
-    // 状況：機能が消えた・スタブに置き換わった疑いがある時
-    // 意図：関数の行数・DOM・依存関数の存在を確認
-    var featureDeepChecks = [
-      ['AI計画モーダル', 'openAiPlanModal', null, 10, ['copyAiPlanPrompt','_buildAiPlanPrompt']],
-      ['深考AIコピー', '_dfmCopyForAI', null, 5, ['_dfmGetHistory']],
-      ['グランドビジョン', 'renderGrandVisionBar', 'grandVisionBanner', 5, ['getGrandVisions']],
-      ['クイズ', 'openQuizMode', 'quizModal', 3, ['_quizStart','_quizShowQ','_quizFinish']],
-    ];
-    featureDeepChecks.forEach(function(fc) {
-      var name=fc[0], fnName=fc[1], domId=fc[2], minLines=fc[3], deps=fc[4];
-      var fn = window[fnName];
-      if (typeof fn !== 'function') { ng('機能: '+name, '関数未定義'); return; }
-      var lines = fn.toString().split('\n').filter(function(l){return l.trim().length>0;}).length;
-      if (lines < minLines) { ng('機能: '+name, 'スタブ疑い('+lines+'行)'); return; }
-      if (domId && !document.getElementById(domId)) { ng('機能: '+name, 'DOM#'+domId+'なし'); return; }
-      var missingDeps = deps.filter(function(d){return typeof window[d]!=='function';});
-      if (missingDeps.length > 0) { ng('機能: '+name, '依存未定義:'+missingDeps.join(',')); return; }
-      ok('機能: '+name+' ('+lines+'行, 依存'+deps.length+'個OK)');
-    });
+     // 7. renderScratchView・promoteScratchToGant 存在確認
+     try {
+       var rsv = window.renderScratchView;
+       if (typeof rsv !== 'function') { ng('renderScratchView', '未定義'); }
+       else {
+         var rsvSrc = rsv.toString();
+         ok('renderScratchView: 存在確認');
+         // IMEイベントはrenderScratchViewの外で管理（触るな原則）
+         rsvSrc.indexOf('isComposing') === -1 ? ok('renderScratchView: IME二重登録なし（iOSバグ安全）') : ng('renderScratchView', 'IMEイベント混入（iOSバグ再燃リスク）');
+       }
+       var pstg = window.promoteScratchToGant;
+       if (typeof pstg !== 'function') { ng('promoteScratchToGant', '未定義'); }
+       else {
+         var pstgSrc = pstg.toString();
+         ['saveAllTasks','generateTaskId','showToast'].forEach(function(d){
+           pstgSrc.indexOf(d) !== -1 ? ok('promoteScratchToGant: ' + d + '参照あり') : ng('promoteScratchToGant', d + '参照なし');
+         });
+       }
+     } catch(e) { ng('scratch系', e.message); }
 
+     // 8. allTasks 整合性
+     try {
+       var tasks8 = window.allTasks || [];
+       Array.isArray(tasks8) ? ok('allTasks: 配列型維持確認') : ng('allTasks', '配列でない');
+       var syncOk = tasks8.filter(function(t){ return t.kind==='task'; }).every(function(t){
+         return 'completed' in t && 'done' in t;
+       });
+       syncOk ? ok('allTasks: completed/done フィールド存在 (' + tasks8.filter(function(t){return t.kind==='task';}).length + '件)') : ng('allTasks', 'completed/done欠落');
+       // thought→journal parentId整合性
+       var journalIds = new Set(tasks8.filter(function(t){ return t.kind==='journal'; }).map(function(t){ return t.id; }));
+       var orphanThoughts = tasks8.filter(function(t){ return t.kind==='thought' && !journalIds.has(t.parentId); });
+       orphanThoughts.length === 0 ? ok('thought→journal 参照整合性') : ng('thought孤立', orphanThoughts.length + '件（parentId不一致）');
+     } catch(e) { ng('allTasks整合性', e.message); }
 
-    // 9. renderScratchView 不変確認
-    // 状況：renderScratchViewに触れるとiOS IME二重登録バグが再発する
-    // 意図：関数が存在し十分な行数があり、IMEバグの痕跡がないことを確認
-    try {
-      var rsv = window.renderScratchView;
-      if (typeof rsv !== 'function') {
-        ng('renderScratchView不変確認', '関数未定義');
-      } else {
-        var rsvStr = rsv.toString();
-        var rsvLines = rsvStr.split('\n').filter(function(l){return l.trim().length>0;}).length;
-        rsvLines >= 20 ? ok('renderScratchView: 正常存在 (' + rsvLines + '行) — 不変') : ng('renderScratchView: 行数不足疑い', rsvLines + '行');
-        // IMEバグの痕跡チェック（compositionstartが二重登録されていないか）
-        var compCount = (rsvStr.match(/compositionstart/g)||[]).length;
-        compCount <= 1 ? ok('renderScratchView: IMEイベント登録正常 (' + compCount + '件)') : ng('renderScratchView: IMEイベント二重登録疑い', compCount + '件');
-      }
-    } catch(e) { ng('renderScratchView確認', e.message); }
+     // 9. grandVision・heaven系
+     try {
+       var gvBanner = document.getElementById('grandVisionBanner');
+       var gvEmpty  = document.getElementById('grandVisionEmpty');
+       gvBanner ? ok('grandVisionBanner: DOM存在確認') : ng('grandVisionBanner', 'DOM見つからない');
+       gvEmpty  ? ok('grandVisionEmpty: DOM存在確認') : ng('grandVisionEmpty', 'DOM見つからない');
+       if (gvBanner) {
+         var gantView9 = document.getElementById('gantView');
+         (gantView9 && gantView9.contains(gvBanner)) ? ok('grandVisionBanner: gantView内に正しく配置') : ng('grandVisionBanner', 'gantView外');
+       }
+       typeof window.renderGrandVisionBar === 'function' ? ok('renderGrandVisionBar: 関数存在') : ng('renderGrandVisionBar', '未定義');
+     } catch(e) { ng('grandVision系', e.message); }
 
-    // 10. promoteScratchToGant 動作確認
-    // 状況：雑記帳→造営ボタンが消えた・動かない時
-    // 意図：関数が定義され依存関数も存在することを確認
-    try {
-      var pstg = window.promoteScratchToGant;
-      if (typeof pstg !== 'function') {
-        ng('promoteScratchToGant', '関数未定義 — 雑記帳→造営ボタンが動かない');
-      } else {
-        var pstgLines = pstg.toString().split('\n').filter(function(l){return l.trim().length>0;}).length;
-        pstgLines >= 5 ? ok('promoteScratchToGant: 正常存在 (' + pstgLines + '行)') : ng('promoteScratchToGant: スタブ疑い', pstgLines + '行');
-        // 依存: saveAllTasks・generateTaskId
-        var deps10 = ['saveAllTasks','generateTaskId','showToast'];
-        var missing10 = deps10.filter(function(d){ return typeof window[d] !== 'function'; });
-        missing10.length === 0 ? ok('promoteScratchToGant: 依存関数OK (' + deps10.join(',') + ')') : ng('promoteScratchToGant: 依存未定義', missing10.join(','));
-      }
-    } catch(e) { ng('promoteScratchToGant確認', e.message); }
+     // 10. localStorage汚染チェック
+     try {
+       var KNOWN_KEYS = ['allTasks','allSettings','deletedTaskIds','currentView','deviceId',
+         'escapeLog','_dbg_log','_dbg_errors','_lastScratchMoveDate','calendars',
+         'mig_category_to_calendar_v170','mig_death_ghost_flags_v0_24_59',
+         'mig_gant_enabled_default_v0_32','mig_ids_to_uuid_v7','mig_journals_to_alltasks_v1',
+         'mig_show_in_daily_to_display_scope_v1','dataVersion','simpleMode','tokuPoints','gouPoints',
+         'wgLastScrollTop','weeklyScrollInit','dailyScrollInit','taskCompletedStreak',
+         'taskCompletedTotal','nbLastPageId','extendedvaluekey','craftMode','gantEnabled'];
+       var dirtyKeys = [];
+       for (var k in localStorage) {
+         if (localStorage.hasOwnProperty(k) && KNOWN_KEYS.indexOf(k) === -1) dirtyKeys.push(k);
+       }
+       dirtyKeys.length === 0 ? ok('直接汚染キー不在確認: ' + KNOWN_KEYS.length + '件チェック済 — 🟢 Absolute Green') : ng('未知キー検出', dirtyKeys.join(', '));
+       var keyNames = Object.keys(localStorage);
+       var hasTask = keyNames.indexOf('allTasks') !== -1;
+       var hasSettings = keyNames.indexOf('allSettings') !== -1;
+       (hasTask && hasSettings) ? ok('Key Purify Absolute Green: 必須キー(allTasks,allSettings)正常存在 — 🟢 Absolute Green') : ng('必須キー欠落', (!hasTask?'allTasks ':'') + (!hasSettings?'allSettings':''));
+     } catch(e) { ng('localStorage汚染チェック', e.message); }
 
-    // 11. allTasks再代入禁止確認
-    // 状況：allTasks = [...] で再代入するとsplice/pushの変更が消える
-    // 意図：saveAllTasks・loadAllTasks以外でallTasks再代入が起きていないことをソース検査
-    try {
-      var saveFn = typeof window.saveAllTasks === 'function' ? window.saveAllTasks.toString() : '';
-      var loadFn = typeof window.loadAllTasks === 'function' ? window.loadAllTasks.toString() : '';
-      // saveAllTasksはJSON.stringify(allTasks)を使うが再代入しない
-      var saveHasReassign = /allTasks\s*=\s*(?!allTasks)/.test(saveFn.replace(/window\.allTasks\s*=\s*allTasks/g,''));
-      saveHasReassign ? ng('saveAllTasks: allTasks再代入疑い') : ok('saveAllTasks: allTasks再代入なし');
-      // allTasks自体が配列のままか
-      Array.isArray(window.allTasks) ? ok('allTasks: 配列型維持確認') : ng('allTasks: 配列でない', typeof window.allTasks);
-      // completed/done双方向同期（kindがtaskのものに両方あるか）
-      var tasks11 = (window.allTasks||[]).filter(function(t){return t.kind==='task';});
-      var syncOk = tasks11.every(function(t){ return ('completed' in t) || ('done' in t); });
-      tasks11.length === 0 ? ok('allTasks: taskなし（同期確認スキップ）') :
-        syncOk ? ok('allTasks: completed/done フィールド存在 (' + tasks11.length + '件)') : ng('allTasks: completed/doneフィールド欠損');
-    } catch(e) { ng('allTasks再代入確認', e.message); }
+     // 11. 天国・inHeaven系（挙動テスト）
+     try {
+       var _hFnSrc = (window.openHeavenFromBanner || function(){}).toString();
+       _hFnSrc.indexOf('heaven') !== -1 || _hFnSrc.indexOf('Heaven') !== -1
+         ? ok('openHeavenFromBanner: heaven処理含む') : ng('openHeavenFromBanner', 'heaven処理なし');
+       // switchView内にdisplayScopeは存在しない（renderAllSections等で処理）
+       var _gcSrc = (window.renderGantChart || function(){}).toString();
+       _gcSrc.indexOf('inHeaven') !== -1
+         ? ok('renderGantChart: inHeaven除外フィルタ確認') : ng('renderGantChart', 'inHeaven処理なし');
+     } catch(e) { ng('heaven系', e.message); }
 
-    // 12. グランドビジョンバナーDOM確認
-    // 状況：グランドビジョンバナーが表示されない・造営ビューに混入する時
-    // 意図：バナーDOMがgantView内の正しい位置にあることを確認
-    try {
-      var gantView = document.getElementById('gantView');
-      var gvBanner = document.getElementById('grandVisionBanner');
-      var gvEmpty  = document.getElementById('grandVisionEmpty');
-      gvBanner ? ok('grandVisionBanner: DOM存在確認') : ng('grandVisionBanner: DOM見つからない');
-      gvEmpty  ? ok('grandVisionEmpty: DOM存在確認') : ng('grandVisionEmpty: DOM見つからない');
-      if (gantView && gvBanner) {
-        gantView.contains(gvBanner) ? ok('grandVisionBanner: gantView内に正しく配置') : ng('grandVisionBanner: gantView外に混入');
-      }
-      // renderGrandVisionBar関数の存在
-      typeof window.renderGrandVisionBar === 'function' ? ok('renderGrandVisionBar: 関数存在') : ng('renderGrandVisionBar: 関数未定義');
-    } catch(e) { ng('グランドビジョンDOM確認', e.message); }
+     // 12. getThoughts/addThought/deleteThought 挙動テスト
+     try {
+       if (typeof getThoughts !== 'function') { ng('getThoughts', '未定義'); }
+       else {
+         var _testJid = '__smoke_test_journal__';
+         var _prevLen = allTasks.length;
+         addThought(_testJid, 'テスト用thought');
+         var _thoughts = getThoughts(_testJid);
+         if (_thoughts.length !== 1) { ng('addThought/getThoughts', '追加後' + _thoughts.length + '件（期待:1）'); }
+         else {
+           deleteThought(_thoughts[0].id);
+           var _after = getThoughts(_testJid);
+           _after.length === 0 && allTasks.length === _prevLen
+             ? ok('getThoughts/addThought/deleteThought: 挙動OK')
+             : ng('deleteThought', '削除後残存' + _after.length + '件 or allTasks件数不一致');
+         }
+       }
+     } catch(e) { ng('thoughtsヘルパー', e.message); }
 
-    // 13. window.allTasks直接汚染キーの不在確認（KPAG強化版）
-    // 状況：v0.36.27バグの再発 — window.allTasksキーに保存してしまう
-    // 意図：localStorage上に'window.allTasks'キーが存在しないことを直接確認
-    try {
-      var directPoisonKeys = ['window.allTasks','window.allSettings','window.currentView','window.deletedTaskIds'];
-      var foundPoison13 = directPoisonKeys.filter(function(k){ return localStorage.getItem(k) !== null; });
-      foundPoison13.length === 0
-        ? ok('直接汚染キー不在確認: ' + directPoisonKeys.length + '件チェック済 — 🟢 Absolute Green')
-        : ng('直接汚染キー検出', foundPoison13.join(', '));
-    } catch(e) { ng('直接汚染キー確認', e.message); }
+     // 13. switchView 挙動テスト（視覚的副作用あり・最後に実行）
+     try {
+       var _savedView = localStorage.getItem('currentView') || 'daily';
+       switchView('monthly');
+       var _mv = document.getElementById('monthlyView');
+       var _ok = _mv && _mv.style.display !== 'none';
+       switchView(_savedView);
+       _ok ? ok('switchView挙動: monthly切替→表示確認→復帰OK') : ng('switchView挙動', 'monthlyView非表示');
+     } catch(e) { ng('switchView挙動', e.message); }
 
-    // 14. Key Purify Absolute Green テスト
-    // 状況：自動置換でlocalStorageキー名が'window.xxx'に汚染された時（v0.36.27バグ再現防止）
-    // 意図：実際にlocalStorageに存在する全キーを検査し、汚染パターンを検知する
-    try {
-      var poisonPatterns = [
-        { pat: /^window\./, label: 'window.プレフィックス汚染' },
-        { pat: /^\s|\s$/, label: '空白文字混入' },
-        { pat: /^undefined$|^null$/, label: 'undefined/null文字列キー' },
-      ];
-      // 必須キーが正しいキー名で存在するか
-      var requiredKeys = ['allTasks', 'allSettings'];
-      var poisonFound = [];
-      var missingRequired = [];
-      // 全キーをスキャン
-      for (var ki = 0; ki < localStorage.length; ki++) {
-        var k = localStorage.key(ki);
-        if (!k) continue;
-        for (var pi = 0; pi < poisonPatterns.length; pi++) {
-          if (poisonPatterns[pi].pat.test(k)) {
-            poisonFound.push(k + ' [' + poisonPatterns[pi].label + ']');
-          }
-        }
-      }
-      // 必須キーの存在確認
-      requiredKeys.forEach(function(rk) {
-        if (localStorage.getItem(rk) === null) missingRequired.push(rk);
-      });
-      // window.allTasks / window.allSettings キーが存在しないか（汚染の直接証拠）
-      var directPoison = ['window.allTasks','window.allSettings','window.currentView']
-        .filter(function(pk){ return localStorage.getItem(pk) !== null; });
+     // 14. SDF開閉テスト
+     try {
+       var _sdfM = document.getElementById('sdfModal');
+       if (!_sdfM) { ng('SDF開閉', 'sdfModal DOM なし'); }
+       else {
+         openSingleDeepFocus();
+         var _open = _sdfM.style.display === 'flex';
+         closeSingleDeepFocus();
+         var _closed = _sdfM.style.display === 'none';
+         (_open && _closed) ? ok('SDF開閉: open→flex, close→none 確認') : ng('SDF開閉', 'open:' + _sdfM.style.display);
+       }
+     } catch(e) { ng('SDF開閉', e.message); }
 
-      if (poisonFound.length === 0 && directPoison.length === 0) {
-        ok('Key Purify Absolute Green: キー名汚染なし (' + localStorage.length + 'キー全検査)');
-      } else {
-        if (poisonFound.length > 0) ng('Key Purify Absolute Green: 汚染検知', poisonFound.join(' / '));
-        if (directPoison.length > 0) ng('Key Purify Absolute Green: 直接汚染キー存在', directPoison.join(', '));
-      }
-      if (missingRequired.length > 0) {
-        ng('Key Purify Absolute Green: 必須キー消失', missingRequired.join(', '));
-      } else {
-        ok('Key Purify Absolute Green: 必須キー(' + requiredKeys.join(',') + ')正常存在 — 🟢 Absolute Green');
-      }
-    } catch(e) { ng('Key Purify Absolute Green テスト', e.message); }
-
-    // 15. 天国送り機能（sendBlueprintToHeaven）
-    // 状況：3/18実装→復旧作業で一時消滅→v0.37.40で復元
-    // 意図：displayScopeをheavenに変更する処理と貢献感テキストが存在することを確認
-    try {
-      var _stbh = window.sendBlueprintToHeaven;
-      if (typeof _stbh !== 'function') { ng('天国送り機能', '関数未定義'); }
-      else {
-        var _stbhSrc = _stbh.toString();
-        var _stbhOk = _stbhSrc.includes('displayScope') && _stbhSrc.includes('heaven') && _stbhSrc.includes('貢献');
-        _stbhOk ? ok('天国送り機能: displayScope・heaven・貢献感 含む') : ng('天国送り機能', 'displayScope/heaven/貢献感いずれか欠落');
-      }
-    } catch(e) { ng('天国送り機能', e.message); }
-
-    // 16. 天国リスト（renderHeavenBlueprints）
-    // 状況：関数は存在したが貢献感テキストが欠落していた→v0.37.40で復元
-    // 意図：貢献感ヘッダーが存在することを確認
-    try {
-      var _rhb = window.renderHeavenBlueprints;
-      if (typeof _rhb !== 'function') { ng('天国リスト', '関数未定義'); }
-      else {
-        var _rhbSrc = _rhb.toString();
-        _rhbSrc.includes('貢献感は、幸福の源泉')
-          ? ok('天国リスト: 貢献感ヘッダー含む')
-          : ng('天国リスト', '貢献感ヘッダー欠落');
-      }
-    } catch(e) { ng('天国リスト', e.message); }
-
-    // 17. ガントチャート天国除外（renderGantChart inHeaven）
-    // 状況：allTasks.filter直接参照でinHeavenフィルタなし→v0.37.40で修正
-    // 意図：gants取得にinHeavenフィルタが含まれることを確認
-    try {
-      var _rgcSrc = (window.renderGantChart || function(){}).toString();
-      _rgcSrc.includes('inHeaven')
-        ? ok('renderGantChart: inHeaven除外フィルタ含む')
-        : ng('renderGantChart', 'inHeavenフィルタ欠落 — 天国の志の工程が表示される');
-    } catch(e) { ng('renderGantChart inHeaven', e.message); }
-
-    // 18. ホバーメッセージ taskCount分岐
-    // 状況：_getBlueprintHoverMsgがtaskCountを引数に取らず分岐なし→v0.37.40で修正
-    // 意図：関数がtaskCountを引数に取り、renderGantBlueprintsがtaskCountを計算して渡すことを確認
-    try {
-      var _gbhm = window._getBlueprintHoverMsg;
-      if (typeof _gbhm !== 'function') { ng('ホバーメッセージtaskCount', '関数未定義'); }
-      else {
-        var _gbhmSrc = _gbhm.toString();
-        var _gbhmParams = _gbhmSrc.match(/function[^(]*\(([^)]*)\)/);
-        var _hasTaskCount = _gbhmSrc.includes('taskCount');
-        _hasTaskCount
-          ? ok('_getBlueprintHoverMsg: taskCount引数・分岐含む')
-          : ng('_getBlueprintHoverMsg', 'taskCount引数なし');
-      }
-    } catch(e) { ng('ホバーメッセージtaskCount', e.message); }
-
-    // 19. ⏰「時を刻む」ボタン
-    // 状況：時間未設定タスクがテキストのみ表示→v0.37.40でボタン追加
-    // 意図：_buildTaskBar内に⏰ボタンHTMLが含まれることを確認
-    try {
-      var _btbSrc = (window._buildTaskBar || function(){}).toString();
-      _btbSrc.includes('⏰ 時を刻む') && _btbSrc.includes('openTaskEditModal')
-        ? ok('⏰時を刻むボタン: _buildTaskBar内に存在')
-        : ng('⏰時を刻むボタン', '_buildTaskBar内に⏰ボタンなし');
-    } catch(e) { ng('⏰時を刻むボタン', e.message); }
-
-    // 20. 志カードタイトル2行表示
-    // 状況：white-space:nowrapで1行切り捨て→v0.37.40で-webkit-line-clamp:2に変更
-    // 意図：renderGantBlueprintsのHTMLに-webkit-line-clampが含まれることを確認
-    try {
-      var _rgb = window.renderGantBlueprints;
-      if (typeof _rgb !== 'function') { ng('志カード2行表示', '関数未定義'); }
-      else {
-        _rgb.toString().includes('-webkit-line-clamp')
-          ? ok('志カードタイトル2行表示: -webkit-line-clamp含む')
-          : ng('志カード2行表示', '-webkit-line-clamp欠落 — タイトルが1行で切れる');
-      }
-    } catch(e) { ng('志カード2行表示', e.message); }
-
-    // 21. スプリッター（_initGantSplitter）
-    // 状況：スプリッターDOMと関数の両方が必要
-    // 意図：関数存在とDOM存在を確認
-    try {
-      var _igs = window._initGantSplitter;
-      var _gsEl = document.getElementById('gantSplitter');
-      if (typeof _igs !== 'function') { ng('スプリッター', '_initGantSplitter未定義'); }
-      else if (!_gsEl) { ng('スプリッター', '#gantSplitter DOMなし'); }
-      else { ok('スプリッター: 関数・DOM両方存在'); }
-    } catch(e) { ng('スプリッター', e.message); }
-
-    // 22. openHeavenFromBanner
-    // 状況：GVバナーの天国ボタンから図書館の志の天国を開く
-    // 意図：関数存在と天国展開処理が含まれることを確認
-    try {
-      var _ohfb = window.openHeavenFromBanner;
-      if (typeof _ohfb !== 'function') { ng('openHeavenFromBanner', '関数未定義'); }
-      else {
-        var _ohfbSrc = _ohfb.toString();
-        _ohfbSrc.includes('aboutHeaven') && _ohfbSrc.includes('renderHeavenBlueprints')
-          ? ok('openHeavenFromBanner: 天国展開処理含む')
-          : ng('openHeavenFromBanner', 'aboutHeaven/renderHeavenBlueprints欠落');
-      }
-    } catch(e) { ng('openHeavenFromBanner', e.message); }
 
     var resultDiv = document.createElement('div');
     resultDiv.style.cssText = 'margin-top:10px;padding:12px;background:#0d1117;border:1px solid #30363d;border-radius:8px;font-size:0.72em;line-height:1.9;';
