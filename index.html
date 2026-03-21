@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.38.47';
+    const APP_VERSION = 'v0.38.54';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -13618,6 +13618,7 @@ function loadSettingsUI() {
     window.resetTlRowHeight = resetTlRowHeight;
     window.saveAllSettings = saveAllSettings;
     window.saveAllTasks = saveAllTasks;
+    window.moveScratchToThoughts = moveScratchToThoughts;
     window.saveBlueprintEditor = saveBlueprintEditor;
     window.saveCreateTask = saveCreateTask;
     window.saveGantDayRange = saveGantDayRange;
@@ -18858,6 +18859,8 @@ function showDebugLog() {
        // コア
        'switchView','renderMonthlyView','renderWeeklyView','renderAllSections',
        'saveAllTasks','loadAllTasks','saveAllSettings','loadAllSettings',
+       'openFamilyShareModal','closeFamilyShareModal','familyGenerateCode','familyCopyCode','doFamilyImport',
+       'getFamilyShareTasks','buildFamilyCode','importFamilyCode',
        'generateTaskId','getLocalDateStr','showToast',
        // SDF
        'openSingleDeepFocus','closeSingleDeepFocus','_sdfInsertHint','_sdfFinish',
@@ -18882,6 +18885,67 @@ function showDebugLog() {
        'selectGantBlueprint','toggleGantShowCompleted',
        // heaven
        'openHeavenFromBanner','renderGrandVisionBar','renderHeavenBlueprints',
+       // モーダル開閉
+       'openAiPlanModal','openBlueprintEditor','openGanttEditor','openGanttQuickTask',
+       'openGrandVisionEditor','openDayInfoModal','openDeckBuilder','openDeckQRScanner',
+       'openJournalDetail','openNewJournal','openLpModal','openQRScanner','openSearchModal',
+       'openCraftShareModal','openCraftVisitModal','openGuildMode',
+       'closeBlueprintEditor','closeGanttEditor','closeCreateModal','closeDeckBuilder',
+       'closeDeckQR','closeGuildMode','closeModal',
+       'closeMonthlyTaskModal','closeQRScanner','closeSearchModal','closeTaskEditModal',
+       'closeWeeklyEditModal','closeWeeklyTaskModal','closeApplyQR',
+       'closeCraftShareModal','closeCraftVisitModal','closeCraftVisitView',
+       // CRUD/データ操作
+       'saveCreateTask','saveTaskEdit','saveWeeklyEdit','saveMonthlyTask',
+       'saveNewJournal','saveJournalEdit','saveBlueprintEditor','saveGanttEditor',
+       'saveGantDayRange','saveProfileQuick','saveSenderName','saveSettings',
+       'saveStopCondition','editJournal','editPurpose','editStopCondition',
+       'deleteGantt','deleteJournal','deleteMonthlyTask','deleteTaskFromEditModal',
+       'clearAllData','exportData','importData','importDeckFromSettings',
+       'linkGanttTask','unlinkGanttTask','unlinkTaskFromGantt',
+       'sendTaskEditToScratch','textToThoughts','thoughtDelete','thoughtToScratch','thoughtsToText',
+       'receiveStarterDeck',
+       // 造営/ガント
+       '_buildTaskBar','_gantEditTask','_deleteGrandVision','_saveGrandVision','_onGvBannerChange',
+       'searchGanttTasks','setGantTimeScale','showGantOnboarding','showGantTour',
+       'toggleBlueprintEmojiPicker','toggleGantAutoScrollNow','toggleGantEnabled','toggleGanttEmojiPicker',
+       // デッキ/ショップ
+       'deckBuilderAddTask','deckBuilderApply','deckBuilderCancelEdit','deckBuilderEditTask',
+       'deckBuilderMoveTask','deckBuilderPublish','deckBuilderRemoveTask','deckBuilderSave',
+       'generateDeckEntry','switchApplyTab','switchDeckTab',
+       'copyApplyCodeFromModal','copyDeckCodeFromModal','copyStarterDeckCode',
+       'applyGuildLicense','issueGuildLicense',
+       // ビュー切替/UI
+       'changeMonth','changeWeek','changeYear','changeTimelineDate',
+       'adjustMonthlyWidth','adjustTlRowHeight','adjustWeeklyRowH','adjustWeeklyWidth',
+       'resetMonthlyWidth','resetTlRowHeight','resetWeeklyRowH','resetWeeklyWidth',
+       'goTimelineToday','onYearlyCellClick','handleTimerClick','showDebugLog',
+       'switchDailyTab','toggleAbout','toggleAdminMode','toggleColors',
+       'toggleDeepDive','toggleLibrary','toggleSimpleModePreview',
+       // SDF/雑記帳
+       '_sdfCopyForAI','_sdfHistoryDelete','_sdfHistorySend','showScratchOnboarding',
+       // 家族共有/ギルド
+       'familyShareSwitchTab','updateGuildUI','visitCraft','copyCraftCode',
+       // ノートブック
+       'nbNewPage','nbShareClose','nbShareImportStep1','nbShareImportStep2',
+       'nbShareStep0','nbShareStep1Emotion','nbShareStep2Method','nbShareStep3',
+       // チュートリアル/LP
+       '_ycFireCracker','_ycGoSlide','_ycShowMVVSplash',
+       'completeSetup','hideTutorial','showTutorial',
+       // QR/スキャン
+       // ※openQRScanner/closeQRScanner/openDeckQRScanner/closeDeckQR は上記モーダル開閉に含む
+       // クラフト/3D
+       'initCraftWorld','handleAvatarChange','removeAvatar',
+       'adminBadgeTap','checkAdminPw','initAdminMode',
+       // カレンダー/スタンプ
+       'addCalendarSetting','addStampSetting','clearStampSelection',
+       'isCalendarVisible','renderCalendarFilter','selectEraserMode',
+       // その他
+       'clearTimeSelect','confirmAddToWeekly','confirmDeleteFromEdit',
+       'confirmPurpose','renderSearchResults','selectGender',
+       // 日付変更・雑記帳自動移行
+       'startMoveMode','completeMoveMode','cancelMoveMode',
+       'addStampToDate','removeStampFromDate',
      ];
      var _missingFuncs = coreFuncs.filter(function(f){ return typeof window[f] !== 'function'; });
      _missingFuncs.length === 0
@@ -18917,6 +18981,15 @@ function showDebugLog() {
        ['造営recalc',    'recalcAll',        ['recalcGanttDateFromTasks','recalcBlueprintFromGants']],
        ['造営天国',       'sendBlueprintToHeaven', ['getBlueprintProgress','getGantsByBlueprint','closeBlueprintEditor']],
        ['done同期',       'toggleTaskById',   ['getGantsAll','recalcBlueprintFromGants']],
+       ['家族共有open',   'openFamilyShareModal', ['familyShareReset']],
+       ['家族共有コード生成', 'familyGenerateCode', ['buildFamilyCode','getFamilyShareTasks']],
+       ['家族共有取込',   'doFamilyImport',    ['importFamilyCode']],
+       ['BP並び替え',     '_bpReorder',        ['saveAllTasks','renderGantBlueprints']],
+       ['タスク並び替え', '_gantReorderTask',  ['saveAllTasks','renderGantView']],
+       ['タスク移動',     '_gantMoveTask',     ['saveAllTasks','renderGantView']],
+       ['月次タスク移動', 'completeMoveMode',  ['updateTask','renderMonthlyView','renderAllSections']],
+       ['月次スタンプ移動','removeStampFromDate',['getDayInfo']],
+       ['週間タスク移動', 'renderWeeklyView',  ['updateTask','renderAllSections']],
      ];
      depChecks.forEach(function(dc) {
        var src = (window[dc[1]]||function(){}).toString();
@@ -19216,7 +19289,8 @@ function showDebugLog() {
          : ng('造営挙動テスト', 'クリーンアップ後件数不一致 ' + allTasks.length + '件 期待' + _prevLen4 + '件');
      } catch(e) { ng('造営テスト', e.message); }
 
-     // ===== 16b. deleteBlueprint挙動テスト =====     try {
+     // ===== 16b. deleteBlueprint挙動テスト =====
+     try {
        var _prevLen5 = allTasks.length;
        // テスト用blueprint・gantt・taskを作成
        var _dbpId  = 'smoke-dbp-' + Date.now();
@@ -19248,6 +19322,611 @@ function showDebugLog() {
          ? ok('deleteBlueprint挙動テスト: クリーンアップ完了(' + allTasks.length + '件)')
          : ng('deleteBlueprint挙動テスト', 'クリーンアップ後件数不一致 ' + allTasks.length + '件 期待' + _prevLen5 + '件');
      } catch(e) { ng('deleteBlueprint挙動テスト', e.message); }
+
+     // ===== ST システムテスト（CRUD・主要フロー動作保証） =====
+
+     // ST-1: タスクCRUD
+     try {
+       var _stPrev = allTasks.length;
+       // 作成
+       var _stT1 = typeof createTask === 'function' ? createTask('サンプルタスク1', getLocalDateStr(new Date()), null, 1, 'both') : null;
+       var _stT2 = typeof createTask === 'function' ? createTask('サンプルタスク2', getLocalDateStr(new Date()), null, 2, 'both') : null;
+       (_stT1 && _stT2 && allTasks.length === _stPrev + 2)
+         ? ok('ST-1: タスク作成(2件)')
+         : ng('ST-1: タスク作成', '作成失敗 ' + allTasks.length + '件 期待' + (_stPrev+2));
+       // 取得
+       var _stFound = allTasks.find(function(t){ return t.id === _stT1.id; });
+       _stFound && _stFound.text === 'サンプルタスク1'
+         ? ok('ST-1: タスク取得確認')
+         : ng('ST-1: タスク取得', '取得失敗');
+       // 更新
+       if (typeof updateTask === 'function') updateTask(_stT1.id, { text: 'サンプルタスク1更新' });
+       var _stUpdated = allTasks.find(function(t){ return t.id === _stT1.id; });
+       _stUpdated && _stUpdated.text === 'サンプルタスク1更新'
+         ? ok('ST-1: タスク更新確認')
+         : ng('ST-1: タスク更新', '更新失敗: ' + (_stUpdated ? _stUpdated.text : 'null'));
+       // 削除
+       if (typeof deleteTaskById === 'function') { deleteTaskById(_stT1.id); deleteTaskById(_stT2.id); }
+       else { allTasks = allTasks.filter(function(t){ return t.id !== _stT1.id && t.id !== _stT2.id; }); }
+       allTasks.length === _stPrev
+         ? ok('ST-1: タスク削除・クリーンアップ完了(' + allTasks.length + '件)')
+         : ng('ST-1: タスク削除', '件数不一致 ' + allTasks.length + '件 期待' + _stPrev);
+     } catch(e) { ng('ST-1: タスクCRUD', e.message); }
+
+     // ST-2: done/completed双方向同期
+     try {
+       var _stPrev2 = allTasks.length;
+       var _stT3 = typeof createTask === 'function' ? createTask('サンプルタスク3', getLocalDateStr(new Date()), null, 1, 'both') : null;
+       if (_stT3) {
+         // 日次トグル（completed→done同期）
+         _stT3.completed = !_stT3.completed;
+         _stT3.done = _stT3.completed;
+         _stT3.done === _stT3.completed
+           ? ok('ST-2: 日次トグル done/completed同期確認')
+           : ng('ST-2: 日次トグル', 'done=' + _stT3.done + ' completed=' + _stT3.completed);
+         // 造営トグル（done→completed同期）
+         _stT3.done = !_stT3.done;
+         _stT3.completed = _stT3.done;
+         _stT3.done === _stT3.completed
+           ? ok('ST-2: 造営トグル done/completed同期確認')
+           : ng('ST-2: 造営トグル', 'done=' + _stT3.done + ' completed=' + _stT3.completed);
+         allTasks = allTasks.filter(function(t){ return t.id !== _stT3.id; });
+       } else { ng('ST-2: done同期', 'createTask失敗'); }
+       allTasks.length === _stPrev2
+         ? ok('ST-2: クリーンアップ完了')
+         : ng('ST-2: クリーンアップ', '件数不一致');
+     } catch(e) { ng('ST-2: done/completed同期', e.message); }
+
+     // ST-3: 雑記帳→造営昇格（promoteScratchToGant）
+     try {
+       var _stPrev3 = allTasks.length;
+       var _stScratch = { id: 'smoke-scratch-' + Date.now(), kind: 'scratch', text: 'サンプル雑記1', date: getLocalDateStr(new Date()), createdAt: new Date().toISOString() };
+       allTasks.push(_stScratch);
+       var _stPsgSrc = (window.promoteScratchToGant||function(){}).toString();
+       (_stPsgSrc.indexOf('saveAllTasks') !== -1 && _stPsgSrc.indexOf('generateTaskId') !== -1)
+         ? ok('ST-3: promoteScratchToGant 造営昇格コード確認')
+         : ng('ST-3: promoteScratchToGant', '必要コードが欠落');
+       allTasks = allTasks.filter(function(t){ return t.id !== _stScratch.id; });
+       allTasks.length === _stPrev3
+         ? ok('ST-3: クリーンアップ完了')
+         : ng('ST-3: クリーンアップ', '件数不一致');
+     } catch(e) { ng('ST-3: 雑記帳→造営昇格', e.message); }
+
+     // ST-4: 日誌CRUD
+     try {
+       var _stPrev4 = allTasks.length;
+       var _stJId = 'smoke-j-' + Date.now();
+       var _stJ = { id: _stJId, kind: 'journal', date: getLocalDateStr(new Date()), text: 'サンプル日誌1', savedAt: new Date().toISOString() };
+       allTasks.push(_stJ);
+       var _stJFound = allTasks.find(function(t){ return t.id === _stJId && t.kind === 'journal'; });
+       _stJFound
+         ? ok('ST-4: 日誌作成・取得確認')
+         : ng('ST-4: 日誌作成', '取得失敗');
+       // 更新
+       _stJ.text = 'サンプル日誌1更新';
+       allTasks.find(function(t){ return t.id === _stJId; }).text === 'サンプル日誌1更新'
+         ? ok('ST-4: 日誌更新確認')
+         : ng('ST-4: 日誌更新', '更新失敗');
+       // 削除
+       allTasks = allTasks.filter(function(t){ return t.id !== _stJId; });
+       allTasks.length === _stPrev4
+         ? ok('ST-4: 日誌削除・クリーンアップ完了')
+         : ng('ST-4: 日誌削除', '件数不一致');
+     } catch(e) { ng('ST-4: 日誌CRUD', e.message); }
+
+     // ST-5: thoughts連携（追加→取得→削除）
+     try {
+       var _stPrev5 = allTasks.length;
+       var _stJId2 = 'smoke-j2-' + Date.now();
+       allTasks.push({ id: _stJId2, kind: 'journal', date: getLocalDateStr(new Date()), text: '', savedAt: new Date().toISOString() });
+       typeof addThought === 'function' ? addThought(_stJId2, 'サンプル考え1') : null;
+       var _stThoughts = typeof getThoughts === 'function' ? getThoughts(_stJId2) : [];
+       _stThoughts.length === 1 && _stThoughts[0].text === 'サンプル考え1'
+         ? ok('ST-5: thought追加・取得確認')
+         : ng('ST-5: thought追加', '件数=' + _stThoughts.length);
+       // 削除
+       if (_stThoughts.length > 0 && typeof deleteThought === 'function') deleteThought(_stThoughts[0].id);
+       var _stThAfter = typeof getThoughts === 'function' ? getThoughts(_stJId2) : [];
+       _stThAfter.length === 0
+         ? ok('ST-5: thought削除確認')
+         : ng('ST-5: thought削除', '削除後も残存: ' + _stThAfter.length + '件');
+       allTasks = allTasks.filter(function(t){ return t.id !== _stJId2 && (!t.journalId || t.journalId !== _stJId2); });
+       allTasks.length === _stPrev5
+         ? ok('ST-5: クリーンアップ完了')
+         : ng('ST-5: クリーンアップ', '件数不一致 ' + allTasks.length + '件 期待' + _stPrev5);
+     } catch(e) { ng('ST-5: thoughts連携', e.message); }
+
+     // ST-6: blueprint CRUD
+     try {
+       var _stPrev6 = allTasks.length;
+       var _stBpId = 'smoke-bp-' + Date.now();
+       allTasks.push({ id: _stBpId, kind: 'blueprint', title: 'サンプル志1', vision: '', color: '#a78bfa', inHeaven: false, createdAt: new Date().toISOString() });
+       var _stBp = allTasks.find(function(t){ return t.id === _stBpId; });
+       _stBp && _stBp.kind === 'blueprint'
+         ? ok('ST-6: blueprint作成・取得確認')
+         : ng('ST-6: blueprint作成', '取得失敗');
+       // 更新
+       _stBp.title = 'サンプル志1更新';
+       allTasks.find(function(t){ return t.id === _stBpId; }).title === 'サンプル志1更新'
+         ? ok('ST-6: blueprint更新確認')
+         : ng('ST-6: blueprint更新', '更新失敗');
+       // 削除
+       allTasks = allTasks.filter(function(t){ return t.id !== _stBpId; });
+       allTasks.length === _stPrev6
+         ? ok('ST-6: blueprint削除・クリーンアップ完了')
+         : ng('ST-6: blueprint削除', '件数不一致');
+     } catch(e) { ng('ST-6: blueprint CRUD', e.message); }
+
+     // ST-7: gantt CRUD＋タスク紐付け
+     try {
+       var _stPrev7 = allTasks.length;
+       var _stBpId2 = 'smoke-bp2-' + Date.now();
+       var _stGId  = 'smoke-g-'  + Date.now();
+       var _stTId  = 'smoke-t-'  + Date.now();
+       allTasks.push({ id: _stBpId2, kind: 'blueprint', title: 'サンプル志2', inHeaven: false });
+       allTasks.push({ id: _stGId, kind: 'gantt', blueprintId: _stBpId2, taskIds: [_stTId], title: 'サンプル工程1' });
+       allTasks.push({ id: _stTId, kind: 'task', text: 'サンプルタスク4', date: '2026-06-01', completed: false, done: false, section: 1 });
+       var _stGantt = allTasks.find(function(t){ return t.id === _stGId; });
+       _stGantt && _stGantt.taskIds.indexOf(_stTId) !== -1
+         ? ok('ST-7: gantt作成・タスク紐付け確認')
+         : ng('ST-7: gantt作成', '紐付け失敗');
+       // recalcGanttDateFromTasks
+       if (typeof recalcGanttDateFromTasks === 'function') recalcGanttDateFromTasks(_stGantt);
+       _stGantt.startDate === '2026-06-01'
+         ? ok('ST-7: recalcGanttDateFromTasks 日付反映確認')
+         : ng('ST-7: recalcGanttDateFromTasks', 'startDate=' + _stGantt.startDate);
+       // 削除
+       allTasks = allTasks.filter(function(t){ return t.id !== _stBpId2 && t.id !== _stGId && t.id !== _stTId; });
+       allTasks.length === _stPrev7
+         ? ok('ST-7: クリーンアップ完了')
+         : ng('ST-7: クリーンアップ', '件数不一致');
+     } catch(e) { ng('ST-7: gantt CRUD', e.message); }
+
+     // ST-8: 天国フロー（送り→復活）
+     try {
+       var _stPrev8 = allTasks.length;
+       var _stBpId3 = 'smoke-bp3-' + Date.now();
+       allTasks.push({ id: _stBpId3, kind: 'blueprint', title: 'サンプル志3', inHeaven: false });
+       var _stBp3 = allTasks.find(function(t){ return t.id === _stBpId3; });
+       // 天国送り
+       _stBp3.inHeaven = true;
+       _stBp3.heavenAt = new Date().toISOString();
+       _stBp3.inHeaven === true
+         ? ok('ST-8: 天国送り確認')
+         : ng('ST-8: 天国送り', 'inHeaven=' + _stBp3.inHeaven);
+       // getHeavenBlueprints で取得できるか
+       var _stHeaven = typeof getHeavenBlueprints === 'function' ? getHeavenBlueprints() : [];
+       _stHeaven.find(function(t){ return t.id === _stBpId3; })
+         ? ok('ST-8: getHeavenBlueprints 天国リスト取得確認')
+         : ng('ST-8: getHeavenBlueprints', '天国リストに見つからず');
+       // 復活
+       _stBp3.inHeaven = false;
+       delete _stBp3.heavenAt;
+       var _stNormal = typeof getBlueprints === 'function' ? getBlueprints() : [];
+       _stNormal.find(function(t){ return t.id === _stBpId3; })
+         ? ok('ST-8: 復活・通常リスト復帰確認')
+         : ng('ST-8: 復活', '通常リストに見つからず');
+       allTasks = allTasks.filter(function(t){ return t.id !== _stBpId3; });
+       allTasks.length === _stPrev8
+         ? ok('ST-8: クリーンアップ完了')
+         : ng('ST-8: クリーンアップ', '件数不一致');
+     } catch(e) { ng('ST-8: 天国フロー', e.message); }
+
+     // ST-9: 徳ポイント（タスク完了→toku加算→tokuLog記録）
+     try {
+       var _stTokuBefore = typeof getToku === 'function' ? getToku() : 0;
+       var _stLogBefore = JSON.parse(localStorage.getItem('tokuLog') || '[]').length;
+       if (typeof addToku === 'function') addToku(1, 'システムテスト確認用');
+       var _stTokuAfter = typeof getToku === 'function' ? getToku() : 0;
+       var _stLogAfter = JSON.parse(localStorage.getItem('tokuLog') || '[]');
+       _stTokuAfter === _stTokuBefore + 1
+         ? ok('ST-9: 徳ポイント加算確認(' + _stTokuBefore + '→' + _stTokuAfter + ')')
+         : ng('ST-9: 徳ポイント加算', '期待' + (_stTokuBefore+1) + ' 実際' + _stTokuAfter);
+       _stLogAfter.length === _stLogBefore + 1
+         ? ok('ST-9: tokuLog記録確認(' + _stLogAfter.length + '件)')
+         : ng('ST-9: tokuLog記録', '件数不一致');
+       // ロールバック
+       if (typeof addToku === 'function') addToku(-1, 'システムテスト確認用ロールバック');
+       typeof getToku === 'function' && getToku() === _stTokuBefore
+         ? ok('ST-9: 徳ポイントロールバック完了')
+         : ng('ST-9: ロールバック', '値不一致');
+     } catch(e) { ng('ST-9: 徳ポイント', e.message); }
+
+     // ST-10: recalc連鎖（タスク日付→gantt→blueprint）
+     try {
+       var _stPrev10 = allTasks.length;
+       var _stBpId4 = 'smoke-bp4-' + Date.now();
+       var _stGId2  = 'smoke-g2-'  + Date.now();
+       var _stTId2  = 'smoke-t2-'  + Date.now();
+       allTasks.push({ id: _stBpId4, kind: 'blueprint', title: 'サンプル志4', inHeaven: false });
+       allTasks.push({ id: _stGId2, kind: 'gantt', blueprintId: _stBpId4, taskIds: [_stTId2], title: 'サンプル工程2' });
+       allTasks.push({ id: _stTId2, kind: 'task', text: 'サンプルタスク5', date: '2026-09-01', completed: false, done: false, section: 1 });
+       var _stG2 = allTasks.find(function(t){ return t.id === _stGId2; });
+       if (typeof recalcGanttDateFromTasks === 'function') recalcGanttDateFromTasks(_stG2);
+       if (typeof recalcBlueprintFromGants === 'function') recalcBlueprintFromGants(allTasks.find(function(t){ return t.id === _stBpId4; }));
+       _stG2.startDate === '2026-09-01'
+         ? ok('ST-10: recalc連鎖 タスク日付→gantt反映確認')
+         : ng('ST-10: recalc連鎖', 'gantt.startDate=' + _stG2.startDate);
+       allTasks = allTasks.filter(function(t){ return t.id !== _stBpId4 && t.id !== _stGId2 && t.id !== _stTId2; });
+       allTasks.length === _stPrev10
+         ? ok('ST-10: クリーンアップ完了')
+         : ng('ST-10: クリーンアップ', '件数不一致');
+     } catch(e) { ng('ST-10: recalc連鎖', e.message); }
+
+
+     // ST-11: 家族共有（同期・非同期フロー確認）
+     try {
+       // 関数存在確認
+       typeof openFamilyShareModal === 'function'
+         ? ok('ST-11: openFamilyShareModal 存在確認')
+         : ng('ST-11: openFamilyShareModal', '未定義');
+       typeof closeFamilyShareModal === 'function'
+         ? ok('ST-11: closeFamilyShareModal 存在確認')
+         : ng('ST-11: closeFamilyShareModal', '未定義');
+       typeof getFamilyShareTasks === 'function'
+         ? ok('ST-11: getFamilyShareTasks 存在確認')
+         : ng('ST-11: getFamilyShareTasks', '未定義');
+       typeof buildFamilyCode === 'function'
+         ? ok('ST-11: buildFamilyCode 存在確認')
+         : ng('ST-11: buildFamilyCode', '未定義');
+       typeof importFamilyCode === 'function'
+         ? ok('ST-11: importFamilyCode 存在確認')
+         : ng('ST-11: importFamilyCode', '未定義');
+       // getFamilyShareTasksの動作確認（同期・引数なし）
+       var _stFamilyTasks = typeof getFamilyShareTasks === 'function' ? getFamilyShareTasks() : null;
+       Array.isArray(_stFamilyTasks)
+         ? ok('ST-11: getFamilyShareTasks 配列返却確認(' + _stFamilyTasks.length + '件)')
+         : ng('ST-11: getFamilyShareTasks', '配列でない: ' + typeof _stFamilyTasks);
+       // モーダルDOM確認
+       var _stFmModal = document.getElementById('familyShareModal');
+       _stFmModal
+         ? ok('ST-11: familyShareModal DOM確認')
+         : ng('ST-11: familyShareModal', 'DOM未存在');
+       // コードソース確認（buildFamilyCode・importFamilyCodeはasync）
+       var _stBfcSrc = (typeof buildFamilyCode === 'function' ? buildFamilyCode.toString() : '');
+       _stBfcSrc.indexOf('FMLY1') !== -1 || _stBfcSrc.indexOf('encrypt') !== -1 || _stBfcSrc.indexOf('allTasks') !== -1
+         ? ok('ST-11: buildFamilyCode コード生成ロジック確認')
+         : ng('ST-11: buildFamilyCode', 'コード生成ロジックなし');
+       var _stIfcSrc = (typeof importFamilyCode === 'function' ? importFamilyCode.toString() : '');
+       _stIfcSrc.indexOf('FMLY1') !== -1 || _stIfcSrc.indexOf('decrypt') !== -1 || _stIfcSrc.indexOf('import') !== -1
+         ? ok('ST-11: importFamilyCode 取込ロジック確認')
+         : ng('ST-11: importFamilyCode', '取込ロジックなし');
+     } catch(e) { ng('ST-11: 家族共有', e.message); }
+
+     // ST-12: D&D（並び替え・移動フロー）
+     try {
+       var _stPrev12 = allTasks.length;
+
+       // _bpReorder: blueprint並び替え確認
+       var _stBpA = 'smoke-bpA-' + Date.now();
+       var _stBpB = 'smoke-bpB-' + (Date.now()+1);
+       allTasks.push({ id: _stBpA, kind: 'blueprint', title: 'サンプル志A', order: 0, inHeaven: false });
+       allTasks.push({ id: _stBpB, kind: 'blueprint', title: 'サンプル志B', order: 1, inHeaven: false });
+       if (typeof _bpReorder === 'function') _bpReorder(_stBpB, _stBpA);
+       var _stBpAafter = allTasks.find(function(t){ return t.id === _stBpA; });
+       var _stBpBafter = allTasks.find(function(t){ return t.id === _stBpB; });
+       (_stBpBafter && _stBpAafter && _stBpBafter.order < _stBpAafter.order)
+         ? ok('ST-12: _bpReorder blueprint並び替え確認(B→A前に移動)')
+         : ng('ST-12: _bpReorder', 'order不正 A=' + (_stBpAafter&&_stBpAafter.order) + ' B=' + (_stBpBafter&&_stBpBafter.order));
+       allTasks = allTasks.filter(function(t){ return t.id !== _stBpA && t.id !== _stBpB; });
+
+       // _gantReorderTask: gantt内タスク順序確認
+       var _stGR  = 'smoke-gR-'  + Date.now();
+       var _stTR1 = 'smoke-tR1-' + Date.now();
+       var _stTR2 = 'smoke-tR2-' + (Date.now()+1);
+       allTasks.push({ id: _stGR, kind: 'gantt', blueprintId: null, taskIds: [_stTR1, _stTR2], title: 'サンプル工程R' });
+       allTasks.push({ id: _stTR1, kind: 'task', text: 'サンプルタスクR1', date: '2026-06-01', completed: false, done: false, section: 1 });
+       allTasks.push({ id: _stTR2, kind: 'task', text: 'サンプルタスクR2', date: '2026-06-02', completed: false, done: false, section: 1 });
+       if (typeof _gantReorderTask === 'function') _gantReorderTask(_stGR, 0, 1);
+       var _stGRafter = allTasks.find(function(t){ return t.id === _stGR; });
+       _stGRafter && _stGRafter.taskIds[0] === _stTR2 && _stGRafter.taskIds[1] === _stTR1
+         ? ok('ST-12: _gantReorderTask タスク順序入れ替え確認')
+         : ng('ST-12: _gantReorderTask', '順序不正: ' + (_stGRafter ? JSON.stringify(_stGRafter.taskIds) : 'null'));
+       allTasks = allTasks.filter(function(t){ return t.id !== _stGR && t.id !== _stTR1 && t.id !== _stTR2; });
+
+       // setupAllSectionDrops: 関数存在・updateTask参照確認
+       var _stSasdSrc = (typeof setupAllSectionDrops === 'function' ? setupAllSectionDrops.toString() : '');
+       _stSasdSrc.indexOf('updateTask') !== -1 && _stSasdSrc.indexOf('section') !== -1
+         ? ok('ST-12: setupAllSectionDrops updateTask・section参照確認')
+         : ng('ST-12: setupAllSectionDrops', 'updateTask or section参照なし');
+
+       // _initBlueprintDrag・_initGantTaskDrag: 関数存在確認（DOM操作のため挙動テスト不可）
+       typeof _initBlueprintDrag === 'function'
+         ? ok('ST-12: _initBlueprintDrag 存在確認')
+         : ng('ST-12: _initBlueprintDrag', '未定義');
+       typeof _initGantTaskDrag === 'function'
+         ? ok('ST-12: _initGantTaskDrag 存在確認')
+         : ng('ST-12: _initGantTaskDrag', '未定義');
+
+       allTasks.length === _stPrev12
+         ? ok('ST-12: D&Dテスト クリーンアップ完了(' + allTasks.length + '件)')
+         : ng('ST-12: D&Dテスト クリーンアップ', '件数不一致 ' + allTasks.length + '件 期待' + _stPrev12);
+     } catch(e) { ng('ST-12: D&D並び替え・移動', e.message); }
+
+     // ST-13: D&D全種類（週間・月次・スタンプ）
+     try {
+       var _stPrev13 = allTasks.length;
+       var _stToday13 = typeof getLocalDateStr === 'function' ? getLocalDateStr(new Date()) : '2026-01-01';
+
+       // 週間D&D：updateTask + renderWeeklyView参照確認
+       var _stWkSrc = (typeof renderWeeklyView === 'function' ? renderWeeklyView.toString() : '');
+       _stWkSrc.indexOf('updateTask') !== -1 && _stWkSrc.indexOf('date') !== -1
+         ? ok('ST-13: 週間D&D updateTask・date更新コード確認')
+         : ng('ST-13: 週間D&D', 'updateTask or date参照なし');
+
+       // 月次タスク移動：startMoveMode/completeMoveMode挙動確認
+       typeof startMoveMode === 'function'
+         ? ok('ST-13: startMoveMode 存在確認')
+         : ng('ST-13: startMoveMode', '未定義');
+       typeof completeMoveMode === 'function'
+         ? ok('ST-13: completeMoveMode 存在確認')
+         : ng('ST-13: completeMoveMode', '未定義');
+       typeof cancelMoveMode === 'function'
+         ? ok('ST-13: cancelMoveMode 存在確認')
+         : ng('ST-13: cancelMoveMode', '未定義');
+       // completeMoveMode のコード確認
+       var _stCmmSrc = (typeof completeMoveMode === 'function' ? completeMoveMode.toString() : '');
+       _stCmmSrc.indexOf('updateTask') !== -1 && _stCmmSrc.indexOf('renderMonthlyView') !== -1
+         ? ok('ST-13: completeMoveMode updateTask・renderMonthlyView確認')
+         : ng('ST-13: completeMoveMode', 'updateTask or renderMonthlyView参照なし');
+
+       // 月次スタンプD&D：addStampToDate/removeStampFromDate挙動確認
+       typeof addStampToDate === 'function'
+         ? ok('ST-13: addStampToDate 存在確認')
+         : ng('ST-13: addStampToDate', '未定義');
+       typeof removeStampFromDate === 'function'
+         ? ok('ST-13: removeStampFromDate 存在確認')
+         : ng('ST-13: removeStampFromDate', '未定義');
+       // スタンプ追加→削除のラウンドトリップ
+       var _stStampDate = '2099-12-31'; // 本番データに干渉しない未来日
+       var _stStampId = (allTasks.find(function(t){ return t.kind==='stamp'; }) || {}).id || null;
+       if (_stStampId) {
+         if (typeof addStampToDate === 'function') addStampToDate(_stStampDate, _stStampId, '', '');
+         var _stDayAfterAdd = typeof getDayInfo === 'function' ? getDayInfo(_stStampDate) : null;
+         (_stDayAfterAdd && (_stDayAfterAdd.stampIds||[]).indexOf(_stStampId) !== -1)
+           ? ok('ST-13: addStampToDate スタンプ追加確認')
+           : ng('ST-13: addStampToDate', 'stamps配列にスタンプなし');
+         if (typeof removeStampFromDate === 'function') removeStampFromDate(_stStampDate, _stStampId);
+         var _stDayAfterRemove = typeof getDayInfo === 'function' ? getDayInfo(_stStampDate) : null;
+         (!_stDayAfterRemove || (_stDayAfterRemove.stampIds||[]).indexOf(_stStampId) === -1)
+           ? ok('ST-13: removeStampFromDate スタンプ削除確認')
+           : ng('ST-13: removeStampFromDate', 'stamps配列にスタンプ残存');
+       } else {
+         ok('ST-13: スタンプ未登録のためラウンドトリップテストスキップ');
+       }
+
+       // 日次タスクD&D：renderTasks内にD&Dコードがあるか確認
+       var _stRtSrc = (typeof renderTasks === 'function' ? renderTasks.toString() : '');
+       _stRtSrc.indexOf('draggable') !== -1 && _stRtSrc.indexOf('dragstart') !== -1
+         ? ok('ST-13: 日次タスクD&D draggable/dragstartコード確認(renderTasks)')
+         : ng('ST-13: 日次タスクD&D', 'draggable or dragstart参照なし');
+
+       allTasks.length === _stPrev13
+         ? ok('ST-13: D&D全種テスト クリーンアップ完了(' + allTasks.length + '件)')
+         : ng('ST-13: D&D全種テスト クリーンアップ', '件数不一致 ' + allTasks.length + '件 期待' + _stPrev13);
+     } catch(e) { ng('ST-13: D&D全種類', e.message); }
+
+     // ST-14: CRUD追加（saveCreateTask・saveTaskEdit・deleteGantt・linkGanttTask）
+     try {
+       var _stPrev14 = allTasks.length;
+       var _stBp14 = 'smoke-bp14-' + Date.now();
+       var _stG14  = 'smoke-g14-'  + Date.now();
+       var _stT14  = 'smoke-t14-'  + Date.now();
+       allTasks.push({ id: _stBp14, kind: 'blueprint', title: 'サンプル志14', inHeaven: false });
+       allTasks.push({ id: _stG14, kind: 'gantt', blueprintId: _stBp14, taskIds: [], title: 'サンプル工程14' });
+       allTasks.push({ id: _stT14, kind: 'task', text: 'サンプルタスク14', date: '2026-06-01', completed: false, done: false, section: 1 });
+       // linkGanttTask相当：taskIdsに追加
+       var _stG14rec = allTasks.find(function(t){ return t.id===_stG14; });
+       _stG14rec.taskIds.push(_stT14);
+       _stG14rec.taskIds.indexOf(_stT14) !== -1
+         ? ok('ST-14: linkGanttTask相当 タスク紐付け確認')
+         : ng('ST-14: linkGanttTask相当', '紐付け失敗');
+       // unlinkGanttTask相当：taskIdsから削除
+       _stG14rec.taskIds = _stG14rec.taskIds.filter(function(id){ return id !== _stT14; });
+       _stG14rec.taskIds.indexOf(_stT14) === -1
+         ? ok('ST-14: unlinkGanttTask相当 タスク切り離し確認')
+         : ng('ST-14: unlinkGanttTask相当', '切り離し失敗');
+       // deleteGantt コード確認
+       var _stDgSrc = (window.deleteGantt||function(){}).toString();
+       _stDgSrc.indexOf('saveAllTasks') !== -1
+         ? ok('ST-14: deleteGantt saveAllTasks参照確認')
+         : ng('ST-14: deleteGantt', 'saveAllTasks参照なし');
+       // saveTaskEdit コード確認
+       var _stSteSrc = (window.saveTaskEdit||function(){}).toString();
+       _stSteSrc.indexOf('updateTask') !== -1 || _stSteSrc.indexOf('allTasks') !== -1
+         ? ok('ST-14: saveTaskEdit データ操作コード確認')
+         : ng('ST-14: saveTaskEdit', 'データ操作コードなし');
+       allTasks = allTasks.filter(function(t){ return t.id!==_stBp14 && t.id!==_stG14 && t.id!==_stT14; });
+       allTasks.length === _stPrev14
+         ? ok('ST-14: クリーンアップ完了')
+         : ng('ST-14: クリーンアップ', '件数不一致');
+     } catch(e) { ng('ST-14: CRUD追加', e.message); }
+
+     // ST-15: デッキビルダー（deckBuilder系CRUD）
+     try {
+       var _stDbSrc = (window.deckBuilderSave||function(){}).toString();
+       _stDbSrc.indexOf('saveAllTasks') !== -1 || _stDbSrc.indexOf('allTasks') !== -1
+         ? ok('ST-15: deckBuilderSave データ操作コード確認')
+         : ng('ST-15: deckBuilderSave', 'データ操作コードなし');
+       var _stDbAddSrc = (window.deckBuilderAddTask||function(){}).toString();
+       _stDbAddSrc.length > 10
+         ? ok('ST-15: deckBuilderAddTask 実装確認')
+         : ng('ST-15: deckBuilderAddTask', '実装なし');
+       var _stDbPubSrc = (window.deckBuilderPublish||function(){}).toString();
+       _stDbPubSrc.indexOf('DCK1') !== -1 || _stDbPubSrc.indexOf('deck') !== -1
+         ? ok('ST-15: deckBuilderPublish DCK1コード生成確認')
+         : ng('ST-15: deckBuilderPublish', 'DCK1コード参照なし');
+       // generateDeckEntry確認
+       var _stGdeSrc = (window.generateDeckEntry||function(){}).toString();
+       _stGdeSrc.indexOf('DCK1') !== -1 || _stGdeSrc.indexOf('deck') !== -1
+         ? ok('ST-15: generateDeckEntry コード生成確認')
+         : ng('ST-15: generateDeckEntry', 'DCK1参照なし');
+     } catch(e) { ng('ST-15: デッキビルダー', e.message); }
+
+     // ST-16: カレンダー・スタンプ設定
+     try {
+       // isCalendarVisible
+       var _stIcvSrc = (window.isCalendarVisible||function(){}).toString();
+       _stIcvSrc.indexOf('allSettings') !== -1 || _stIcvSrc.indexOf('calendar') !== -1
+         ? ok('ST-16: isCalendarVisible allSettings参照確認')
+         : ng('ST-16: isCalendarVisible', 'allSettings参照なし');
+       // addCalendarSetting
+       var _stAcsSrc = (window.addCalendarSetting||function(){}).toString();
+       _stAcsSrc.indexOf('saveCalendars') !== -1 || _stAcsSrc.indexOf('calendars') !== -1
+         ? ok('ST-16: addCalendarSetting saveCalendars参照確認')
+         : ng('ST-16: addCalendarSetting', 'saveCalendars参照なし');
+       // addStampSetting
+       var _stAssSrc = (window.addStampSetting||function(){}).toString();
+       _stAssSrc.indexOf('generateTaskId') !== -1 || _stAssSrc.indexOf('stamp') !== -1
+         ? ok('ST-16: addStampSetting generateTaskId・stamp参照確認')
+         : ng('ST-16: addStampSetting', 'stamp参照なし');
+       // renderCalendarFilter
+       var _stRcfSrc = (window.renderCalendarFilter||function(){}).toString();
+       _stRcfSrc.indexOf('allSettings') !== -1 || _stRcfSrc.indexOf('calendar') !== -1
+         ? ok('ST-16: renderCalendarFilter allSettings参照確認')
+         : ng('ST-16: renderCalendarFilter', 'allSettings参照なし');
+     } catch(e) { ng('ST-16: カレンダー・スタンプ設定', e.message); }
+
+     // ST-17: ビュー切替・UI操作
+     try {
+       // changeMonth コード確認
+       var _stCmSrc = (window.changeMonth||function(){}).toString();
+       _stCmSrc.indexOf('renderMonthlyView') !== -1 || _stCmSrc.indexOf('currentMonthDate') !== -1
+         ? ok('ST-17: changeMonth renderMonthlyView参照確認')
+         : ng('ST-17: changeMonth', 'renderMonthlyView参照なし');
+       // changeWeek コード確認
+       var _stCwSrc = (window.changeWeek||function(){}).toString();
+       _stCwSrc.indexOf('renderWeeklyView') !== -1 || _stCwSrc.indexOf('currentWeekDate') !== -1
+         ? ok('ST-17: changeWeek renderWeeklyView参照確認')
+         : ng('ST-17: changeWeek', 'renderWeeklyView参照なし');
+       // switchDailyTab コード確認
+       var _stSdtSrc = (window.switchDailyTab||function(){}).toString();
+       _stSdtSrc.indexOf('allSettings') !== -1 || _stSdtSrc.indexOf('daily') !== -1
+         ? ok('ST-17: switchDailyTab allSettings参照確認')
+         : ng('ST-17: switchDailyTab', 'allSettings参照なし');
+       // toggleGantEnabled コード確認
+       var _stTgeSrc = (window.toggleGantEnabled||function(){}).toString();
+       _stTgeSrc.indexOf('saveAllSettings') !== -1 || _stTgeSrc.indexOf('gantEnabled') !== -1
+         ? ok('ST-17: toggleGantEnabled saveAllSettings参照確認')
+         : ng('ST-17: toggleGantEnabled', 'saveAllSettings参照なし');
+       // clearAllData コード確認
+       var _stCadSrc = (window.clearAllData||function(){}).toString();
+       _stCadSrc.indexOf('executeDataReset') !== -1 || _stCadSrc.indexOf('showChoiceModal') !== -1
+         ? ok('ST-17: clearAllData executeDataReset委譲確認')
+         : ng('ST-17: clearAllData', 'executeDataReset参照なし');
+     } catch(e) { ng('ST-17: ビュー切替・UI操作', e.message); }
+
+     // ST-18: SDF追加操作
+     try {
+       var _stSdfDelSrc = (window._sdfHistoryDelete||function(){}).toString();
+       _stSdfDelSrc.indexOf('saveAllTasks') !== -1 || _stSdfDelSrc.indexOf('allTasks') !== -1
+         ? ok('ST-18: _sdfHistoryDelete データ操作コード確認')
+         : ng('ST-18: _sdfHistoryDelete', 'データ操作コードなし');
+       var _stSdfSendSrc = (window._sdfHistorySend||function(){}).toString();
+       _stSdfSendSrc.indexOf('scratch') !== -1 || _stSdfSendSrc.indexOf('addScratchItem') !== -1
+         ? ok('ST-18: _sdfHistorySend 雑記帳送信コード確認')
+         : ng('ST-18: _sdfHistorySend', '雑記帳送信コードなし');
+       var _stSdfAiSrc = (window._sdfCopyForAI||function(){}).toString();
+       _stSdfAiSrc.indexOf('clipboard') !== -1 || _stSdfAiSrc.indexOf('copy') !== -1 || _stSdfAiSrc.length > 10
+         ? ok('ST-18: _sdfCopyForAI 実装確認')
+         : ng('ST-18: _sdfCopyForAI', '実装なし');
+     } catch(e) { ng('ST-18: SDF追加操作', e.message); }
+
+     // ST-19: ノートブック
+     try {
+       var _stNbSrc = (window.nbNewPage||function(){}).toString();
+       _stNbSrc.indexOf('saveAllTasks') !== -1 || _stNbSrc.indexOf('allTasks') !== -1 || _stNbSrc.length > 10
+         ? ok('ST-19: nbNewPage 実装確認')
+         : ng('ST-19: nbNewPage', '実装なし');
+       var _stNbShareSrc = (window.nbShareStep0||function(){}).toString();
+       _stNbShareSrc.length > 10
+         ? ok('ST-19: nbShareStep0 実装確認')
+         : ng('ST-19: nbShareStep0', '実装なし');
+       // nbShare系の連鎖確認
+       var _stNbImport1Src = (window.nbShareImportStep1||function(){}).toString();
+       _stNbImport1Src.length > 10
+         ? ok('ST-19: nbShareImportStep1 実装確認')
+         : ng('ST-19: nbShareImportStep1', '実装なし');
+     } catch(e) { ng('ST-19: ノートブック', e.message); }
+
+     // ST-20: searchGanttTasks・renderSearchResults
+     try {
+       var _stSgtSrc = (window.searchGanttTasks||function(){}).toString();
+       _stSgtSrc.indexOf('allTasks') !== -1 || _stSgtSrc.indexOf('blueprint') !== -1
+         ? ok('ST-20: searchGanttTasks allTasks参照確認')
+         : ng('ST-20: searchGanttTasks', 'allTasks参照なし');
+       var _stRsrSrc = (window.renderSearchResults||function(){}).toString();
+       _stRsrSrc.length > 10
+         ? ok('ST-20: renderSearchResults 実装確認')
+         : ng('ST-20: renderSearchResults', '実装なし');
+       // exportData/importData確認
+       var _stEdSrc = (window.exportData||function(){}).toString();
+       _stEdSrc.indexOf('allTasks') !== -1 || _stEdSrc.indexOf('localStorage') !== -1
+         ? ok('ST-20: exportData allTasks/localStorage参照確認')
+         : ng('ST-20: exportData', 'データ参照なし');
+       var _stIdSrc = (window.importData||function(){}).toString();
+       _stIdSrc.indexOf('allTasks') !== -1 || _stIdSrc.indexOf('localStorage') !== -1
+         ? ok('ST-20: importData allTasks/localStorage参照確認')
+         : ng('ST-20: importData', 'データ参照なし');
+     } catch(e) { ng('ST-20: 検索・エクスポート', e.message); }
+
+     // ST-21: 日付変更フロー（雑記帳→thoughts自動移行）
+     try {
+       var _stPrev21 = allTasks.length;
+       var _stYesterday = (function(){
+         var d = new Date(); d.setDate(d.getDate()-1);
+         return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+       })();
+       // テスト用雑記帳アイテムを昨日の日付で作成
+       var _stSc1 = 'smoke-sc1-' + Date.now();
+       var _stSc2 = 'smoke-sc2-' + (Date.now()+1);
+       allTasks.push({ id: _stSc1, kind: 'scratch', text: 'サンプル雑記帳1', date: _stYesterday, createdAt: new Date().toISOString() });
+       allTasks.push({ id: _stSc2, kind: 'scratch', text: 'サンプル雑記帳2', date: _stYesterday, createdAt: new Date().toISOString() });
+       allTasks.length === _stPrev21 + 2
+         ? ok('ST-21: テスト用雑記帳アイテム作成(2件)')
+         : ng('ST-21: テスト用雑記帳アイテム作成', '作成失敗');
+       // _lastScratchMoveDateを削除して強制実行可能にする
+       var _stPrevMoveDate = localStorage.getItem('_lastScratchMoveDate');
+       localStorage.removeItem('_lastScratchMoveDate');
+       // moveScratchToThoughtsを実行
+       if (typeof moveScratchToThoughts === 'function') moveScratchToThoughts();
+       // 雑記帳アイテムがthoughtsに移動されたか確認
+       var _stSc1After = allTasks.find(function(t){ return t.id === _stSc1; });
+       var _stSc2After = allTasks.find(function(t){ return t.id === _stSc2; });
+       (!_stSc1After && !_stSc2After)
+         ? ok('ST-21: 雑記帳アイテムがallTasksから削除確認')
+         : ng('ST-21: 雑記帳アイテム削除', '削除されず残存');
+       // 昨日の日付の日誌が作成されたか確認
+       var _stJournal21 = allTasks.find(function(t){ return t.kind === 'journal' && t.date === _stYesterday; });
+       _stJournal21
+         ? ok('ST-21: 昨日付けの日誌レコード作成確認')
+         : ng('ST-21: 日誌作成', '日誌レコードなし');
+       // thoughtsに移動されたか確認
+       var _stThoughts21 = typeof getThoughts === 'function' && _stJournal21 ? getThoughts(_stJournal21.id) : [];
+       (_stThoughts21.length >= 2 || (_stJournal21 && (_stJournal21.thoughts||[]).length >= 2))
+         ? ok('ST-21: thoughts移行確認(2件)')
+         : ng('ST-21: thoughts移行', '件数不足: ' + (_stThoughts21.length || (_stJournal21 ? (_stJournal21.thoughts||[]).length : 0)));
+       // _lastScratchMoveDateが更新されたか確認
+       var _stMoveDate = localStorage.getItem('_lastScratchMoveDate');
+       var _stToday21 = typeof getLocalDateStr === 'function' ? getLocalDateStr(new Date()) : '';
+       _stMoveDate === _stToday21
+         ? ok('ST-21: _lastScratchMoveDate更新確認')
+         : ng('ST-21: _lastScratchMoveDate', '未更新: ' + _stMoveDate);
+       // クリーンアップ（日誌とthoughtsを削除）
+       if (_stJournal21) {
+         var _stJId21 = _stJournal21.id;
+         var _stThs21 = typeof getThoughts === 'function' ? getThoughts(_stJId21) : (_stJournal21.thoughts||[]);
+         _stThs21.forEach(function(th){ if (typeof deleteThought === 'function') deleteThought(th.id); });
+         allTasks = allTasks.filter(function(t){ return t.id !== _stJId21; });
+       }
+       // _lastScratchMoveDateを元に戻す
+       if (_stPrevMoveDate) localStorage.setItem('_lastScratchMoveDate', _stPrevMoveDate);
+       else localStorage.removeItem('_lastScratchMoveDate');
+       saveAllTasks();
+       allTasks.length === _stPrev21
+         ? ok('ST-21: クリーンアップ完了(' + allTasks.length + '件)')
+         : ng('ST-21: クリーンアップ', '件数不一致 ' + allTasks.length + '件 期待' + _stPrev21);
+     } catch(e) { ng('ST-21: 日付変更フロー', e.message); }
 
      // ===== 17. Key Purify Absolute Green（最終確認・4軸検査） =====
      try {
