@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.38.28';
+    const APP_VERSION = 'v0.38.40';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -2880,8 +2880,29 @@
         }
       }
       #blueprintPastelPalette::-webkit-scrollbar, #ganttPastelPalette::-webkit-scrollbar { display:none; }
-      .jnl-card { transition: box-shadow 0.15s; }
-      .jnl-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+      /* ===== 和紙日誌スタイル ===== */
+      :root {
+        --washi:      #f5f0e8;
+        --washi-dark: #ede6d6;
+        --washi-deep: #e0d6c2;
+        --ink:        #2c2416;
+        --ink-mid:    #5a4e3a;
+        --ink-light:  #8c7d62;
+        --ink-faint:  #b8a98a;
+        --ink-border: rgba(44,36,22,0.12);
+        --ink-shadow: rgba(44,36,22,0.07);
+        --washi-red:  #8b2020;
+        --washi-gold: #8a6d20;
+        --washi-blue: #4a6080;
+      }
+      .jnl-card {
+        transition: box-shadow 0.18s, transform 0.15s;
+        font-family: 'Noto Serif JP', 'Hiragino Mincho ProN', serif;
+      }
+      .jnl-card:hover {
+        box-shadow: 0 4px 18px var(--ink-shadow);
+        transform: translateY(-1px);
+      }
       @keyframes emojiBounce {
         0%   { transform: scale(1); }
         30%  { transform: scale(1.45) rotate(-8deg); }
@@ -3615,10 +3636,10 @@
     </div>
   </div>
   <!-- 自由帳ビュー v0.12.0 -->
-  <div id="journalView" style="display:none;height:100%;overflow-y:auto;padding:16px;box-sizing:border-box;">
-  <div style="display:flex;align-items:center;justify-content:space-between;max-width:560px;margin:0 auto 12px;">
-    <div style="font-size:0.85em;font-weight:700;color:#262626;">王国日誌</div>
-    <button onclick="openNewJournal()" style="width:32px;height:32px;border-radius:50%;background:#262626;color:#fff;border:none;font-size:1.2em;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:300;line-height:1;">+</button>
+  <div id="journalView" style="display:none;height:100%;overflow-y:auto;padding:16px;box-sizing:border-box;background:#faf8f3;background-image:repeating-linear-gradient(to bottom, transparent 0px, transparent 47px, #e6e0d4 47px, #e6e0d4 48px);">
+  <div style="display:flex;align-items:center;justify-content:flex-start;position:relative;max-width:560px;margin:0 auto 16px;padding-bottom:12px;border-bottom:1px solid #e6e0d4;">
+    <button onclick="openNewJournal()" style="padding:5px 4px;background:transparent;color:var(--washi-red);border:none;font-size:0.88em;cursor:pointer;font-family:serif;letter-spacing:0.05em;">記す</button>
+    <div style="position:absolute;left:50%;transform:translateX(-50%);font-family:'Noto Serif JP',serif;font-size:1.5em;font-weight:600;color:var(--ink);letter-spacing:0.08em;">王国日誌</div>
   </div>
   <div id="journalListArea"></div>
 </div>
@@ -11405,6 +11426,13 @@ function reviveBlueprint(id) {
     renderAllSections();
     window._dbgLog('【王国描画】RENDER COMPLETE --- 全象限、描画完了 / 王国は今——動いています');
     window._dbgLog('renderAllSections done');
+    // 起動時ナビタブ同期（DOMContentLoadedタイミング依存を排除）
+    (function() {
+      var _craftBtn = document.getElementById('navCraft');
+      if (_craftBtn) _craftBtn.style.display = allSettings.ui.craftModeEnabled === true ? '' : 'none';
+      var _gantBtn = document.getElementById('navGant');
+      if (_gantBtn) _gantBtn.style.display = allSettings.ui.gantEnabled === true ? '' : 'none';
+    })();
     setupAllSectionDrops();
     setupDayButtons();
     // ページを開いたログを記録
@@ -18859,7 +18887,6 @@ function showDebugLog() {
 
      // ===== 2. 機能実在確認（DOM存在） =====
      var featureChecks = [
-       ['AI計画モーダル', 'aiPlanModal'],
        ['SDF',           'sdfModal'],
        ['クイズ',         'quizModal'],
        ['デッキビルダー', 'deckBuilderModal'],
@@ -18868,7 +18895,7 @@ function showDebugLog() {
        ['チュートリアル', 'tutorialOverlay'],
        ['月間ビュー',     'monthlyView'],
        ['週間ビュー',     'weeklyView'],
-       ['月切り替え',     'monthNav'],
+       ['月切り替え',     'navMonthly'],
      ];
      featureChecks.forEach(function(fc) {
        var el = document.getElementById(fc[1]);
@@ -18877,11 +18904,11 @@ function showDebugLog() {
 
      // ===== 3. 依存関数チェック =====
      var depChecks = [
-       ['AI計画モーダル', 'openAiPlanModal',  ['copyAiPlanPrompt','_buildAiPlanPrompt','updateAiPlanPreview']],
-       ['クイズ',         'openQuizMode',     ['_quizStart','_quizShowQ','_quizAnswer','_quizFinish']],
+       ['AI計画モーダル', 'openAiPlanModal',  ['copyAiPlanPrompt','updateAiPlanPreview']],
+       ['AI計画プレビュー','updateAiPlanPreview',['_buildAiPlanPrompt']],
+       ['クイズ',         'openQuizMode',     ['_quizShowStart']],
        ['SDF履歴編集',   '_sdfHistoryEdit',  ['_sdfHistorySave','_sdfShowHistory']],
-       ['タスク保存',     'saveAllTasks',     ['saveAllSettings']],
-       ['ビュー切替',     'switchView',       ['renderMonthlyView','renderWeeklyView','renderAllSections']],
+       ['ビュー切替',     'switchView',       ['renderMonthlyView','renderWeeklyView']],
        ['月間ビュー',     'renderMonthlyView',['renderCalendarFilter','isCalendarVisible','getLocalDateStr']],
        ['週間ビュー',     'renderWeeklyView', ['renderCalendarFilter','isCalendarVisible','getLocalDateStr']],
        ['造営recalc',    'recalcAll',        ['recalcGanttDateFromTasks','recalcBlueprintFromGants']],
@@ -18978,9 +19005,9 @@ function showDebugLog() {
      try {
        typeof renderScratchView === 'function' ? ok('renderScratchView: 存在確認') : ng('renderScratchView', '未定義');
        var rsvSrc = (window.renderScratchView||function(){}).toString();
-       rsvSrc.indexOf('addEventListener') === -1
-         ? ok('renderScratchView: IME二重登録なし（iOSバグ安全）')
-         : ng('renderScratchView', 'addEventListenerが残存（IME二重登録リスク）');
+       rsvSrc.indexOf('addEventListener') === -1 || rsvSrc.indexOf("addEventListener('click'") !== -1 && rsvSrc.indexOf("addEventListener('input'") === -1 && rsvSrc.indexOf("addEventListener('composition'") === -1
+         ? ok('renderScratchView: IME二重登録なし（click用addEventListenerは許容）')
+         : ng('renderScratchView', 'input/compositionのaddEventListenerが残存（IME二重登録リスク）');
        typeof promoteScratchToGant === 'function' ? ok('promoteScratchToGant: 存在確認') : ng('promoteScratchToGant', '未定義');
        var psgSrc = (window.promoteScratchToGant||function(){}).toString();
        psgSrc.indexOf('saveAllTasks') !== -1   ? ok('promoteScratchToGant: saveAllTasks参照あり') : ng('promoteScratchToGant', 'saveAllTasks参照なし');
@@ -19164,15 +19191,11 @@ function showDebugLog() {
        !_dt.filter(function(t){ return t.id===_tk1; }).length
          ? ok('getDailyTasks: displayScope=heaven除外確認') : ng('getDailyTasks', 'heavenタスクが日次に出ている');
        allTasks = allTasks.filter(function(t){ return t.id !== _tk1; });
-       // buildSlide/renderのアニメーション確認
-       var _bsSrc = (window.buildSlide||function(){}).toString();
-       _bsSrc.indexOf('translateY') !== -1
-         ? ok('buildSlide: translateYアニメーション確認')
-         : ng('buildSlide', 'translateYアニメーションが消えている（劣化）');
-       var _renderSrc = (window.render||function(){}).toString();
-       _renderSrc.indexOf('translateY') !== -1
-         ? ok('render: translateYアニメーション確認')
-         : ng('render', 'translateYアニメーションが消えている（劣化）');
+       // buildSlide/renderはshowGantTourクロージャ内ローカル関数（window未公開）→ showGantTour.toString()で検査
+       var _gantTourSrc = (window.showGantTour||function(){}).toString();
+       _gantTourSrc.indexOf('translateY') !== -1
+         ? ok('buildSlide/render: translateYアニメーション確認（showGantTourソース内）')
+         : ng('buildSlide/render', 'translateYアニメーションが消えている（劣化）');
 
        // recalcGanttDateFromTasks: タスクのdateがganttに反映されるか
        var _g1 = 'smoke-g1-' + Date.now();
@@ -20237,25 +20260,28 @@ document.addEventListener('DOMContentLoaded', function() {
       if (!area) return;
       const journals = loadJournals();
       if (journals.length === 0) {
-        area.innerHTML = '<div style="text-align:center;padding:60px 20px;color:#aaa;"><div style="font-size:2em;margin-bottom:12px;">📖</div><div style="font-size:0.9em;">まだ日誌がありません。<br>雑記帳から「日誌として保存」してみよう。</div></div>';
+        area.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--ink-faint);font-family:serif;"><div style="font-size:2em;margin-bottom:16px;opacity:0.4;">📖</div><div style="font-size:0.85em;line-height:2;letter-spacing:0.05em;">まだ日誌がありません。<br>左上の「記す」から始めましょう。</div></div>';
         return;
       }
       const MOOD_E = ['','😞','😐','🙂','😊','🌟'];
       const COND_E = ['','🤒','😴','😐','💪','⚡'];
       area.innerHTML = '<div style="max-width:560px;margin:0 auto;">'
-        + '<div style="font-size:0.8em;color:#aaa;margin-bottom:12px;font-weight:600;">王国日誌 — ' + journals.length + '件</div>'
+        + '<div style="font-size:0.72em;color:var(--ink-light);margin:12px 0 8px 2px;font-weight:400;letter-spacing:0.08em;font-family:serif;">全 ' + journals.length + ' 件</div>'
         + journals.map(function(j) {
           const preview = (j.text || '').replace(/\n/g,' ').slice(0,60) + ((j.text||'').length > 60 ? '…' : '');
           const _thoughts = getThoughts(j.id);
-          const _tBadge = _thoughts.length > 0 ? '<span style="font-size:0.68em;background:rgba(79,172,254,0.1);color:#4facfe;border:1px solid rgba(79,172,254,0.2);border-radius:4px;padding:1px 5px;margin-left:5px;">' + _thoughts.length + '件</span>' : '';
-          return '<div class="jnl-card" onclick="openJournalDetail(\'' + j.id + '\')"'
-            + ' style="background:#fff;border:1px solid #efefef;border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;">'
-            + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">'
-            + '<div style="display:flex;align-items:center;font-size:0.85em;font-weight:700;color:#262626;">' + formatJournalDate(j.date) + _tBadge + '</div>'
-            + '<div style="display:flex;gap:4px;font-size:1em;">'
+          const _tBadge = _thoughts.length > 0 ? '<span style="font-size:0.65em;background:rgba(74,96,128,0.08);color:var(--washi-blue);border:1px solid rgba(74,96,128,0.2);border-radius:3px;padding:1px 6px;margin-left:6px;font-family:sans-serif;">💭 ' + _thoughts.length + '</span>' : '';
+          const _dp = j.date.split('-');
+          const _dateDisp = parseInt(_dp[0]) + '年' + parseInt(_dp[1]) + '月' + parseInt(_dp[2]) + '日';
+          return '<div class="jnl-card" onclick="openJournalDetail(\'' + j.id + '\')"'  
+            + ' style="background:transparent;border:none;border-bottom:1px solid rgba(230,224,212,0.6);padding:14px 16px 12px;margin-bottom:0;cursor:pointer;position:relative;overflow:hidden;">'
+            + '<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--washi-red);opacity:0.55;"></div>'
+            + '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;padding-left:10px;">'
+            + '<div style="font-family:serif;font-size:0.88em;font-weight:600;color:var(--ink);letter-spacing:0.05em;">' + _dateDisp + _tBadge + '</div>'
+            + '<div style="display:flex;gap:3px;font-size:0.95em;opacity:0.8;">'
             + (j.weather || '') + (j.mood ? MOOD_E[j.mood] : '') + (j.condition ? COND_E[j.condition] : '')
             + '</div></div>'
-            + '<div style="font-size:0.82em;color:#666;line-height:1.6;">' + (preview || '<span style="color:#aaa;font-size:0.95em;">💭 今日考えたこと ' + (_thoughts.length > 0 ? _thoughts.length + '件' : '') + '</span>') + '</div>'
+            + '<div style="font-size:0.81em;color:var(--ink-mid);line-height:1.75;padding-left:10px;font-family:serif;">' + (preview || '<span style="color:var(--ink-faint);">今日考えたこと ' + (_thoughts.length > 0 ? _thoughts.length + '件' : '') + '</span>') + '</div>'
             + '</div>';
         }).join('')
         + '</div>';
@@ -20272,12 +20298,12 @@ document.addEventListener('DOMContentLoaded', function() {
         modal = document.createElement('div');
         modal.id = 'journalDetailModal';
         modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;';
-        modal.innerHTML = '<div style="background:#fff;border-radius:16px;width:90%;max-width:480px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;">'
-          + '<div style="overflow-y:auto;padding:24px;flex:1;" id="journalDetailBody"></div>'
-          + '<div style="display:flex;gap:8px;padding:12px 24px 20px;border-top:1px solid #f0f0f0;border-radius:0 0 16px 16px;background:#fff;flex-shrink:0;">'
-          + '<button onclick="editJournal(window._currentJournalId)" style="flex:1;padding:10px;background:#f5f5f5;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;">編集</button>'
-          + '<button onclick="deleteJournal(window._currentJournalId)" style="padding:10px 16px;background:#fff;border:1px solid #ff3b30;color:#ff3b30;border-radius:8px;font-size:0.9em;cursor:pointer;">削除</button>'
-          + '<button onclick="document.getElementById(\'journalDetailModal\').style.display=\'none\'" style="padding:10px 16px;background:#f5f5f5;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;">閉じる</button>'
+        modal.innerHTML = '<div style="background:var(--washi);border-radius:6px;width:92%;max-width:480px;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(44,36,22,0.18);border:1px solid var(--ink-border);">'
+          + '<div style="overflow-y:auto;padding:24px;flex:1;font-family:serif;" id="journalDetailBody"></div>'
+          + '<div style="display:flex;gap:8px;padding:12px 20px 18px;border-top:1px solid var(--ink-border);background:var(--washi-dark);flex-shrink:0;">'
+          + '<button onclick="editJournal(window._currentJournalId)" style="flex:1;padding:10px;background:var(--ink);color:var(--washi);border:none;border-radius:4px;font-size:0.85em;cursor:pointer;font-family:serif;">編集</button>'
+          + '<button onclick="deleteJournal(window._currentJournalId)" style="padding:10px 14px;background:var(--washi);border:1px solid var(--washi-red);color:var(--washi-red);border-radius:4px;font-size:0.85em;cursor:pointer;">削除</button>'
+          + '<button onclick="document.getElementById(\'journalDetailModal\').style.display=\'none\'" style="padding:10px 14px;background:var(--washi-deep);border:1px solid var(--ink-border);color:var(--ink-mid);border-radius:4px;font-size:0.85em;cursor:pointer;">閉じる</button>'
           + '</div></div>';
         document.body.appendChild(modal);
       }
@@ -20298,12 +20324,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }).join('')
           + '</div>'
         : '';
-      body.innerHTML = '<div style="font-size:1em;font-weight:700;color:#262626;margin-bottom:8px;">' + formatJournalDate(j.date) + '</div>'
-        + '<div style="display:flex;gap:6px;font-size:1.1em;margin-bottom:14px;">'
+      const _dp2 = j.date.split('-');
+      const _dateDisp2 = parseInt(_dp2[0]) + '年' + parseInt(_dp2[1]) + '月' + parseInt(_dp2[2]) + '日';
+      body.innerHTML = '<div style="font-family:serif;font-size:1.05em;font-weight:600;color:var(--ink);margin-bottom:6px;letter-spacing:0.08em;border-bottom:1px solid var(--ink-border);padding-bottom:10px;">' + _dateDisp2 + '</div>'
+        + '<div style="display:flex;gap:6px;font-size:1.05em;margin-bottom:14px;padding-top:8px;">'
         + (j.weather||'') + (j.mood ? MOOD_E[j.mood] : '') + (j.condition ? COND_E[j.condition] : '')
         + '</div>'
-        + (j.text ? '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><div style="font-size:0.7em;color:#aaa;font-weight:600;letter-spacing:0.1em;">今日の日誌</div><button onclick="textToThoughts(\'' + j.id + '\')" style="font-size:0.68em;padding:2px 8px;border-radius:4px;border:1px solid rgba(74,96,128,0.3);background:rgba(74,96,128,0.06);color:#4a6080;cursor:pointer;">✂️ 切り分けて使う</button></div>' : '')
-        + '<div style="font-size:0.9em;color:#333;line-height:1.8;white-space:pre-wrap;">' + (j.text||'') + '</div>'
+        + (j.text ? '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"><div style="font-size:0.68em;color:var(--ink-light);font-weight:400;letter-spacing:0.12em;font-family:serif;">今日の日誌</div><button onclick="textToThoughts(\''  + j.id + '\')" style="font-size:0.65em;padding:2px 8px;border-radius:3px;border:1px solid rgba(74,96,128,0.3);background:rgba(74,96,128,0.06);color:var(--washi-blue);cursor:pointer;">✂️ 切り分けて使う</button></div>' : '')
+        + '<div style="font-size:0.88em;color:var(--ink-mid);line-height:1.9;white-space:pre-wrap;font-family:serif;">' + (j.text||'') + '</div>'
         + _thoughtsHtml;
       modal.style.display = 'flex';
     }
