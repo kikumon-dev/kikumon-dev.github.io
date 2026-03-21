@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.37.65';
+    const APP_VERSION = 'v0.37.73';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -2997,7 +2997,8 @@
     <div class="scratch-header">
       <span class="scratch-date-label" id="scratchDateLabel"></span>
       <div style="display:flex;gap:6px;margin-left:auto;">
-        <button onclick="openDeepFocusMode()" style="padding:4px 10px;background:#0a0a0a;border:1px solid #a78bfa;border-radius:7px;color:#a78bfa;font-size:0.72em;font-weight:700;cursor:pointer;white-space:nowrap;">✦ 自分で深く考える</button>
+        <button onclick="openSingleDeepFocus()" style="padding:4px 10px;background:#0a0f0a;border:1px solid #4ade80;border-radius:7px;color:#4ade80;font-size:0.72em;font-weight:700;cursor:pointer;white-space:nowrap;">✦ 深考する</button>
+        
         <button onclick="openAiPlanModal()" style="padding:4px 10px;background:linear-gradient(135deg,#a78bfa,#6d28d9);color:#fff;border:none;border-radius:7px;font-size:0.72em;font-weight:700;cursor:pointer;white-space:nowrap;">✨ AIに計画を作ってもらう</button>
       </div>
     </div>
@@ -14521,6 +14522,187 @@ function renderDeckShop() {
   });
 }
 // ===== 印刷前後の制御 =====
+    // ===== SingleDeepFocus =====
+    var _sdf = { question: '', hintIdx: 0 };
+
+    var _sdfHints = [
+      // 動機・目的
+      'なぜその問いを立てたのですか？',
+      '何のためですか？',
+      '誰の幸せにつながりますか？',
+      '誰と誰が喜びますか？',
+      // 本当に欲しいもの
+      '本当に欲しい結果は何ですか？具体的・測定可能に。',
+      'なぜそれが欲しいのですか？感情的な動機を。',
+      'それを得るために何をしますか？大量行動計画を。',
+      // 確実性・不確実性
+      'この問いの中で、確かなことは何ですか？',
+      'この問いの中で、まだ見えていないことは何ですか？',
+      'この問いはあなたにとってなぜ重要ですか？',
+      'この問いは誰とのつながりに関係していますか？',
+      'この問いを深めることで、あなたはどう成長しますか？',
+      'この問いの答えは、誰かの役に立ちますか？',
+      // 状況把握
+      '規模はどのくらいですか？（人数・影響範囲）',
+      '今、何が起きていますか？',
+      'どこでのことですか？',
+      '誰が関係していますか？',
+      'いつのことですか？',
+      '何を武器・ツールにできますか？',
+      // 5W1H
+      'Who・What・When・Where・Why・How で整理すると？',
+      // なぜ？×5回
+      'なぜ？（1回目）',
+      'なぜ？（2回目）——その答えをさらに問い返す。',
+      'なぜ？（3回目）——もう一度深く。',
+      'なぜ？（4回目）——本質が見えてきた？',
+      'なぜ？（5回目）——これが根っこだ。',
+      // 4象限
+      'これをやったら、何が起きますか？',
+      'これをやらなかったら、何が起きますか？',
+      'これをやったら、何が起きなくなりますか？',
+      'これをやらなかったら、何が起きなくなりますか？',
+      // 問いを疑う
+      'それは本当ですか？確信できますか？',
+      'その考えの反証は何ですか？',
+      'その問いの前提は何ですか？',
+      'もし前提が間違っていたら？',
+      // 本質・関係
+      '何が本質ですか？',
+      '何と何が関係していますか？',
+      '名前をつけるとしたら何ですか？',
+      '今の状態はどうですか？',
+      '時間軸で見るとどうですか？',
+      // 制約外し・解決・最終
+      'もし〇〇だったら？制約を外したら、どうなりますか？',
+      'どうやって解決したいですか？',
+      'この問いから逃げたくなっていますか？なぜ？',
+    ];
+
+    function openSingleDeepFocus() {
+      var modal = document.getElementById('sdfModal');
+      if (!modal) return;
+      _sdf = { question: '', hintIdx: 0 };
+      var q = document.getElementById('sdf-question');
+      if (q) q.value = '';
+      var r = document.getElementById('sdf-result');
+      if (r) r.value = '';
+      var ha = document.getElementById('sdf-history-area');
+      if (ha) { ha.innerHTML = ''; ha.style.display = 'none'; }
+      var hintCard = document.getElementById('sdf-hint-card');
+      if (hintCard) hintCard.style.display = 'none';
+      _sdfShowStep(1);
+      modal.style.display = 'flex';
+    }
+
+    function closeSingleDeepFocus() {
+      var modal = document.getElementById('sdfModal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function _sdfShowStep(n) {
+      var s1 = document.getElementById('sdf-step1');
+      var s2 = document.getElementById('sdf-step2');
+      var bar = document.getElementById('sdf-hint-bar');
+      if (s1) s1.style.display = n === 1 ? 'flex' : 'none';
+      if (s2) s2.style.display = n === 2 ? 'flex' : 'none';
+      if (bar) bar.style.display = n === 2 ? 'block' : 'none';
+    }
+
+    function _sdfNext() {
+      var q = document.getElementById('sdf-question');
+      if (!q || !q.value.trim()) { showToast('問いを入力してください', {type:'warn'}); return; }
+      _sdf.question = q.value.trim();
+      var disp = document.getElementById('sdf-question-display');
+      if (disp) disp.textContent = '「' + _sdf.question + '」';
+      _sdfShowStep(2);
+      setTimeout(function() {
+        var r = document.getElementById('sdf-result');
+        if (r) r.focus();
+      }, 100);
+    }
+
+    function _sdfInsertHint() {
+      var r = document.getElementById('sdf-result');
+      if (!r) return;
+      var hint = _sdfHints[_sdf.hintIdx % _sdfHints.length];
+      var current = r.value;
+      var insert = (current && !current.endsWith('\n') ? '\n' : '') + 'Q: ' + hint + '\n→ ';
+      r.value = current + insert;
+      r.focus();
+      r.setSelectionRange(r.value.length, r.value.length);
+      _sdf.hintIdx++;
+      // 全ヒント使い切ったらボタンを変える
+      if (_sdf.hintIdx >= _sdfHints.length) {
+        var btn = document.getElementById('sdf-hint-btn');
+        if (btn) { btn.textContent = '❓ ヒント（最初に戻る）'; }
+      }
+    }
+
+    function _sdfFinish() {
+      var r = document.getElementById('sdf-result');
+      var text = r ? r.value.trim() : '';
+      if (!text) { showToast('内容を入力してください', {type:'warn'}); return; }
+      var saveText = '【深考】' + _sdf.question + '\n' + text;
+      var dateStr = getLocalDateStr(new Date());
+      var record = {
+        id: generateTaskId(),
+        kind: 'singleDeepFocus',
+        question: _sdf.question,
+        text: saveText,
+        date: dateStr,
+        createdAt: new Date().toISOString()
+      };
+      allTasks.push(record);
+      saveAllTasks();
+      showToast('深考を保存しました', {type:'success'});
+      closeSingleDeepFocus();
+      if (typeof switchView === 'function') switchView('scratch');
+    }
+
+    function _sdfShowHistory() {
+      var area = document.getElementById('sdf-history-area');
+      if (!area) return;
+      if (area.style.display === 'block') { area.style.display = 'none'; return; }
+      var history = allTasks.filter(function(t){ return t.kind === 'singleDeepFocus'; })
+        .sort(function(a,b){ return b.createdAt > a.createdAt ? 1 : -1; });
+      if (history.length === 0) { showToast('まだ深考の記録がありません', {type:'info'}); return; }
+      var html = '';
+      history.forEach(function(t) {
+        var safeText = (t.text||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        html += '<div style="padding:10px;background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.1);border-radius:8px;margin-bottom:8px;">';
+        html += '<div style="font-size:0.78em;color:#4ade80;opacity:0.6;margin-bottom:4px;">' + (t.date||'') + '</div>';
+        html += '<div style="font-size:0.85em;color:#d1fae5;line-height:1.6;white-space:pre-wrap;">' + safeText + '</div>';
+        html += '<div style="margin-top:8px;">';
+        html += '<button onclick="_sdfHistoryDelete(\'' + t.id + '\')" style="font-size:0.72em;padding:3px 8px;background:none;border:1px solid rgba(239,68,68,0.3);border-radius:4px;color:#f87171;cursor:pointer;">削除</button>';
+        html += '</div></div>';
+      });
+      area.innerHTML = html;
+      area.style.display = 'block';
+    }
+
+    function _sdfHistoryDelete(id) {
+      showChoiceModal('この深考を削除しますか？', function() {
+        allTasks = allTasks.filter(function(t){ return t.id !== id; });
+        saveAllTasks();
+        _sdfShowHistory();
+        showToast('削除しました', {type:'success'});
+      });
+    }
+
+    function _sdfCopyForAI() {
+      var history = allTasks.filter(function(t){ return t.kind === 'singleDeepFocus'; })
+        .sort(function(a,b){ return b.createdAt > a.createdAt ? 1 : -1; })
+        .slice(0, 5);
+      if (history.length === 0) { showToast('深考の記録がありません', {type:'info'}); return; }
+      var sep = '\n\n---\n\n';
+      var text = '# 深考の記録\n\n' + history.map(function(t){ return t.text; }).join(sep);
+      navigator.clipboard.writeText(text).then(function(){
+        showToast('AIコピー完了', {type:'success'});
+      }).catch(function(){
+        showToast('コピーに失敗しました', {type:'error'});
+      });
+    }
 window.addEventListener('beforeprint', function() {
   // 印刷時に不要な要素を強制非表示
   const hideIds = ['dailyInnerTabBar','scratchView','timelineView','weeklyView',
@@ -18345,6 +18527,15 @@ function _quizFinish() {
     + '</div></div>';
 }
 
+window.openSingleDeepFocus = openSingleDeepFocus;
+window.closeSingleDeepFocus = closeSingleDeepFocus;
+window._sdfNext = _sdfNext;
+window._sdfInsertHint = _sdfInsertHint;
+window._sdfAddHint = _sdfAddHint;
+window._sdfFinish = _sdfFinish;
+window._sdfShowHistory = _sdfShowHistory;
+window._sdfHistoryDelete = _sdfHistoryDelete;
+window._sdfCopyForAI = _sdfCopyForAI;
 window.openDeepFocusMode = openDeepFocusMode;
 window.closeDeepFocusMode = closeDeepFocusMode;
 window._dfmNext = _dfmNext;
@@ -20790,57 +20981,52 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 <!-- 印刷処理（beforeprint / afterprint） -->
-<script>
-window.addEventListener('beforeprint', function() {
-  // 印刷時に不要な要素を強制非表示
-  const hideIds = ['dailyInnerTabBar','scratchView','timelineView','weeklyView',
-    'monthlyView','yearlyView','notebookView','shopView','craftView',
-    'craftHUD','craftGDPBadge','settingsView','setupOverlay','tutorialHelpBtn',
-    'escapeMessage','modal-root','lpModal'];
-  hideIds.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.dataset.printHidden = el.style.display;
-    if (el) el.style.setProperty('display','none','important');
-  });
-  // エクスポート・インポートボタンも非表示
-  document.querySelectorAll('.data-btn').forEach(el => {
-    el.dataset.printHidden = el.style.display;
-    el.style.setProperty('display','none','important');
-  });
-  // containerを強制表示・サイズ固定
-  const c = document.querySelector('.container');
-  if (c) {
-    c.style.setProperty('display','grid','important');
-    c.style.width = '297mm';
-    c.style.height = '210mm';
-    c.style.gridTemplateColumns = '1fr 1fr';
-    c.style.gridTemplateRows = '1fr 1fr';
-    c.style.margin = '0';
-    c.style.position = 'static';
-  }
-});
-window.addEventListener('afterprint', function() {
-  // 印刷後に元の状態に戻す
-  const hideIds = ['dailyInnerTabBar','scratchView','timelineView','weeklyView',
-    'monthlyView','yearlyView','notebookView','shopView','craftView',
-    'craftHUD','craftGDPBadge','settingsView','setupOverlay','tutorialHelpBtn',
-    'escapeMessage','modal-root','lpModal'];
-  hideIds.forEach(id => {
-    const el = document.getElementById(id);
-    if (el && el.dataset.printHidden !== undefined) {
-      el.style.display = el.dataset.printHidden;
-      delete el.dataset.printHidden;
-    }
-  });
-  document.querySelectorAll('.data-btn').forEach(el => {
-    if (el.dataset.printHidden !== undefined) {
-      el.style.display = el.dataset.printHidden;
-      delete el.dataset.printHidden;
-    }
-  });
-  // containerを元に戻す（再描画）
-  if (typeof switchView === 'function') switchView(localStorage.getItem('currentView') || 'daily');
-});
-</script>
-</body>
-</html>
+
+<!-- SingleDeepFocus モーダル -->
+<div id="sdfModal" style="display:none;position:fixed;inset:0;background:#0a0f0a;z-index:10000;flex-direction:column;overflow:hidden;">
+
+  <!-- ヘッダー -->
+  <div style="flex-shrink:0;display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid rgba(74,222,128,0.12);">
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:0.68em;color:rgba(74,222,128,0.45);letter-spacing:0.08em;">✦ 自分で深く考える</div>
+      <div id="sdf-question-display" style="font-size:0.88em;font-weight:700;color:#d1fae5;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px;"></div>
+    </div>
+    <button onclick="_sdfFinish()" style="flex-shrink:0;padding:8px 18px;background:linear-gradient(135deg,#166534,#15803d);color:#d1fae5;border:none;border-radius:8px;font-size:0.82em;font-weight:700;cursor:pointer;">保存</button>
+    <button onclick="closeSingleDeepFocus()" style="flex-shrink:0;width:34px;height:34px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:#6ee7b7;border-radius:8px;font-size:0.9em;cursor:pointer;">✕</button>
+  </div>
+
+  <!-- ヒントボタン：ヘッダー直下・常に見える -->
+  <div id="sdf-hint-bar" style="display:none;flex-shrink:0;padding:8px 16px;border-bottom:1px solid rgba(74,222,128,0.08);">
+    <button onclick="_sdfInsertHint()" id="sdf-hint-btn"
+      style="width:100%;padding:11px;background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.2);border-radius:10px;color:#4ade80;font-size:0.88em;font-weight:600;cursor:pointer;">
+      ❓ ヒント
+    </button>
+  </div>
+
+  <!-- step1 -->
+  <div id="sdf-step1" style="display:flex;flex-direction:column;flex:1;overflow-y:auto;padding:20px 16px;gap:14px;">
+    <div style="font-size:0.82em;color:rgba(74,222,128,0.6);line-height:1.9;text-align:center;padding-top:8px;">
+      シングルディープフォーカス<br>
+      一つの問いを人より長く深く考える。<br>
+      <span style="font-size:0.9em;opacity:0.7;">その問いが幸せに向かうなら、始めましょう。</span>
+    </div>
+    <div style="background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.15);border-radius:12px;padding:4px;">
+      <textarea id="sdf-question" placeholder="問いを一つ、ここに書いてください。" rows="4"
+        style="width:100%;padding:14px;background:transparent;border:none;color:#d1fae5;font-size:0.95em;resize:none;box-sizing:border-box;line-height:1.8;outline:none;font-family:inherit;"></textarea>
+    </div>
+    <button onclick="_sdfNext()"
+      style="width:100%;padding:14px;background:linear-gradient(135deg,#166534,#15803d);color:#d1fae5;border:none;border-radius:12px;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(74,222,128,0.15);">
+      ✦ この問いで深考を始める
+    </button>
+    <button onclick="_sdfShowHistory()" style="background:none;border:none;color:rgba(74,222,128,0.35);font-size:0.78em;cursor:pointer;text-align:center;padding:4px;">過去の深考を見る</button>
+    <div id="sdf-history-area" style="display:none;"></div>
+  </div>
+
+  <!-- step2：textareaが残り全部を占める -->
+  <div id="sdf-step2" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+    <textarea id="sdf-result" placeholder="考えながら、ここに打ち込んでください。"
+      style="flex:1;width:100%;padding:16px;background:transparent;border:none;color:#d1fae5;font-size:0.95em;box-sizing:border-box;resize:none;font-family:inherit;line-height:1.9;outline:none;"></textarea>
+  </div>
+
+</div>
+>
