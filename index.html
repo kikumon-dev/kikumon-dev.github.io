@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.38.16';
+    const APP_VERSION = 'v0.38.18';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -7507,7 +7507,9 @@ function myDeckApply(idx) {
       {bg:'#e0f7fa',text:'#006064'}
     ];
     function getBlueprints() {
-      return allTasks.filter(t => t.kind === 'blueprint').sort((a,b) => (a.order||0)-(b.order||0));
+      const all = allTasks.filter(t => t.kind === 'blueprint' && !t.inHeaven).sort((a,b) => (a.order||0)-(b.order||0));
+      if (!_selectedGrandVisionId) return all;
+      return all.filter(b => b.grandvisionId === _selectedGrandVisionId);
     }
     function getGantsByBlueprint(blueprintId) {
       return allTasks.filter(t => t.kind === 'gantt' && t.blueprintId === blueprintId)
@@ -8190,19 +8192,15 @@ function myDeckApply(idx) {
       var gid = btn.dataset.gid;
       if (gid) openGanttQuickTask(gid);
     }
-    var _gantToggling = {};
     function _gantToggleCompleted(btn) {
       var tid = btn.dataset.tid;
-      if (_gantToggling[tid]) return;
-      _gantToggling[tid] = true;
-      setTimeout(function(){ delete _gantToggling[tid]; }, 300);
       var t = allTasks.find(function(x){ return x.id===tid; });
       if (!t) return;
       t.done = !t.done;
       t.completed = t.done; // 日次ビューのcompletedと双方向同期
       saveAllTasks();
       if (typeof recalcAll === 'function') recalcAll(tid);
-      renderGantView();
+      renderGantView(); // 展開状態の保存・復元はrenderGantView内で処理
     }
     function _gantEditTask(btn) {
       var tid = btn.dataset.tid;
@@ -9872,12 +9870,23 @@ function reviveBlueprint(id) {
         task.done = task.completed; // 造営(gantt)のdoneと双方向同期
         task.updatedAt = new Date().toISOString();
         saveAllTasks();
-        // クラフトモード：完了時にリアルタイム更新
         if (!wasCompleted && task.completed) {
+          // 完了時
           onTaskCompleted(task);
-          // deckHistory：完了カウントを加算
           if (task.deckId && typeof incrementDeckHistoryStat === 'function') {
             incrementDeckHistoryStat(task.deckId);
+          }
+        } else if (wasCompleted && !task.completed) {
+          // 完了を外したとき：gantt進捗を更新
+          var _linkedGants = getGantsAll().filter(function(g){ return (g.taskIds||[]).includes(task.id); });
+          if (_linkedGants.length > 0) {
+            _linkedGants.forEach(function(g){
+              var bp = allTasks.find(function(t){ return t.id === g.blueprintId; });
+              if (bp) recalcBlueprintFromGants(bp);
+            });
+            saveAllTasks();
+            var _gv = document.getElementById('gantView');
+            if (_gv && _gv.style.display !== 'none') renderGantView();
           }
         }
         // 日次ビュー：全象限を再描画
@@ -18840,49 +18849,63 @@ function showDebugLog() {
 
      // ===== 15. done/completed 双方向同期 挙動テスト =====
      try {
+       // --- ① 関数・実装確認 ---
+       // _gantToggleCompletedのソースにdone/completed双方向同期が含まれるか
+       var _gtcSrc = (window._gantToggleCompleted || function(){}).toString();
+       (_gtcSrc.indexOf('t.done = !t.done') !== -1 && _gtcSrc.indexOf('t.completed = t.done') !== -1)
+         ? ok('_gantToggleCompleted: done/completed双方向同期コード確認')
+         : ng('_gantToggleCompleted', 'done/completed同期コードが見つからない');
+
+       // toggleTaskByIdのソースにdone同期・造営連動が含まれるか
+       var _ttbSrc = (window.toggleTaskById || function(){}).toString();
+       (_ttbSrc.indexOf('task.done = task.completed') !== -1)
+         ? ok('toggleTaskById: done同期コード確認')
+         : ng('toggleTaskById', 'done同期コードが見つからない');
+       (_ttbSrc.indexOf('getGantsAll') !== -1 || _ttbSrc.indexOf('recalcAll') !== -1)
+         ? ok('toggleTaskById: 造営連動コード確認（recalcAll/getGantsAll）')
+         : ng('toggleTaskById', '造営連動コードが見つからない');
+
+       // getBlueprints が !inHeaven フィルタを持つか
+       var _gbSrc = (window.getBlueprints || function(){}).toString();
+       _gbSrc.indexOf('!t.inHeaven') !== -1
+         ? ok('getBlueprints: !inHeavenフィルタ確認')
+         : ng('getBlueprints', '!inHeavenフィルタがない（天国に送った志が造営に残る）');
+
+       // --- ② 挙動テスト（メモリのみ・localStorage非書き込み） ---
        var _syncId = 'smoke-sync-' + Date.now();
        var _prevLen2 = allTasks.length;
-       // テスト用taskをメモリに追加
        var _syncTask = { id: _syncId, kind: 'task', text: 'sync test', completed: false, done: false, date: '2026-01-01' };
        allTasks.push(_syncTask);
        var _st = allTasks.filter(function(t){ return t.id === _syncId; })[0];
 
-       // 造営トグルシミュレート: done = !done、completed = done
+       // 造営トグルシミュレート
        _st.done = !_st.done;
        _st.completed = _st.done;
        (_st.done === true && _st.completed === true)
-         ? ok('done/completed同期: 造営トグル done→true、completed→true 確認')
+         ? ok('done/completed同期: 造営トグル→done:true completed:true')
          : ng('done/completed同期', '造営トグル後 done:' + _st.done + ' completed:' + _st.completed);
 
-       // 日次トグルシミュレート: completed = !completed、done = completed
+       // 日次トグルシミュレート
        _st.completed = !_st.completed;
        _st.done = _st.completed;
        (_st.done === false && _st.completed === false)
-         ? ok('done/completed同期: 日次トグル done→false、completed→false 確認')
+         ? ok('done/completed同期: 日次トグル→done:false completed:false')
          : ng('done/completed同期', '日次トグル後 done:' + _st.done + ' completed:' + _st.completed);
 
-       // 旧データ互換: done:true、completed未定義 → (completed || done) = true
-       var _oldData1 = { done: true };
-       var _oldData2 = { completed: true };
-       var _oldData3 = { done: false, completed: undefined };
-       (_oldData1.completed || _oldData1.done) === true
-         ? ok('done/completed互換: done:true completed:undefined → true')
-         : ng('done/completed互換', 'done:true completed:undefinedがfalse');
-       (_oldData2.completed || _oldData2.done) === true
-         ? ok('done/completed互換: done:undefined completed:true → true')
-         : ng('done/completed互換', 'done:undefined completed:trueがfalse');
-       !!(_oldData3.completed || _oldData3.done) === false
-         ? ok('done/completed互換: done:false completed:undefined → false')
-         : ng('done/completed互換', '両方falsy/undefinedがtrueになった');
+       // 旧データ互換テスト
+       var _r1 = { done: true }; var _r2 = { completed: true }; var _r3 = { done: false, completed: undefined };
+       (_r1.completed || _r1.done) === true ? ok('旧データ互換: done:true → true') : ng('旧データ互換', 'done:true が false になった');
+       (_r2.completed || _r2.done) === true ? ok('旧データ互換: completed:true → true') : ng('旧データ互換', 'completed:true が false になった');
+       !!(_r3.completed || _r3.done) === false ? ok('旧データ互換: 両方false/undefined → false') : ng('旧データ互換', '両方false/undefined が true になった');
 
-       // テスト用レコードをメモリから削除
+       // クリーンアップ（メモリのみ）
        allTasks = allTasks.filter(function(t){ return t.id !== _syncId; });
        allTasks.length === _prevLen2
          ? ok('done/completed同期テスト: クリーンアップ完了')
          : ng('done/completed同期テスト', 'クリーンアップ後件数不一致');
      } catch(e) { ng('done/completed同期テスト', e.message); }
 
-     // ===== 11. Key Purify Absolute Green（最終確認） =====
+          // ===== 11. Key Purify Absolute Green（最終確認） =====
      try {
        var keyNames = Object.keys(localStorage);
        var hasTask = keyNames.indexOf('allTasks') !== -1;
