@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.38.05';
+    const APP_VERSION = 'v0.38.09';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -5337,6 +5337,9 @@
       window.allTasks = allTasks; // クラフトモードと同期
     }
     // ===== deckHistory管理 =====
+    function getGantsAll() {
+      return allTasks.filter(function(t){ return t.kind === 'gantt'; });
+    }
     function getDeckHistory() {
       return allTasks.filter(function(t){ return t.kind === 'deckHistory'; });
     }
@@ -18699,12 +18702,11 @@ function showDebugLog() {
 
      // ===== 7. saveAllTasks / localStorage 往復テスト =====
      try {
-       var _snap = JSON.stringify(window.allTasks);
        saveAllTasks();
-       var _read = localStorage.getItem('allTasks');
-       JSON.parse(_snap).length === JSON.parse(_read).length
-         ? ok('saveAllTasks/localStorage往復')
-         : ng('saveAllTasks/localStorage往復', '件数不一致');
+       var _lsCount = JSON.parse(localStorage.getItem('allTasks') || '[]').length;
+       allTasks.length === _lsCount
+         ? ok('saveAllTasks/localStorage往復（' + allTasks.length + '件一致）')
+         : ng('saveAllTasks/localStorage往復', 'メモリ' + allTasks.length + '件 ≠ localStorage' + _lsCount + '件');
      } catch(e) { ng('saveAllTasks往復', e.message); }
 
      // ===== 8. UUID v7 品質テスト =====
@@ -18774,8 +18776,8 @@ function showDebugLog() {
            deleteThought(_t[0].id);
            var _a = getThoughts(_jid);
            (_a.length === 0 && allTasks.length === _prev)
-             ? ok('getThoughts/addThought/deleteThought: 挙動OK')
-             : ng('deleteThought', '削除後' + _a.length + '件残存');
+           ? ok('getThoughts/addThought/deleteThought: 挙動OK')
+           : ng('deleteThought', '削除後' + _a.length + '件残存');
          }
        }
      } catch(e) { ng('thoughtsヘルパー', e.message); }
@@ -18830,8 +18832,10 @@ function showDebugLog() {
          allTasks.length === _prevLen + 1 ? ok('SDF履歴編集: 件数維持(' + allTasks.length + '件)') : ng('SDF履歴編集', '件数変化');
          // テスト用レコード削除（副作用なし）
          allTasks = allTasks.filter(function(t){ return t.id !== _testId; });
-         allTasks.length === _prevLen ? ok('SDF履歴編集: テストレコード削除・件数復元OK') : ng('SDF履歴編集', '削除後件数不一致');
-       }
+         allTasks.length === _prevLen
+           ? ok('SDF履歴編集: テストレコード削除・件数復元OK')
+           : ng('SDF履歴編集', '削除後件数不一致');
+        } // else (_sdfHistorySave存在)
      } catch(e) { ng('SDF履歴編集', e.message); }
 
      // ===== 11. Key Purify Absolute Green（最終確認） =====
