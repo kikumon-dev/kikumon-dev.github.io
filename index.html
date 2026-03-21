@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.37.89';
+    const APP_VERSION = 'v0.37.97';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -10239,7 +10239,7 @@ function reviveBlueprint(id) {
         document.getElementById('dailyTabScratch').classList.add('active');
         if (!allSettings.flags.scratchTourSeen) {
           allSettings.flags.scratchTourSeen = true; saveAllSettings();
-          setTimeout(showScratchOnboarding, 400);
+          setTimeout(function(){ if (typeof showScratchOnboarding === 'function') showScratchOnboarding(); }, 400);
         }
         renderScratchView();
       } else if (mode === 'timeline') {
@@ -14655,9 +14655,16 @@ function renderDeckShop() {
       };
       allTasks.push(record);
       saveAllTasks();
-      showToast('深考を保存しました', {type:'success'});
-      closeSingleDeepFocus();
-      if (typeof switchView === 'function') switchView('scratch');
+      showToast('深考を保存しました ✦', {type:'success', duration:2500});
+      // 画面に留まる：問いとtextareaをリセットしてstep1へ
+      _sdf.question = '';
+      _sdf.hintIdx = 0;
+      var q = document.getElementById('sdf-question');
+      if (q) q.value = '';
+      if (r) r.value = '';
+      var disp = document.getElementById('sdf-question-display');
+      if (disp) disp.textContent = '';
+      _sdfShowStep(1);
     }
 
     function _sdfShowHistory() {
@@ -14675,6 +14682,7 @@ function renderDeckShop() {
         html += '<div style="font-size:0.85em;color:#d1fae5;line-height:1.6;white-space:pre-wrap;">' + safeText + '</div>';
         html += '<div style="margin-top:8px;">';
         html += '<button onclick="_sdfHistoryDelete(\'' + t.id + '\')" style="font-size:0.72em;padding:3px 8px;background:none;border:1px solid rgba(239,68,68,0.3);border-radius:4px;color:#f87171;cursor:pointer;">削除</button>';
+        html += '<button onclick="_sdfHistorySend(\'' + t.id + '\')" style="font-size:0.72em;padding:3px 8px;background:none;border:1px solid rgba(74,222,128,0.3);border-radius:4px;color:#4ade80;cursor:pointer;">雑記帳に送る</button>';
         html += '</div></div>';
       });
       area.innerHTML = html;
@@ -14688,6 +14696,22 @@ function renderDeckShop() {
         _sdfShowHistory();
         showToast('削除しました', {type:'success'});
       });
+    }
+
+    function _sdfHistorySend(id) {
+      var record = allTasks.filter(function(t){ return t.id === id; })[0];
+      if (!record) { showToast('記録が見つかりません', {type:'error'}); return; }
+      var newTask = {
+        id: generateTaskId(),
+        kind: 'scratch',
+        text: record.text,
+        date: getLocalDateStr(new Date()),
+        createdAt: new Date().toISOString()
+      };
+      allTasks.push(newTask);
+      saveAllTasks();
+      showToast('雑記帳に送りました ✦', {type:'success', duration:2000});
+      _sdfShowHistory();
     }
 
     function _sdfCopyForAI() {
@@ -18079,6 +18103,7 @@ try {
   window._sdfInsertHint = _sdfInsertHint;
   window._sdfFinish = _sdfFinish;
   window._sdfHistoryDelete = _sdfHistoryDelete;
+  window._sdfHistorySend = _sdfHistorySend;
   window._sdfCopyForAI = _sdfCopyForAI;
   window.openDeckBuilder = openDeckBuilder;
   window.openGrandVisionEditor = openGrandVisionEditor;
@@ -20382,6 +20407,9 @@ document.addEventListener('DOMContentLoaded', function() {
       <div id="sdf-question-display" style="font-size:0.88em;font-weight:700;color:#d1fae5;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px;"></div>
     </div>
     <button onclick="_sdfFinish()" style="flex-shrink:0;padding:8px 18px;background:linear-gradient(135deg,#166534,#15803d);color:#d1fae5;border:none;border-radius:8px;font-size:0.82em;font-weight:700;cursor:pointer;">保存</button>
+    <button onclick="_sdfCopyForAI()" title="コピー" style="flex-shrink:0;width:34px;height:34px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:#6ee7b7;border-radius:8px;font-size:1em;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+    </button>
     <button onclick="closeSingleDeepFocus()" style="flex-shrink:0;width:34px;height:34px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:#6ee7b7;border-radius:8px;font-size:0.9em;cursor:pointer;">✕</button>
   </div>
 
@@ -20419,4 +20447,3 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 
 </div>
->
