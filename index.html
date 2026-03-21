@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.38.18';
+    const APP_VERSION = 'v0.38.19';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -7943,7 +7943,7 @@ function myDeckApply(idx) {
           sub: '週間・月間ビューだけで、充分な人がほとんど。',
           items: [
             { n:'💡', color:'#a78bfa', title:'一般ユーザーへ', desc:'日次・週間・月間で管理するだけで十分です。<br>造営は、もっと大きな夢を描きたくなったときに開けばいい。' },
-            { n:'👑', color:'#ffd700', title:'管理職・プロジェクトリーダーへ', desc:'志（ゴール）→ 手立て（施策）→ タスク（行動）の3層で<br>プロジェクトの地図を描けます。ここが本領発揮の場所。' },
+            { n:'👑', color:'#4facfe', title:'管理職・プロジェクトリーダーへ', desc:'志（ゴール）→ 手立て（施策）→ タスク（行動）の3層で<br>プロジェクトの地図を描けます。ここが本領発揮の場所。' },
             { n:'🏢', color:'#4facfe', title:'社長・経営者へ', desc:'中長期の戦略を「造営計画」として可視化できます。<br>チームと共有する地図として使ってください。' },
           ]
         },
@@ -7953,7 +7953,7 @@ function myDeckApply(idx) {
           sub: '王国の地図を、あなたの手で描こう。',
           items: [
             { n:'1', color:'#4facfe', title:'志を立てる', desc:'「＋ 造営計画」で夢や目標をひとつ。<br>大きくなくていい。続けたいことでもいい。' },
-            { n:'2', color:'#ffd700', title:'工程を刻む', desc:'「工程を刻む」でステップに分ける。<br><span style="color:#a78bfa;">基礎固め → 実践 → 仕上げ</span>　細かくしすぎなくていい。' },
+            { n:'2', color:'#4facfe', title:'工程を刻む', desc:'「工程を刻む」でステップに分ける。<br><span style="color:#a78bfa;">基礎固め → 実践 → 仕上げ</span>　細かくしすぎなくていい。' },
             { n:'3', color:'#a78bfa', title:'タスクを紐づける', desc:'工程行の <span style="background:#4facfe;color:#fff;border-radius:50%;padding:0 5px;font-size:0.82em;">＋</span> でタスクを即作成。「○件」で展開できる。' },
           ]
         },
@@ -7964,7 +7964,7 @@ function myDeckApply(idx) {
           items: [
             { n:'4', color:'#f8bbd0', title:'日付・時刻を入れる', desc:'時刻を入れると、ガントバーが現れる。<br>「まだ、時を刻んでいない」が消えたとき、王国が動き始める。' },
             { n:'5', color:'#81c784', title:'日・週・月で俯瞰する', desc:'<strong style="color:#fff;">日</strong>：今日の動き　<strong style="color:#fff;">週</strong>：この週の流れ　<strong style="color:#fff;">月</strong>：長期の俯瞰<br>視点を自由に切り替えよう。' },
-            { n:'✦', color:'#ffd700', title:'志カードにホバーしてみよう', desc:'進捗に応じて、王国からのメッセージが届く。<br>100%になったとき、次の志が始まる。' },
+            { n:'✦', color:'#4facfe', title:'志カードにホバーしてみよう', desc:'進捗に応じて、王国からのメッセージが届く。<br>100%になったとき、次の志が始まる。' },
           ]
         }
       ];
