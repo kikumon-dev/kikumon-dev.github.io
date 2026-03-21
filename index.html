@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.38.19';
+    const APP_VERSION = 'v0.38.25';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -5282,7 +5282,7 @@
       allTasks
         .filter(t => {
           const sc = t.displayScope || (t.showInDaily && !t.showInWeekly ? 'daily_only' : t.showInDaily && t.showInWeekly ? 'both' : null);
-          if (!sc || sc === 'weekly_only') return false;
+          if (!sc || sc === 'weekly_only' || sc === 'heaven') return false;
           if (!isCalendarVisible(t.calendarId)) return false;
           if (sc === 'daily_only') return t.date === date;
           return (t.date === date); // both: その日だけ
@@ -5315,6 +5315,7 @@
       return allTasks
         .filter(t =>
           (t.displayScope === 'both' || t.displayScope === 'weekly_only' || (!t.displayScope && t.showInWeekly)) &&
+          t.displayScope !== 'heaven' &&
           t.time &&
           t.date >= startDate &&
           t.date <= endDate &&
@@ -7654,7 +7655,7 @@ function myDeckApply(idx) {
       el.style.cssText = 'position:fixed;z-index:99999;border-radius:10px;padding:10px 14px;'
         + 'font-size:11px;line-height:1.8;font-weight:600;pointer-events:none;white-space:pre-wrap;'
         + 'box-shadow:0 4px 16px rgba(0,0,0,0.2);max-width:200px;'
-        + 'background:' + color + '44;color:' + textColor + ';border:1.5px solid ' + color + 'aa;';
+        + 'background:#fff;color:' + textColor + ';border:2px solid ' + color + ';';
       el.textContent = msg.replace(/\|/g, '\n');
       // 位置計算（display前にvisibilityで一時表示して高さ取得）
       el.style.visibility = 'hidden';
@@ -7789,12 +7790,29 @@ function myDeckApply(idx) {
       renderGantChart();
     }
     function renderGantView() {
+      // 展開状態を記憶してから再描画
+      var _openIds = [];
+      document.querySelectorAll('[id^=ganttExpand_]').forEach(function(el){
+        if (el.style.display !== 'none') _openIds.push(el.id);
+      });
       if (typeof window.renderGrandVisionBar === 'function') window.renderGrandVisionBar();
       renderGantBlueprints();
       _initGantSplitter();
       // display:'flex'直後はlayoutが未確定→RAFで遅延してareaWを正確に取得
       requestAnimationFrame(function() {
         renderGantChart();
+        // 展開状態を復元
+        if (_openIds.length > 0) {
+          setTimeout(function(){
+            _openIds.forEach(function(id){
+              var el = document.getElementById(id);
+              if (el) el.style.display = 'table-row-group';
+              var btn = null;
+              document.querySelectorAll('[data-eid]').forEach(function(x){ if(x.dataset.eid===id) btn=x; });
+              if (btn) btn.style.transform = 'rotate(90deg)';
+            });
+          }, 50);
+        }
       });
       // 設定UI同期
       const scaleCheck = document.getElementById('gantShowCompletedCheck');
@@ -7846,6 +7864,9 @@ function myDeckApply(idx) {
     function renderGantBlueprints() {
       const area = document.getElementById('gantBlueprintArea');
       if (!area) return;
+      // 志選択時のみ「＋工程を刻む」ボタンを表示
+      const _addGanttBarBtn = document.getElementById('gantAddGanttBarBtn');
+      if (_addGanttBarBtn) _addGanttBarBtn.style.display = _gantSelectedBlueprintId ? '' : 'none';
       const blueprints = getBlueprints();
       if (blueprints.length === 0) {
         area.innerHTML = '<div style="color:#aaa;font-size:0.85em;padding:8px;">＋ 造営計画を追加してください</div>';
@@ -7859,8 +7880,8 @@ function myDeckApply(idx) {
         const ganttCount = getGantsByBlueprint(bp.id).length;
         const taskCount = getGantsByBlueprint(bp.id).reduce(function(sum, g){ return sum + (g.taskIds||[]).length; }, 0);
         const _bpMsg = _getBlueprintHoverMsg(bp, progress, ganttCount, taskCount);
-        return `<div style="
-          min-width:170px; max-width:220px; padding:10px 14px;
+        return `<div class="bp-card" data-bpid="${bp.id}" draggable="false" style="
+          min-width:0; max-width:100%; padding:10px 14px;
           border-radius:12px; border:2px solid ${isSelected ? color : '#e8e8e8'};
           background:${isSelected ? color + '15' : '#fff'};
           cursor:pointer; flex-shrink:0; position:relative;
@@ -7871,8 +7892,9 @@ function myDeckApply(idx) {
            data-bp-msg="${_bpMsg.replace(/"/g,'&quot;')}" data-bp-color="${color}" data-bp-textcolor="${bp.textColor||'#1a237e'}">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
             <div style="display:flex;align-items:center;gap:4px;min-width:0;">
+              <span class="bp-grip" style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;cursor:grab;padding:2px 3px;justify-content:center;"><span style="display:block;width:10px;height:1.5px;background:#bbb;border-radius:1px;"></span><span style="display:block;width:10px;height:1.5px;background:#bbb;border-radius:1px;"></span><span style="display:block;width:10px;height:1.5px;background:#bbb;border-radius:1px;"></span></span>
               <span style="font-size:1em;flex-shrink:0;">${bp.emoji||'🏰'}</span>
-              <div style="font-size:0.85em;font-weight:600;color:#262626;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3;max-height:2.6em;">${bp.title}</div>
+              <div style="font-size:0.85em;font-weight:600;color:#262626;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.4;flex:1;min-width:0;">${bp.title}</div>
             </div>
             <button onclick="event.stopPropagation();openBlueprintEditor('${bp.id}')" style="background:none;border:none;font-size:0.75em;color:#aaa;cursor:pointer;padding:2px;">✏️</button>
           </div>
@@ -7904,24 +7926,45 @@ function myDeckApply(idx) {
       requestAnimationFrame(function(){ m.style.background = 'rgba(0,0,0,0.55)'; });
       const btnStyles = {
         primary: 'padding:11px;background:#262626;color:#fff;border:none;border-radius:10px;font-size:0.9em;cursor:pointer;font-weight:600;width:100%;',
-        danger:  'padding:11px;background:#fff;color:#ff3b30;border:1.5px solid #ff3b30;border-radius:10px;font-size:0.9em;cursor:pointer;width:100%;',
+        danger:  'padding:11px;background:#ff3b30;color:#fff;border:none;border-radius:10px;font-size:0.9em;cursor:pointer;font-weight:700;width:100%;',
         cancel:  'padding:11px;background:#f5f5f5;color:#333;border:none;border-radius:10px;font-size:0.9em;cursor:pointer;width:100%;',
       };
       const btnsHtml = (opts.buttons || []).map((b, i) =>
         `<button data-ci="${i}" style="${btnStyles[b.style||'cancel']}">${b.label}</button>`
       ).join('');
-      m.innerHTML = `<div style="background:#fff;border-radius:20px;padding:24px;width:100%;max-width:380px;box-shadow:0 8px 32px rgba(0,0,0,0.18);opacity:0;transition:opacity 0.25s;">
+      m.innerHTML = `<div style="background:#fff;border-radius:20px;padding:24px;width:100%;max-width:380px;box-shadow:0 8px 32px rgba(0,0,0,0.18);transform:translateY(24px);opacity:0;transition:transform 0.28s cubic-bezier(0.34,1.56,0.64,1),opacity 0.25s;">
         ${opts.title ? `<div style="font-size:1em;font-weight:700;margin-bottom:6px;">${opts.title}</div>` : ''}
         ${opts.desc  ? `<div style="font-size:0.85em;color:#555;margin-bottom:20px;line-height:1.5;">${opts.desc}</div>` : ''}
         <div style="display:flex;flex-direction:column;gap:8px;">${btnsHtml}</div>
       </div>`;
       document.body.appendChild(m);
-      requestAnimationFrame(function(){ const box = m.querySelector('div'); if(box){ box.style.opacity='1'; } });
+      requestAnimationFrame(function(){ const box = m.querySelector('div'); if(box){ box.style.transform='translateY(0)'; box.style.opacity='1'; } });
       m.querySelectorAll('[data-ci]').forEach(function(btn) {
         btn.onclick = function() {
-          const cb = (opts.buttons[+btn.dataset.ci]||{}).onClick;
-          m.remove();
-          if (cb) cb();
+          const btnOpts = opts.buttons[+btn.dataset.ci] || {};
+          const cb = btnOpts.onClick;
+          if (btnOpts.style === 'danger') {
+            // 二重確認
+            const confirm2 = document.createElement('div');
+            confirm2.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
+            confirm2.innerHTML = '<div style="background:#fff;border-radius:20px;padding:24px;width:100%;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,0.18);">'
+              + '<div style="font-size:1em;font-weight:700;color:#ff3b30;margin-bottom:8px;">⚠️ 本当に削除しますか？</div>'
+              + '<div style="font-size:0.85em;color:#555;margin-bottom:20px;line-height:1.5;">この操作は取り消せません。</div>'
+              + '<div style="display:flex;flex-direction:column;gap:8px;">'
+              + '<button id="_confirm2Yes" style="padding:11px;background:#ff3b30;color:#fff;border:none;border-radius:10px;font-size:0.9em;font-weight:700;cursor:pointer;">削除する</button>'
+              + '<button id="_confirm2No" style="padding:11px;background:#f5f5f5;color:#333;border:none;border-radius:10px;font-size:0.9em;cursor:pointer;">やめる</button>'
+              + '</div></div>';
+            document.body.appendChild(confirm2);
+            document.getElementById('_confirm2Yes').onclick = function() {
+              confirm2.remove(); m.remove(); if (cb) cb();
+            };
+            document.getElementById('_confirm2No').onclick = function() {
+              confirm2.remove();
+            };
+          } else {
+            m.remove();
+            if (cb) cb();
+          }
         };
       });
       m.addEventListener('click', function(e) { if (e.target === m) { m.remove(); if (opts.onOverlay) opts.onOverlay(); } });
@@ -8078,7 +8121,7 @@ function myDeckApply(idx) {
       const _effectiveIds = [...new Set([..._rawTaskIds, ..._allLinkedIds])];
       const taskIds = _effectiveIds;
       const taskCount = taskIds.length;
-      const doneCount = taskIds.filter(id => { const t = _tasks.find(x => x.id === id); return t && (t.completed || t.done); }).length;
+      const doneCount = taskIds.filter(id => { const t = _tasks.find(x => x.id === id); return t && t.done; }).length;
       const bg       = ctx.rowBg || '#fff';
       const expandId = 'ganttExpand_' + gantt.id;
       const bp       = _tasks.find(t => t.id === gantt.blueprintId);
@@ -8132,14 +8175,15 @@ function myDeckApply(idx) {
       // タスク展開行
       let taskRows = '';
       if (taskCount > 0) {
-        const taskHtml = taskIds.map(function(tid) {
+        const taskHtml = taskIds.map(function(tid, idx) {
           const t = _tasks.find(x => x.id === tid);
           if (!t) return '';
           const tBar = _buildTaskBar(t, ctx) + (ctx.scale === 'day' ? (ctx.nowLine || '') : (ctx.nowLine2 || ''));
-          return '<div style="display:flex;align-items:stretch;border-bottom:1px solid #efefef;">'
-            + '<div style="width:' + ctx.labelW + 'px;min-width:' + ctx.labelW + 'px;padding:0 4px 0 20px;border-right:1px solid #e0e0e0;display:flex;align-items:center;gap:3px;overflow:hidden;position:sticky;left:0;z-index:2;background:#f9f9f9;">'
-            + '<button data-tid="' + tid + '" onclick="_gantToggleCompleted(this)" style="background:none;border:none;font-size:12px;cursor:pointer;padding:0;flex-shrink:0;">' + ((t.completed || t.done) ? '✅' : '⬜') + '</button>'
-            + '<span style="font-size:10px;color:' + ((t.completed || t.done) ? '#aaa' : '#333') + ';text-decoration:' + ((t.completed || t.done) ? 'line-through' : 'none') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;">' + (t.text || '') + '</span>'
+          return '<div draggable="true" data-ganttid="' + gantt.id + '" data-tid="' + tid + '" data-idx="' + idx + '" class="gant-task-row" style="display:flex;align-items:stretch;border-bottom:1px solid #efefef;cursor:grab;">'
+            + '<div style="width:' + ctx.labelW + 'px;min-width:' + ctx.labelW + 'px;padding:0 4px 0 12px;border-right:1px solid #e0e0e0;display:flex;align-items:center;gap:3px;overflow:hidden;position:sticky;left:0;z-index:2;background:#f9f9f9;">'
+            + '<span style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;cursor:grab;padding:2px 3px;justify-content:center;"><span style="display:block;width:10px;height:1.5px;background:#bbb;border-radius:1px;"></span><span style="display:block;width:10px;height:1.5px;background:#bbb;border-radius:1px;"></span><span style="display:block;width:10px;height:1.5px;background:#bbb;border-radius:1px;"></span></span>'
+            + '<button data-tid="' + tid + '" onclick="_gantToggleDone(this)" style="background:none;border:none;font-size:12px;cursor:pointer;padding:0;flex-shrink:0;">' + (t.done ? '✅' : '⬜') + '</button>'
+            + '<span style="font-size:10px;color:' + (t.done ? '#aaa' : '#333') + ';text-decoration:' + (t.done ? 'line-through' : 'none') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;">' + (t.text || '') + '</span>'
             + '<button data-tid="' + tid + '" onclick="_gantEditTask(this)" style="background:none;border:none;font-size:11px;cursor:pointer;padding:0 2px;flex-shrink:0;color:#ccc;">✏️</button>'
             + '</div>'
             + '<div style="position:relative;height:32px;overflow:visible;width:' + ctx.chartW + 'px;flex-shrink:0;">'
@@ -8192,6 +8236,120 @@ function myDeckApply(idx) {
       var gid = btn.dataset.gid;
       if (gid) openGanttQuickTask(gid);
     }
+    var _bpDrag = { fromId: null };
+    var _gantDrag = { ganttId: null, fromIdx: null, fromTid: null };
+    function _gantReorderTask(ganttId, fromIdx, toIdx) {
+      var gantt = allTasks.find(function(x){ return x.id === ganttId; });
+      if (!gantt || !Array.isArray(gantt.taskIds)) return;
+      if (toIdx < 0 || toIdx >= gantt.taskIds.length || fromIdx === toIdx) return;
+      var tid = gantt.taskIds.splice(fromIdx, 1)[0];
+      gantt.taskIds.splice(toIdx, 0, tid);
+      saveAllTasks();
+      renderGantView();
+    }
+    
+    function _initBlueprintDrag() {
+      document.addEventListener('mousedown', function(e) {
+        var grip = e.target.closest ? e.target.closest('.bp-grip') : null;
+        if (!grip) return;
+        var card = grip.closest('.bp-card');
+        if (!card) return;
+        card.setAttribute('draggable', 'true');
+        card.addEventListener('dragend', function once() {
+          card.setAttribute('draggable', 'false');
+          card.removeEventListener('dragend', once);
+        });
+      });
+      document.addEventListener('dragstart', function(e) {
+        var card = e.target.closest ? e.target.closest('.bp-card') : null;
+        if (!card || card.getAttribute('draggable') !== 'true') return;
+        _bpDrag.fromId = card.dataset.bpid;
+        card.style.opacity = '0.4';
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      document.addEventListener('dragend', function() {
+        if (!_bpDrag.fromId) return; // 志カードのドラッグでなければ無視
+        document.querySelectorAll('.bp-card').forEach(function(c){ c.style.opacity=''; c.style.outline=''; c.setAttribute('draggable','false'); });
+        _bpDrag.fromId = null;
+      });
+      document.addEventListener('dragover', function(e) {
+        if (!_bpDrag.fromId) return; // 志カードのドラッグ中でなければ無視
+        var card = e.target.closest ? e.target.closest('.bp-card') : null;
+        if (!card || card.dataset.bpid === _bpDrag.fromId) return;
+        e.preventDefault();
+        document.querySelectorAll('.bp-card').forEach(function(c){ c.style.outline=''; });
+        card.style.outline = '2px solid #a78bfa';
+      });
+      document.addEventListener('drop', function(e) {
+        if (!_bpDrag.fromId) return; // 志カードのドラッグ中でなければ無視
+        var card = e.target.closest ? e.target.closest('.bp-card') : null;
+        if (!card || card.dataset.bpid === _bpDrag.fromId) return;
+        e.preventDefault();
+        _bpReorder(_bpDrag.fromId, card.dataset.bpid);
+      });
+    }
+    _initBlueprintDrag(); // 志カードD&D初期化
+    
+    function _initGantTaskDrag() {
+      // グリップをつかんだとき親trをdraggable=trueに
+      document.addEventListener('mousedown', function(e) {
+        var grip = e.target.closest ? e.target.closest('.gant-grip') : null;
+        if (!grip) return;
+        var row = grip.closest('.gant-task-row');
+        if (!row) return;
+        row.setAttribute('draggable', 'true');
+        row.addEventListener('dragend', function once() {
+          row.setAttribute('draggable', 'false');
+          row.removeEventListener('dragend', once);
+        });
+      });
+      document.addEventListener('touchstart', function(e) {
+        var grip = e.target.closest ? e.target.closest('.gant-grip') : null;
+        if (!grip) return;
+        var row = grip.closest('.gant-task-row');
+        if (!row) return;
+        _gantDrag.ganttId = row.dataset.ganttid;
+        _gantDrag.fromIdx = parseInt(row.dataset.idx);
+        _gantDrag.startY  = e.touches[0].clientY;
+        row.style.opacity = '0.5';
+      }, { passive: true });
+      document.addEventListener('touchend', function(e) {
+        if (!_gantDrag.ganttId) return;
+        var endY = e.changedTouches[0].clientY;
+        var dy = endY - _gantDrag.startY;
+        var toIdx = _gantDrag.fromIdx + (dy < -28 ? -1 : dy > 28 ? 1 : 0);
+        if (toIdx !== _gantDrag.fromIdx) _gantReorderTask(_gantDrag.ganttId, _gantDrag.fromIdx, toIdx);
+        document.querySelectorAll('.gant-task-row').forEach(function(r){ r.style.opacity=''; r.style.borderTop=''; });
+        _gantDrag = { ganttId: null, fromIdx: null, startY: 0 };
+      }, { passive: true });
+      // PC drag
+      document.addEventListener('dragstart', function(e) {
+        var row = e.target.closest ? e.target.closest('.gant-task-row') : null;
+        if (!row || row.getAttribute('draggable') !== 'true') return;
+        _gantDrag.ganttId  = row.dataset.ganttid;
+        _gantDrag.fromIdx  = parseInt(row.dataset.idx);
+        row.style.opacity  = '0.4';
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      document.addEventListener('dragend', function() {
+        document.querySelectorAll('.gant-task-row').forEach(function(r){ r.style.opacity=''; r.style.borderTop=''; r.setAttribute('draggable','false'); });
+        _gantDrag = { ganttId: null, fromIdx: null, startY: 0 };
+      });
+      document.addEventListener('dragover', function(e) {
+        var row = e.target.closest ? e.target.closest('.gant-task-row') : null;
+        if (!row || row.dataset.ganttid !== _gantDrag.ganttId) return;
+        e.preventDefault();
+        document.querySelectorAll('.gant-task-row').forEach(function(r){ r.style.borderTop=''; });
+        row.style.borderTop = '2px solid #4facfe';
+      });
+      document.addEventListener('drop', function(e) {
+        var row = e.target.closest ? e.target.closest('.gant-task-row') : null;
+        if (!row || row.dataset.ganttid !== _gantDrag.ganttId) return;
+        e.preventDefault();
+        _gantReorderTask(_gantDrag.ganttId, _gantDrag.fromIdx, parseInt(row.dataset.idx));
+      });
+    }
+    _initGantTaskDrag(); // 造営タスク行D&D初期化
     function _gantToggleCompleted(btn) {
       var tid = btn.dataset.tid;
       var t = allTasks.find(function(x){ return x.id===tid; });
@@ -8632,14 +8790,13 @@ function reviveBlueprint(id) {
         }).join('');
       }
       modal.style.display = 'flex';
-      // グランドビジョンセレクトを初期化
-      const _gvSel = document.getElementById('blueprintGvSelect');
-      if (_gvSel) {
-        const _gvs = allTasks.filter(function(t){ return t.kind === 'grandvision'; }).sort(function(a,b){ return (a.order||0)-(b.order||0); });
-        _gvSel.innerHTML = '<option value="">紐づけない</option>' + _gvs.map(function(gv){
-          return '<option value="' + gv.id + '">' + (gv.emoji||'🎖️') + ' ' + gv.title + '</option>';
-        }).join('');
-        _gvSel.value = (bp && bp.grandvisionId) ? bp.grandvisionId : '';
+      // グランドビジョンselect初期化
+      const gvSelect = document.getElementById('blueprintGvSelect');
+      if (gvSelect) {
+        const gvs = getGrandVisions();
+        gvSelect.innerHTML = '<option value="">なし</option>' + gvs.map(gv =>
+          `<option value="${gv.id}" ${bp&&bp.grandvisionId===gv.id?'selected':''}>${gv.emoji||'🎖️'} ${gv.title}</option>`
+        ).join('');
       }
     }
     function saveBlueprintEditor() {
@@ -8663,24 +8820,24 @@ function reviveBlueprint(id) {
           bp.color     = _svBg ? _svBg.value : '#c5cae9';
           bp.textColor = _svTx ? _svTx.value : '#283593';
           const _newBpEmoji = _svEm ? _svEm.textContent.trim() : '🏰';
-          // 志の絵文字が変わったら配下の全工程に同期
           if (bp.emoji !== _newBpEmoji) {
             allTasks.filter(t => t.kind === 'gantt' && t.blueprintId === bp.id)
               .forEach(g => { g.emoji = _newBpEmoji; });
           }
           bp.emoji = _newBpEmoji;
-          // グランドビジョン紐づけ
-          const _gvSelSave = document.getElementById('blueprintGvSelect');
+          const _gvSel = document.getElementById('blueprintGvSelect');
+          const _newGvId = _gvSel ? (_gvSel.value || null) : null;
           const _oldGvId = bp.grandvisionId;
-          bp.grandvisionId = _gvSelSave ? (_gvSelSave.value || null) : bp.grandvisionId;
+          bp.grandvisionId = _newGvId;
           // 新たにGVに紐づいた かつ visionが空 → GVのvisionを継承
-          if (bp.grandvisionId && bp.grandvisionId !== _oldGvId && !bp.vision) {
-            const _gv = allTasks.find(t => t.id === bp.grandvisionId);
+          if (_newGvId && _newGvId !== _oldGvId && !bp.vision) {
+            const _gv = allTasks.find(t => t.id === _newGvId);
             if (_gv && _gv.vision) bp.vision = _gv.vision;
           }
         }
       } else {
         const blueprints = getBlueprints();
+        const _gvSel = document.getElementById('blueprintGvSelect');
         allTasks.push({
           id: generateTaskId(),
           kind: 'blueprint',
@@ -8691,7 +8848,7 @@ function reviveBlueprint(id) {
           color:     (function(){ const e=document.getElementById('blueprintBgPicker');   return e?e.value:'#c5cae9'; })(),
           textColor: (function(){ const e=document.getElementById('blueprintTextPicker'); return e?e.value:'#283593'; })(),
           emoji:     (function(){ const e=document.getElementById('blueprintEmojiBtn'); return e?e.textContent.trim():'🏰'; })(),
-          grandvisionId: (function(){ const e=document.getElementById('blueprintGvSelect'); return e&&e.value?e.value:null; })(),
+          grandvisionId: _gvSel ? (_gvSel.value || null) : null,
           order: blueprints.length,
           ganttIds: [],
           achieveMode: 'both',
@@ -8716,9 +8873,6 @@ function reviveBlueprint(id) {
       }
     }
     function deleteBlueprint() {
-      if (!_gantEditingBlueprintId) return;
-      const id = _gantEditingBlueprintId;
-      const bp = allTasks.find(t => t.id === id);
       if (!bp) return;
       const childGants   = allTasks.filter(t => t.kind === 'gantt' && t.blueprintId === id);
       const uniqueTaskIds = [...new Set(childGants.flatMap(g => g.taskIds || []))];
@@ -8729,19 +8883,23 @@ function reviveBlueprint(id) {
       if (taskCount > 0) btns.push({
         label: 'やることを残して、計画と工程だけ消す', style: 'primary',
         onClick: function() {
-          allTasks = allTasks.filter(t => !(t.kind === 'gantt' && t.blueprintId === id));
-          allTasks = allTasks.filter(t => t.id !== id);
+          for (var i = allTasks.length - 1; i >= 0; i--) {
+            if (allTasks[i].kind === 'gantt' && allTasks[i].blueprintId === id) allTasks.splice(i, 1);
+            else if (allTasks[i].id === id) allTasks.splice(i, 1);
+          }
           if (_gantSelectedBlueprintId === id) _gantSelectedBlueprintId = null;
           saveAllTasks(); closeBlueprintEditor(); renderGantView();
           showToast('計画と工程を消しました。やることは残っています。', {type:'success', duration:4000});
         }
       });
       btns.push({
-        label: 'すべてまとめて消す' + (taskCount > 0 ? '（やること含む）' : ''), style: 'danger',
+        label: `「${bp.title}」をすべてまとめて消す` + (taskCount > 0 ? '（やること含む）' : ''), style: 'danger',
         onClick: function() {
-          allTasks = allTasks.filter(t => !uniqueTaskIds.includes(t.id));
-          allTasks = allTasks.filter(t => !(t.kind === 'gantt' && t.blueprintId === id));
-          allTasks = allTasks.filter(t => t.id !== id);
+          for (var i = allTasks.length - 1; i >= 0; i--) {
+            if (uniqueTaskIds.includes(allTasks[i].id)) allTasks.splice(i, 1);
+            else if (allTasks[i].kind === 'gantt' && allTasks[i].blueprintId === id) allTasks.splice(i, 1);
+            else if (allTasks[i].id === id) allTasks.splice(i, 1);
+          }
           if (_gantSelectedBlueprintId === id) _gantSelectedBlueprintId = null;
           saveAllTasks(); closeBlueprintEditor(); renderGantView();
           showToast('計画・工程・やることをすべて消しました。', {type:'success', duration:3000});
@@ -9136,7 +9294,7 @@ function reviveBlueprint(id) {
         btns.push({
           label: 'やることを残して、工程だけ消す', style: 'primary',
           onClick: function() {
-            allTasks = allTasks.filter(t => t.id !== id);
+            var _idx = allTasks.findIndex(t => t.id === id); if (_idx !== -1) allTasks.splice(_idx, 1);
             const bp = allTasks.find(t => t.id === gantt.blueprintId);
             if (bp) recalcBlueprintFromGants(bp);
             saveAllTasks(); closeGanttEditor(); renderGantView();
@@ -9144,9 +9302,11 @@ function reviveBlueprint(id) {
           }
         });
         btns.push({
-          label: 'やることごと、すべて消す', style: 'danger',
+          label: `「${gantt.title}」やることごと、すべて消す`, style: 'danger',
           onClick: function() {
-            allTasks = allTasks.filter(t => t.id !== id && !validTaskIds.includes(t.id));
+            for (var i = allTasks.length - 1; i >= 0; i--) {
+              if (allTasks[i].id === id || validTaskIds.includes(allTasks[i].id)) allTasks.splice(i, 1);
+            }
             const bp = allTasks.find(t => t.id === gantt.blueprintId);
             if (bp) recalcBlueprintFromGants(bp);
             saveAllTasks(); closeGanttEditor(); renderGantView();
@@ -9157,7 +9317,7 @@ function reviveBlueprint(id) {
         btns.push({
           label: '工程を消す', style: 'danger',
           onClick: function() {
-            allTasks = allTasks.filter(t => t.id !== id);
+            var _idx = allTasks.findIndex(t => t.id === id); if (_idx !== -1) allTasks.splice(_idx, 1);
             const bp = allTasks.find(t => t.id === gantt.blueprintId);
             if (bp) recalcBlueprintFromGants(bp);
             saveAllTasks(); closeGanttEditor(); renderGantView();
@@ -13295,7 +13455,7 @@ function loadSettingsUI() {
           taskLines.forEach(function(line) {
             if (!line) return;
             const task = { id: generateTaskId(), kind: 'task', text: line, date: startDate || today,
-              section: 1, completed: false, displayScope: 'daily_only',
+              section: 1, completed: false, done: false, displayScope: 'daily_only',
               createdAt: new Date().toISOString() };
             allTasks.push(task);
             gantt.taskIds.push(task.id);
@@ -13319,7 +13479,23 @@ function loadSettingsUI() {
     window._gantEdit = _gantEdit;
     window._gantEditTask = _gantEditTask;
     window._gantToggle = _gantToggle;
-    window._gantToggleCompleted = _gantToggleCompleted;
+    function _bpReorder(fromId, toId) {
+      var blueprints = allTasks.filter(t => t.kind === 'blueprint').sort((a,b) => (a.order||0)-(b.order||0));
+      var fromIdx = blueprints.findIndex(function(b){ return b.id === fromId; });
+      var toIdx   = blueprints.findIndex(function(b){ return b.id === toId; });
+      if (fromIdx === -1 || toIdx === -1) return;
+      var moved = blueprints.splice(fromIdx, 1)[0];
+      blueprints.splice(toIdx, 0, moved);
+      blueprints.forEach(function(b, i){ b.order = i; });
+      saveAllTasks();
+      renderGantBlueprints();
+    }
+
+    window._bpReorder = _bpReorder;
+  window._gantReorderTask = _gantReorderTask;
+  window._initBlueprintDrag = _initBlueprintDrag;
+  window._initGantTaskDrag = _initGantTaskDrag;
+  window._gantToggleCompleted = _gantToggleCompleted;
     window.addCalendarSetting = addCalendarSetting;
     window.addStampSetting = addStampSetting;
     window.adjustMonthlyWidth = adjustMonthlyWidth;
@@ -16843,6 +17019,20 @@ function _getHotokuMessage(task) {
   return pool[idx];
 }
 function onTaskCompleted(task) {
+  // 造営（gantt）に紐づいているタスクの進捗を反映
+  // ganttはt.doneで進捗管理→task.completedと同期する
+  task.done = task.completed;
+  var linkedGants = getGantsAll().filter(function(g){ return (g.taskIds||[]).includes(task.id); });
+  if (linkedGants.length > 0) {
+    linkedGants.forEach(function(g) {
+      var bp = allTasks.find(function(t){ return t.id === g.blueprintId; });
+      if (bp) recalcBlueprintFromGants(bp);
+    });
+    saveAllTasks();
+    // 造営ビューが開いていれば再描画
+    var gantView = document.getElementById('gantView');
+    if (gantView && gantView.style.display !== 'none') renderGantView();
+  }
   // 報徳トーストはクラフトモードON時のみ
   var _craftOn = (allSettings && allSettings.ui && allSettings.ui.craftModeEnabled) ? true : false;
   var _hmsg = _craftOn ? _getHotokuMessage(task) : null;
@@ -18618,7 +18808,18 @@ function showDebugLog() {
        'openSingleDeepFocus','closeSingleDeepFocus','_sdfInsertHint','_sdfFinish',
        '_sdfHistoryEdit','_sdfHistorySave',
        'openQuizMode','closeQuizMode','_quizStart','_quizShowQ','_quizAnswer','_quizFinish',
-       'moveScratchToThoughts','getThoughts','addThought','deleteThought'
+       'moveScratchToThoughts','getThoughts','addThought','deleteThought',
+       // 造営系
+       'getBlueprints','getGantsAll','getGantsByBlueprint','getBlueprintProgress',
+       'renderGantView','renderGantBlueprints','renderGantChart',
+       'sendBlueprintToHeaven','reviveBlueprint','getHeavenBlueprints',
+       'recalcAll','recalcBlueprintFromGants','recalcGanttDateFromTasks',
+       '_gantToggleCompleted','_gantToggle','_gantAddTask','_gantEdit',
+       '_gantReorderTask','_bpReorder','_initBlueprintDrag','_initGantTaskDrag',
+       'toggleTaskById','onTaskCompleted',
+       'openHeavenFromBanner','renderGrandVisionBar',
+       'getDailyTasks','getWeeklyTasks','buildGanttRow','renderGanttLinkedTasks',
+       'selectGantBlueprint','toggleGantShowCompleted'
      ];
      coreFuncs.forEach(function(f) {
        typeof window[f] === 'function' ? ok('関数: ' + f) : ng('関数: ' + f, '未定義');
@@ -18905,7 +19106,121 @@ function showDebugLog() {
          : ng('done/completed同期テスト', 'クリーンアップ後件数不一致');
      } catch(e) { ng('done/completed同期テスト', e.message); }
 
-          // ===== 11. Key Purify Absolute Green（最終確認） =====
+          // ===== 16. 造営（ガント）関数網羅テスト =====
+     try {
+       // --- 関数存在確認（造営全関数）---
+       var _gantFns = [
+         'getBlueprints','getGantsAll','getGantsByBlueprint',
+         'getBlueprintProgress','getBlueprintDateRange',
+         'renderGantView','renderGantBlueprints','renderGantChart',
+         'sendBlueprintToHeaven','reviveBlueprint',
+         'openBlueprintEditor','saveBlueprintEditor',
+         'deleteBlueprint','deleteGantt',
+         'selectGantBlueprint','openGanttEditor','saveGanttEditor',
+         'openGanttQuickTask','recalcAll','recalcBlueprintFromGants',
+         'recalcGanttDateFromTasks','toggleGantShowCompleted',
+         '_gantToggleCompleted','_gantToggle','_gantAddTask',
+         '_gantEdit','_gantReorderTask','_gantMoveTask',
+         '_bpReorder','_initBlueprintDrag','_initGantTaskDrag',
+         'toggleTaskById','onTaskCompleted',
+         'getHeavenBlueprints','renderHeavenBlueprints',
+         'openHeavenFromBanner','renderGrandVisionBar',
+         'getDailyTasks','getWeeklyTasks',
+         'buildGanttRow','renderGanttLinkedTasks'
+       ];
+       var _gantMissing = _gantFns.filter(function(fn){ return typeof window[fn] !== 'function'; });
+       _gantMissing.length === 0
+         ? ok('造営関数: 全' + _gantFns.length + '件存在確認')
+         : ng('造営関数', '未定義: ' + _gantMissing.join(', '));
+
+       // --- 実装確認（ソース検査）---
+       // getBlueprints が !inHeaven フィルタを持つか（再確認）
+       var _gbSrc = (window.getBlueprints||function(){}).toString();
+       _gbSrc.indexOf('!t.inHeaven') !== -1 || _gbSrc.indexOf('inHeaven') !== -1
+         ? ok('getBlueprints: inHeavenフィルタ確認')
+         : ng('getBlueprints', 'inHeavenフィルタなし');
+
+       // getDailyTasks / getWeeklyTasks が heaven を除外しているか
+       var _gdtSrc = (window.getDailyTasks||function(){}).toString();
+       _gdtSrc.indexOf('heaven') !== -1
+         ? ok('getDailyTasks: heavenフィルタ確認')
+         : ng('getDailyTasks', 'heavenフィルタなし');
+       var _gwtSrc = (window.getWeeklyTasks||function(){}).toString();
+       _gwtSrc.indexOf('heaven') !== -1
+         ? ok('getWeeklyTasks: heavenフィルタ確認')
+         : ng('getWeeklyTasks', 'heavenフィルタなし');
+
+       // onTaskCompleted が造営連動を持つか
+       var _otcSrc = (window.onTaskCompleted||function(){}).toString();
+       _otcSrc.indexOf('getGantsAll') !== -1 && _otcSrc.indexOf('recalcBlueprintFromGants') !== -1
+         ? ok('onTaskCompleted: 造営連動コード確認')
+         : ng('onTaskCompleted', '造営連動コードなし');
+
+       // _bpReorder が order更新・saveAllTasks・renderGantBlueprintsを持つか
+       var _bpSrc = (window._bpReorder||function(){}).toString();
+       _bpSrc.indexOf('saveAllTasks') !== -1 && _bpSrc.indexOf('renderGantBlueprints') !== -1
+         ? ok('_bpReorder: saveAllTasks・renderGantBlueprints確認')
+         : ng('_bpReorder', 'saveAllTasksまたはrenderGantBlueprintsなし');
+
+       // recalcAll が getGantsAll・recalcGanttDateFromTasks を持つか
+       var _raSrc = (window.recalcAll||function(){}).toString();
+       _raSrc.indexOf('recalcGanttDateFromTasks') !== -1 && _raSrc.indexOf('recalcBlueprintFromGants') !== -1
+         ? ok('recalcAll: recalcGanttDateFromTasks・recalcBlueprintFromGants確認')
+         : ng('recalcAll', '連鎖再計算コードなし');
+
+       // renderGantView が展開状態保存・復元を持つか
+       var _rvSrc = (window.renderGantView||function(){}).toString();
+       _rvSrc.indexOf('ganttExpand_') !== -1 && _rvSrc.indexOf('setTimeout') !== -1
+         ? ok('renderGantView: 展開状態保存・復元確認')
+         : ng('renderGantView', '展開状態保存・復元なし');
+
+       // --- 挙動テスト（メモリのみ）---
+       // getBlueprints・getGantsAllの挙動
+       var _bps = (typeof getBlueprints === 'function') ? getBlueprints() : null;
+       var _gnts = (typeof getGantsAll === 'function') ? getGantsAll() : null;
+       Array.isArray(_bps) && Array.isArray(_gnts)
+         ? ok('getBlueprints/getGantsAll: 配列を返す確認')
+         : ng('getBlueprints/getGantsAll', '配列でない');
+
+       // getBlueprints が inHeaven=trueを除外するか（挙動）
+       var _prevLen3 = allTasks.length;
+       var _testBpId = 'smoke-bp-' + Date.now();
+       allTasks.push({ id: _testBpId, kind: 'blueprint', inHeaven: true, order: 9999, title: 'test' });
+       var _bpsAfter = getBlueprints();
+       var _heavenInList = _bpsAfter.filter(function(b){ return b.id === _testBpId; }).length > 0;
+       allTasks = allTasks.filter(function(t){ return t.id !== _testBpId; });
+       !_heavenInList
+         ? ok('getBlueprints: inHeaven=trueを除外する挙動確認')
+         : ng('getBlueprints', 'inHeaven=trueが除外されていない');
+
+       // getHeavenBlueprints が inHeaven=trueのみ返すか（挙動）
+       var _testBpId2 = 'smoke-bp2-' + Date.now();
+       allTasks.push({ id: _testBpId2, kind: 'blueprint', inHeaven: true, heavenAt: new Date().toISOString(), title: 'heaven test' });
+       var _hbps = getHeavenBlueprints();
+       var _heavenFound = _hbps.filter(function(b){ return b.id === _testBpId2; }).length > 0;
+       allTasks = allTasks.filter(function(t){ return t.id !== _testBpId2; });
+       _heavenFound
+         ? ok('getHeavenBlueprints: inHeaven=trueのみ返す挙動確認')
+         : ng('getHeavenBlueprints', 'inHeaven=trueが返ってこない');
+
+       // getDailyTasks が displayScope='heaven'を除外するか
+       var _testTaskId = 'smoke-task-heaven-' + Date.now();
+       var _today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : '2026-01-01';
+       allTasks.push({ id: _testTaskId, kind: 'task', text: 'heaven task', date: _today, completed: false, done: false, displayScope: 'heaven', section: 1 });
+       var _dailyTasks = (typeof getDailyTasks === 'function') ? getDailyTasks(_today) : [];
+       var _heavenInDaily = _dailyTasks.filter(function(t){ return t.id === _testTaskId; }).length > 0;
+       allTasks = allTasks.filter(function(t){ return t.id !== _testTaskId; });
+       !_heavenInDaily
+         ? ok('getDailyTasks: displayScope=heavenを除外する挙動確認')
+         : ng('getDailyTasks', 'displayScope=heavenが日次に出ている');
+
+       allTasks.length === _prevLen3
+         ? ok('造営挙動テスト: クリーンアップ完了（' + allTasks.length + '件）')
+         : ng('造営挙動テスト', 'クリーンアップ後件数不一致 ' + allTasks.length + '件 期待' + _prevLen3 + '件');
+
+     } catch(e) { ng('造営テスト', e.message); }
+
+     // ===== 11. Key Purify Absolute Green（最終確認） =====
      try {
        var keyNames = Object.keys(localStorage);
        var hasTask = keyNames.indexOf('allTasks') !== -1;
@@ -19719,7 +20034,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     function deleteThoughtsByJournal(journalId) {
       for (var i = allTasks.length - 1; i >= 0; i--) {
-        if (allTasks[i].kind === 'thought' && allTasks[i].parentId === journalId) allTasks.splice(i, 1);
+        if (allTasks[i].kind === 'thought' && allTasks[i].parentId === journalId) {
+          allTasks.splice(i, 1);
+        }
       }
     }
 
