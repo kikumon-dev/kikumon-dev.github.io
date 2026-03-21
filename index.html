@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.38.09';
+    const APP_VERSION = 'v0.38.15';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -6171,8 +6171,10 @@ function myDeckApply(idx) {
             // 完了トグル
             const _wasDone = task.completed;
             task.completed = !task.completed;
+            task.done = task.completed; // 造営(gantt)のdoneと同期
             task.updatedAt = new Date().toISOString();
             saveAllTasks();
+            if (typeof recalcAll === 'function') recalcAll(task.id);
             if (!_wasDone && task.completed) {
               onTaskCompleted(task);
               if (task.deckId && typeof incrementDeckHistoryStat === 'function') {
@@ -7344,7 +7346,9 @@ function myDeckApply(idx) {
             if (e.target.textContent === '✏️') return;
             const _wasDone = t.completed;
             t.completed = !t.completed;
+            t.done = t.completed; // 造営(gantt)のdoneと同期
             saveAllTasks();
+            if (typeof recalcAll === 'function') recalcAll(t.id);
             if (!_wasDone && t.completed) {
               onTaskCompleted(t);
               if (t.deckId && typeof incrementDeckHistoryStat === 'function') {
@@ -8132,7 +8136,7 @@ function myDeckApply(idx) {
           const tBar = _buildTaskBar(t, ctx) + (ctx.scale === 'day' ? (ctx.nowLine || '') : (ctx.nowLine2 || ''));
           return '<div style="display:flex;align-items:stretch;border-bottom:1px solid #efefef;">'
             + '<div style="width:' + ctx.labelW + 'px;min-width:' + ctx.labelW + 'px;padding:0 4px 0 20px;border-right:1px solid #e0e0e0;display:flex;align-items:center;gap:3px;overflow:hidden;position:sticky;left:0;z-index:2;background:#f9f9f9;">'
-            + '<button data-tid="' + tid + '" onclick="_gantToggleDone(this)" style="background:none;border:none;font-size:12px;cursor:pointer;padding:0;flex-shrink:0;">' + ((t.completed || t.done) ? '✅' : '⬜') + '</button>'
+            + '<button data-tid="' + tid + '" onclick="_gantToggleCompleted(this)" style="background:none;border:none;font-size:12px;cursor:pointer;padding:0;flex-shrink:0;">' + ((t.completed || t.done) ? '✅' : '⬜') + '</button>'
             + '<span style="font-size:10px;color:' + ((t.completed || t.done) ? '#aaa' : '#333') + ';text-decoration:' + ((t.completed || t.done) ? 'line-through' : 'none') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;">' + (t.text || '') + '</span>'
             + '<button data-tid="' + tid + '" onclick="_gantEditTask(this)" style="background:none;border:none;font-size:11px;cursor:pointer;padding:0 2px;flex-shrink:0;color:#ccc;">✏️</button>'
             + '</div>'
@@ -8186,30 +8190,19 @@ function myDeckApply(idx) {
       var gid = btn.dataset.gid;
       if (gid) openGanttQuickTask(gid);
     }
-    function _gantToggleDone(btn) {
+    var _gantToggling = {};
+    function _gantToggleCompleted(btn) {
       var tid = btn.dataset.tid;
+      if (_gantToggling[tid]) return;
+      _gantToggling[tid] = true;
+      setTimeout(function(){ delete _gantToggling[tid]; }, 300);
       var t = allTasks.find(function(x){ return x.id===tid; });
       if (!t) return;
-      t.completed = !t.completed;
+      t.done = !t.done;
+      t.completed = t.done; // 日次ビューのcompletedと双方向同期
       saveAllTasks();
       if (typeof recalcAll === 'function') recalcAll(tid);
-      // 展開状態を記憶してから再描画
-      var openIds = [];
-      document.querySelectorAll('[id^=ganttExpand_]').forEach(function(el){
-        if (el.style.display !== 'none') openIds.push(el.id);
-      });
       renderGantView();
-      setTimeout(function(){
-        openIds.forEach(function(id){
-          var el = document.getElementById(id);
-          var b  = document.querySelector('[data-eid]');
-          if (b && b.dataset.eid !== id) b = null;
-          // fallback: 全ボタンからeid一致を探す
-          if (!b) { document.querySelectorAll('[data-eid]').forEach(function(x){ if(x.dataset.eid===id) b=x; }); }
-          if (el) { el.style.display = 'table-row-group'; }
-          if (b)  { b.style.transform = 'rotate(90deg)'; }
-        });
-      }, 50);
     }
     function _gantEditTask(btn) {
       var tid = btn.dataset.tid;
@@ -8359,7 +8352,7 @@ function myDeckApply(idx) {
             var tBar = _buildTaskBar(t, ctx2) + nowLineBar;
             var tLabelCell = '<td style="position:sticky;left:0;z-index:2;background:#f9f9f9;border-right:1px solid #d0d8e8;border-bottom:1px solid #efefef;padding:0 4px 0 20px;width:' + labelW + 'px;min-width:' + labelW + 'px;max-width:' + labelW + 'px;vertical-align:middle;">'
               + '<div style="display:flex;align-items:center;gap:3px;min-height:32px;overflow:hidden;">'
-              + '<button data-tid="' + tid + '" onclick="_gantToggleDone(this)" style="background:none;border:none;font-size:12px;cursor:pointer;padding:0;flex-shrink:0;">' + ((t.completed || t.done) ?'✅':'⬜') + '</button>'
+              + '<button data-tid="' + tid + '" onclick="_gantToggleCompleted(this)" style="background:none;border:none;font-size:12px;cursor:pointer;padding:0;flex-shrink:0;">' + ((t.completed || t.done) ?'✅':'⬜') + '</button>'
               + '<span style="font-size:10px;color:' + ((t.completed || t.done) ?'#aaa':'#333') + ';text-decoration:' + ((t.completed || t.done) ?'line-through':'none') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;">' + (t.text||'') + '</span>'
               + '<button data-tid="' + tid + '" onclick="_gantEditTask(this)" style="background:none;border:none;font-size:11px;cursor:pointer;padding:0 2px;flex-shrink:0;color:#ccc;">✏️</button>'
               + '</div></td>';
@@ -9876,6 +9869,7 @@ function reviveBlueprint(id) {
       if (task) {
         const wasCompleted = task.completed;
         task.completed = !task.completed;
+        task.done = task.completed; // 造営(gantt)のdoneと双方向同期
         task.updatedAt = new Date().toISOString();
         saveAllTasks();
         // クラフトモード：完了時にリアルタイム更新
@@ -13316,7 +13310,7 @@ function loadSettingsUI() {
     window._gantEdit = _gantEdit;
     window._gantEditTask = _gantEditTask;
     window._gantToggle = _gantToggle;
-    window._gantToggleDone = _gantToggleDone;
+    window._gantToggleCompleted = _gantToggleCompleted;
     window.addCalendarSetting = addCalendarSetting;
     window.addStampSetting = addStampSetting;
     window.adjustMonthlyWidth = adjustMonthlyWidth;
