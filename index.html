@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.38.43';
+    const APP_VERSION = 'v0.38.45';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -2882,8 +2882,8 @@
       #blueprintPastelPalette::-webkit-scrollbar, #ganttPastelPalette::-webkit-scrollbar { display:none; }
       /* ===== 和紙日誌スタイル ===== */
       :root {
-        --washi:      #f5f0e8;
-        --washi-dark: #ede6d6;
+        --washi:      #f4f3ee;
+        --washi-dark: #f4f3ee;
         --washi-deep: #e0d6c2;
         --ink:        #2c2416;
         --ink-mid:    #5a4e3a;
@@ -3636,7 +3636,7 @@
     </div>
   </div>
   <!-- 自由帳ビュー v0.12.0 -->
-  <div id="journalView" style="display:none;height:100%;overflow-y:auto;padding:16px;box-sizing:border-box;background:#faf8f3;">
+  <div id="journalView" style="display:none;height:100%;overflow-y:auto;padding:16px;box-sizing:border-box;background:#f4f3ee;">
   <div style="display:flex;align-items:center;justify-content:flex-start;position:relative;max-width:560px;margin:0 auto 16px;padding-bottom:12px;border-bottom:1px solid #e6e0d4;">
     <button onclick="openNewJournal()" style="padding:5px 4px;background:transparent;color:var(--washi-red);border:none;font-size:0.88em;cursor:pointer;font-family:serif;letter-spacing:0.05em;">記す</button>
     <div style="position:absolute;left:50%;transform:translateX(-50%);font-family:'Noto Serif JP',serif;font-size:1.5em;font-weight:600;color:var(--ink);letter-spacing:0.08em;">王国日誌</div>
@@ -11397,7 +11397,8 @@ function reviveBlueprint(id) {
       'simpleMode', 'dataVersion',
       'mig_journals_to_alltasks_v1', 'mig_journal_ids_to_uuid_v7',
       '_lastScratchMoveDate',
-      'tokuLog', 'selectedDailyDate', 'tlLastScrollTop',
+      'selectedDailyDate', 'tlLastScrollTop',
+      'craftMode', 'gantEnabled',
     ]);
     // 起動時スキャン
     (function() {
@@ -19213,27 +19214,80 @@ function showDebugLog() {
          : ng('造営挙動テスト', 'クリーンアップ後件数不一致 ' + allTasks.length + '件 期待' + _prevLen4 + '件');
      } catch(e) { ng('造営テスト', e.message); }
 
-     // ===== 17. Key Purify Absolute Green（最終確認） =====
+     // ===== 17. Key Purify Absolute Green（最終確認・4軸検査） =====
      try {
-       var keyNames = Object.keys(localStorage);
-       var hasTask = keyNames.indexOf('allTasks') !== -1;
-       var hasSettings = keyNames.indexOf('allSettings') !== -1;
-       var dirtyCount = 0;
-       for (var _k in localStorage) {
-         if (localStorage.hasOwnProperty(_k) && ['allTasks','allSettings','deletedTaskIds','currentView','deviceId',
-           'simpleMode','craftMode','gantEnabled','dataVersion','tokuPoints','gouPoints',
-           'escapeLog','calendars','_dbg_log','_dbg_errors','_lastScratchMoveDate',
-           'nbLastPageId','taskCompletedStreak','taskCompletedTotal','wgLastScrollTop',
-           'dailyScrollInit','weeklyScrollInit',
-           'mig_category_to_calendar_v170','mig_death_ghost_flags_v0_24_59',
-           'mig_gant_enabled_default_v0_32','mig_ids_to_uuid_v7',
-           'mig_journals_to_alltasks_v1','mig_show_in_daily_to_display_scope_v1',
-         ].indexOf(_k) === -1) { dirtyCount++; }
-       }
-       var kpagOk = hasTask && hasSettings && dirtyCount === 0;
-       kpagOk
-         ? ok('🟢 Key Purify Absolute Green — 全' + keyNames.length + 'キー検査済・汚染ゼロ')
-         : ng('Key Purify', (!hasTask?'allTasks欠落 ':'')+(!hasSettings?'allSettings欠落 ':'')+(dirtyCount>0?'未知キー'+dirtyCount+'件':''));
+       var _kpKeys = Object.keys(localStorage);
+
+       // ① 必須キー存在確認
+       _kpKeys.indexOf('allTasks') !== -1
+         ? ok('KPAG①: allTasks 存在確認')
+         : ng('KPAG①: allTasks', '欠落 — データ消失の可能性');
+       _kpKeys.indexOf('allSettings') !== -1
+         ? ok('KPAG①: allSettings 存在確認')
+         : ng('KPAG①: allSettings', '欠落 — 設定消失の可能性');
+
+       // ② 値の整合性チェック（型・パース確認）
+       try {
+         var _kpTasks = JSON.parse(localStorage.getItem('allTasks') || 'null');
+         Array.isArray(_kpTasks)
+           ? ok('KPAG②: allTasks 配列型確認')
+           : ng('KPAG②: allTasks', '配列でない — データ破損: ' + typeof _kpTasks);
+       } catch(e) { ng('KPAG②: allTasks', 'JSONパース失敗: ' + e.message); }
+       try {
+         var _kpSettings = JSON.parse(localStorage.getItem('allSettings') || 'null');
+         (_kpSettings && typeof _kpSettings === 'object' && !Array.isArray(_kpSettings))
+           ? ok('KPAG②: allSettings オブジェクト型確認')
+           : ng('KPAG②: allSettings', 'オブジェクトでない — データ破損: ' + typeof _kpSettings);
+       } catch(e) { ng('KPAG②: allSettings', 'JSONパース失敗: ' + e.message); }
+
+       // ③ 禁止キー検知（完全廃止済みキーの残存チェック）
+       var _bannedKeys = [
+         'taskIdCounter',       // UUID移行済み・完全廃止
+         'craftModeEnabled',    // allSettings.ui.craftModeEnabledに統合
+         'dailyViewMode',       // allSettings.ui.dailyViewModeに統合
+         'initialView',         // allSettings.ui.initialViewに統合
+         'monthlyMode',         // allSettings.ui.monthlyModeに統合
+         'weeklyDays',          // allSettings.ui.weeklyDaysに統合
+         'weeklyRowH',          // allSettings.ui.weeklyRowHに統合
+         'weeklyCellScale',     // allSettings.ui.weeklyCellScaleに統合
+         'weeklyTimeBar',       // allSettings.ui.weeklyTimeBarに統合
+         'tlScrollMode',        // allSettings.ui.tlScrollModeに統合
+         'wgScrollMode',        // allSettings.ui.wgScrollModeに統合
+       ];
+       var _bannedFound = _bannedKeys.filter(function(k){ return _kpKeys.indexOf(k) !== -1; });
+       _bannedFound.length === 0
+         ? ok('KPAG③: 禁止キー検知 — 廃止キー残存なし (' + _bannedKeys.length + '件チェック)')
+         : ng('KPAG③: 禁止キー検知', '廃止キーが残存: ' + _bannedFound.join(', '));
+
+       // ④ 未知キー検知（白名単チェック）
+       var _allowedKeys = [
+         'allTasks','allSettings','deletedTaskIds','currentView','deviceId',
+         'simpleMode','craftMode','gantEnabled','dataVersion','tokuPoints','gouPoints',
+         'escapeLog','calendars','tokuLog','_dbg_log','_dbg_errors','_lastScratchMoveDate',
+         'nbLastPageId','taskCompletedStreak','taskCompletedTotal','wgLastScrollTop',
+         'dailyScrollInit','weeklyScrollInit','tlLastScrollTop','selectedDailyDate',
+         'mig_category_to_calendar_v170','mig_death_ghost_flags_v0_24_59',
+         'mig_gant_enabled_default_v0_32','mig_ids_to_uuid_v7',
+         'mig_journals_to_alltasks_v1','mig_show_in_daily_to_display_scope_v1',
+         'mig_journal_ids_to_uuid_v7',
+         // 旧バージョン互換キー（残存する場合あり）
+         'migration_calendarId_v1','extendedvaluekey',
+         'notebooks','_calIdMigMap','journals','mainCalendarId','autoMainCalendar',
+       ];
+       var _unknownKeys = _kpKeys.filter(function(k){ return _allowedKeys.indexOf(k) === -1; });
+       _unknownKeys.length === 0
+         ? ok('KPAG④: 未知キー検知 — 全' + _kpKeys.length + 'キー検査済・汚染ゼロ')
+         : ng('KPAG④: 未知キー検知', '未知キー' + _unknownKeys.length + '件: ' + _unknownKeys.join(', '));
+
+       // 総合判定
+       var _kpagAllOk = _kpKeys.indexOf('allTasks') !== -1 && _kpKeys.indexOf('allSettings') !== -1
+         && _bannedFound.length === 0 && _unknownKeys.length === 0;
+       // ピュリファイ済みキー一覧を出力
+       var _purifiedList = _kpKeys.slice().sort().join(', ');
+       ok('KPAG済キー一覧(' + _kpKeys.length + '件): ' + _purifiedList);
+       _kpagAllOk
+         ? ok('🟢 Key Purify Absolute Green — 4軸全検査済・汚染ゼロ')
+         : ng('Key Purify Absolute Green', '上記の失敗項目を確認してください');
      } catch(e) { ng('Key Purify Absolute Green', e.message); }
 
 var resultDiv = document.createElement('div');
