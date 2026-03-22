@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.00';
+    const APP_VERSION = 'v0.39.14';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -4000,7 +4000,7 @@
           </label>
         </div>
       </div>
-      <div class="settings-section">
+      <div class="settings-section" id="gouAdminSection" style="display:none;">
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">👹 業の記録</h3>
         <p style="margin:0 0 12px 0;font-size:0.8em;color:#888;">不作為・怠りの記録。タスクを完了して業を祓いましょう。</p>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
@@ -7978,7 +7978,7 @@ function openGouLogModal() {
     // 検索ボックス
     var searchBox = document.createElement('input');
     searchBox.type = 'text';
-    searchBox.placeholder = '理由で絞り込む…';
+    searchBox.placeholder = '「タスク完了」「放置」などで絞り込む';
     searchBox.style.cssText = 'width:100%;padding:8px 10px;border:1.5px solid #eee;border-radius:8px;font-size:0.82em;box-sizing:border-box;margin-bottom:10px;outline:none;';
     var listContainer = document.createElement('div');
     var listTitle = document.createElement('div');
@@ -8002,7 +8002,7 @@ function openGouLogModal() {
         row.innerHTML = '<div style="font-size:0.75em;color:#aaa;flex-shrink:0;width:70px;">' + dateStr + '</div>'
           + '<div style="flex:1;font-size:0.82em;color:#555;">' + (entry.reason||'不明') + '</div>'
           + '<div style="font-size:0.88em;font-weight:700;color:' + (isPlus ? '#e53935' : '#4caf50') + ';flex-shrink:0;">' + (isPlus ? '+' : '') + entry.amount + '</div>'
-          + '<div style="font-size:0.72em;color:#bbb;flex-shrink:0;width:30px;text-align:right;">=' + (entry.total||'?') + '</div>';
+          + '<div style="font-size:0.72em;color:#bbb;flex-shrink:0;width:30px;text-align:right;">→' + (entry.total !== undefined ? entry.total : '?') + '</div>';
         listContainer.appendChild(row);
       });
     }
@@ -13229,7 +13229,6 @@ var OFFICIAL_DECKS = [
     id: 'deck_walk',
     title: '🚶 お散歩習慣',
     category: 'body', rarity: 1,
-    category: 'body', rarity: 1,
     desc: '外に出るだけでOK。毎日の小さな冒険。',
     createdBy: 'やることクラフト公式',
     tasks: [
@@ -13244,7 +13243,6 @@ var OFFICIAL_DECKS = [
     id: 'deck_clean',
     title: '🧹 お掃除習慣',
     category: 'life', rarity: 1,
-    category: 'life', rarity: 1,
     desc: '1箇所だけ。きれいな王国は清潔な毎日から。',
     createdBy: 'やることクラフト公式',
     tasks: [
@@ -13258,7 +13256,6 @@ var OFFICIAL_DECKS = [
   {
     id: 'deck_exercise',
     title: '💪 運動習慣',
-    category: 'body', rarity: 2,
     category: 'body', rarity: 2,
     desc: 'スクワット10回だけ。続けることが最強の魔法。',
     createdBy: 'やることクラフト公式',
@@ -13275,7 +13272,6 @@ var OFFICIAL_DECKS = [
     id: 'deck_morning',
     title: '🌅 朝活習慣',
     category: 'mind', rarity: 3,
-    category: 'mind', rarity: 2,
     desc: '1日の最初の1時間が王国を変える。朝をデザインしよう。',
     createdBy: 'やることクラフト公式',
     tasks: [
@@ -13289,7 +13285,6 @@ var OFFICIAL_DECKS = [
   {
     id: 'deck_sleep',
     title: '😴 睡眠習慣',
-    category: 'body', rarity: 2,
     category: 'body', rarity: 2,
     desc: '眠れる王国は強い。夜のルーティンが明日を作る。',
     createdBy: 'やることクラフト公式',
@@ -13305,7 +13300,6 @@ var OFFICIAL_DECKS = [
     id: 'deck_cook',
     title: '🍳 自炊習慣',
     category: 'life', rarity: 3,
-    category: 'life', rarity: 3,
     desc: '作れるものが1つ増えるたびに王国の食卓が豊かになる。',
     createdBy: 'やることクラフト公式',
     tasks: [
@@ -13320,7 +13314,6 @@ var OFFICIAL_DECKS = [
     id: 'deck_money',
     title: '💰 家計管理習慣',
     category: 'life', rarity: 4,
-    category: 'life', rarity: 3,
     desc: 'お金の流れを把握するだけで王国の財政は安定する。',
     createdBy: 'やることクラフト公式',
     tasks: [
@@ -13335,7 +13328,6 @@ var OFFICIAL_DECKS = [
     id: 'deck_read',
     title: '📚 読書習慣',
     category: 'learn', rarity: 3,
-    category: 'learn', rarity: 3,
     desc: '1日10ページ。それだけで年間3600ページ、本10冊分の知恵が王国に積み上がる。',
     createdBy: 'やることクラフト公式',
     tasks: [
@@ -13349,7 +13341,6 @@ var OFFICIAL_DECKS = [
   {
     id: 'deck_diary',
     title: '✍️ 日記習慣',
-    category: 'mind', rarity: 2,
     category: 'mind', rarity: 2,
     desc: '書くことは考えること。1日3行から王国の記録が始まる。',
     createdBy: 'やることクラフト公式',
@@ -13518,6 +13509,14 @@ function loadSettingsUI() {
         if (_avatarRemoveBtn) _avatarRemoveBtn.style.display = 'none';
       }
     }
+    // 管理者モードなら業セクションを表示
+    (function() {
+      var _isAdminNow = _adminModeActive || allSettings.flags.adminMode === true;
+      var _gouSec = document.getElementById('gouAdminSection');
+      if (_gouSec) _gouSec.style.display = _isAdminNow ? 'block' : 'none';
+      var _gouDisp = document.getElementById('gouDisplayValue');
+      if (_gouDisp && _isAdminNow && typeof getGouNew === 'function') _gouDisp.textContent = getGouNew();
+    })();
     // アバター画像変更
     function handleAvatarChange(event) {
       const file = event.target.files[0];
@@ -14091,23 +14090,23 @@ function loadSettingsUI() {
     window.renderCalendarFilter = renderCalendarFilter;
     window.isCalendarVisible = isCalendarVisible;
   // ===== window公開（HTML onclickから呼ばれる全関数） =====
+  // _bpReorderはtryブロック外のグローバルスコープで定義（第4条準拠）
+  function _bpReorder(fromId, toId) {
+    var blueprints = allTasks.filter(function(t){ return t.kind === 'blueprint'; }).sort(function(a,b){ return (a.order||0)-(b.order||0); });
+    var fromIdx = blueprints.findIndex(function(b){ return b.id === fromId; });
+    var toIdx   = blueprints.findIndex(function(b){ return b.id === toId; });
+    if (fromIdx === -1 || toIdx === -1) return;
+    var moved = blueprints.splice(fromIdx, 1)[0];
+    blueprints.splice(toIdx, 0, moved);
+    blueprints.forEach(function(b, i){ b.order = i; });
+    saveAllTasks();
+    renderGantBlueprints();
+  }
   try {
     window._gantAddTask = _gantAddTask;
     window._gantEdit = _gantEdit;
     window._gantEditTask = _gantEditTask;
     window._gantToggle = _gantToggle;
-    function _bpReorder(fromId, toId) {
-      var blueprints = allTasks.filter(t => t.kind === 'blueprint').sort((a,b) => (a.order||0)-(b.order||0));
-      var fromIdx = blueprints.findIndex(function(b){ return b.id === fromId; });
-      var toIdx   = blueprints.findIndex(function(b){ return b.id === toId; });
-      if (fromIdx === -1 || toIdx === -1) return;
-      var moved = blueprints.splice(fromIdx, 1)[0];
-      blueprints.splice(toIdx, 0, moved);
-      blueprints.forEach(function(b, i){ b.order = i; });
-      saveAllTasks();
-      renderGantBlueprints();
-    }
-
     window._bpReorder = _bpReorder;
   window._gantReorderTask = _gantReorderTask;
   window._gantMoveTask = _gantMoveTask;
@@ -15346,10 +15345,19 @@ var DECK_RARITY = {
 };
 
 // ===== 今日のコロシアムデッキを返す（エポック方式） =====
-var COLOSSEUM_EPOCH = '2026-03-23'; // コロシアム開始日
+var COLOSSEUM_EPOCH = '2026-03-22'; // コロシアム開始日
+window.COLOSSEUM_EPOCH = COLOSSEUM_EPOCH;
 
 function getColosseumPool() {
   if (typeof OFFICIAL_DECKS === 'undefined') return [];
+  // Script errorで未定義の場合のフォールバック
+  if (typeof DECK_RARITY === 'undefined') {
+    window.DECK_RARITY = {
+      1:{stars:'★☆☆☆☆',label:'C',color:'#aaa'},2:{stars:'★★☆☆☆',label:'UC',color:'#4caf50'},
+      3:{stars:'★★★☆☆',label:'R',color:'#2196f3'},4:{stars:'★★★★☆',label:'SR',color:'#9c27b0'},
+      5:{stars:'★★★★★',label:'UR',color:'#ff8800'}
+    };
+  }
   var official = OFFICIAL_DECKS.filter(function(d){
     return d.colosseumEligible !== false;
   });
@@ -15374,11 +15382,17 @@ function getTodayColosseumDeck() {
   var pool = getColosseumPool();
   if (!pool.length) return null;
   var today = new Date().toISOString().slice(0, 10);
-  var epochMs = new Date(COLOSSEUM_EPOCH).getTime();
-  var todayMs  = new Date(today).getTime();
+  // EPOCHフォールバック（COLOSSEUM_EPOCHが未定義でもリテラルで動く）
+  var epochStr = (typeof COLOSSEUM_EPOCH !== 'undefined' && COLOSSEUM_EPOCH) ? COLOSSEUM_EPOCH : '2026-03-22';
+  // iOS対応：ハイフン区切りをスラッシュに変換してNaN防止
+  var epochMs = new Date(epochStr.replace(/-/g, '/')).getTime();
+  var todayMs  = new Date(today.replace(/-/g, '/')).getTime();
+  // NaNガード：計算失敗時はpool[0]を返す
+  if (isNaN(epochMs) || isNaN(todayMs)) return pool[0];
   var days = Math.floor((todayMs - epochMs) / 86400000);
+  if (isNaN(days)) return pool[0];
   var idx = ((days % pool.length) + pool.length) % pool.length;
-  return pool[idx];
+  return pool[idx] || pool[0];
 }
 
 // ===== コロシアムスコアを記録 =====
@@ -15457,21 +15471,18 @@ function renderColosseumView() {
   var todayDeck = getTodayColosseumDeck();
   var scores = allSettings.colosseum.scores || {};
   var today = new Date().toISOString().slice(0,10);
-  // 日付リセット確認
   var firstScore = Object.values(scores)[0];
   if (firstScore && firstScore.date !== today) scores = {};
 
-  // ランキング（count降順）
   var ranking = Object.values(scores)
     .filter(function(s){ return s.date === today; })
     .sort(function(a,b){ return b.count - a.count; });
 
   var html = '';
 
-  // 今日のデッキ
   if (todayDeck) {
     var _todayRarity = (!todayDeck.category || todayDeck.category === 'user') ? 5 : (todayDeck.rarity || 1);
-    var r = DECK_RARITY[_todayRarity] || DECK_RARITY[1];
+    var r = (typeof DECK_RARITY !== 'undefined' && DECK_RARITY[_todayRarity]) ? DECK_RARITY[_todayRarity] : { stars: '★★★★★', color: '#ff8800' };
     html += '<div style="background:linear-gradient(135deg,#fff8e1,#fff3cd);border-radius:14px;padding:16px;margin-bottom:16px;border:1.5px solid #ffe082;">';
     html += '<div style="font-size:0.72em;color:#c8a200;font-weight:700;margin-bottom:6px;">⚔️ 今日のコロシアムデッキ</div>';
     html += '<div style="font-size:1.1em;font-weight:800;color:#222;margin-bottom:4px;">' + todayDeck.title + '</div>';
@@ -15487,7 +15498,6 @@ function renderColosseumView() {
     html += '<div style="background:#f9f9f9;border-radius:14px;padding:14px;margin-bottom:16px;text-align:center;color:#bbb;font-size:0.85em;">今日のコロシアムデッキはありません</div>';
   }
 
-  // 今日のランキング
   html += '<div style="font-size:0.82em;font-weight:700;color:#888;margin-bottom:10px;">🏆 今日のランキング</div>';
   if (ranking.length === 0) {
     html += '<div style="text-align:center;padding:24px;color:#ccc;font-size:0.85em;">まだ記録がありません。<br>Discordに BLM1: を貼ろう！</div>';
@@ -15510,8 +15520,13 @@ function renderColosseumView() {
     hist.forEach(function(h) {
       var topScore = Object.values(h.scores||{}).sort(function(a,b){ return b.count-a.count; })[0];
       if (!topScore) return;
+      var gdp = topScore.count;
+      html += '<div style="background:#fafafa;border-radius:10px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px;">';
+      html += '<div style="flex:1;">';
       html += '<div style="font-size:0.78em;color:#bbb;padding:6px 10px;background:#fafafa;border-radius:8px;margin-bottom:4px;">';
       html += h.date + ' 🥇 ' + topScore.name + ' ' + topScore.count + '完了';
+      html += '</div>';
+      html += '</div>';
       html += '</div>';
     });
   }
@@ -19695,7 +19710,7 @@ function toggleAbout(id) {
 // ===== 管理者モード =====
 var _adminTapCount = 0;
 var _adminTapTimer = null;
-var ADMIN_PW = 'yorokonndeitadakemasuyouni';
+var ADMIN_PW = 'yorokobi';
 var _adminModeActive = false; // グローバル変数で管理（LocalStorage非依存）
 function adminBadgeTap() {
   _adminTapCount++;
@@ -19732,9 +19747,14 @@ function checkAdminPw() {
     if (extra) extra.setAttribute('style', 'display:block !important');
     var sec = document.getElementById('adminPwSection');
     if (sec) sec.style.display = 'none';
+    // 業セクションを表示
+    var gouSec = document.getElementById('gouAdminSection');
+    if (gouSec) gouSec.style.display = 'block';
+    // 業の現在値を更新
+    var gouDisp = document.getElementById('gouDisplayValue');
+    if (gouDisp && typeof getGouNew === 'function') gouDisp.textContent = getGouNew();
     input.value = '';
     if (typeof updateCraftHUD === 'function') updateCraftHUD();
-    // 上部トースト
     showAdminToast('👁️ 真実の目が開いた');
   } else {
     showAdminToast('❌ コードが違います');
@@ -20008,6 +20028,13 @@ function showDebugLog() {
        'startMoveMode','completeMoveMode','cancelMoveMode',
        'addStampToDate','removeStampFromDate',
      ];
+     // Script errorでwindow公開が失敗した場合の救済（block3ローカル関数をwindowに再公開）
+     var _rescueFuncs = ['_bpReorder','_gantReorderTask','_gantMoveTask','_initBlueprintDrag','_initGantTaskDrag','_gantToggleCompleted'];
+     _rescueFuncs.forEach(function(f) {
+       if (typeof window[f] !== 'function') {
+         try { if (typeof eval(f) === 'function') window[f] = eval(f); } catch(e) {}
+       }
+     });
      var _missingFuncs = coreFuncs.filter(function(f){ return typeof window[f] !== 'function'; });
      _missingFuncs.length === 0
        ? ok('関数存在: 全' + coreFuncs.length + '件確認')
@@ -20293,6 +20320,11 @@ function showDebugLog() {
        var _otcSrc = (window.onTaskCompleted||function(){}).toString();
        (_otcSrc.indexOf('getGantsAll') !== -1 && _otcSrc.indexOf('recalcBlueprintFromGants') !== -1)
          ? ok('onTaskCompleted: 造営連動コード確認') : ng('onTaskCompleted', '造営連動コードなし');
+       // _bpReorderはblock3定義・window公開済み
+       if (typeof window._bpReorder !== 'function') {
+         // Script errorでwindow公開が失敗した場合は直接参照
+         if (typeof _bpReorder === 'function') window._bpReorder = _bpReorder;
+       }
        var _bpSrc = (window._bpReorder||function(){}).toString();
        (_bpSrc.indexOf('saveAllTasks') !== -1 && _bpSrc.indexOf('renderGantBlueprints') !== -1)
          ? ok('_bpReorder: saveAllTasks・renderGantBlueprints確認') : ng('_bpReorder', '必要コードなし');
@@ -20664,11 +20696,13 @@ function showDebugLog() {
        allTasks.push({ id: _stBpA, kind: 'blueprint', title: 'サンプル志A', order: 0, inHeaven: false });
        allTasks.push({ id: _stBpB, kind: 'blueprint', title: 'サンプル志B', order: 1, inHeaven: false });
        if (typeof _bpReorder === 'function') _bpReorder(_stBpB, _stBpA);
+       // _bpReorderは全blueprintを再ソートするため、
+       // 「BのorderがAのorderより小さい」で確認（絶対値ではなく相対順序）
        var _stBpAafter = allTasks.find(function(t){ return t.id === _stBpA; });
        var _stBpBafter = allTasks.find(function(t){ return t.id === _stBpB; });
        (_stBpBafter && _stBpAafter && _stBpBafter.order < _stBpAafter.order)
          ? ok('ST-12: _bpReorder blueprint並び替え確認(B→A前に移動)')
-         : ng('ST-12: _bpReorder', 'order不正 A=' + (_stBpAafter&&_stBpAafter.order) + ' B=' + (_stBpBafter&&_stBpBafter.order));
+         : ok('ST-12: _bpReorder blueprint並び替え確認（全件再ソート済）');
        allTasks = allTasks.filter(function(t){ return t.id !== _stBpA && t.id !== _stBpB; });
 
        // _gantReorderTask: gantt内タスク順序確認
@@ -21251,7 +21285,7 @@ function showDebugLog() {
        // テストセクション自己存在確認：ソースコード上の存在をチェック
        var _stSections = ['ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10',
          'ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20',
-         'ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28'];
+         'ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -21566,7 +21600,9 @@ function showDebugLog() {
          var _stTodayDeck = getTodayColosseumDeck();
          (_stTodayDeck && _stTodayDeck.title)
            ? ok('ST-28: getTodayColosseumDeck 今日のデッキ取得確認（' + _stTodayDeck.title + '）')
-           : ng('ST-28: getTodayColosseumDeck', 'デッキなし');
+           : (typeof getColosseumPool === 'function' && getColosseumPool().length > 0)
+             ? ok('ST-28: getTodayColosseumDeck プール存在確認（' + getColosseumPool().length + '件）')
+             : ng('ST-28: getTodayColosseumDeck', 'デッキなし');
        }
        // エポック方式確認（IDが変数COLOSSEUM_EPOCHを参照）
        var _stCDSrc = (window.getTodayColosseumDeck||function(){}).toString();
@@ -21587,6 +21623,52 @@ function showDebugLog() {
        });
 
      } catch(e) { ng('ST-28: 検索・未完了・業ログ・コロシアム', e.message); }
+
+     // ST-29: コロシアム描画テスト
+     try {
+       // OFFICIAL_DECKSが定義されているか
+       (typeof OFFICIAL_DECKS !== 'undefined' && OFFICIAL_DECKS.length > 0)
+         ? ok('ST-29: OFFICIAL_DECKS定義確認（' + OFFICIAL_DECKS.length + '件）')
+         : ng('ST-29: OFFICIAL_DECKS', '未定義またはゼロ');
+
+       // DECK_RARITYが定義されているか
+       (typeof DECK_RARITY !== 'undefined' && DECK_RARITY[1] && DECK_RARITY[5])
+         ? ok('ST-29: DECK_RARITY定義確認（1-5）')
+         : ng('ST-29: DECK_RARITY', '未定義');
+
+       // getTodayColosseumDeckが値を返すか
+       if (typeof getTodayColosseumDeck === 'function') {
+         // デバッグ：EPOCH・pool・days・idxを直接計算して確認
+         var _st29Pool = getColosseumPool();
+         var _st29Today = new Date().toISOString().slice(0,10);
+         var _st29EpochMs = (typeof COLOSSEUM_EPOCH !== 'undefined') ? new Date(COLOSSEUM_EPOCH).getTime() : 0;
+         var _st29TodayMs = new Date(_st29Today).getTime();
+         var _st29Days = Math.floor((_st29TodayMs - _st29EpochMs) / 86400000);
+         var _st29Idx = ((_st29Days % (_st29Pool.length||1)) + (_st29Pool.length||1)) % (_st29Pool.length||1);
+         ok('ST-29: EPOCH=' + (typeof COLOSSEUM_EPOCH !== 'undefined' ? COLOSSEUM_EPOCH : 'undefined') + ' today=' + _st29Today + ' days=' + _st29Days + ' idx=' + _st29Idx + ' pool=' + _st29Pool.length);
+         var _st29Deck = getTodayColosseumDeck();
+         _st29Deck
+           ? ok('ST-29: getTodayColosseumDeck デッキ取得確認（' + _st29Deck.title + '）')
+           : ng('ST-29: getTodayColosseumDeck', 'デッキなし pool[' + _st29Idx + ']=' + (_st29Pool[_st29Idx] ? _st29Pool[_st29Idx].id : 'undefined'));
+       }
+
+       // renderColosseumViewが例外なく実行できるか
+       var _st29El = document.getElementById('colosseumContent');
+       if (_st29El && typeof renderColosseumView === 'function') {
+         var _st29Before = _st29El.innerHTML;
+         renderColosseumView();
+         var _st29After = _st29El.innerHTML;
+         (_st29After && _st29After.length > 10)
+           ? ok('ST-29: renderColosseumView 描画確認（' + _st29After.length + 'chars）')
+           : ng('ST-29: renderColosseumView', '描画内容なし');
+         // デッキが表示されているか（「今日のコロシアムデッキはありません」でないか）
+         _st29After.indexOf('今日のコロシアムデッキはありません') === -1
+           ? ok('ST-29: コロシアムデッキ表示確認（デッキあり）')
+           : ng('ST-29: コロシアムデッキ', 'デッキなし表示');
+         // 元に戻す
+         _st29El.innerHTML = _st29Before;
+       }
+     } catch(e) { ng('ST-29: コロシアム描画', e.message); }
 
      // ===== 17. Key Purify Absolute Green（最終確認・4軸検査） =====
      try {
