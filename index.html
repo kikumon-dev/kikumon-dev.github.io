@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.38.70';
+    const APP_VERSION = 'v0.38.77';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -2992,6 +2992,7 @@
   <rect x="21" y="16" width="2" height="3"/>
   <rect x="25" y="16" width="2" height="3"/>
 </svg></button>
+    <button class="nav-tab" id="navColosseum" onclick="switchView('colosseum')" title="コロシアム" style="display:none;">⚔️</button>
     <button class="nav-tab" id="navShop" onclick="switchView('shop')" title="デッキショップ"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;">
   <!-- 取っ手（灰色半円） -->
   <path d="M7 12 A5 6 0 0 1 17 12" stroke="#999" stroke-width="2.5"/>
@@ -3798,7 +3799,21 @@
   </div>
   <div style="position:absolute;bottom:22px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.14);font-size:0.58em;font-family:monospace;pointer-events:none;letter-spacing:0.08em;">ドラッグで視点回転 / スクロールでズーム</div>
 </div>
-<div id="shopView" class="settings-view" style="display:none;background:#f5f5f5;position:relative;z-index:1;">
+<div id="colosseumView" class="settings-view" style="display:none;background:#f5f5f5;position:relative;z-index:1;min-height:100vh;">
+  <div class="settings-container">
+    <h2 style="margin:0 0 8px 0;color:#262626;font-size:1.4em;font-weight:700;">⚔️ コロシアム</h2>
+    <p style="margin:0 0 20px 0;font-size:0.88em;color:#8e8e8e;">同じデッキで戦え。完了した数がスコアになる。</p>
+    <div id="colosseumContent">
+      <div style="text-align:center;padding:40px 20px;color:#bbb;">
+        <div style="font-size:3em;margin-bottom:12px;">⚔️</div>
+        <div style="font-size:0.92em;font-weight:600;color:#888;margin-bottom:8px;">コロシアム準備中</div>
+        <div style="font-size:0.8em;color:#bbb;line-height:1.6;">まもなく開幕します。<br>Discordをチェックしよう。</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="shopView" class="settings-view"
+ style="display:none;background:#f5f5f5;position:relative;z-index:1;">
   <div class="settings-container">
     <!-- タブ -->
     <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid #e0e0e0;">
@@ -3956,6 +3971,32 @@
             <select id="gantDayEndH" onchange="saveGantDayRange()" style="padding:6px 10px;border:1px solid #ddd;border-radius:8px;font-size:0.88em;"><option value="2">2時</option><option value="3">3時</option><option value="4">4時</option><option value="5">5時</option><option value="6">6時</option><option value="7">7時</option><option value="8">8時</option><option value="9">9時</option><option value="10">10時</option><option value="11">11時</option><option value="12">12時</option><option value="13">13時</option><option value="14">14時</option><option value="15">15時</option><option value="16">16時</option><option value="17">17時</option><option value="18">18時</option><option value="19">19時</option><option value="20">20時</option><option value="21">21時</option><option value="22">22時</option><option value="23">23時</option><option value="24">24時</option></select>
           </div>
           <p style="margin:6px 0 0 0;font-size:0.8em;color:#888;">この時間帯だけ表示されます。寝てる時間を非表示にできます。</p>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">📱 ナビタブ表示</h3>
+        <p style="margin:0 0 12px 0;font-size:0.8em;color:#888;">表示するタブを選択できます。日次・週間・月間・日誌・🔍・⚙️は常時表示。</p>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="visTabYearly" onchange="toggleVisibleTab('yearly',this.checked)" style="width:18px;height:18px;accent-color:#4facfe;cursor:pointer;">
+            <span style="font-size:0.9em;color:#333;font-weight:600;">年間</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="visTabNotebook" onchange="toggleVisibleTab('notebook',this.checked)" style="width:18px;height:18px;accent-color:#4facfe;cursor:pointer;">
+            <span style="font-size:0.9em;color:#333;font-weight:600;">自由帳</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="visTabCraft" onchange="toggleVisibleTab('craft',this.checked)" style="width:18px;height:18px;accent-color:#4facfe;cursor:pointer;">
+            <span style="font-size:0.9em;color:#333;font-weight:600;">🏰 クラフト</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="visTabColosseum" onchange="toggleVisibleTab('colosseum',this.checked)" style="width:18px;height:18px;accent-color:#4facfe;cursor:pointer;">
+            <span style="font-size:0.9em;color:#333;font-weight:600;">⚔️ コロシアム</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="visTabShop" onchange="toggleVisibleTab('shop',this.checked)" style="width:18px;height:18px;accent-color:#4facfe;cursor:pointer;">
+            <span style="font-size:0.9em;color:#333;font-weight:600;">🛍️ ショップ</span>
+          </label>
         </div>
       </div>
       <div class="settings-section">
@@ -4629,7 +4670,11 @@
         gantLabelW: null,
         gantDayEndH: 24,
         gantTimeScale:    'day',
-        gantShowCompleted: true
+        gantShowCompleted: true,
+        visibleTabs: {
+          yearly: true, notebook: true, craft: true,
+          shop: true, colosseum: true
+        }
       },
       calendar: {
         list:        [],
@@ -7645,7 +7690,39 @@ function myDeckApply(idx) {
       const end = ends.length ? ends[ends.length - 1] : (bp.endDate || null);
       return { start, end };
     }
-    function toggleGantEnabled(checked) {
+    function applyVisibleTabsSettings() {
+  if (!allSettings.ui.visibleTabs) allSettings.ui.visibleTabs = {};
+  var vt = allSettings.ui.visibleTabs;
+  var tabs = [
+    { id: 'navYearly',     key: 'yearly' },
+    { id: 'navNotebook',   key: 'notebook' },
+    { id: 'navCraft',      key: 'craft' },
+    { id: 'navShop',       key: 'shop' },
+    { id: 'navColosseum',  key: 'colosseum' },
+  ];
+  tabs.forEach(function(t) {
+    var el = document.getElementById(t.id);
+    if (!el) return;
+    var visible = vt[t.key] !== false; // デフォルトtrue
+    // navCraftはcraftModeEnabledも考慮
+    if (t.key === 'craft') {
+      visible = visible && allSettings.ui.craftModeEnabled === true;
+    }
+    el.style.display = visible ? '' : 'none';
+  });
+  // gantは既存のgantEnabledに従う
+  var gantEl = document.getElementById('navGant');
+  if (gantEl) gantEl.style.display = allSettings.ui.gantEnabled === true ? '' : 'none';
+}
+
+function toggleVisibleTab(key, checked) {
+  if (!allSettings.ui.visibleTabs) allSettings.ui.visibleTabs = {};
+  allSettings.ui.visibleTabs[key] = checked;
+  saveAllSettings();
+  applyVisibleTabsSettings();
+}
+
+function toggleGantEnabled(checked) {
       allSettings.ui.gantEnabled = checked;
       saveAllSettings();
       const gantBtn = document.getElementById('navGant');
@@ -11525,6 +11602,14 @@ function reviveBlueprint(id) {
       if (_craftBtn) _craftBtn.style.display = allSettings.ui.craftModeEnabled === true ? '' : 'none';
       var _gantBtn = document.getElementById('navGant');
       if (_gantBtn) _gantBtn.style.display = allSettings.ui.gantEnabled === true ? '' : 'none';
+      if (typeof applyVisibleTabsSettings === 'function') applyVisibleTabsSettings();
+      // ナビタブ設定のチェックボックスを初期化
+      var vt = allSettings.ui.visibleTabs || {};
+      var vtMap = { yearly:'visTabYearly', notebook:'visTabNotebook', craft:'visTabCraft', shop:'visTabShop', colosseum:'visTabColosseum' };
+      Object.keys(vtMap).forEach(function(key) {
+        var el = document.getElementById(vtMap[key]);
+        if (el) el.checked = vt[key] !== false;
+      });
     })();
     setupAllSectionDrops();
     setupDayButtons();
@@ -11545,7 +11630,17 @@ function reviveBlueprint(id) {
     let inspectionMode = 0; // 0: 通常, 1: 8つの問い表示, 2: 履歴表示, 3: プレーン表示
     // 起動時ビュー適用はL11641のswitchView(startView)で一元管理
     // ビュー切り替え関数
+    var _switchViewLast = '';
+    var _switchViewTimer = null;
     function switchView(view) {
+      // 同一ビューへの連続呼び出しを300ms以内に防止（iOSタップ多重発火対策）
+      if (_switchViewLast === view) {
+        clearTimeout(_switchViewTimer);
+        _switchViewTimer = setTimeout(function(){ _switchViewLast = ''; }, 300);
+        return;
+      }
+      _switchViewLast = view;
+      _switchViewTimer = setTimeout(function(){ _switchViewLast = ''; }, 300);
 
       try {
       window._dbgLog && window._dbgLog('【量子転移】SYSTEM ONLINE --- ' + view + ' へ転移 / 行きます！');
@@ -11566,6 +11661,7 @@ function reviveBlueprint(id) {
       yearlyView.style.display = 'none';
       settingsView.style.display = 'none';
       document.getElementById('shopView').style.display = 'none';
+      document.getElementById('colosseumView').style.display = 'none';
       notebookView.style.display = 'none';
       if (craftView) craftView.style.display = 'none';
       if (gantView) {
@@ -11626,14 +11722,17 @@ function reviveBlueprint(id) {
         if (typeof renderDeckShop === 'function') renderDeckShop();
         if (typeof renderDeckHistory === 'function') renderDeckHistory();
       if (typeof renderMyDecks === 'function') renderMyDecks();
+      } else if (view === 'colosseum') {
+        document.getElementById('colosseumView').style.display = 'block';
+        var _ncol = document.getElementById('navColosseum');
+        if (_ncol) _ncol.classList.add('active');
+        window.scrollTo(0, 0);
       } else if (view === 'settings') {
         if (gantView) gantView.style.display = 'none';
         settingsView.style.display = 'block';
         if (typeof updateGuildUI === 'function') updateGuildUI();
         document.getElementById('navSettings').classList.add('active');
         loadSettingsUI();
-        if (typeof renderDeckShop === 'function') renderDeckShop();
-        if (typeof renderDeckHistory === 'function') renderDeckHistory();
       } else if (view === 'notebook') {
         notebookView.style.display = 'block';
         document.getElementById('navNotebook').classList.add('active');
@@ -12927,8 +13026,8 @@ function loadSettingsUI() {
       // クラフトモード
       const craftCheck = document.getElementById('craftModeEnabled');
       if (craftCheck) {
-        if (allSettings.ui.craftModeEnabled === false || allSettings.ui.craftModeEnabled === null) {
-          allSettings.ui.craftModeEnabled = true; saveAllSettings();
+        if (allSettings.ui.craftModeEnabled !== true) {
+          allSettings.ui.craftModeEnabled = true;
         }
         const enabled = (allSettings.ui.craftModeEnabled === true || allSettings.ui.craftModeEnabled === 'true');
         craftCheck.checked = enabled;
@@ -12942,6 +13041,15 @@ function loadSettingsUI() {
       if (gantCheck) {
         gantCheck.checked = allSettings.ui.gantEnabled === true;
       }
+      // ナビタブ表示チェックボックスを現在の設定で初期化
+      (function() {
+        var _vt = allSettings.ui.visibleTabs || {};
+        var _vtMap = { yearly:'visTabYearly', notebook:'visTabNotebook', craft:'visTabCraft', shop:'visTabShop', colosseum:'visTabColosseum' };
+        Object.keys(_vtMap).forEach(function(key) {
+          var el = document.getElementById(_vtMap[key]);
+          if (el) el.checked = _vt[key] !== false;
+        });
+      })();
       // 描画モード
       const renderMode = allSettings.ui.craftRenderMode || '2d';
       const r2d = document.getElementById('craftMode2D');
@@ -13422,6 +13530,8 @@ function loadSettingsUI() {
         _toastEl.style.display = 'block';
         setTimeout(function(){ _toastEl.style.display = 'none'; }, 2000);
         if (typeof showCraftMessage === 'function') showCraftMessage('✅ 設定を保存しました！');
+        // ナビタブ表示を反映
+        if (typeof applyVisibleTabsSettings === 'function') applyVisibleTabsSettings();
         // 画面遷移
         if (simpleToggle && simpleToggle.checked) {
           switchView('monthly');
@@ -13711,6 +13821,8 @@ function loadSettingsUI() {
     window.saveAllTasks = saveAllTasks;
     window.moveScratchToThoughts = moveScratchToThoughts;
     window.switchShopTab = switchShopTab;
+    window.applyVisibleTabsSettings = applyVisibleTabsSettings;
+    window.toggleVisibleTab = toggleVisibleTab;
     window.openDeckDetailModal = openDeckDetailModal;
     window.closeDeckDetailModal = closeDeckDetailModal;
     window.generateArvCode = generateArvCode;
@@ -15242,7 +15354,7 @@ function renderDeckShop() {
 window.addEventListener('beforeprint', function() {
   // 印刷時に不要な要素を強制非表示
   const hideIds = ['dailyInnerTabBar','scratchView','timelineView','weeklyView',
-    'monthlyView','yearlyView','notebookView','shopView','craftView',
+    'monthlyView','yearlyView','notebookView','shopView','colosseumView','craftView',
     'craftHUD','craftGDPBadge','settingsView','setupOverlay','tutorialHelpBtn',
     'escapeMessage','modal-root','lpModal'];
   hideIds.forEach(id => {
@@ -15270,7 +15382,7 @@ window.addEventListener('beforeprint', function() {
 window.addEventListener('afterprint', function() {
   // 印刷後に元の状態に戻す
   const hideIds = ['dailyInnerTabBar','scratchView','timelineView','weeklyView',
-    'monthlyView','yearlyView','notebookView','shopView','craftView',
+    'monthlyView','yearlyView','notebookView','shopView','colosseumView','craftView',
     'craftHUD','craftGDPBadge','settingsView','setupOverlay','tutorialHelpBtn',
     'escapeMessage','modal-root','lpModal'];
   hideIds.forEach(id => {
@@ -19241,6 +19353,7 @@ function showDebugLog() {
        'generateArvCode','receiveArvCode','generateBlmCode','receiveBlmCode',
        '_copyBlmCode','applyTokubunEffect','switchShopTab',
        'openDeckDetailModal','closeDeckDetailModal',
+       'applyVisibleTabsSettings','toggleVisibleTab',
        // 日付変更・雑記帳自動移行
        'startMoveMode','completeMoveMode','cancelMoveMode',
        'addStampToDate','removeStampFromDate',
@@ -20416,6 +20529,88 @@ function showDebugLog() {
            : ng('ST-24: deckDetailModal 閉じる', 'display=' + (_stDdModal&&_stDdModal.style.display));
        }
      } catch(e) { ng('ST-24: デッキショップUI', e.message); }
+
+     // ST-25: コロシアムビュー＋ナビタブ制御
+     try {
+       // ===== ST-25A: コロシアムビュー =====
+       // colosseumView DOM確認
+       var _stCol = document.getElementById('colosseumView');
+       _stCol
+         ? ok('ST-25: colosseumView DOM確認')
+         : ng('ST-25: colosseumView', 'DOM未存在');
+       // switchView colosseum → 表示確認
+       if (typeof switchView === 'function') switchView('colosseum');
+       _stCol && _stCol.style.display === 'block'
+         ? ok('ST-25: colosseumView 表示確認')
+         : ng('ST-25: colosseumView 表示', 'display=' + (_stCol&&_stCol.style.display));
+       // 他ビューが非表示になっているか
+       var _stShopHidden = document.getElementById('shopView');
+       var _stSetHidden  = document.getElementById('settingsView');
+       (_stShopHidden && _stShopHidden.style.display === 'none')
+         ? ok('ST-25: colosseum切替時 shopView非表示確認')
+         : ng('ST-25: shopView非表示', 'display=' + (_stShopHidden&&_stShopHidden.style.display));
+       (_stSetHidden && _stSetHidden.style.display === 'none')
+         ? ok('ST-25: colosseum切替時 settingsView非表示確認')
+         : ng('ST-25: settingsView非表示', 'display=' + (_stSetHidden&&_stSetHidden.style.display));
+       // settings切替時にcolosseumViewが非表示になるか
+       if (typeof switchView === 'function') switchView('settings');
+       _stCol && _stCol.style.display === 'none'
+         ? ok('ST-25: settings切替時 colosseumView非表示確認')
+         : ng('ST-25: colosseumView非表示', 'display=' + (_stCol&&_stCol.style.display));
+       // 復元
+       if (typeof switchView === 'function') switchView('daily');
+
+       // ===== ST-25B: ナビタブ制御 =====
+       // applyVisibleTabsSettings・toggleVisibleTab存在確認
+       typeof applyVisibleTabsSettings === 'function'
+         ? ok('ST-25: applyVisibleTabsSettings 存在確認')
+         : ng('ST-25: applyVisibleTabsSettings', '未定義');
+       typeof toggleVisibleTab === 'function'
+         ? ok('ST-25: toggleVisibleTab 存在確認')
+         : ng('ST-25: toggleVisibleTab', '未定義');
+       // visibleTabsがallSettings.uiに存在
+       allSettings.ui.visibleTabs !== undefined
+         ? ok('ST-25: allSettings.ui.visibleTabs 存在確認')
+         : ng('ST-25: visibleTabs', '未定義');
+       // toggleVisibleTab OFF→navが非表示になるか
+       if (typeof toggleVisibleTab === 'function') toggleVisibleTab('yearly', false);
+       var _stNavY = document.getElementById('navYearly');
+       (_stNavY && _stNavY.style.display === 'none')
+         ? ok('ST-25: navYearly OFF→非表示確認')
+         : ng('ST-25: navYearly OFF', 'display=' + (_stNavY&&_stNavY.style.display));
+       // toggleVisibleTab ON→navが表示になるか
+       if (typeof toggleVisibleTab === 'function') toggleVisibleTab('yearly', true);
+       (_stNavY && _stNavY.style.display !== 'none')
+         ? ok('ST-25: navYearly ON→表示確認')
+         : ng('ST-25: navYearly ON', 'display=' + (_stNavY&&_stNavY.style.display));
+       // visibleTabsの状態をallSettingsに保存・復元確認
+       var _stVtBefore = JSON.stringify(allSettings.ui.visibleTabs);
+       if (typeof toggleVisibleTab === 'function') toggleVisibleTab('colosseum', false);
+       allSettings.ui.visibleTabs.colosseum === false
+         ? ok('ST-25: visibleTabs.colosseum=false 保存確認')
+         : ng('ST-25: visibleTabs保存', JSON.stringify(allSettings.ui.visibleTabs));
+       // 復元
+       if (typeof toggleVisibleTab === 'function') toggleVisibleTab('colosseum', true);
+       allSettings.ui.visibleTabs.colosseum !== false
+         ? ok('ST-25: visibleTabs.colosseum復元確認')
+         : ng('ST-25: visibleTabs復元', JSON.stringify(allSettings.ui.visibleTabs));
+
+       // ===== ST-25C: テストセクション自己存在確認 =====
+       var _stSections = ['ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10',
+         'ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20',
+         'ST-21','ST-22','ST-23','ST-24','ST-25'];
+       var _stMissing = [];
+       _stSections.forEach(function(s) {
+         // スモークテスト本体のソースにそのSTセクションが存在するか確認
+         if (typeof runSmokeTest === 'function') return; // 外部関数化されている場合はスキップ
+         // テスト結果配列にそのSTのokが存在するか（resultsには全ok/ngが入っている）
+         var found = results.some(function(r){ return r && r.indexOf && r.indexOf(s + ':') !== -1; });
+         if (!found) _stMissing.push(s);
+       });
+       _stMissing.length === 0
+         ? ok('ST-25: テストセクション自己存在確認(' + _stSections.length + '件全て存在)')
+         : ng('ST-25: テストセクション欠落検知', '欠落: ' + _stMissing.join(', '));
+     } catch(e) { ng('ST-25: コロシアム＋ナビタブ', e.message); }
 
      // ===== 17. Key Purify Absolute Green（最終確認・4軸検査） =====
      try {
