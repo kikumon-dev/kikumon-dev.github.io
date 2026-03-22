@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.38';
+    const APP_VERSION = 'v0.39.39';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -4161,6 +4161,19 @@
             </label>
           </div>
         </div>
+        <div style="margin-top:16px;">
+          <label style="font-size:0.8em;color:#666;display:block;margin-bottom:8px;font-weight:600;">⏰ 週間ビューの表示時間帯</label>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <select id="weeklyStartHSelect" onchange="saveWeeklyTimeRange()" style="padding:6px 10px;border:1px solid #ddd;border-radius:8px;font-size:0.88em;">
+              <option value="0">0時</option><option value="1">1時</option><option value="2">2時</option><option value="3">3時</option><option value="4">4時</option><option value="5">5時</option><option value="6">6時</option><option value="7">7時</option><option value="8">8時</option><option value="9">9時</option><option value="10">10時</option><option value="11">11時</option><option value="12">12時</option>
+            </select>
+            <span style="color:#888;font-size:0.9em;">〜</span>
+            <select id="weeklyEndHSelect" onchange="saveWeeklyTimeRange()" style="padding:6px 10px;border:1px solid #ddd;border-radius:8px;font-size:0.88em;">
+              <option value="13">13時</option><option value="14">14時</option><option value="15">15時</option><option value="16">16時</option><option value="17">17時</option><option value="18">18時</option><option value="19">19時</option><option value="20">20時</option><option value="21">21時</option><option value="22">22時</option><option value="23">23時</option><option value="24">24時</option>
+            </select>
+          </div>
+          <p style="margin:6px 0 0 0;font-size:0.8em;color:#888;">この時間帯だけ表示されます。寝てる時間を非表示にできます。</p>
+        </div>
       </div>
       <!-- 月間表示モード -->
       <div style="margin-top: 24px; border-top: 1px solid #efefef; padding-top: 18px;">
@@ -4684,9 +4697,11 @@
         weeklyRowH:       80,
         weeklyCellScale:  100,
         weeklyTimeBar:    'show',
-        tlScrollMode:     'auto',
+        tlScrollMode:     'now',
         tlRowHeights:     null,
-        wgScrollMode:     'auto',
+        wgScrollMode:     'now',
+        weeklyStartH:     6,
+        weeklyEndH:       24,
         useColors:        true,
         craftModeEnabled: false,
         craftRenderMode:  '3d',
@@ -4801,7 +4816,7 @@
         'simpleMode', 'craftModeEnabled', 'craftRenderMode',
         'dailyViewMode', 'initialView', 'monthlyMode',
         'weeklyDays', 'weeklyRowH', 'weeklyCellScale', 'weeklyTimeBar',
-        'tlScrollMode', 'tlRowHeights', 'wgScrollMode', 'useColors',
+        'tlScrollMode', 'tlRowHeights', 'wgScrollMode', 'weeklyStartH', 'weeklyEndH', 'useColors',
         'calendars', 'mainCalendarId', 'autoMainCalendar',
         'okaeriDate', 'lastHotokuIdx',
         'starterDeckReceived',
@@ -4895,7 +4910,7 @@
         'simpleMode', 'craftModeEnabled', 'craftRenderMode',
         'dailyViewMode', 'initialView', 'monthlyMode',
         'weeklyDays', 'weeklyRowH', 'weeklyCellScale', 'weeklyTimeBar',
-        'tlScrollMode', 'tlRowHeights', 'wgScrollMode', 'useColors',
+        'tlScrollMode', 'tlRowHeights', 'wgScrollMode', 'weeklyStartH', 'weeklyEndH', 'useColors',
         // calendar系（_calIdMigMapは削除禁止→除外）
         'calendars', 'mainCalendarId', 'autoMainCalendar',
         // craft系
@@ -6161,7 +6176,9 @@ function myDeckApply(idx) {
       const nowHour  = now.getHours();
       const nowMin   = now.getMinutes();
       const ROW_H    = parseInt(allSettings.ui.weeklyRowH || '80');
-      const TOTAL_H  = ROW_H * 24;
+      const _wgStartH = (allSettings.ui.weeklyStartH !== undefined) ? parseInt(allSettings.ui.weeklyStartH) : 6;
+      const _wgEndH   = (allSettings.ui.weeklyEndH   !== undefined) ? parseInt(allSettings.ui.weeklyEndH)   : 24;
+      const TOTAL_H  = ROW_H * (_wgEndH - _wgStartH);
       // CSS変数でROW_Hを動的に設定
       document.documentElement.style.setProperty('--wg-row-h', ROW_H + 'px');
       // ── owner（家族メンバー）カラーパレット ──────────────────
@@ -6225,6 +6242,10 @@ function myDeckApply(idx) {
       const _endH   = document.getElementById('gantDayEndH');
       if (_startH) _startH.value = (allSettings.ui.gantDayStartH !== undefined ? allSettings.ui.gantDayStartH : 6);
       if (_endH)   _endH.value   = (allSettings.ui.gantDayEndH   !== undefined ? allSettings.ui.gantDayEndH   : 24);
+      const _wgStartHSel = document.getElementById('weeklyStartHSelect');
+      const _wgEndHSel   = document.getElementById('weeklyEndHSelect');
+      if (_wgStartHSel) _wgStartHSel.value = (allSettings.ui.weeklyStartH !== undefined ? allSettings.ui.weeklyStartH : 6);
+      if (_wgEndHSel)   _wgEndHSel.value   = (allSettings.ui.weeklyEndH   !== undefined ? allSettings.ui.weeklyEndH   : 24);
       const _rowHSlider = document.getElementById('weeklyRowHSlider');
       if (_rowHSlider) _rowHSlider.value = allSettings.ui.weeklyRowH || '80';
       var _rowHSliderSp = document.getElementById('weeklyRowHSliderSp');
@@ -6276,10 +6297,11 @@ function myDeckApply(idx) {
       timeInner.className = 'wg-time-inner';
       timeInner.style.height = TOTAL_H + 'px'; // wg-day-colと同じ高さ
       timeCol.appendChild(timeInner);
-      for (let h = 0; h < 24; h++) {
+      for (let h = _wgStartH; h < _wgEndH; h++) {
         const lbl = document.createElement('div');
         lbl.className = 'wg-time-label';
-        lbl.style.top = (h * ROW_H) + 'px';  // wg-cell-bgと完全同一の座標
+        lbl.style.top = ((h - _wgStartH) * ROW_H) + 'px';
+        lbl.id = `weekly-time-${h}`;
         lbl.textContent = String(h).padStart(2,'0') + ':00';
         if (h === nowHour)  lbl.classList.add('wg-current-hour');
         if (h === 12) lbl.classList.add('wg-zone-noon');
@@ -6299,13 +6321,14 @@ function myDeckApply(idx) {
         col.dataset.col = String(colIdx + 1);
         col.style.cssText = `flex:0 0 ${CELL_W}px;width:${CELL_W}px;min-width:${CELL_W}px;height:${TOTAL_H}px;`;
         // ── 背景セル（各1時間、absoluteで積む） ──────
-        for (let h = 0; h < 24; h++) {
+        for (let h = _wgStartH; h < _wgEndH; h++) {
           const isCur = h === nowHour;
           const bg = document.createElement('div');
           bg.className = 'wg-cell-bg';
+          bg.dataset.hour = h;
           bg.style.cssText =
             'position:absolute;left:0;right:0;' +
-            'top:' + (h * ROW_H) + 'px;' +
+            'top:' + ((h - _wgStartH) * ROW_H) + 'px;' +
             'height:' + ROW_H + 'px;';
           bg.dataset.date = dateStr;
           bg.dataset.hour = String(h);
@@ -6355,7 +6378,7 @@ function myDeckApply(idx) {
         // 重なり解消: 列割り当て（タイムラインと同ロジック）
         const wgItems = tasksOnDay.map(task => {
           const [sh, sm] = task.time.split(':').map(Number);
-          const topPx = sh * ROW_H + Math.round(sm / 60 * ROW_H);
+          const topPx = (sh - _wgStartH) * ROW_H + Math.round(sm / 60 * ROW_H);
           let blockH = 36;
           if (task.endTime) {
             const [eh, em] = task.endTime.split(':').map(Number);
@@ -6480,7 +6503,7 @@ function myDeckApply(idx) {
         if (isToday) {
           const nowLine = document.createElement('div');
           nowLine.className = 'wg-now-line';
-          nowLine.style.top = (nowHour * ROW_H + Math.round(nowMin / 60 * ROW_H)) + 'px';
+          nowLine.style.top = ((nowHour - _wgStartH) * ROW_H + Math.round(nowMin / 60 * ROW_H)) + 'px';
           col.appendChild(nowLine);
         }
         body.appendChild(col);
@@ -6497,7 +6520,7 @@ function myDeckApply(idx) {
         } else {
           var now2 = new Date();
           var h2 = now2.getHours(), m2 = now2.getMinutes();
-          var scrollTop = Math.max(0, h2 * ROW_H + Math.round(m2 / 60 * ROW_H) - ROW_H);
+          var scrollTop = Math.max(0, (h2 - _wgStartH) * ROW_H + Math.round(m2 / 60 * ROW_H) - ROW_H);
           scrollArea.scrollTop = scrollTop;
         }
         // スクロール位置を随時保存
@@ -8352,6 +8375,17 @@ function toggleGantEnabled(checked) {
       allSettings.ui.gantDayEndH   = ev;
       saveAllSettings();
       renderGantChart();
+    }
+    function saveWeeklyTimeRange() {
+      const s = document.getElementById('weeklyStartHSelect');
+      const e = document.getElementById('weeklyEndHSelect');
+      if (!s || !e) return;
+      const sv = parseInt(s.value), ev = parseInt(e.value);
+      if (ev <= sv) { showToast('終了時刻は開始より後にしてください', {type:'warn'}); return; }
+      allSettings.ui.weeklyStartH = sv;
+      allSettings.ui.weeklyEndH   = ev;
+      saveAllSettings();
+      renderWeeklyView();
     }
     function toggleGantAutoScrollNow(checked) {
       allSettings.ui.gantDisableAutoScroll = checked;
@@ -14465,6 +14499,7 @@ function loadSettingsUI() {
     window.saveBlueprintEditor = saveBlueprintEditor;
     window.saveCreateTask = saveCreateTask;
     window.saveGantDayRange = saveGantDayRange;
+    window.saveWeeklyTimeRange = saveWeeklyTimeRange;
     window.saveGanttEditor = saveGanttEditor;
     window.saveMonthlyTask = saveMonthlyTask;
     window.saveProfileQuick = saveProfileQuick;
