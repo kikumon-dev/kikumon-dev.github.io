@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.36';
+    const APP_VERSION = 'v0.39.38';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -4539,6 +4539,8 @@
     // 週間タスク編集用
     let editingTask = null; // { dateStr, index }
     let creatingTask = null; // { dateStr, hour }
+    // 管理者モード（チュートリアルblockより前に定義必須）
+    var _adminModeActive = false;
     // 月間ビュー用
     let currentMonthDate = new Date(); // 表示中の月
     let movingTaskId = null; // スマホ用：移動中のタスクID
@@ -19967,7 +19969,6 @@ function toggleAbout(id) {
 var _adminTapCount = 0;
 var _adminTapTimer = null;
 var ADMIN_PW = 'yorokobi';
-var _adminModeActive = false; // グローバル変数で管理（LocalStorage非依存）
 function adminBadgeTap() {
   _adminTapCount++;
   clearTimeout(_adminTapTimer);
