@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.14';
+    const APP_VERSION = 'v0.39.15';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -21285,7 +21285,7 @@ function showDebugLog() {
        // テストセクション自己存在確認：ソースコード上の存在をチェック
        var _stSections = ['ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10',
          'ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20',
-         'ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29'];
+         'ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -21669,6 +21669,54 @@ function showDebugLog() {
          _st29El.innerHTML = _st29Before;
        }
      } catch(e) { ng('ST-29: コロシアム描画', e.message); }
+
+     // ===== ST-30: iOS日付パース・NaNガード =====
+     try {
+       // スラッシュ形式は必ず正常パース
+       var _st30SlashMs = new Date('2026/03/22').getTime();
+       !isNaN(_st30SlashMs)
+         ? ok('ST-30: スラッシュ形式パース正常')
+         : ng('ST-30: スラッシュ形式パース', 'NaN');
+
+       // pool空配列 → null
+       var _st30OrigPool = window.getColosseumPool;
+       window.getColosseumPool = function(){ return []; };
+       var _st30R0 = getTodayColosseumDeck();
+       _st30R0 === null
+         ? ok('ST-30: pool空→null確認')
+         : ng('ST-30: pool空→null', String(_st30R0));
+
+       // EPOCH=undefined → pool[0]フォールバック
+       var _st30OrigEpoch = window.COLOSSEUM_EPOCH;
+       window.getColosseumPool = function(){ return [{id:'_st30_a'},{id:'_st30_b'}]; };
+       window.COLOSSEUM_EPOCH = undefined;
+       var _st30R1 = getTodayColosseumDeck();
+       (_st30R1 && _st30R1.id === '_st30_a')
+         ? ok('ST-30: EPOCH=undefined→pool[0]フォールバック確認')
+         : ng('ST-30: EPOCH=undefined→pool[0]', JSON.stringify(_st30R1));
+
+       // 正常系: days=0 → idx=0
+       var _st30Today = new Date().toISOString().slice(0,10);
+       window.COLOSSEUM_EPOCH = _st30Today;
+       var _st30R2 = getTodayColosseumDeck();
+       (_st30R2 && _st30R2.id === '_st30_a')
+         ? ok('ST-30: days=0→idx=0確認')
+         : ng('ST-30: days=0→idx=0', JSON.stringify(_st30R2));
+
+       // 正常系: days=pool.length → idx=0 (ループ)
+       var _st30D = new Date();
+       _st30D.setDate(_st30D.getDate() - 2); // 2日前=days=2, pool.length=2 → idx=0
+       window.COLOSSEUM_EPOCH = _st30D.toISOString().slice(0,10);
+       var _st30R3 = getTodayColosseumDeck();
+       (_st30R3 && _st30R3.id === '_st30_a')
+         ? ok('ST-30: days=pool.length→idx=0ループ確認')
+         : ng('ST-30: days=pool.length→idx=0ループ', JSON.stringify(_st30R3));
+
+       // 復元
+       window.COLOSSEUM_EPOCH = _st30OrigEpoch;
+       window.getColosseumPool = _st30OrigPool;
+       ok('ST-30: クリーンアップ完了');
+     } catch(e) { ng('ST-30: iOS日付パース・NaNガード', e.message); }
 
      // ===== 17. Key Purify Absolute Green（最終確認・4軸検査） =====
      try {
