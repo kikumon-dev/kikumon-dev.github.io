@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.38.55';
+    const APP_VERSION = 'v0.38.64';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3800,9 +3800,55 @@
 </div>
 <div id="shopView" class="settings-view" style="display:none;background:#f5f5f5;position:relative;z-index:1;">
   <div class="settings-container">
-    <h2 style="margin:0 0 24px 0;color:#262626;font-size:1.4em;font-weight:700;">🛍️ デッキショップ</h2>
-    <p style="margin:0 0 20px 0;font-size:0.88em;color:#8e8e8e;">公式デッキを受け取ろう。受け取ったタスクは今日の日次に追加されます。</p>
-    <div id="deckShopList" style="display:flex;flex-direction:column;gap:14px;"></div>
+    <!-- タブ -->
+    <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid #e0e0e0;">
+      <button id="shopTabDeck" onclick="switchShopTab('deck')"
+        style="flex:1;padding:10px 0;background:none;border:none;border-bottom:2px solid #333;margin-bottom:-2px;font-size:0.88em;font-weight:700;color:#262626;cursor:pointer;">🛍️ デッキショップ</button>
+      <button id="shopTabPort" onclick="switchShopTab('port')"
+        style="flex:1;padding:10px 0;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;font-size:0.88em;font-weight:700;color:#999;cursor:pointer;">🚢 貿易港</button>
+    </div>
+    <!-- デッキショップ -->
+    <div id="shopPaneDeck" style="display:block;">
+      <p style="margin:0 0 20px 0;font-size:0.88em;color:#8e8e8e;">公式デッキを受け取ろう。受け取ったタスクは今日の日次に追加されます。</p>
+      <div id="deckShopList" style="display:flex;flex-direction:column;gap:14px;"></div>
+    </div>
+    <!-- 貿易港 -->
+    <div id="shopPanePort" style="display:none;">
+      <div style="background:linear-gradient(135deg,#0d1b2a,#1a2a3a);border:2px solid #4facfe;border-radius:14px;padding:20px;box-shadow:0 0 20px rgba(79,172,254,0.15);">
+        <h3 style="margin:0 0 6px 0;color:#4facfe;font-size:1em;font-weight:700;display:flex;align-items:center;gap:8px;">🚢 貿易港</h3>
+        <p style="font-size:0.78em;color:#aaa;margin:0 0 14px 0;">DCK1: / ARV1: / BLM1: で始まるコードを貼り付けるか、QRコードを読み取ろう。<br><span style="color:#ffd700;font-weight:600;">あ、王国が動いた！</span></p>
+        <button onclick="openDeckQRScanner()" style="width:100%;padding:12px;background:linear-gradient(135deg,#064e3b,#065f46);border:2px solid #34d399;border-radius:10px;color:#34d399;font-size:0.92em;font-weight:700;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;">
+          <span style="font-size:1.2em;">📷</span> QRコードを読み取る
+        </button>
+        <div style="margin-bottom:10px;">
+          <button onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'" style="width:100%;text-align:left;background:rgba(255,200,220,0.08);border:1px solid rgba(255,200,220,0.2);border-radius:8px;padding:8px 12px;color:#ffc8dc;font-size:0.78em;cursor:pointer;">
+            📱 iPhoneをお使いの方へ
+          </button>
+          <div style="display:none;background:rgba(255,200,220,0.05);border:1px solid rgba(255,200,220,0.15);border-top:none;border-radius:0 0 8px 8px;padding:12px;font-size:0.78em;color:#ccc;line-height:1.9;">
+            iPhoneカメラでQRを読む方がスムーズです。<br>
+            <span style="color:#ffd700;">① </span>iPhoneの標準カメラアプリを開く<br>
+            <span style="color:#ffd700;">② </span>QRコードにカメラを向ける<br>
+            <span style="color:#ffd700;">③ </span>画面上部に通知が出たらタップ<br>
+            <span style="color:#ffd700;">④ </span>アプリが開いてデッキを受け取れます<br>
+            <span style="color:#aaa;font-size:0.9em;">※うまくいかない場合は下のコード入力欄をお使いください</span>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <div style="flex:1;height:1px;background:rgba(79,172,254,0.2);"></div>
+          <div style="color:#555;font-size:0.72em;">またはコードを直接入力</div>
+          <div style="flex:1;height:1px;background:rgba(79,172,254,0.2);"></div>
+        </div>
+        <textarea id="deckImportInput" rows="3" placeholder="DCK1: / ARV1: / BLM1: で始まるコードをここに貼り付け..."
+          style="width:100%;padding:10px;border:1.5px solid #4facfe;border-radius:8px;background:#0a1520;color:#fff;font-size:0.82em;box-sizing:border-box;resize:none;margin-bottom:10px;font-family:monospace;"></textarea>
+        <button onclick="importDeckFromSettings()" style="width:100%;padding:11px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:10px;color:#003355;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(79,172,254,0.3);margin-bottom:8px;">📦 王国に輸入する</button>
+        <button id="guildDeckBuilderBtn" onclick="openDeckBuilder()" style="display:none;width:100%;padding:11px;background:linear-gradient(135deg,#a855f7,#6366f1);border:none;border-radius:10px;color:#fff;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(168,85,247,0.3);">⚔️ デッキを仕込む（貿易商人）</button>
+        <div id="deckHistorySection" style="margin-top:16px;"></div>
+        <div id="myDeckSection" style="margin-top:16px;border-top:1px solid #1a2a3a;padding-top:14px;">
+          <div style="font-size:0.82em;font-weight:700;color:#34d399;margin-bottom:8px;">💾 マイデッキ（手元に保存したデッキ）</div>
+          <div id="myDeckList" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 <div id="settingsView"  class="settings-view" style="display: none; background:#f5f5f5; position:relative; z-index:1;">
@@ -3829,49 +3875,6 @@
           <button onclick="generateDeckEntry()" style="width:100%;padding:10px;background:linear-gradient(135deg,#ffd700,#ff8800);border:none;border-radius:8px;color:#7a4800;font-size:0.88em;font-weight:700;cursor:pointer;margin-bottom:8px;">⚙️ エントリを生成してコピー</button>
           <div id="deckEntryPreview" style="display:none;background:#0d1b0d;border:1px solid #4caf50;border-radius:8px;padding:10px;font-family:monospace;font-size:0.72em;color:#4caf50;word-break:break-all;white-space:pre-wrap;margin-bottom:8px;"></div>
           <div id="deckEntryMsg" style="font-size:0.75em;text-align:center;color:#aaa;"></div>
-        </div>
-      </div>
-      <!-- 🚢 貿易港（β）セクション -->
-      <div style="margin-bottom:24px;background:linear-gradient(135deg,#0d1b2a,#1a2a3a);border:2px solid #4facfe;border-radius:14px;padding:20px;box-shadow:0 0 20px rgba(79,172,254,0.15);">
-        <h3 style="margin:0 0 6px 0;color:#4facfe;font-size:1em;font-weight:700;display:flex;align-items:center;gap:8px;">🚢 貿易港（β）</h3>
-        <p style="font-size:0.78em;color:#aaa;margin:0 0 14px 0;">DCK1: で始まるデッキコードを貼り付けるか、QRコードを読み取ろう。<br><span style="color:#ffd700;font-weight:600;">あ、王国が動いた！</span></p>
-        <!-- QRスキャンボタン -->
-        <div style="font-size:0.78em;color:#aaa;margin-bottom:8px;line-height:1.7;">
-          このボタンでQRを読み取れます。読み取れない場合はAndroidカメラで直接読み取ってください。<br>
-          <span style="color:#ffc8dc;">iPhoneをお使いの方は下をご確認ください。</span>
-        </div>
-        <button onclick="openDeckQRScanner()" style="width:100%;padding:12px;background:linear-gradient(135deg,#064e3b,#065f46);border:2px solid #34d399;border-radius:10px;color:#34d399;font-size:0.92em;font-weight:700;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;">
-          <span style="font-size:1.2em;">📷</span> QRコードを読み取る
-        </button>
-        <!-- iPhoneユーザー向け案内（折りたたみ） -->
-        <div style="margin-bottom:10px;">
-          <button onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'" style="width:100%;text-align:left;background:rgba(255,200,220,0.08);border:1px solid rgba(255,200,220,0.2);border-radius:8px;padding:8px 12px;color:#ffc8dc;font-size:0.78em;cursor:pointer;">
-            📱 iPhoneをお使いの方へ
-          </button>
-          <div style="display:none;background:rgba(255,200,220,0.05);border:1px solid rgba(255,200,220,0.15);border-top:none;border-radius:0 0 8px 8px;padding:12px;font-size:0.78em;color:#ccc;line-height:1.9;">
-            iPhoneカメラでQRを読む方がスムーズです。<br>
-            <span style="color:#ffd700;">① </span>iPhoneの標準カメラアプリを開く<br>
-            <span style="color:#ffd700;">② </span>QRコードにカメラを向ける<br>
-            <span style="color:#ffd700;">③ </span>画面上部に通知が出たらタップ<br>
-            <span style="color:#ffd700;">④ </span>アプリが開いてデッキを受け取れます<br>
-            <span style="color:#aaa;font-size:0.9em;">※うまくいかない場合は下のコード入力欄をお使いください</span>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-          <div style="flex:1;height:1px;background:rgba(79,172,254,0.2);"></div>
-          <div style="color:#555;font-size:0.72em;">またはコードを直接入力</div>
-          <div style="flex:1;height:1px;background:rgba(79,172,254,0.2);"></div>
-        </div>
-        <textarea id="deckImportInput" rows="3" placeholder="DCK1: で始まるコードをここに貼り付け..."
-          style="width:100%;padding:10px;border:1.5px solid #4facfe;border-radius:8px;background:#0a1520;color:#fff;font-size:0.82em;box-sizing:border-box;resize:none;margin-bottom:10px;font-family:monospace;"></textarea>
-        <button onclick="importDeckFromSettings()" style="width:100%;padding:11px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:10px;color:#003355;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(79,172,254,0.3);margin-bottom:8px;">📦 王国に輸入する</button>
-        <button id="guildDeckBuilderBtn" onclick="openDeckBuilder()" style="display:none;width:100%;padding:11px;background:linear-gradient(135deg,#a855f7,#6366f1);border:none;border-radius:10px;color:#fff;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(168,85,247,0.3);">⚔️ デッキを仕込む（貿易商人）</button>
-        <!-- 王国GDP -->
-        <div id="deckHistorySection" style="margin-top:16px;"></div>
-        <!-- マイデッキ -->
-        <div id="myDeckSection" style="margin-top:16px;border-top:1px solid #1a2a3a;padding-top:14px;">
-          <div style="font-size:0.82em;font-weight:700;color:#34d399;margin-bottom:8px;">💾 マイデッキ（手元に保存したデッキ）</div>
-          <div id="myDeckList" style="display:flex;flex-direction:column;gap:8px;"></div>
         </div>
       </div>
       <!-- プロフィールセクション -->
@@ -5384,6 +5387,84 @@
       saveAllTasks();
       // 🔥 業判定はソース呼び出し元で行う（ここでは行わない）
     }
+    // ===== ARV1: 着荷コード生成・受取 =====
+    function generateArvCode(deck) {
+      var payload = JSON.stringify({
+        kind: 'arv',
+        deckId: deck.deckId || deck.id || '',
+        deckTitle: deck.title || '',
+        reportedBy: (allSettings.profile.name || '').trim() || '旅人',
+        receivedAt: (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10)
+      });
+      return 'ARV1:' + btoa(unescape(encodeURIComponent(payload)));
+    }
+
+    function _copyBlmCode(deckId) {
+      var code = typeof generateBlmCode === 'function' ? generateBlmCode(deckId) : null;
+      if (!code) return;
+      navigator.clipboard.writeText(code).then(function(){
+        showToast('🌸 BLM1:開花コードをコピーしました！Discordに貼ってください', {type:'success', duration:5000});
+      }).catch(function(){
+        showToast('🌸 BLM1:開花コード生成完了（コピーは手動で）', {type:'info', duration:4000});
+      });
+    }
+
+    function receiveArvCode(code) {
+      var raw;
+      try { raw = decodeURIComponent(escape(atob(code.slice(5)))); }
+      catch(e) { showToast('ARV1:コードが壊れています', {type:'warn'}); return; }
+      var data;
+      try { data = JSON.parse(raw); }
+      catch(e) { showToast('ARV1:コードの形式が正しくありません', {type:'warn'}); return; }
+      if (data.kind !== 'arv') { showToast('ARV1:コードの形式が正しくありません', {type:'warn'}); return; }
+      // deckHistoryのstats.receivedをインクリメント
+      var entry = allTasks.find(function(t){ return t.kind === 'deckHistory' && t.deckId === data.deckId; });
+      if (!entry) {
+        showToast('⚓ ' + (data.deckTitle||'デッキ') + 'の履歴が見つかりません', {type:'warn'}); return;
+      }
+      if (!entry.stats) entry.stats = { received: 0, completed: 0 };
+      entry.stats.received = (entry.stats.received || 0) + 1;
+      saveAllTasks();
+      if (typeof addToku === 'function') addToku(1, 'ARV1:着荷（' + (data.deckTitle||'デッキ') + ' by ' + (data.reportedBy||'旅人') + '）');
+      if (typeof renderDeckHistory === 'function') renderDeckHistory();
+      showToast('⚓ ' + (data.reportedBy||'旅人') + 'さんに届きました！GDP+1', {type:'success', duration:4000});
+    }
+
+    // ===== BLM1: 開花コード生成・受取 =====
+    function generateBlmCode(deckId) {
+      var entry = allTasks.find(function(t){ return t.kind === 'deckHistory' && t.deckId === deckId; });
+      if (!entry) { showToast('履歴が見つかりません', {type:'warn'}); return null; }
+      var completed = entry.stats ? (entry.stats.completed || 0) : 0;
+      var payload = JSON.stringify({
+        kind: 'blm',
+        deckId: deckId,
+        deckTitle: entry.title || '',
+        reportedBy: (allSettings.profile.name || '').trim() || '旅人',
+        completedCount: completed,
+        reportedAt: (typeof getLocalDateStr === 'function') ? getLocalDateStr(new Date()) : new Date().toISOString().slice(0,10)
+      });
+      return 'BLM1:' + btoa(unescape(encodeURIComponent(payload)));
+    }
+
+    function receiveBlmCode(code) {
+      var raw;
+      try { raw = decodeURIComponent(escape(atob(code.slice(5)))); }
+      catch(e) { showToast('BLM1:コードが壊れています', {type:'warn'}); return; }
+      var data;
+      try { data = JSON.parse(raw); }
+      catch(e) { showToast('BLM1:コードの形式が正しくありません', {type:'warn'}); return; }
+      if (data.kind !== 'blm') { showToast('BLM1:コードの形式が正しくありません', {type:'warn'}); return; }
+      var entry = allTasks.find(function(t){ return t.kind === 'deckHistory' && t.deckId === data.deckId; });
+      if (!entry) { showToast('🌸 ' + (data.deckTitle||'デッキ') + 'の履歴が見つかりません', {type:'warn'}); return; }
+      if (!entry.stats) entry.stats = { received: 0, completed: 0 };
+      entry.stats.blmCompleted = (entry.stats.blmCompleted || 0) + (data.completedCount || 0);
+      saveAllTasks();
+      var bonus = data.completedCount || 0;
+      if (bonus > 0 && typeof addToku === 'function') addToku(bonus, 'BLM1:開花（' + (data.deckTitle||'デッキ') + ' by ' + (data.reportedBy||'旅人') + '）');
+      if (typeof renderDeckHistory === 'function') renderDeckHistory();
+      showToast('🌸 ' + (data.reportedBy||'旅人') + 'さんが' + bonus + '件完了！GDP+' + bonus, {type:'success', duration:4000});
+    }
+
     function incrementDeckHistoryStat(deckId) {
       if (!deckId) return;
       var entry = allTasks.find(function(t){ return t.kind === 'deckHistory' && t.deckId === deckId; });
@@ -11384,24 +11465,32 @@ function reviveBlueprint(id) {
     ['extendedvaluekey', 'selectedDailyDate', 'setItem'].forEach(k => localStorage.removeItem(k));
     // 外部書き込み検知（拡張機能等によるLocalStorage汚染チェック）
     const KNOWN_KEYS = new Set([
+      // コアデータ
       'allTasks', 'allSettings', 'deletedTaskIds',
-      'tokuPoints', 'gouPoints', 'escapeLog', 'deviceId',
-      'currentView', 'wgLastScrollTop', '_dbg_log', '_dbg_errors',
+      // 徳・業・ログ
+      'tokuPoints', 'gouPoints', 'tokuLog', 'escapeLog',
+      // UI状態
+      'currentView', 'wgLastScrollTop', 'tlLastScrollTop', 'selectedDailyDate',
+      'simpleMode', 'dataVersion',
+      // デバッグ
+      '_dbg_log', '_dbg_errors',
+      // デバイス
+      'deviceId',
+      // カレンダー
+      'calendars', 'mainCalendarId', 'autoMainCalendar', '_calIdMigMap',
+      // 雑記帳
+      '_lastScratchMoveDate',
+      // マイグレーション済みキー
       'mig_ids_to_uuid_v7', 'mig_show_in_daily_to_display_scope_v1',
       'mig_category_to_calendar_v170', 'mig_death_ghost_flags_v0_24_59',
-      'mig_gant_enabled_default_v0_32',
-      // 旧バージョン互換キー（削除済みだが残存する場合あり）
-      'tokuLog', 'taskCompletedTotal', 'taskCompletedStreak',
-      'migration_calendarId_v1', 'extendedvaluekey',
-      'notebooks', '_calIdMigMap',
-      'journals',
-      'calendars', 'mainCalendarId', 'autoMainCalendar',
-      'dailyScrollInit', 'weeklyScrollInit', 'nbLastPageId',
-      'simpleMode', 'dataVersion',
-      'mig_journals_to_alltasks_v1', 'mig_journal_ids_to_uuid_v7',
-      '_lastScratchMoveDate',
-      'selectedDailyDate', 'tlLastScrollTop',
+      'mig_gant_enabled_default_v0_32', 'mig_journals_to_alltasks_v1',
+      // 旧バージョン互換（旧ユーザーのデバイスに残存する場合あり・削除不可）
+      'journals', 'notebooks', 'nbLastPageId',
       'craftMode', 'gantEnabled',
+      'taskCompletedTotal', 'taskCompletedStreak',
+      'migration_calendarId_v1', 'extendedvaluekey',
+      'mig_journal_ids_to_uuid_v7',
+      'dailyScrollInit', 'weeklyScrollInit',
     ]);
     // 起動時スキャン
     (function() {
@@ -11533,6 +11622,7 @@ function reviveBlueprint(id) {
       } else if (view === 'shop') {
         document.getElementById('shopView').style.display = 'block';
         document.getElementById('navShop').classList.add('active');
+        if (typeof switchShopTab === 'function') switchShopTab('deck');
         if (typeof renderDeckShop === 'function') renderDeckShop();
         if (typeof renderDeckHistory === 'function') renderDeckHistory();
       if (typeof renderMyDecks === 'function') renderMyDecks();
@@ -13620,6 +13710,12 @@ function loadSettingsUI() {
     window.saveAllSettings = saveAllSettings;
     window.saveAllTasks = saveAllTasks;
     window.moveScratchToThoughts = moveScratchToThoughts;
+    window.switchShopTab = switchShopTab;
+    window.generateArvCode = generateArvCode;
+    window.receiveArvCode = receiveArvCode;
+    window.generateBlmCode = generateBlmCode;
+    window.receiveBlmCode = receiveBlmCode;
+    window._copyBlmCode = _copyBlmCode;
     window.saveBlueprintEditor = saveBlueprintEditor;
     window.saveCreateTask = saveCreateTask;
     window.saveGantDayRange = saveGantDayRange;
@@ -14648,6 +14744,27 @@ function loadSettingsUI() {
     }
     // 起動時にシンプルモード適用
     applySimpleMode();
+function switchShopTab(tab) {
+  var pDeck = document.getElementById('shopPaneDeck');
+  var pPort = document.getElementById('shopPanePort');
+  var tDeck = document.getElementById('shopTabDeck');
+  var tPort = document.getElementById('shopTabPort');
+  if (!pDeck || !pPort) return;
+  if (tab === 'deck') {
+    pDeck.style.display = 'block';
+    pPort.style.display = 'none';
+    if (tDeck) { tDeck.style.borderBottomColor='#333'; tDeck.style.color='#262626'; tDeck.style.fontWeight='700'; }
+    if (tPort) { tPort.style.borderBottomColor='transparent'; tPort.style.color='#999'; tPort.style.fontWeight='400'; }
+  } else {
+    pDeck.style.display = 'none';
+    pPort.style.display = 'block';
+    if (tDeck) { tDeck.style.borderBottomColor='transparent'; tDeck.style.color='#999'; tDeck.style.fontWeight='400'; }
+    if (tPort) { tPort.style.borderBottomColor='#4facfe'; tPort.style.color='#4facfe'; tPort.style.fontWeight='700'; }
+    if (typeof renderDeckHistory === 'function') renderDeckHistory();
+    if (typeof renderMyDecks === 'function') renderMyDecks();
+  }
+}
+
 function renderDeckHistory() {
   var el = document.getElementById('deckHistorySection');
   if (!el) return;
@@ -14665,6 +14782,11 @@ function renderDeckHistory() {
     html += '<div style="font-size:0.88em;font-weight:700;color:#fff;margin-bottom:2px;">' + statusIcon + ' ' + h.title + '</div>';
     html += '<div style="font-size:0.72em;color:#aaa;">by ' + h.createdBy + '｜' + h.receivedAt + '受け取り｜' + h.taskCount + '枚</div>';
     html += '<div style="font-size:0.78em;color:#ffd700;margin-top:4px;">完了：' + (h.stats ? h.stats.completed : 0) + '回</div>';
+    var _arvCount = h.stats ? (h.stats.received || 0) : 0;
+    var _blmCount = h.stats ? (h.stats.blmCompleted || 0) : 0;
+    if (_arvCount > 0) html += '<div style="font-size:0.72em;color:#4facfe;margin-top:2px;">⚓ 着荷：' + _arvCount + '件</div>';
+    if (_blmCount > 0) html += '<div style="font-size:0.72em;color:#f9a8d4;margin-top:2px;">🌸 開花：' + _blmCount + '件</div>';
+    html += '<button onclick="_copyBlmCode(\'' + h.deckId + '\')" style="margin-top:8px;padding:4px 12px;background:transparent;border:1px solid #f9a8d4;border-radius:6px;color:#f9a8d4;font-size:0.72em;cursor:pointer;">🌸 開花を報告する</button>';
     html += '</div>';
   });
   html += '<div style="background:linear-gradient(135deg,#1a2a0a,#2a3a1a);border:1.5px solid #4caf50;border-radius:10px;padding:12px;margin-top:4px;text-align:center;">';
@@ -15371,6 +15493,17 @@ function visitCraft() {
     if (typeof addDeckHistory === 'function') addDeckHistory(deck);
     if (typeof saveAllTasks === 'function') saveAllTasks();
     if (typeof renderAllSections === 'function') renderAllSections(today);
+    // ARV1:自動生成・クリップボードコピー
+    try {
+      var _arvCode = typeof generateArvCode === 'function' ? generateArvCode(deck) : null;
+      if (_arvCode) {
+        navigator.clipboard.writeText(_arvCode).then(function(){
+          showToast('⚓ ARV1:着荷コードをコピーしました！Discordに貼ってください', {type:'success', duration:5000});
+        }).catch(function(){
+          showToast('⚓ ARV1:着荷コード生成完了（コピーは手動で）', {type:'info', duration:4000});
+        });
+      }
+    } catch(e) {}
     closeCraftVisitModal();
     var _toastEl = document.getElementById('settingsSaveToast');
     if (!_toastEl) {
@@ -15730,7 +15863,7 @@ function updateCraftHUD() {
       tokubunEl.textContent = tb;
       tokubunEl.style.color = tb >= 0 ? '#f8bbd0' : '#ff5252';
     }
-    applyTokubunEffect();
+    if (typeof applyTokubunEffect === 'function') applyTokubunEffect();
   }
 }
 function getToku() {
@@ -15766,6 +15899,31 @@ function addToku(amount, reason) {
     if (badge) badge.style.borderColor = 'rgba(120,0,120,0.9)';
   }
 }
+// 徳分レベルに応じたHUD演出を適用する
+function applyTokubunEffect() {
+  var tokubun = typeof getTokubun === 'function' ? getTokubun() : 0;
+  var badge = document.getElementById('craftGDPBadge');
+  var msg = null;
+  if (tokubun >= 100) {
+    if (badge) badge.style.boxShadow = '0 0 18px rgba(255,248,200,0.6)';
+    msg = '✨ 徳が満ちている…';
+  } else if (tokubun >= 50) {
+    if (badge) badge.style.boxShadow = '0 0 12px rgba(248,187,208,0.5)';
+  } else if (tokubun >= 0) {
+    if (badge) badge.style.boxShadow = '0 0 8px rgba(76,175,80,0.3)';
+  } else if (tokubun >= -10) {
+    if (badge) badge.style.boxShadow = '0 0 10px rgba(255,152,0,0.5)';
+    msg = '⚠️ 業が積まれている…';
+  } else if (tokubun >= -30) {
+    if (badge) badge.style.boxShadow = '0 0 14px rgba(244,67,54,0.6)';
+    msg = '🔥 業が深まっている…';
+  } else {
+    if (badge) badge.style.boxShadow = '0 0 18px rgba(120,0,120,0.8)';
+    msg = '💀 業が極まっている…';
+  }
+  if (msg && typeof showCraftMessage === 'function') showCraftMessage(msg);
+}
+
 // 業が浄化されたとき（業が減ったとき）に呼ぶ光の演出
 function triggerPurificationEffect() {
   var canvas = document.getElementById('craftCanvas');
@@ -18944,6 +19102,9 @@ function showDebugLog() {
        // その他
        'clearTimeSelect','confirmAddToWeekly','confirmDeleteFromEdit',
        'confirmPurpose','renderSearchResults','selectGender',
+       // 行動貿易 ARV1/BLM1
+       'generateArvCode','receiveArvCode','generateBlmCode','receiveBlmCode',
+       '_copyBlmCode','applyTokubunEffect','switchShopTab',
        // 日付変更・雑記帳自動移行
        'startMoveMode','completeMoveMode','cancelMoveMode',
        'addStampToDate','removeStampFromDate',
@@ -19929,6 +20090,127 @@ function showDebugLog() {
          : ng('ST-21: クリーンアップ', '件数不一致 ' + allTasks.length + '件 期待' + _stPrev21);
      } catch(e) { ng('ST-21: 日付変更フロー', e.message); }
 
+     // ST-22: 行動貿易（ARV1/BLM1）フロー
+     try {
+       var _stPrev22 = allTasks.length;
+       var _stTokuBefore22 = typeof getToku === 'function' ? getToku() : 0;
+
+       // テスト用deckHistoryレコードを作成
+       var _stDeckId22 = 'smoke-dk22-' + Date.now();
+       allTasks.push({
+         id: 'smoke-dh22-' + Date.now(),
+         kind: 'deckHistory',
+         deckId: _stDeckId22,
+         title: 'サンプルデッキ22',
+         createdBy: 'テスト',
+         receivedAt: '2026-01-01',
+         taskCount: 3,
+         stats: { received: 0, completed: 0 },
+         createdAt: new Date().toISOString()
+       });
+
+       // ARV1:コード生成確認
+       var _stArvCode = typeof generateArvCode === 'function'
+         ? generateArvCode({ deckId: _stDeckId22, title: 'サンプルデッキ22' }) : null;
+       (_stArvCode && _stArvCode.startsWith('ARV1:'))
+         ? ok('ST-22: generateArvCode ARV1:コード生成確認')
+         : ng('ST-22: generateArvCode', '生成失敗: ' + _stArvCode);
+
+       // ARV1:デコード確認
+       if (_stArvCode) {
+         var _stArvRaw = JSON.parse(decodeURIComponent(escape(atob(_stArvCode.slice(5)))));
+         _stArvRaw.kind === 'arv' && _stArvRaw.deckId === _stDeckId22
+           ? ok('ST-22: ARV1:コード内容確認(kind・deckId)')
+           : ng('ST-22: ARV1:デコード', 'kind=' + _stArvRaw.kind + ' deckId=' + _stArvRaw.deckId);
+       }
+
+       // receiveArvCode: メモリ上で再現（トースト副作用なし）
+       var _stDh22 = allTasks.find(function(t){ return t.kind==='deckHistory' && t.deckId===_stDeckId22; });
+       if (_stDh22) {
+         if (!_stDh22.stats) _stDh22.stats = { received: 0, completed: 0 };
+         _stDh22.stats.received = (_stDh22.stats.received || 0) + 1;
+         if (typeof addToku === 'function') addToku(1, 'ST-22:ARV1:テスト');
+       }
+       (_stDh22 && _stDh22.stats.received === 1)
+         ? ok('ST-22: receiveArvCode stats.received+1確認')
+         : ng('ST-22: receiveArvCode', 'received=' + (_stDh22 && _stDh22.stats.received));
+       typeof getToku === 'function' && getToku() === _stTokuBefore22 + 1
+         ? ok('ST-22: receiveArvCode GDP+1確認')
+         : ng('ST-22: receiveArvCode GDP', '期待' + (_stTokuBefore22+1) + ' 実際' + getToku());
+
+       // BLM1:コード生成確認
+       if (_stDh22) _stDh22.stats.completed = 3; // 完了数をセット
+       var _stBlmCode = typeof generateBlmCode === 'function'
+         ? generateBlmCode(_stDeckId22) : null;
+       (_stBlmCode && _stBlmCode.startsWith('BLM1:'))
+         ? ok('ST-22: generateBlmCode BLM1:コード生成確認')
+         : ng('ST-22: generateBlmCode', '生成失敗: ' + _stBlmCode);
+
+       // BLM1:デコード確認
+       if (_stBlmCode) {
+         var _stBlmRaw = JSON.parse(decodeURIComponent(escape(atob(_stBlmCode.slice(5)))));
+         _stBlmRaw.kind === 'blm' && _stBlmRaw.completedCount === 3
+           ? ok('ST-22: BLM1:コード内容確認(kind・completedCount)')
+           : ng('ST-22: BLM1:デコード', 'kind=' + _stBlmRaw.kind + ' count=' + _stBlmRaw.completedCount);
+       }
+
+       // receiveBlmCode: メモリ上で再現（トースト副作用なし）
+       var _stTokuBefore22b = typeof getToku === 'function' ? getToku() : 0;
+       var _stDh22b = allTasks.find(function(t){ return t.kind==='deckHistory' && t.deckId===_stDeckId22; });
+       if (_stDh22b) {
+         _stDh22b.stats.blmCompleted = (_stDh22b.stats.blmCompleted || 0) + 3;
+         if (typeof addToku === 'function') addToku(3, 'ST-22:BLM1:テスト');
+       }
+       (_stDh22b && _stDh22b.stats.blmCompleted === 3)
+         ? ok('ST-22: receiveBlmCode stats.blmCompleted+=3確認')
+         : ng('ST-22: receiveBlmCode', 'blmCompleted=' + (_stDh22b && _stDh22b.stats.blmCompleted));
+       typeof getToku === 'function' && getToku() === _stTokuBefore22b + 3
+         ? ok('ST-22: receiveBlmCode GDPボーナス+3確認')
+         : ng('ST-22: receiveBlmCode GDP', '期待' + (_stTokuBefore22b+3) + ' 実際' + getToku());
+
+       // クリーンアップ
+       allTasks = allTasks.filter(function(t){ return t.deckId !== _stDeckId22; });
+       if (typeof addToku === 'function') addToku(-(_stTokuBefore22b + 3 - _stTokuBefore22), 'ST-22ロールバック');
+       allTasks.length === _stPrev22
+         ? ok('ST-22: クリーンアップ完了(' + allTasks.length + '件)')
+         : ng('ST-22: クリーンアップ', '件数不一致 ' + allTasks.length + '件 期待' + _stPrev22);
+     } catch(e) { ng('ST-22: 行動貿易ARV1/BLM1', e.message); }
+
+     // ST-23: switchShopTab（デッキショップ・貿易港タブ切り替え）
+     try {
+       // DOM確認
+       var _stPaneDeck = document.getElementById('shopPaneDeck');
+       var _stPanePort = document.getElementById('shopPanePort');
+       var _stTabDeck  = document.getElementById('shopTabDeck');
+       var _stTabPort  = document.getElementById('shopTabPort');
+       (_stPaneDeck && _stPanePort && _stTabDeck && _stTabPort)
+         ? ok('ST-23: shopPane/Tab DOM確認')
+         : ng('ST-23: DOM', 'shopPaneDeck=' + !!_stPaneDeck + ' shopPanePort=' + !!_stPanePort);
+
+       // 初期状態：デッキショップが表示
+       if (typeof switchShopTab === 'function') switchShopTab('deck');
+       (_stPaneDeck && _stPaneDeck.style.display !== 'none' && _stPanePort && _stPanePort.style.display === 'none')
+         ? ok('ST-23: switchShopTab(deck) デッキショップ表示確認')
+         : ng('ST-23: switchShopTab(deck)', 'deck=' + (_stPaneDeck&&_stPaneDeck.style.display) + ' port=' + (_stPanePort&&_stPanePort.style.display));
+
+       // 貿易港タブに切り替え
+       if (typeof switchShopTab === 'function') switchShopTab('port');
+       (_stPanePort && _stPanePort.style.display !== 'none' && _stPaneDeck && _stPaneDeck.style.display === 'none')
+         ? ok('ST-23: switchShopTab(port) 貿易港表示確認')
+         : ng('ST-23: switchShopTab(port)', 'deck=' + (_stPaneDeck&&_stPaneDeck.style.display) + ' port=' + (_stPanePort&&_stPanePort.style.display));
+
+       // タブのアクティブスタイル確認
+       (_stTabPort && _stTabPort.style.color === 'rgb(79, 172, 254)')
+         ? ok('ST-23: 貿易港タブアクティブスタイル確認')
+         : ng('ST-23: 貿易港タブスタイル', 'color=' + (_stTabPort&&_stTabPort.style.color));
+
+       // デッキショップに戻す（後処理）
+       if (typeof switchShopTab === 'function') switchShopTab('deck');
+       (_stPaneDeck && _stPaneDeck.style.display !== 'none')
+         ? ok('ST-23: switchShopTab 復元確認')
+         : ng('ST-23: 復元', 'deck=' + (_stPaneDeck&&_stPaneDeck.style.display));
+     } catch(e) { ng('ST-23: switchShopTab', e.message); }
+
      // ===== 17. Key Purify Absolute Green（最終確認・4軸検査） =====
      try {
        var _kpKeys = Object.keys(localStorage);
@@ -19975,20 +20257,7 @@ function showDebugLog() {
          : ng('KPAG③: 禁止キー検知', '廃止キーが残存: ' + _bannedFound.join(', '));
 
        // ④ 未知キー検知（白名単チェック）
-       var _allowedKeys = [
-         'allTasks','allSettings','deletedTaskIds','currentView','deviceId',
-         'simpleMode','craftMode','gantEnabled','dataVersion','tokuPoints','gouPoints',
-         'escapeLog','calendars','tokuLog','_dbg_log','_dbg_errors','_lastScratchMoveDate',
-         'nbLastPageId','taskCompletedStreak','taskCompletedTotal','wgLastScrollTop',
-         'dailyScrollInit','weeklyScrollInit','tlLastScrollTop','selectedDailyDate',
-         'mig_category_to_calendar_v170','mig_death_ghost_flags_v0_24_59',
-         'mig_gant_enabled_default_v0_32','mig_ids_to_uuid_v7',
-         'mig_journals_to_alltasks_v1','mig_show_in_daily_to_display_scope_v1',
-         'mig_journal_ids_to_uuid_v7',
-         // 旧バージョン互換キー（残存する場合あり）
-         'migration_calendarId_v1','extendedvaluekey',
-         'notebooks','_calIdMigMap','journals','mainCalendarId','autoMainCalendar',
-       ];
+       var _allowedKeys = ['_calIdMigMap','_dbg_errors','_dbg_log','_lastScratchMoveDate','allSettings','allTasks','autoMainCalendar','calendars','craftMode','currentView','dailyScrollInit','dataVersion','deletedTaskIds','deviceId','escapeLog','extendedvaluekey','gantEnabled','gouPoints','journals','mainCalendarId','mig_category_to_calendar_v170','mig_death_ghost_flags_v0_24_59','mig_gant_enabled_default_v0_32','mig_ids_to_uuid_v7','mig_journal_ids_to_uuid_v7','mig_journals_to_alltasks_v1','mig_show_in_daily_to_display_scope_v1','migration_calendarId_v1','nbLastPageId','notebooks','selectedDailyDate','simpleMode','taskCompletedStreak','taskCompletedTotal','tlLastScrollTop','tokuLog','tokuPoints','weeklyScrollInit','wgLastScrollTop'];
        var _unknownKeys = _kpKeys.filter(function(k){ return _allowedKeys.indexOf(k) === -1; });
        _unknownKeys.length === 0
          ? ok('KPAG④: 未知キー検知 — 全' + _kpKeys.length + 'キー検査済・汚染ゼロ')
@@ -20659,7 +20928,18 @@ function importDeckFromSettings() {
   var code = (document.getElementById('deckImportInput').value || '').trim();
   if (!code) { showToast('コードを入力してください', {type:'warn'}); return; }
   var upper = code.toUpperCase();
-  if (!upper.startsWith('DCK1:')) { showToast('DCK1: で始まるコードを入力してください', {type:'warn'}); return; }
+  // ARV1:・BLM1:も受け付ける
+  if (upper.startsWith('ARV1:')) {
+    if (typeof receiveArvCode === 'function') receiveArvCode(code);
+    const _inp = document.getElementById('deckImportInput'); if (_inp) _inp.value = '';
+    return;
+  }
+  if (upper.startsWith('BLM1:')) {
+    if (typeof receiveBlmCode === 'function') receiveBlmCode(code);
+    const _inp2 = document.getElementById('deckImportInput'); if (_inp2) _inp2.value = '';
+    return;
+  }
+  if (!upper.startsWith('DCK1:')) { showToast('DCK1: / ARV1: / BLM1: で始まるコードを入力してください', {type:'warn'}); return; }
   var raw;
   try { raw = decodeURIComponent(escape(atob(code.slice(5)))); }
   catch(e) { showToast('コードが壊れています', {type:'warn'}); return; }
@@ -20684,6 +20964,15 @@ function importDeckFromSettings() {
         if (typeof addDeckHistory === 'function') addDeckHistory(deck);
         if (typeof saveAllTasks === 'function') saveAllTasks();
         if (typeof renderAllSections === 'function') renderAllSections(today);
+        // ARV1:自動生成・クリップボードコピー
+        try {
+          var _arvCode3 = typeof generateArvCode === 'function' ? generateArvCode(deck) : null;
+          if (_arvCode3) {
+            navigator.clipboard.writeText(_arvCode3).then(function(){
+              showToast('⚓ ARV1:着荷コードをコピーしました！Discordに貼ってください', {type:'success', duration:5000});
+            }).catch(function(){});
+          }
+        } catch(e) {}
         // 入力欄をクリア
         const inp = document.getElementById('deckImportInput');
         if (inp) inp.value = '';
