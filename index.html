@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.38.64';
+    const APP_VERSION = 'v0.38.70';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -13711,6 +13711,8 @@ function loadSettingsUI() {
     window.saveAllTasks = saveAllTasks;
     window.moveScratchToThoughts = moveScratchToThoughts;
     window.switchShopTab = switchShopTab;
+    window.openDeckDetailModal = openDeckDetailModal;
+    window.closeDeckDetailModal = closeDeckDetailModal;
     window.generateArvCode = generateArvCode;
     window.receiveArvCode = receiveArvCode;
     window.generateBlmCode = generateBlmCode;
@@ -14827,58 +14829,172 @@ function receiveDeckAgain(deckId) {
   delete allSettings.deck.received[deckId]; saveAllSettings();
   receiveDeck(deckId);
 }
+function openDeckDetailModal(deckId) {
+  var deck = typeof OFFICIAL_DECKS !== 'undefined'
+    ? OFFICIAL_DECKS.find(function(d){ return d.id === deckId; }) : null;
+  if (!deck) return;
+  var modal = document.getElementById('deckDetailModal');
+  if (!modal) return;
+  // バナー絵文字
+  var emoji = deck.title.match(/^(\S+)/)?.[1] || '📦';
+  var emojiEl = document.getElementById('deckDetailEmoji');
+  if (emojiEl) emojiEl.textContent = emoji;
+  // タイトル（絵文字除去）
+  var titleEl = document.getElementById('deckDetailTitle');
+  if (titleEl) titleEl.textContent = deck.title.replace(/^\S+\s*/, '');
+  // 出品者
+  var authorEl = document.getElementById('deckDetailAuthor');
+  if (authorEl) authorEl.textContent = deck.createdBy ? '⚓ ' + deck.createdBy : '';
+  // 説明
+  var descEl = document.getElementById('deckDetailDesc');
+  if (descEl) descEl.textContent = deck.desc || '';
+  // タスク一覧
+  var tasksEl = document.getElementById('deckDetailTasks');
+  if (tasksEl) {
+    tasksEl.innerHTML = '';
+    (deck.tasks || []).forEach(function(t, i) {
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:#fafafa;border-radius:10px;border:1px solid #f0f0f0;';
+      var num = document.createElement('div');
+      num.textContent = (i + 1) + '';
+      num.style.cssText = 'flex-shrink:0;width:22px;height:22px;background:#ffe082;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.72em;font-weight:700;color:#7a4800;';
+      var txt = document.createElement('div');
+      txt.style.cssText = 'flex:1;';
+      var taskText = document.createElement('div');
+      taskText.textContent = t.text;
+      taskText.style.cssText = 'font-size:0.85em;color:#333;font-weight:600;margin-bottom:2px;';
+      txt.appendChild(taskText);
+      if (t.memo) {
+        var memo = document.createElement('div');
+        memo.textContent = t.memo;
+        memo.style.cssText = 'font-size:0.75em;color:#999;line-height:1.5;';
+        txt.appendChild(memo);
+      }
+      row.appendChild(num);
+      row.appendChild(txt);
+      tasksEl.appendChild(row);
+    });
+  }
+  // ボタン
+  var btnArea = document.getElementById('deckDetailBtnArea');
+  if (btnArea) {
+    btnArea.innerHTML = '';
+    var received = allSettings.deck.received[deck.id];
+    if (received) {
+      var btn2 = document.createElement('button');
+      btn2.textContent = 'もう一度受け取る';
+      btn2.style.cssText = 'width:100%;padding:12px;background:none;border:1.5px solid #ddd;border-radius:24px;color:#aaa;font-size:0.88em;cursor:pointer;';
+      btn2.addEventListener('click', function(){ closeDeckDetailModal(); receiveDeckAgain(deck.id); });
+      btnArea.appendChild(btn2);
+    } else {
+      var btn = document.createElement('button');
+      btn.textContent = '📦 受け取る';
+      btn.style.cssText = 'width:100%;padding:13px;border:none;border-radius:24px;font-size:0.95em;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#ffd700,#ff8800);color:#7a4800;box-shadow:0 3px 10px rgba(255,180,0,0.35);';
+      btn.addEventListener('click', function(){ closeDeckDetailModal(); receiveDeck(deck.id); });
+      btnArea.appendChild(btn);
+    }
+  }
+  modal.style.display = 'block';
+}
+
+function closeDeckDetailModal() {
+  var modal = document.getElementById('deckDetailModal');
+  if (modal) modal.style.display = 'none';
+}
+
 function renderDeckShop() {
   var el = document.getElementById('deckShopList');
   if (!el) return;
   if (typeof OFFICIAL_DECKS === 'undefined') return;
+  // メルカリ風2カラムグリッド
+  el.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;';
   el.innerHTML = '';
   OFFICIAL_DECKS.forEach(function(deck) {
     var received = allSettings.deck.received[deck.id];
     var card = document.createElement('div');
-    card.style.cssText = 'border:1px solid ' + (received ? '#e0e0e0' : '#ffe0a0') + ';border-radius:12px;padding:14px 16px;background:' + (received ? '#fafafa' : '#fffdf5') + ';';
-    var info = document.createElement('div');
-    var author = deck.createdBy ? '<span style="color:#c8a200;">⚓ ' + deck.createdBy + '</span>' : '';
-    info.innerHTML = '<div style="font-size:1em;font-weight:700;color:' + (received ? '#aaa' : '#333') + ';margin-bottom:4px;">' + deck.title + '</div>'
-      + (deck.desc ? '<div style="font-size:0.8em;color:#999;margin-bottom:3px;">' + deck.desc + '</div>' : '')
-      + (author ? '<div style="font-size:0.72em;margin-top:2px;">' + author + '</div>' : '');
-    var btnWrap = document.createElement('div');
-    btnWrap.style.cssText = 'display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;';
-    var btn = document.createElement('button');
+    card.style.cssText = [
+      'border-radius:14px',
+      'overflow:hidden',
+      'background:' + (received ? '#f5f5f5' : '#fff'),
+      'border:1.5px solid ' + (received ? '#e0e0e0' : '#ffe0a0'),
+      'box-shadow:0 2px 8px rgba(0,0,0,0.06)',
+      'display:flex',
+      'flex-direction:column',
+      'cursor:pointer',
+      'transition:transform 0.15s',
+    ].join(';');
+    // タップ時の浮き上がり
+    card.addEventListener('touchstart', function(){ card.style.transform='scale(0.97)'; }, {passive:true});
+    card.addEventListener('touchend',   function(){ card.style.transform='scale(1)'; }, {passive:true});
+    card.addEventListener('click', (function(id){ return function(){ openDeckDetailModal(id); }; })(deck.id));
+    // アイコンバナー
+    var banner = document.createElement('div');
+    var emoji = deck.title.match(/^(\S+)/)?.[1] || '📦';
+    banner.style.cssText = [
+      'height:60px',
+      'display:flex',
+      'align-items:center',
+      'justify-content:center',
+      'font-size:1.8em',
+      'background:' + (received ? '#f0f0f0' : 'linear-gradient(135deg,#fff8e1,#fff3cd)'),
+      'position:relative',
+    ].join(';');
+    banner.textContent = emoji;
+    // 受取済みバッジ
     if (received) {
-      // 受取済み：グレーボタン＋「もう一度受け取る」テキストリンク
-      btn.textContent = '✅ 受取済';
-      btn.disabled = true;
-      btn.style.cssText = 'flex-shrink:0;padding:8px 14px;border:none;border-radius:20px;font-size:0.82em;font-weight:700;cursor:default;background:#e0e0e0;color:#aaa;';
+      var badge = document.createElement('div');
+      badge.textContent = '✅';
+      badge.style.cssText = 'position:absolute;top:6px;right:8px;font-size:1em;';
+      banner.appendChild(badge);
+    }
+    // 本体
+    var body = document.createElement('div');
+    body.style.cssText = 'padding:7px 8px 6px;flex:1;display:flex;flex-direction:column;gap:3px;';
+    var titleEl = document.createElement('div');
+    // タイトルから絵文字除去
+    var titleText = deck.title.replace(/^\S+\s*/, '');
+    titleEl.textContent = titleText;
+    titleEl.style.cssText = 'font-size:0.78em;font-weight:700;color:' + (received ? '#aaa' : '#222') + ';line-height:1.3;';
+    var taskCount = document.createElement('div');
+    taskCount.textContent = (deck.tasks||[]).length + '枚';
+    taskCount.style.cssText = 'font-size:0.72em;color:#aaa;';
+    var authorEl2 = document.createElement('div');
+    authorEl2.textContent = deck.createdBy ? '⚓ ' + deck.createdBy : '';
+    authorEl2.style.cssText = 'font-size:0.68em;color:#c8a200;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+    body.appendChild(titleEl);
+    body.appendChild(taskCount);
+    body.appendChild(authorEl2);
+    // ボタン行
+    var foot = document.createElement('div');
+    foot.style.cssText = 'padding:0 8px 8px;';
+    if (received) {
       var btn2 = document.createElement('button');
       btn2.textContent = 'もう一度受け取る';
-      btn2.style.cssText = 'background:none;border:none;color:#c8a200;font-size:0.75em;cursor:pointer;padding:0;text-decoration:underline;text-align:right;';
-      btn2.addEventListener('click', (function(id){ return function(){ receiveDeckAgain(id); }; })(deck.id));
-      btnWrap.appendChild(btn);
-      btnWrap.appendChild(btn2);
+      btn2.style.cssText = 'width:100%;padding:7px 0;background:none;border:1px solid #ddd;border-radius:20px;color:#aaa;font-size:0.75em;cursor:pointer;';
+      btn2.addEventListener('click', (function(id){ return function(e){ e.stopPropagation(); receiveDeckAgain(id); }; })(deck.id));
+      foot.appendChild(btn2);
     } else {
+      var btn = document.createElement('button');
       btn.textContent = '受け取る';
-      btn.disabled = false;
-      btn.style.cssText = 'flex-shrink:0;padding:8px 14px;border:none;border-radius:20px;font-size:0.82em;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#ffd700,#ff8800);color:#7a4800;';
-      btn.addEventListener('click', (function(id){ return function(){ receiveDeck(id); }; })(deck.id));
-      btnWrap.appendChild(btn);
+      btn.style.cssText = 'width:100%;padding:8px 0;border:none;border-radius:20px;font-size:0.82em;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#ffd700,#ff8800);color:#7a4800;box-shadow:0 2px 6px rgba(255,180,0,0.3);';
+      btn.addEventListener('click', (function(id){ return function(e){ e.stopPropagation(); receiveDeck(id); }; })(deck.id));
+      foot.appendChild(btn);
     }
-    // 管理者モードのときQRボタン追加
+    // 管理者QRボタン
     if (allSettings.flags.adminMode === '1') {
       var btnQR = document.createElement('button');
       btnQR.textContent = '📱 QR';
-      btnQR.style.cssText = 'background:rgba(100,220,180,0.12);border:1px solid rgba(100,220,180,0.4);border-radius:8px;color:#64dcb4;font-size:0.72em;padding:4px 10px;cursor:pointer;margin-top:2px;';
-      btnQR.addEventListener('click', (function(d){ return function(){
+      btnQR.style.cssText = 'width:100%;padding:5px 0;background:rgba(100,220,180,0.12);border:1px solid rgba(100,220,180,0.4);border-radius:8px;color:#64dcb4;font-size:0.72em;cursor:pointer;margin-top:4px;';
+      btnQR.addEventListener('click', (function(d){ return function(e){ e.stopPropagation();
         var payload = JSON.stringify({ kind:'deck', status:'active', deckId:d.id, title:d.title, desc:d.desc||'', tasks:d.tasks, createdBy:d.createdBy||'やることクラフト公式', createdAt:'' });
         var code = 'DCK1:' + btoa(unescape(encodeURIComponent(payload)));
         if (typeof showDeckQR === 'function') showDeckQR(code, d.title);
       }; })(deck));
-      btnWrap.appendChild(btnQR);
+      foot.appendChild(btnQR);
     }
-    btn = btnWrap;
-    var row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;';
-    row.appendChild(info); row.appendChild(btn);
-    card.appendChild(row);
+    card.appendChild(banner);
+    card.appendChild(body);
+    card.appendChild(foot);
     el.appendChild(card);
   });
 }
@@ -15301,6 +15417,25 @@ window.addEventListener('afterprint', function() {
     </div>
   </div>
   <!-- カスタム確認モーダル -->
+  <!-- ===== デッキ詳細モーダル ===== -->
+  <div id="deckDetailModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:10000;overflow-y:auto;" onclick="if(event.target.id==='deckDetailModal') closeDeckDetailModal();">
+    <div style="background:#fff;margin:40px auto 24px;max-width:480px;border-radius:20px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+      <div id="deckDetailBanner" style="height:100px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#fff8e1,#fff3cd);position:relative;">
+        <span id="deckDetailEmoji" style="font-size:3em;line-height:1;"></span>
+        <button onclick="closeDeckDetailModal()" style="position:absolute;top:10px;right:12px;background:rgba(0,0,0,0.12);border:none;border-radius:50%;width:28px;height:28px;font-size:16px;line-height:1;cursor:pointer;color:#555;display:flex;align-items:center;justify-content:center;">✕</button>
+      </div>
+      <div style="padding:16px 18px 0;">
+        <div id="deckDetailTitle" style="font-size:1.1em;font-weight:800;color:#222;margin-bottom:4px;"></div>
+        <div id="deckDetailAuthor" style="font-size:0.78em;color:#c8a200;margin-bottom:8px;"></div>
+        <div id="deckDetailDesc" style="font-size:0.85em;color:#666;margin-bottom:14px;line-height:1.6;"></div>
+        <div style="font-size:0.82em;font-weight:700;color:#888;margin-bottom:8px;">📋 タスク一覧</div>
+        <div id="deckDetailTasks" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;"></div>
+      </div>
+      <div style="padding:0 18px 20px;">
+        <div id="deckDetailBtnArea"></div>
+      </div>
+    </div>
+  </div>
   <div id="customModal" class="custom-modal" onclick="if(event.target.id==='customModal') closeModal();">
     <div class="modal-content">
       <div class="modal-title">確認</div>
@@ -19105,6 +19240,7 @@ function showDebugLog() {
        // 行動貿易 ARV1/BLM1
        'generateArvCode','receiveArvCode','generateBlmCode','receiveBlmCode',
        '_copyBlmCode','applyTokubunEffect','switchShopTab',
+       'openDeckDetailModal','closeDeckDetailModal',
        // 日付変更・雑記帳自動移行
        'startMoveMode','completeMoveMode','cancelMoveMode',
        'addStampToDate','removeStampFromDate',
@@ -20210,6 +20346,76 @@ function showDebugLog() {
          ? ok('ST-23: switchShopTab 復元確認')
          : ng('ST-23: 復元', 'deck=' + (_stPaneDeck&&_stPaneDeck.style.display));
      } catch(e) { ng('ST-23: switchShopTab', e.message); }
+
+     // ST-24: デッキショップUI（メルカリ風グリッド）
+     try {
+       // renderDeckShop実行
+       if (typeof renderDeckShop === 'function') renderDeckShop();
+       var _stDsList = document.getElementById('deckShopList');
+       _stDsList
+         ? ok('ST-24: deckShopList DOM確認')
+         : ng('ST-24: deckShopList', 'DOM未存在');
+       // グリッドレイアウト確認
+       _stDsList && _stDsList.style.gridTemplateColumns
+         ? ok('ST-24: 2カラムグリッド設定確認')
+         : ng('ST-24: グリッド', 'gridTemplateColumns未設定');
+       // カード枚数確認（OFFICIAL_DECKSと一致するか）
+       var _stDeckCount = typeof OFFICIAL_DECKS !== 'undefined' ? OFFICIAL_DECKS.length : 0;
+       var _stCardCount = _stDsList ? _stDsList.children.length : 0;
+       _stCardCount === _stDeckCount
+         ? ok('ST-24: カード枚数確認(' + _stCardCount + '枚)')
+         : ng('ST-24: カード枚数', '期待' + _stDeckCount + ' 実際' + _stCardCount);
+       // 各カードにバナー・本体・ボタン行があるか
+       var _stFirstCard = _stDsList && _stDsList.children[0];
+       _stFirstCard && _stFirstCard.children.length >= 3
+         ? ok('ST-24: カード構造確認(バナー・本体・ボタン行)')
+         : ng('ST-24: カード構造', '子要素数=' + (_stFirstCard ? _stFirstCard.children.length : 0));
+       // 受け取るボタンが存在するか
+       var _stBtns = _stDsList ? _stDsList.querySelectorAll('button') : [];
+       _stBtns.length > 0
+         ? ok('ST-24: 受け取るボタン存在確認(' + _stBtns.length + '個)')
+         : ng('ST-24: ボタン', 'ボタン未存在');
+       // OFFICIAL_DECKSの件数確認
+       _stDeckCount >= 9
+         ? ok('ST-24: OFFICIAL_DECKS件数確認(' + _stDeckCount + '件)')
+         : ng('ST-24: OFFICIAL_DECKS', '件数不足: ' + _stDeckCount);
+       // deckDetailModal DOM確認
+       var _stDdModal = document.getElementById('deckDetailModal');
+       _stDdModal
+         ? ok('ST-24: deckDetailModal DOM確認')
+         : ng('ST-24: deckDetailModal', 'DOM未存在');
+       // openDeckDetailModal・closeDeckDetailModal存在確認
+       typeof openDeckDetailModal === 'function'
+         ? ok('ST-24: openDeckDetailModal 存在確認')
+         : ng('ST-24: openDeckDetailModal', '未定義');
+       typeof closeDeckDetailModal === 'function'
+         ? ok('ST-24: closeDeckDetailModal 存在確認')
+         : ng('ST-24: closeDeckDetailModal', '未定義');
+       // openDeckDetailModal挙動確認（最初のデッキで開く）
+       if (typeof openDeckDetailModal === 'function' && _stDeckCount > 0) {
+         openDeckDetailModal(OFFICIAL_DECKS[0].id);
+         var _stDdTitle = document.getElementById('deckDetailTitle');
+         var _stDdAuthor = document.getElementById('deckDetailAuthor');
+         var _stDdTasks = document.getElementById('deckDetailTasks');
+         (_stDdTitle && _stDdTitle.textContent.length > 0)
+           ? ok('ST-24: deckDetailModal タイトル表示確認')
+           : ng('ST-24: deckDetailModal タイトル', '空');
+         (_stDdAuthor && _stDdAuthor.textContent.length > 0)
+           ? ok('ST-24: deckDetailModal 出品者表示確認')
+           : ng('ST-24: deckDetailModal 出品者', '空');
+         (_stDdTasks && _stDdTasks.children.length === OFFICIAL_DECKS[0].tasks.length)
+           ? ok('ST-24: deckDetailModal タスク一覧確認(' + _stDdTasks.children.length + '件)')
+           : ng('ST-24: deckDetailModal タスク', '件数不一致');
+         _stDdModal && _stDdModal.style.display === 'block'
+           ? ok('ST-24: deckDetailModal 表示状態確認')
+           : ng('ST-24: deckDetailModal 表示', 'display=' + (_stDdModal&&_stDdModal.style.display));
+         // 閉じる
+         if (typeof closeDeckDetailModal === 'function') closeDeckDetailModal();
+         _stDdModal && _stDdModal.style.display === 'none'
+           ? ok('ST-24: deckDetailModal 閉じる確認')
+           : ng('ST-24: deckDetailModal 閉じる', 'display=' + (_stDdModal&&_stDdModal.style.display));
+       }
+     } catch(e) { ng('ST-24: デッキショップUI', e.message); }
 
      // ===== 17. Key Purify Absolute Green（最終確認・4軸検査） =====
      try {
