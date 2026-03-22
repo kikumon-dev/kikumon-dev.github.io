@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.15';
+    const APP_VERSION = 'v0.39.34';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3008,8 +3008,17 @@
       <span id="navAvatarPlaceholder">⚙️</span>
     </button>
   </div>
+  <!-- 日次日付ナビバー -->
+  <div id="dailyDateNavBar" style="display:none;align-items:center;justify-content:space-between;padding:4px 8px;background:#fafafa;border-bottom:1px solid #f0f0f0;box-sizing:border-box;">
+    <button class="monthly-nav-btn" style="padding:5px 10px;font-size:0.72em;white-space:nowrap;flex-shrink:0;" onclick="changeDailyDate(-1)">◀ 前日</button>
+    <span id="dailyNavDateLabel" style="font-size:0.8em;font-weight:700;color:#262626;text-align:center;flex:1;padding:0 6px;"></span>
+    <div style="display:flex;gap:4px;flex-shrink:0;align-items:center;">
+      <button onclick="goToDailyToday()" style="font-size:0.68em;padding:5px 6px;border-radius:5px;border:1.5px solid #4facfe;background:#fff;color:#4facfe;cursor:pointer;white-space:nowrap;font-weight:600;">今日</button>
+      <button class="monthly-nav-btn" style="padding:5px 10px;font-size:0.72em;white-space:nowrap;" onclick="changeDailyDate(1)">翌日 ▶</button>
+    </div>
+  </div>
   <!-- 日次内タブバー（マトリクス/タイムライン/雑記帳） -->
-  <div id="dailyInnerTabBar" style="display:flex;">
+  <div id="dailyInnerTabBar" style="display:none;">
     <button class="daily-inner-tab" id="dailyTabScratch" onclick="switchDailyTab('scratch')">✏️ 雑記帳</button>
     <button class="daily-inner-tab" id="dailyTabMatrix" onclick="switchDailyTab('matrix')">📊 マトリクス</button>
     <button class="daily-inner-tab" id="dailyTabTimeline" onclick="switchDailyTab('timeline')">🕐 タイムライン</button>
@@ -3770,6 +3779,11 @@
     box-shadow:0 8px 32px rgba(0,0,0,0.35),inset 0 1px 0 rgba(255,255,255,0.06);
     min-width:74px;
   " onclick="adminBadgeTap()">
+    <!-- 称号表示行 -->
+    <div style="text-align:center;margin-bottom:6px;">
+      <div id="craftKingdomTitle" style="font-size:0.82em;font-weight:700;color:#fff;letter-spacing:0.08em;text-shadow:0 0 8px rgba(255,255,255,0.2);">🌱 開拓民</div>
+    </div>
+    <div style="height:1px;background:rgba(255,255,255,0.06);margin-bottom:6px;"></div>
     <div style="display:flex;flex-direction:row;gap:12px;align-items:center;">
       <div style="text-align:center;">
         <div style="font-size:0.5em;color:rgba(255,220,80,0.55);letter-spacing:0.12em;margin-bottom:2px;">GDP</div>
@@ -7180,6 +7194,56 @@ function myDeckApply(idx) {
       renderWeeklyView();
     }
     window.resetWeeklyWidth = resetWeeklyWidth;
+    // ===== 日次日付ナビゲーション =====
+    function _updateDailyNavBar() {
+      var navBar = document.getElementById('dailyDateNavBar');
+      var label = document.getElementById('dailyNavDateLabel');
+      if (!navBar || !label) return;
+      var dateStr = currentDailyDate || getLocalDateStr(new Date());
+      // iOS対応：スラッシュ変換
+      var d = new Date(dateStr.replace(/-/g, '/'));
+      if (isNaN(d.getTime())) d = new Date();
+      var weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+      label.textContent = d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate() + '（' + weekdays[d.getDay()] + '）';
+      // 今日なら「今日」ボタンをグレーアウト
+      var todayStr = getLocalDateStr(new Date());
+      var todayBtn = navBar.querySelector('button[onclick="goToDailyToday()"]');
+      if (todayBtn) {
+        todayBtn.style.opacity = (dateStr === todayStr) ? '0.35' : '1';
+        todayBtn.style.pointerEvents = (dateStr === todayStr) ? 'none' : 'auto';
+      }
+    }
+    function changeDailyDate(delta) {
+      var base = currentDailyDate || getLocalDateStr(new Date());
+      var d = new Date(base.replace(/-/g, '/'));
+      if (isNaN(d.getTime())) d = new Date();
+      d.setDate(d.getDate() + delta);
+      var newDate = getLocalDateStr(d);
+      currentDailyDate = newDate;
+      localStorage.setItem('selectedDailyDate', newDate);
+      // dateDisplay更新
+      var weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+      var dateText = d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate() + '（' + weekdays[d.getDay()] + '）';
+      var dd = document.getElementById('dateDisplay');
+      if (dd) dd.textContent = dateText;
+      var ddm = document.getElementById('dateDisplayMobile');
+      if (ddm) ddm.textContent = dateText;
+      _updateDailyNavBar();
+      renderAllSections();
+    }
+    function goToDailyToday() {
+      currentDailyDate = null;
+      localStorage.removeItem('selectedDailyDate');
+      var today = new Date();
+      var weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+      var dateText = today.toLocaleDateString('ja-JP') + '（' + weekdays[today.getDay()] + '）';
+      var dd = document.getElementById('dateDisplay');
+      if (dd) dd.textContent = dateText;
+      var ddm = document.getElementById('dateDisplayMobile');
+      if (ddm) ddm.textContent = dateText;
+      _updateDailyNavBar();
+      renderAllSections();
+    }
     // ===== 日次タイムラインビュー =====
     let currentTimelineDate = null;
     function changeTimelineDate(delta) {
@@ -8614,7 +8678,8 @@ function toggleGantEnabled(checked) {
 
     function buildGanttRow(gantt, ctx) {
       const _tasks   = allTasks;
-      const _rawTaskIds = gantt.taskIds || [];
+      // 孤立参照（allTasksに実体がないID）を除外してからカウント・表示に使う
+      const _rawTaskIds = (gantt.taskIds || []).filter(function(tid){ return allTasks.some(function(t){ return t.id === tid; }); });
       // 繰り返しタスク：repeatGroupIdが一致するものも含める
       const _baseIds = new Set(_rawTaskIds);
       const _allLinkedIds = allTasks
@@ -11533,12 +11598,29 @@ function reviveBlueprint(id) {
       reader.onload = function(e) {
         try {
           const data = JSON.parse(e.target.result);
-          // ① セットアップ未完了チェック
-          const currentCalsCheck = JSON.parse(localStorage.getItem('calendars') || '[]');
+          // ① セットアップ未完了チェック → 未設定なら自動生成
+          var currentCalsCheck = JSON.parse(localStorage.getItem('calendars') || '[]');
           if (currentCalsCheck.length === 0) {
-            showToast('⚠️ 先にカレンダーをセットアップしてください。\n画面を更新してカレンダーを作成してから再度インポートしてください。', {type:'warn'});
-            event.target.value = '';
-            return;
+            // インポートデータ内のcalendarsがあれば自動生成（全てUUID v7に変換）
+            if (data.calendars && Array.isArray(data.calendars) && data.calendars.length > 0) {
+              var _autoCals = data.calendars.map(function(c) {
+                return {
+                  id: (typeof generateTaskId === 'function') ? generateTaskId() : crypto.randomUUID(),
+                  name: c.name || '名称未設定',
+                  color: c.color || '#90caf9',
+                  visible: true,
+                  shareable: !!c.shareable
+                };
+              });
+              localStorage.setItem('calendars', JSON.stringify(_autoCals));
+              calendars = _autoCals;
+              currentCalsCheck = _autoCals;
+              showToast('📅 ' + _autoCals.length + '件のカレンダーを自動生成しました', {type:'info', duration: 3000});
+            } else {
+              showToast('⚠️ カレンダーが未設定です。\n\nこのデバイスはまだ初回セットアップが完了していません。\n\n手順：\n① 画面を更新する\n② 初回セットアップ（カレンダー作成）を完了させる\n③ 再度インポートする', {type:'warn', duration: 6000});
+              event.target.value = '';
+              return;
+            }
           }
           const tasksData = data.tasks || data.allTasks;
           if (!tasksData || !Array.isArray(tasksData)) throw new Error('タスクデータが見つかりません');
@@ -11620,21 +11702,72 @@ function reviveBlueprint(id) {
           const myDeletedIds = new Set(JSON.parse(localStorage.getItem('deletedTaskIds') || '[]'));
           const incomingDeletedIds = new Set(data.deletedIds || []);
           const existingIds = new Set(allTasks.map(t => t.id));
-          const newTasks = fixedTasks.filter(t =>
-            !existingIds.has(t.id) && !myDeletedIds.has(t.id)
-          );
-          // ⑥ updatedAtで判定：自分の更新が新しければ上書きしない
-          fixedTasks.forEach(function(incoming) {
-            if (!existingIds.has(incoming.id)) return;
-            const existing = allTasks.find(t => t.id === incoming.id);
-            if (!existing) return;
-            const incomingTime = new Date(incoming.updatedAt || 0).getTime();
-            const existingTime = new Date(existing.updatedAt || 0).getTime();
-            if (incomingTime > existingTime) {
-              Object.assign(existing, incoming);
-            }
+
+          // ===== 第1段：ID重複の厳格スキップ（上書き廃止） =====
+          // 既存IDは一切触らない。追加のみ。
+          var _skipDup = 0;
+          var _skipDeleted = 0;
+          const newTasks = fixedTasks.filter(t => {
+            if (existingIds.has(t.id)) { _skipDup++; return false; }
+            if (myDeletedIds.has(t.id)) { _skipDeleted++; return false; }
+            return true;
           });
-          allTasks = [...allTasks, ...newTasks];
+
+          // ===== 第3段：同一エクスポート二重インポート防止 =====
+          var _importLog = JSON.parse(localStorage.getItem('_importLog') || '[]');
+          var _srcDeviceId = (data.settings && data.settings.profile) ? (data.deviceId || '') : '';
+          var _srcExportedAt = data.exportedAt || '';
+          var _importFingerprint = _srcDeviceId + '|' + _srcExportedAt;
+          var _alreadyImported = _importFingerprint !== '|' && _importLog.some(function(e){ return e.fp === _importFingerprint; });
+          if (_alreadyImported) {
+            var _prevDate = _importLog.find(function(e){ return e.fp === _importFingerprint; }).at || '不明';
+            showChoiceModal({
+              title: '⚠️ 二重インポート検知',
+              desc: 'このエクスポートデータは ' + _prevDate + ' にインポート済みです。\n重複データが混入する可能性があります。\n本当に続けますか？',
+              buttons: [
+                { label: '続行してインポートする', style: 'primary', onClick: function(){ _doImport(); } },
+                { label: 'キャンセル（推奨）', style: 'cancel', onClick: function(){ event.target.value = ''; } }
+              ]
+            });
+            return;
+          }
+
+          function _doImport() {
+            allTasks = [...allTasks, ...newTasks];
+            // ===== インポート後クリーニング =====
+          // 1. gantt.taskIdsから孤立ID除去
+          var _importAllIdSet = new Set(allTasks.map(function(t){ return t.id; }));
+          allTasks.forEach(function(t) {
+            if (t.kind !== 'gantt' || !Array.isArray(t.taskIds)) return;
+            t.taskIds = t.taskIds.filter(function(tid){ return _importAllIdSet.has(tid); });
+          });
+          // 2. 同一タイトルのgrandvisionが複数ある場合、古い方（IDが若い方）を削除
+          var _gvByTitle = {};
+          allTasks.filter(function(t){ return t.kind === 'grandvision'; }).forEach(function(t){
+            var title = t.title || '';
+            if (!_gvByTitle[title]) { _gvByTitle[title] = []; }
+            _gvByTitle[title].push(t);
+          });
+          var _dupGvIds = new Set();
+          Object.values(_gvByTitle).forEach(function(gvs) {
+            if (gvs.length <= 1) return;
+            // createdAtが新しい1件だけ残し、残りを削除対象に
+            gvs.sort(function(a, b){ return (a.createdAt||'') > (b.createdAt||'') ? -1 : 1; });
+            gvs.slice(1).forEach(function(g){ _dupGvIds.add(g.id); });
+          });
+          if (_dupGvIds.size > 0) {
+            // 削除対象grandvisionに紐づくblueprint/ganttも削除
+            var _dupBpIds = new Set(
+              allTasks.filter(function(t){ return t.kind === 'blueprint' && _dupGvIds.has(t.grandvisionId); }).map(function(t){ return t.id; })
+            );
+            var _dupGtIds = new Set(
+              allTasks.filter(function(t){ return t.kind === 'gantt' && _dupBpIds.has(t.blueprintId); }).map(function(t){ return t.id; })
+            );
+            allTasks = allTasks.filter(function(t){
+              return !_dupGvIds.has(t.id) && !_dupBpIds.has(t.id) && !_dupGtIds.has(t.id);
+            });
+          }
+          // ===== クリーニング完了 =====
           // 相手のdeletedIdsを自分の削除リストにも反映
           incomingDeletedIds.forEach(function(id) { myDeletedIds.add(id); });
           localStorage.setItem('deletedTaskIds', JSON.stringify([...myDeletedIds]));
@@ -11658,18 +11791,31 @@ function reviveBlueprint(id) {
             });
             localStorage.setItem('calendars', JSON.stringify(myCals));
           }
+          // ===== 第3段：インポート履歴を記録 =====
+          if (_importFingerprint !== '|') {
+            var _now = new Date().toLocaleString('ja-JP');
+            _importLog.push({ fp: _importFingerprint, at: _now, added: newTasks.length });
+            localStorage.setItem('_importLog', JSON.stringify(_importLog));
+          }
+          // ===== 第2段：透明化メッセージ =====
           const _matched = newTasks.length - _importUnmatchedCount;
-          let importMsg = `インポート完了！\n\n`;
-          importMsg += `✅ 成功：${_matched}件\n`;
+          let importMsg = 'インポート完了！\n\n';
+          importMsg += '✅ 追加：' + _matched + '件\n';
+          if (_skipDup > 0) importMsg += '🔒 重複IDスキップ：' + _skipDup + '件\n';
+          if (_skipDeleted > 0) importMsg += '🗑️ 削除済みスキップ：' + _skipDeleted + '件\n';
           if (_importUnmatchedCount > 0) {
-            importMsg += `⚠️ 先頭の「${_importFallbackCalName}」カレンダーに追加：${_importUnmatchedCount}件\n`;
+            importMsg += '⚠️ 先頭の「' + _importFallbackCalName + '」カレンダーに追加：' + _importUnmatchedCount + '件\n';
           }
           if (_invalidCount > 0) {
-            importMsg += `❌ データ破損により失敗：${_invalidCount}件\n`;
+            importMsg += '❌ データ破損により失敗：' + _invalidCount + '件\n';
           }
-          importMsg += `\n合計：${tasksData.length}件中 ${newTasks.length}件を追加`;
-          showToast(importMsg, {type:'info'});
-          location.reload();
+          importMsg += '\n合計：' + tasksData.length + '件中 ' + newTasks.length + '件を追加';
+          showToast(importMsg, {type:'info', duration: 4000});
+          setTimeout(function(){ location.reload(); }, 4200);
+          } // end _doImport
+
+          // 二重インポートでなければそのまま実行
+          if (!_alreadyImported) _doImport();
         } catch (err) {
           showToast(`インポートエラー: ${err.message}`, {type:'error'});
         }
@@ -11804,6 +11950,7 @@ function reviveBlueprint(id) {
         localStorage.setItem('tokuPoints', String(cur * 100));
         var log = JSON.parse(localStorage.getItem('tokuLog') || '[]');
         log.push({ type:'migration', amount: cur * 99, reason: 'GDP億単位マイグレーション', date: new Date().toISOString() });
+        if (log.length > 1000) log = log.slice(-1000);
         localStorage.setItem('tokuLog', JSON.stringify(log));
       }
       localStorage.setItem(_migKey, '1');
@@ -11829,6 +11976,91 @@ function reviveBlueprint(id) {
         localStorage.setItem('mig_journals_to_alltasks_v1', '1');
         window._dbgLog && window._dbgLog('migrateJournalsToAllTasks done. added=' + added);
       } catch(e) { console.error('[migrateJournalsToAllTasks]', e); }
+    })();
+
+    // ===== 孤立taskIds除去 + 重複blueprint削除マイグレーション =====
+    (function() {
+      var _migKey = 'mig_orphan_taskids_v1';
+      if (localStorage.getItem(_migKey)) return;
+      try {
+        var changed = false;
+
+        // 1. gantt.taskIdsから孤立IDを除去
+        var allTaskIdSet = new Set(allTasks.map(function(t){ return t.id; }));
+        allTasks.forEach(function(t) {
+          if (t.kind !== 'gantt' || !Array.isArray(t.taskIds)) return;
+          var before = t.taskIds.length;
+          t.taskIds = t.taskIds.filter(function(tid){ return allTaskIdSet.has(tid); });
+          if (t.taskIds.length !== before) {
+            changed = true;
+            window._dbgLog && window._dbgLog('mig_orphan: gantt[' + t.title + '] ' + before + '→' + t.taskIds.length + '件');
+          }
+        });
+
+        // 2. grandvisionId=019d10bd-e931-71e5... 系の重複セットを削除
+        //    （同一グランドビジョンタイトルが2セット存在する問題）
+        //    019d10bd系のblueprint/gantt/taskを削除する
+        var dupPrefix = '019d10bd-e931-';
+        var dupBlueprintIds = new Set(
+          allTasks
+            .filter(function(t){ return t.kind === 'blueprint' && t.id.indexOf(dupPrefix) === 0; })
+            .map(function(t){ return t.id; })
+        );
+        var dupGanttIds = new Set(
+          allTasks
+            .filter(function(t){ return t.kind === 'gantt' && dupBlueprintIds.has(t.blueprintId); })
+            .map(function(t){ return t.id; })
+        );
+        // 重複grandvision(019d10bd系)も削除
+        var dupGrandvisionIds = new Set(
+          allTasks
+            .filter(function(t){ return t.kind === 'grandvision' && t.id.indexOf(dupPrefix) === 0; })
+            .map(function(t){ return t.id; })
+        );
+
+        var beforeLen = allTasks.length;
+        allTasks = allTasks.filter(function(t) {
+          if (dupBlueprintIds.has(t.id)) return false;
+          if (dupGanttIds.has(t.id)) return false;
+          if (dupGrandvisionIds.has(t.id)) return false;
+          return true;
+        });
+        if (allTasks.length !== beforeLen) {
+          changed = true;
+          window._dbgLog && window._dbgLog('mig_orphan: 重複セット削除 ' + beforeLen + '→' + allTasks.length + '件');
+        }
+
+        if (changed) saveAllTasks();
+        localStorage.setItem(_migKey, '1');
+        window._dbgLog && window._dbgLog('mig_orphan_taskids_v1 done');
+      } catch(e) { console.error('[mig_orphan_taskids_v1]', e); }
+    })();
+
+    // ===== done/completed同期修正マイグレーション =====
+    (function() {
+      var _migKey = 'mig_done_completed_sync_v1';
+      if (localStorage.getItem(_migKey)) return;
+      try {
+        var fixed = 0;
+        allTasks.forEach(function(t) {
+          if (t.kind !== 'task') return;
+          var hasDone = 'done' in t;
+          var hasCompleted = 'completed' in t;
+          if (!hasDone && !hasCompleted) return;
+          // どちらかしかない場合は揃える
+          if (hasDone && !hasCompleted) {
+            t.completed = !!t.done; fixed++;
+          } else if (!hasDone && hasCompleted) {
+            t.done = !!t.completed; fixed++;
+          } else if (!!t.done !== !!t.completed) {
+            // 両方あるがズレている→completedを正とする
+            t.done = !!t.completed; fixed++;
+          }
+        });
+        if (fixed > 0) saveAllTasks();
+        localStorage.setItem(_migKey, '1');
+        window._dbgLog && window._dbgLog('mig_done_completed_sync_v1 done. fixed=' + fixed);
+      } catch(e) { console.error('[mig_done_completed_sync_v1]', e); }
     })();
     // 日付変更時：雑記帳→thoughtsに自動移動
     function moveScratchToThoughts() {
@@ -11897,7 +12129,8 @@ function reviveBlueprint(id) {
       'mig_ids_to_uuid_v7', 'mig_show_in_daily_to_display_scope_v1',
       'mig_category_to_calendar_v170', 'mig_death_ghost_flags_v0_24_59',
       'mig_gant_enabled_default_v0_32', 'mig_journals_to_alltasks_v1',
-      'mig_gdp_to_oku_v1',
+      'mig_gdp_to_oku_v1', 'mig_orphan_taskids_v1', 'mig_done_completed_sync_v1',
+      '_importLog',
       // GDP経済システム
       'gdpPoints', 'gdpLog', 'gouLog', 'lastGouCheckDate', 'lastTaskCompletedDate',
       'lastKingdomCodeDate', 'lastMonthlyBonusMonth',
@@ -12019,12 +12252,17 @@ function reviveBlueprint(id) {
       document.getElementById('scratchView').style.display = 'none';
       var _jv = document.getElementById('journalView'); if (_jv) _jv.style.display = 'none';
       document.getElementById('dailyInnerTabBar').style.display = 'none';
+      var _dailyNavBarReset = document.getElementById('dailyDateNavBar');
+      if (_dailyNavBarReset) _dailyNavBarReset.style.display = 'none';
       var _hb = document.getElementById('tutorialHelpBtn');
       if (_hb) _hb.style.display = 'block';
       // タブのアクティブ状態を更新
       document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
       if (view === 'daily') {
         document.getElementById('dailyInnerTabBar').style.display = 'flex';
+        var _navBar = document.getElementById('dailyDateNavBar');
+        if (_navBar) { _navBar.style.display = 'flex'; }
+        if (typeof _updateDailyNavBar === 'function') _updateDailyNavBar();
         const _dm = allSettings.ui.dailyViewMode;
         const dailyMode = (_dm === 'matrix' || _dm === 'timeline' || _dm === 'scratch') ? _dm : 'matrix';
         switchDailyTab(dailyMode);
@@ -14119,6 +14357,9 @@ function loadSettingsUI() {
     window.adjustTlRowHeight = adjustTlRowHeight;
     window.changeMonth = changeMonth;
     window.changeTimelineDate = changeTimelineDate;
+    window.changeDailyDate = changeDailyDate;
+    window.goToDailyToday = goToDailyToday;
+    window._updateDailyNavBar = _updateDailyNavBar;
     window.changeWeek = changeWeek;
     window.changeYear = changeYear;
     window.promoteScratchToGant = promoteScratchToGant;
@@ -16757,6 +16998,14 @@ function updateCraftHUD() {
   // 業（怠り負債）表示
   var gouEl2 = document.getElementById('craftGouValue');
   if (gouEl2) gouEl2.textContent = getGouNew();
+  // 称号表示
+  var titleEl = document.getElementById('craftKingdomTitle');
+  if (titleEl && typeof getKingdomTitle === 'function') {
+    var t = getKingdomTitle();
+    titleEl.textContent = t.icon + ' ' + t.name;
+    titleEl.style.color = t.color || '#fff';
+    titleEl.style.textShadow = '0 0 8px ' + (t.color || '#fff') + '88';
+  }
   // 管理者モード追加表示
   var isAdmin = _adminModeActive;
   var extra = document.getElementById('adminBadgeExtra');
@@ -16785,6 +17034,7 @@ function addToku(amount, reason) {
   localStorage.setItem('tokuPoints', String(current + amount));
   const log = JSON.parse(localStorage.getItem('tokuLog') || '[]');
   log.push({ type: 'toku', amount: amount, reason: reason, date: new Date().toISOString() });
+  if (log.length > 1000) log = log.slice(-1000);
   localStorage.setItem('tokuLog', JSON.stringify(log));
   if (typeof updateCraftHUD === 'function') updateCraftHUD();
   var tokubun = getTokubun();
@@ -20117,7 +20367,7 @@ function showDebugLog() {
        var desynced = synced.filter(function(t){ return !!t.done !== !!t.completed; }).length;
        desynced === 0
          ? ok('done/completed同期: ズレなし（' + synced.length + '件確認）')
-         : ok('done/completed同期: ' + desynced + '件ズレあり（旧データ混在の可能性）');
+         : ng('done/completed同期', desynced + '件ズレあり（mig_done_completed_sync_v1未適用？）');
        // thought→journal参照整合性
        var journalIds = new Set(at.filter(function(t){ return t.kind==='journal'; }).map(function(t){ return t.id; }));
        var orphans = at.filter(function(t){ return t.kind==='thought' && !journalIds.has(t.parentId); });
@@ -21010,9 +21260,12 @@ function showDebugLog() {
        // クリーンアップ（日誌とthoughtsを削除）
        if (_stJournal21) {
          var _stJId21 = _stJournal21.id;
-         var _stThs21 = typeof getThoughts === 'function' ? getThoughts(_stJId21) : (_stJournal21.thoughts||[]);
-         _stThs21.forEach(function(th){ if (typeof deleteThought === 'function') deleteThought(th.id); });
-         allTasks = allTasks.filter(function(t){ return t.id !== _stJId21; });
+         // thoughtsを直接allTasksからIDで削除（getThoughtsに依存しない）
+         allTasks = allTasks.filter(function(t){
+           if (t.kind === 'thought' && t.parentId === _stJId21) return false;
+           if (t.id === _stJId21) return false;
+           return true;
+         });
        }
        // _lastScratchMoveDateを元に戻す
        if (_stPrevMoveDate) localStorage.setItem('_lastScratchMoveDate', _stPrevMoveDate);
@@ -21285,7 +21538,7 @@ function showDebugLog() {
        // テストセクション自己存在確認：ソースコード上の存在をチェック
        var _stSections = ['ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10',
          'ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20',
-         'ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30'];
+         'ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -21670,6 +21923,7 @@ function showDebugLog() {
        }
      } catch(e) { ng('ST-29: コロシアム描画', e.message); }
 
+
      // ===== ST-30: iOS日付パース・NaNガード =====
      try {
        // スラッシュ形式は必ず正常パース
@@ -21718,6 +21972,144 @@ function showDebugLog() {
        ok('ST-30: クリーンアップ完了');
      } catch(e) { ng('ST-30: iOS日付パース・NaNガード', e.message); }
 
+     // ===== ST-31: 称号HUD表示テスト =====
+     try {
+       // DOM存在確認
+       var _st31El = document.getElementById('craftKingdomTitle');
+       _st31El
+         ? ok('ST-31: #craftKingdomTitle DOM確認')
+         : ng('ST-31: #craftKingdomTitle', 'DOM未存在');
+
+       // getKingdomTitle関数確認
+       typeof getKingdomTitle === 'function'
+         ? ok('ST-31: getKingdomTitle 存在確認')
+         : ng('ST-31: getKingdomTitle', '未定義');
+
+       // getKingdomPower関数確認
+       typeof getKingdomPower === 'function'
+         ? ok('ST-31: getKingdomPower 存在確認')
+         : ng('ST-31: getKingdomPower', '未定義');
+
+       // 称号6段階の全パターン確認
+       var _st31Cases = [
+         { power: 0,         icon: '🌱', name: '開拓民' },
+         { power: 10000,     icon: '🏠', name: '村長'   },
+         { power: 100000,    icon: '🏯', name: '城主'   },
+         { power: 1000000,   icon: '👑', name: '大名'   },
+         { power: 10000000,  icon: '🌍', name: '列強'   },
+         { power: 100000000, icon: '🌟', name: '覇者'   }
+       ];
+       // getKingdomTitleはgetKingdomPower()を内部で呼ぶため
+       // 直接powerを渡すモックで確認
+       var _st31OrigFn = window.getKingdomPower;
+       var _st31AllOk = true;
+       _st31Cases.forEach(function(c) {
+         window.getKingdomPower = function(){ return c.power; };
+         var t = getKingdomTitle();
+         if (!t || t.icon !== c.icon || t.name !== c.name) {
+           ng('ST-31: 称号パターン power=' + c.power, JSON.stringify(t));
+           _st31AllOk = false;
+         }
+       });
+       if (_st31AllOk) ok('ST-31: 称号6段階パターン全確認（開拓民〜覇者）');
+       window.getKingdomPower = _st31OrigFn;
+
+       // updateCraftHUDがcraftKingdomTitleを更新するか確認
+       if (_st31El && typeof updateCraftHUD === 'function') {
+         var _st31Before = _st31El.textContent;
+         updateCraftHUD();
+         var _st31After = _st31El.textContent;
+         _st31After && _st31After.length > 0
+           ? ok('ST-31: updateCraftHUD→称号更新確認（' + _st31After + '）')
+           : ng('ST-31: updateCraftHUD→称号更新', '空文字');
+       }
+
+       // 称号が上・GDP/徳が下の順序確認（DOM構造）
+       if (_st31El) {
+         var _st31GdpEl = document.getElementById('craftGDPValue');
+         if (_st31El && _st31GdpEl) {
+           // craftKingdomTitleがcraftGDPValueより前に出現するかHTMLで確認
+           var _st31Html = document.getElementById('craftGDPBadge') ? document.getElementById('craftGDPBadge').innerHTML : '';
+           var _st31TitlePos = _st31Html.indexOf('craftKingdomTitle');
+           var _st31GdpPos   = _st31Html.indexOf('craftGDPValue');
+           _st31TitlePos < _st31GdpPos && _st31TitlePos !== -1
+             ? ok('ST-31: 称号が上・GDP/徳が下の順序確認')
+             : ng('ST-31: DOM順序', 'title=' + _st31TitlePos + ' gdp=' + _st31GdpPos);
+         }
+       }
+     } catch(e) { ng('ST-31: 称号HUD表示', e.message); }
+
+     // ===== ST-32: 日次日付ナビゲーション =====
+     try {
+       // DOM確認
+       var _st32NavBar = document.getElementById('dailyDateNavBar');
+       _st32NavBar
+         ? ok('ST-32: #dailyDateNavBar DOM確認')
+         : ng('ST-32: #dailyDateNavBar', 'DOM未存在');
+       var _st32Label = document.getElementById('dailyNavDateLabel');
+       _st32Label
+         ? ok('ST-32: #dailyNavDateLabel DOM確認')
+         : ng('ST-32: #dailyNavDateLabel', 'DOM未存在');
+
+       // 関数存在確認
+       typeof changeDailyDate === 'function'
+         ? ok('ST-32: changeDailyDate 存在確認')
+         : ng('ST-32: changeDailyDate', '未定義');
+       typeof goToDailyToday === 'function'
+         ? ok('ST-32: goToDailyToday 存在確認')
+         : ng('ST-32: goToDailyToday', '未定義');
+       typeof _updateDailyNavBar === 'function'
+         ? ok('ST-32: _updateDailyNavBar 存在確認')
+         : ng('ST-32: _updateDailyNavBar', '未定義');
+
+       // 前日移動テスト
+       var _st32OrigDate = currentDailyDate;
+       var _st32Today = getLocalDateStr(new Date());
+       currentDailyDate = _st32Today;
+       changeDailyDate(-1);
+       var _st32Yesterday = currentDailyDate;
+       var _st32ExpectedYesterday = (function(){
+         var d = new Date(_st32Today.replace(/-/g, '/'));
+         d.setDate(d.getDate() - 1);
+         return getLocalDateStr(d);
+       })();
+       _st32Yesterday === _st32ExpectedYesterday
+         ? ok('ST-32: 前日移動確認（' + _st32Yesterday + '）')
+         : ng('ST-32: 前日移動', _st32Yesterday + '≠' + _st32ExpectedYesterday);
+
+       // 翌日移動テスト
+       changeDailyDate(1);
+       currentDailyDate === _st32Today
+         ? ok('ST-32: 翌日移動→元の日付確認（' + currentDailyDate + '）')
+         : ng('ST-32: 翌日移動', currentDailyDate + '≠' + _st32Today);
+
+       // 今日リセットテスト
+       currentDailyDate = '2026-01-01';
+       goToDailyToday();
+       currentDailyDate === null
+         ? ok('ST-32: goToDailyToday→null（今日）リセット確認')
+         : ng('ST-32: goToDailyToday', 'currentDailyDate=' + currentDailyDate);
+
+       // iOS日付パース確認（スラッシュ変換）
+       var _st32IosDate = new Date('2026-03-22'.replace(/-/g, '/')).getTime();
+       !isNaN(_st32IosDate)
+         ? ok('ST-32: iOS日付パース（スラッシュ変換）確認')
+         : ng('ST-32: iOS日付パース', 'NaN');
+
+       // ラベル更新確認
+       currentDailyDate = _st32Today;
+       if (typeof _updateDailyNavBar === 'function') _updateDailyNavBar();
+       var _st32LabelAfter = _st32Label ? _st32Label.textContent : '';
+       _st32LabelAfter.length > 0
+         ? ok('ST-32: ナビバーラベル更新確認（' + _st32LabelAfter + '）')
+         : ng('ST-32: ナビバーラベル', '空文字');
+
+       // クリーンアップ
+       currentDailyDate = _st32OrigDate;
+       if (typeof _updateDailyNavBar === 'function') _updateDailyNavBar();
+       ok('ST-32: クリーンアップ完了');
+     } catch(e) { ng('ST-32: 日次日付ナビゲーション', e.message); }
+
      // ===== 17. Key Purify Absolute Green（最終確認・4軸検査） =====
      try {
        var _kpKeys = Object.keys(localStorage);
@@ -21764,7 +22156,7 @@ function showDebugLog() {
          : ng('KPAG③: 禁止キー検知', '廃止キーが残存: ' + _bannedFound.join(', '));
 
        // ④ 未知キー検知（白名単チェック）
-       var _allowedKeys = ['_calIdMigMap','_dbg_errors','_dbg_log','_lastScratchMoveDate','allSettings','allTasks','autoMainCalendar','calendars','craftMode','currentView','dailyScrollInit','dataVersion','deletedTaskIds','deviceId','escapeLog','extendedvaluekey','gantEnabled','gdpLog','gdpPoints','gouLog','gouPoints','journals','lastGouCheckDate','lastKingdomCodeDate','lastMonthlyBonusMonth','lastTaskCompletedDate','mainCalendarId','mig_category_to_calendar_v170','mig_death_ghost_flags_v0_24_59','mig_gant_enabled_default_v0_32','mig_gdp_to_oku_v1','mig_ids_to_uuid_v7','mig_journal_ids_to_uuid_v7','mig_journals_to_alltasks_v1','mig_show_in_daily_to_display_scope_v1','migration_calendarId_v1','nbLastPageId','notebooks','selectedDailyDate','simpleMode','taskCompletedStreak','taskCompletedTotal','tlLastScrollTop','tokuLog','tokuPoints','weeklyScrollInit','wgLastScrollTop'];
+       var _allowedKeys = ['_calIdMigMap','_dbg_errors','_dbg_log','_lastScratchMoveDate','allSettings','allTasks','autoMainCalendar','calendars','craftMode','currentView','dailyScrollInit','dataVersion','deletedTaskIds','deviceId','escapeLog','extendedvaluekey','gantEnabled','gdpLog','gdpPoints','gouLog','gouPoints','journals','lastGouCheckDate','lastKingdomCodeDate','lastMonthlyBonusMonth','lastTaskCompletedDate','mainCalendarId','mig_category_to_calendar_v170','mig_death_ghost_flags_v0_24_59','mig_gant_enabled_default_v0_32','mig_gdp_to_oku_v1','mig_ids_to_uuid_v7','mig_journal_ids_to_uuid_v7','_importLog','mig_done_completed_sync_v1','mig_journals_to_alltasks_v1','mig_orphan_taskids_v1','mig_show_in_daily_to_display_scope_v1','migration_calendarId_v1','nbLastPageId','notebooks','selectedDailyDate','simpleMode','taskCompletedStreak','taskCompletedTotal','tlLastScrollTop','tokuLog','tokuPoints','weeklyScrollInit','wgLastScrollTop'];
        var _unknownKeys = _kpKeys.filter(function(k){ return _allowedKeys.indexOf(k) === -1; });
        _unknownKeys.length === 0
          ? ok('KPAG④: 未知キー検知 — 全' + _kpKeys.length + 'キー検査済・汚染ゼロ')
