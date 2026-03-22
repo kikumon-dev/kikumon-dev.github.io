@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.34';
+    const APP_VERSION = 'v0.39.36';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -5984,9 +5984,12 @@ function myDeckApply(idx) {
     }
     // 日付表示
     function updateDate() {
-      const now = new Date();
-      const weekday = ['日', '月', '火', '水', '木', '金', '土'];
-      const dateStr = now.toLocaleDateString('ja-JP') + '（' + weekday[now.getDay()] + '）';
+      var weekday = ['日', '月', '火', '水', '木', '金', '土'];
+      var target = (typeof currentDailyDate !== 'undefined' && currentDailyDate)
+        ? new Date(currentDailyDate.replace(/-/g, '/'))
+        : new Date();
+      if (isNaN(target.getTime())) target = new Date();
+      var dateStr = target.toLocaleDateString('ja-JP') + '（' + weekday[target.getDay()] + '）';
       document.getElementById('dateDisplay').textContent = dateStr;
       // スマホ用の第1象限日付も同期
       const mobileDate = document.getElementById('dateDisplayMobile');
@@ -7229,12 +7232,13 @@ function myDeckApply(idx) {
       var ddm = document.getElementById('dateDisplayMobile');
       if (ddm) ddm.textContent = dateText;
       _updateDailyNavBar();
-      renderAllSections();
+      renderAllSections(newDate);
     }
     function goToDailyToday() {
       currentDailyDate = null;
       localStorage.removeItem('selectedDailyDate');
       var today = new Date();
+      var todayStr = getLocalDateStr(today);
       var weekdays = ['日', '月', '火', '水', '木', '金', '土'];
       var dateText = today.toLocaleDateString('ja-JP') + '（' + weekdays[today.getDay()] + '）';
       var dd = document.getElementById('dateDisplay');
@@ -7242,7 +7246,7 @@ function myDeckApply(idx) {
       var ddm = document.getElementById('dateDisplayMobile');
       if (ddm) ddm.textContent = dateText;
       _updateDailyNavBar();
-      renderAllSections();
+      renderAllSections(todayStr);
     }
     // ===== 日次タイムラインビュー =====
     let currentTimelineDate = null;
@@ -10640,8 +10644,9 @@ function reviveBlueprint(id) {
             if (_gv && _gv.style.display !== 'none') renderGantView();
           }
         }
-        // 日次ビュー：全象限を再描画
-        renderAllSections();
+        // 日次ビュー：全象限を再描画（currentDailyDateを維持）
+        var _togDate = (typeof currentDailyDate !== 'undefined' && currentDailyDate) ? currentDailyDate : null;
+        renderAllSections(_togDate);
         // 週間ビューが表示されていたら更新
         if (isWeeklyViewVisible()) {
           renderWeeklyView();
@@ -10924,8 +10929,9 @@ function reviveBlueprint(id) {
         saveAllTasks();
       }
       renderGantView && renderGantView();
-      // 日次ビュー：全象限を再描画
-      renderAllSections();
+      // 日次ビュー：全象限を再描画（currentDailyDateを維持）
+      var _delDate = (typeof currentDailyDate !== 'undefined' && currentDailyDate) ? currentDailyDate : null;
+      renderAllSections(_delDate);
       // 週間ビューが表示されていたら更新
       if (isWeeklyViewVisible()) {
         renderWeeklyView();
@@ -11011,9 +11017,9 @@ function reviveBlueprint(id) {
         // matrix（デフォルト）
         dailyView.style.display = 'grid';
         document.getElementById('dailyTabMatrix').classList.add('active');
-        currentDailyDate = null;
+        var _matrixDate = currentDailyDate || getLocalDateStr(new Date());
         updateDate();
-        renderAllSections();
+        renderAllSections(_matrixDate);
       }
       // 設定のdailyViewModeも更新
       allSettings.ui.dailyViewMode = mode;
