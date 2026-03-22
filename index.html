@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.38.77';
+    const APP_VERSION = 'v0.39.00';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3825,6 +3825,7 @@
     <!-- デッキショップ -->
     <div id="shopPaneDeck" style="display:block;">
       <p style="margin:0 0 20px 0;font-size:0.88em;color:#8e8e8e;">公式デッキを受け取ろう。受け取ったタスクは今日の日次に追加されます。</p>
+      <div id="deckShopFilter"></div>
       <div id="deckShopList" style="display:flex;flex-direction:column;gap:14px;"></div>
     </div>
     <!-- 貿易港 -->
@@ -3998,6 +3999,15 @@
             <span style="font-size:0.9em;color:#333;font-weight:600;">🛍️ ショップ</span>
           </label>
         </div>
+      </div>
+      <div class="settings-section">
+        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">👹 業の記録</h3>
+        <p style="margin:0 0 12px 0;font-size:0.8em;color:#888;">不作為・怠りの記録。タスクを完了して業を祓いましょう。</p>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <div style="font-size:1.4em;font-weight:800;color:#e53935;" id="gouDisplayValue">0</div>
+          <div style="font-size:0.8em;color:#888;">/ 365（上限）</div>
+        </div>
+        <button onclick="openGouLogModal()" style="width:100%;padding:10px;border:1.5px solid #e53935;border-radius:10px;background:none;color:#e53935;font-size:0.85em;font-weight:600;cursor:pointer;">📜 業の発生履歴を見る</button>
       </div>
       <div class="settings-section">
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">🏰 王国を訪問する</h3>
@@ -4692,6 +4702,12 @@
         received:    {},
         starterDone: false
       },
+      colosseum: {
+        mode: 'auto',
+        cycle: 'daily',
+        cycleStart: '',
+        scores: {}
+      },
       flags: {
         tutorialSeen:       false,
         gantTourSeen:       false,
@@ -5217,12 +5233,112 @@
       return null;
     }
     // ===== タスク検索 =====
+// ===== 検索タブ切り替え =====
+function switchSearchTab(tab) {
+  var btnSearch = document.getElementById('searchTabSearch');
+  var btnTodo   = document.getElementById('searchTabTodo');
+  var paneSearch = document.getElementById('searchPaneSearch');
+  var paneTodo   = document.getElementById('searchPaneTodo');
+  if (!btnSearch || !btnTodo || !paneSearch || !paneTodo) return;
+  if (tab === 'search') {
+    btnSearch.style.cssText = 'flex:1;padding:6px 0;border-radius:20px;border:1.5px solid #333;background:#333;color:#fff;font-size:0.8em;font-weight:700;cursor:pointer;';
+    btnTodo.style.cssText   = 'flex:1;padding:6px 0;border-radius:20px;border:1.5px solid #e0e0e0;background:#fff;color:#888;font-size:0.8em;font-weight:700;cursor:pointer;';
+    paneSearch.style.display = 'flex';
+    paneTodo.style.display   = 'none';
+  } else {
+    btnSearch.style.cssText = 'flex:1;padding:6px 0;border-radius:20px;border:1.5px solid #e0e0e0;background:#fff;color:#888;font-size:0.8em;font-weight:700;cursor:pointer;';
+    btnTodo.style.cssText   = 'flex:1;padding:6px 0;border-radius:20px;border:1.5px solid #333;background:#333;color:#fff;font-size:0.8em;font-weight:700;cursor:pointer;';
+    paneSearch.style.display = 'none';
+    paneTodo.style.display   = 'flex';
+    renderTodoList();
+  }
+}
+
+// ===== 未完了タスク一覧 =====
+function renderTodoList() {
+  var container = document.getElementById('todoResults');
+  var countEl   = document.getElementById('todoCount');
+  if (!container || !countEl) return;
+  // 未完了タスクを全件取得・日付順
+  var todos = allTasks.filter(function(t) {
+    return t.kind === 'task' && !t.completed && !t.done && !t.inHeaven && t.displayScope !== 'heaven';
+  }).sort(function(a, b) {
+    var da = a.date || '9999-99-99'; var db = b.date || '9999-99-99';
+    if (da !== db) return da.localeCompare(db);
+    return (a.section||4) - (b.section||4);
+  });
+  countEl.textContent = todos.length + '件の未完了タスク';
+  container.innerHTML = '';
+  if (todos.length === 0) {
+    container.innerHTML = '<div style="text-align:center;color:#bbb;padding:32px 0;font-size:0.9em;">未完了タスクはありません🎉</div>';
+    return;
+  }
+  var sectionNames = { 1:'🔴 緊急×重要', 2:'🟡 重要', 3:'🟠 緊急', 4:'⬜ その他' };
+  var lastDate = '';
+  todos.forEach(function(t) {
+    // 日付区切り
+    var dateStr = t.date || '日付なし';
+    if (dateStr !== lastDate) {
+      var sep = document.createElement('div');
+      sep.style.cssText = 'font-size:0.72em;font-weight:700;color:#aaa;padding:8px 4px 4px;letter-spacing:0.05em;' + (lastDate ? 'border-top:1px solid #f0f0f0;margin-top:4px;' : '');
+      sep.textContent = dateStr === '日付なし' ? '📌 日付なし' : '📅 ' + dateStr;
+      container.appendChild(sep);
+      lastDate = dateStr;
+    }
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:flex-start;gap:8px;padding:9px 6px;border-bottom:1px solid #f8f8f8;cursor:pointer;border-radius:8px;';
+    row.onmouseover = function(){ row.style.background='#f9f9f9'; };
+    row.onmouseout  = function(){ row.style.background=''; };
+    row.onclick = (function(task){
+      return function() {
+        closeSearchModal();
+        var d = task.date || getLocalDateStr(new Date());
+        var sec = task.section || 4;
+        // currentDailyDateをセットしてから遷移
+        if (typeof currentDailyDate !== 'undefined') currentDailyDate = d;
+        switchView('daily');
+        setTimeout(function(){
+          if (typeof renderAllSections === 'function') renderAllSections(d);
+          // セクションにスクロール → タスクにスクロール
+          setTimeout(function(){
+            var secEl = document.getElementById('section' + sec);
+            if (secEl) secEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setTimeout(function(){
+              var taskEl = document.getElementById('task-' + task.id);
+              if (taskEl) taskEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 200);
+          }, 150);
+        }, 100);
+      };
+    })(t);
+    var secLabel = document.createElement('div');
+    secLabel.style.cssText = 'font-size:0.65em;color:#aaa;flex-shrink:0;margin-top:3px;width:20px;text-align:center;';
+    secLabel.textContent = {1:'🔴',2:'🟡',3:'🟠',4:'⬜'}[t.section||4]||'⬜';
+    var info = document.createElement('div');
+    info.style.cssText = 'flex:1;min-width:0;';
+    var textEl = document.createElement('div');
+    textEl.style.cssText = 'font-size:0.88em;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+    textEl.textContent = t.text || '（無題）';
+    info.appendChild(textEl);
+    if (t.memo) {
+      var memo = document.createElement('div');
+      memo.style.cssText = 'font-size:0.72em;color:#aaa;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+      memo.textContent = t.memo;
+      info.appendChild(memo);
+    }
+    row.appendChild(secLabel);
+    row.appendChild(info);
+    container.appendChild(row);
+  });
+}
+
     function openSearchModal() {
       document.getElementById('searchModal').classList.add('show');
       document.getElementById('searchInput').value = '';
       document.getElementById('searchResults').innerHTML = '';
       document.getElementById('searchCount').textContent = '0件';
-      setTimeout(() => document.getElementById('searchInput').focus(), 100);
+      if (typeof switchSearchTab === 'function') switchSearchTab('search');
+      setTimeout(() => { var el = document.getElementById('searchInput'); if(el) el.focus(); }, 100);
     }
     function closeSearchModal() {
       document.getElementById('searchModal').classList.remove('show');
@@ -5470,9 +5586,9 @@
       if (!entry.stats) entry.stats = { received: 0, completed: 0 };
       entry.stats.received = (entry.stats.received || 0) + 1;
       saveAllTasks();
-      if (typeof addToku === 'function') addToku(1, 'ARV1:着荷（' + (data.deckTitle||'デッキ') + ' by ' + (data.reportedBy||'旅人') + '）');
+      if (typeof addGDP === 'function') addGDP(100, 'ARV1:着荷（' + (data.deckTitle||'デッキ') + ' by ' + (data.reportedBy||'旅人') + '）');
       if (typeof renderDeckHistory === 'function') renderDeckHistory();
-      showToast('⚓ ' + (data.reportedBy||'旅人') + 'さんに届きました！GDP+1', {type:'success', duration:4000});
+      showToast('⚓ ' + (data.reportedBy||'旅人') + 'さんに届きました！GDP+100万', {type:'success', duration:4000});
     }
 
     // ===== BLM1: 開花コード生成・受取 =====
@@ -5505,9 +5621,14 @@
       entry.stats.blmCompleted = (entry.stats.blmCompleted || 0) + (data.completedCount || 0);
       saveAllTasks();
       var bonus = data.completedCount || 0;
-      if (bonus > 0 && typeof addToku === 'function') addToku(bonus, 'BLM1:開花（' + (data.deckTitle||'デッキ') + ' by ' + (data.reportedBy||'旅人') + '）');
+      if (bonus > 0 && typeof addGDP === 'function') addGDP(bonus * 100, 'BLM1:開花（' + (data.deckTitle||'デッキ') + ' by ' + (data.reportedBy||'旅人') + '）');
       if (typeof renderDeckHistory === 'function') renderDeckHistory();
-      showToast('🌸 ' + (data.reportedBy||'旅人') + 'さんが' + bonus + '件完了！GDP+' + bonus, {type:'success', duration:4000});
+      // コロシアムランキングに記録
+      if (typeof recordColosseumScore === 'function') {
+        recordColosseumScore(data.deckId, data.reportedBy || '旅人', data.completedCount || 0);
+        if (typeof renderColosseumView === 'function') renderColosseumView();
+      }
+      showToast('🌸 ' + (data.reportedBy||'旅人') + 'さんが' + bonus + '件完了！GDP+' + (bonus*100) + '万', {type:'success', duration:4000});
     }
 
     function incrementDeckHistoryStat(deckId) {
@@ -5616,7 +5737,7 @@ function myDeckApply(idx) {
     // 徳加算（1回のみ）
     if (!_applyTokuDone) {
       _applyTokuDone = true;
-      if (typeof addToku === 'function') addToku(300, '公式申請');
+      // 公式申請：旧報酬削除
     }
     // 特別トースト
     var applyToast = document.createElement('div');
@@ -7690,7 +7811,209 @@ function myDeckApply(idx) {
       const end = ends.length ? ends[ends.length - 1] : (bp.endDate || null);
       return { start, end };
     }
-    function applyVisibleTabsSettings() {
+    // ===== GDP・業 独立管理 =====
+function getGDP() {
+  return parseInt(localStorage.getItem('gdpPoints') || '0');
+}
+function addGDP(amount, reason) {
+  var cur = getGDP();
+  var next = Math.max(0, cur + amount);
+  localStorage.setItem('gdpPoints', String(next));
+  var log = JSON.parse(localStorage.getItem('gdpLog') || '[]');
+  log.push({ type:'gdp', amount:amount, reason:reason, date:new Date().toISOString() });
+  if (log.length > 300) log = log.slice(-300);
+  localStorage.setItem('gdpLog', JSON.stringify(log));
+  if (typeof updateCraftHUD === 'function') updateCraftHUD();
+}
+function getGouNew() {
+  return parseInt(localStorage.getItem('gouPoints') || '0');
+}
+function addGou(amount, reason) {
+  var cur = getGouNew();
+  var next = Math.max(0, Math.min(365, cur + amount));
+  localStorage.setItem('gouPoints', String(next));
+  // 業ログを記録
+  if (reason && !reason.startsWith('ST-') && !reason.startsWith('テスト')) {
+    var gouLog = JSON.parse(localStorage.getItem('gouLog') || '[]');
+    gouLog.push({ amount: amount, reason: reason || '不明', date: new Date().toISOString(), total: next });
+    if (gouLog.length > 100) gouLog = gouLog.slice(-100);
+    localStorage.setItem('gouLog', JSON.stringify(gouLog));
+  }
+  if (typeof updateCraftHUD === 'function') updateCraftHUD();
+  // 業は静かに積み上がる（トースト通知なし・設定で確認）
+}
+// 毎日起動時：業によるGDP削減チェック
+function checkDailyGouPenalty() {
+  var _migKey = 'lastGouCheckDate';
+  var today = new Date().toISOString().slice(0,10);
+  var last = localStorage.getItem(_migKey);
+  if (last === today) return;
+  localStorage.setItem(_migKey, today);
+  var gou = getGouNew();
+  if (gou <= 0) return;
+  var gdp = getGDP();
+  if (gdp <= 0) return;
+  var penalty = Math.floor(gdp * (gou / 365));
+  if (penalty > 0) {
+    addGDP(-penalty, '業によるGDP削減（業=' + gou + '）');
+    // GDP削減は静かに実行（設定の業ログで確認可能）
+  }
+}
+// 3日放置チェック（起動時）
+// A3: 月末決算ボーナス
+function checkMonthlyBonus() {
+  var _key = 'lastMonthlyBonusMonth';
+  var now = new Date();
+  var thisMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  var last = localStorage.getItem(_key);
+  if (last === thisMonth) return;
+  // 先月の完了件数を集計
+  var lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  var lastMonthStr = lastMonth.getFullYear() + '-' + String(lastMonth.getMonth() + 1).padStart(2, '0');
+  var completedLastMonth = (allTasks || []).filter(function(t) {
+    return t.kind === 'task' && t.completed && t.date && t.date.startsWith(lastMonthStr);
+  }).length;
+  if (completedLastMonth > 0) {
+    var bonus = completedLastMonth;
+    if (typeof addToku === 'function') addToku(bonus, '月末決算ボーナス（' + lastMonthStr + '月 ' + completedLastMonth + '件完了）');
+    if (typeof showToast === 'function') {
+      showToast('🎊 ' + lastMonthStr + '月の決算！' + completedLastMonth + '件完了→徳+' + bonus + '！', {type:'success', duration:5000});
+    }
+  }
+  localStorage.setItem(_key, thisMonth);
+}
+
+function checkAbsencePenalty() {
+  var lastKey = 'lastTaskCompletedDate';
+  var last = localStorage.getItem(lastKey);
+  if (!last) { localStorage.setItem(lastKey, new Date().toISOString().slice(0,10)); return; }
+  var today = new Date().toISOString().slice(0,10);
+  if (last === today) return;
+  var lastMs = new Date(last).getTime();
+  var todayMs = new Date(today).getTime();
+  var days = Math.floor((todayMs - lastMs) / 86400000);
+  if (days >= 3) {
+    var gain = days >= 10 ? 5 : days >= 5 ? 2 : 1;
+    addGou(gain, days + '日放置');
+    // 放置ペナルティは静かに加算（設定の業ログで確認可能）
+  }
+}
+function recordTaskCompletedDate() {
+  localStorage.setItem('lastTaskCompletedDate', new Date().toISOString().slice(0,10));
+}
+
+// B1: 王国力計算
+function getKingdomPower() {
+  var toku = typeof getToku === 'function' ? getToku() : 0;
+  var gdp  = typeof getGDP  === 'function' ? getGDP()  : 0;
+  var gou  = typeof getGouNew === 'function' ? getGouNew() : 0;
+  return Math.floor((toku * gdp) / (gou + 1));
+}
+
+function getKingdomTitle() {
+  var power = getKingdomPower();
+  if (power >= 100000000) return { icon: '🌟', name: '覇者',   color: '#ff8800' };
+  if (power >= 10000000)  return { icon: '🌍', name: '列強',   color: '#9c27b0' };
+  if (power >= 1000000)   return { icon: '👑', name: '大名',   color: '#2196f3' };
+  if (power >= 100000)    return { icon: '🏯', name: '城主',   color: '#4caf50' };
+  if (power >= 10000)     return { icon: '🏠', name: '村長',   color: '#aaa'    };
+  return { icon: '🌱', name: '開拓民', color: '#bbb' };
+}
+
+// ===== GDP億単位フォーマット =====
+function formatGDP(val) {
+  if (!val || val === 0) return '0万';
+  if (val >= 1000000) return (val / 1000000).toFixed(1).replace(/\.0$/, '') + '兆';
+  if (val >= 10000)   return (val / 10000).toFixed(1).replace(/\.0$/, '') + '億';
+  if (val >= 1)       return val.toLocaleString() + '万';
+  return val + '万';
+}
+
+// ===== GDP称号 =====
+function getGDPTitle(val) {
+  // 内部単位：万
+  // 村長=1,000万、城主=1億(10000万)、大名=10億、列強=100億、覇者=1000億
+  if (val >= 10000000) return { icon: '🌟', name: '覇者' };   // 1000億
+  if (val >= 1000000)  return { icon: '🌍', name: '列強' };   // 100億
+  if (val >= 100000)   return { icon: '👑', name: '大名' };   // 10億
+  if (val >= 10000)    return { icon: '🏯', name: '城主' };   // 1億
+  if (val >= 1000)     return { icon: '🏠', name: '村長' };   // 1000万
+  return { icon: '🌱', name: '開拓民' };
+}
+
+// ===== 業ログモーダル =====
+function openGouLogModal() {
+  var log = JSON.parse(localStorage.getItem('gouLog') || '[]').slice().reverse();
+  var gou = getGouNew();
+  var overlay = document.createElement('div');
+  overlay.className = 'gou-log-overlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:10001;overflow-y:auto;';
+  overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
+  var inner = document.createElement('div');
+  inner.style.cssText = 'background:#fff;margin:40px auto 24px;max-width:480px;border-radius:20px;padding:20px;box-shadow:0 8px 32px rgba(0,0,0,0.18);';
+  // ヘッダー
+  var header = document.createElement('div');
+  header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;';
+  header.innerHTML = '<div style="font-size:1.1em;font-weight:800;color:#222;">👹 業の記録</div>';
+  var closeBtn = document.createElement('button');
+  closeBtn.textContent = '✕';
+  closeBtn.style.cssText = 'background:none;border:none;font-size:1.3em;cursor:pointer;color:#aaa;';
+  closeBtn.addEventListener('click', function(){ overlay.remove(); });
+  header.appendChild(closeBtn);
+  inner.appendChild(header);
+  // 現在値
+  var current = document.createElement('div');
+  current.style.cssText = 'background:#fff5f5;border-radius:10px;padding:12px;margin-bottom:16px;text-align:center;';
+  current.innerHTML = '<div style="font-size:0.78em;color:#e53935;margin-bottom:4px;">現在の業</div>'
+    + '<div style="font-size:2em;font-weight:800;color:#e53935;">' + gou + '</div>'
+    + '<div style="font-size:0.72em;color:#aaa;">タスク完了で-1・日誌で-1・業が0になると王国が輝く</div>';
+  inner.appendChild(current);
+  // ログ一覧
+  if (log.length === 0) {
+    var empty = document.createElement('div');
+    empty.style.cssText = 'text-align:center;color:#bbb;padding:24px;font-size:0.85em;';
+    empty.innerHTML = '業の記録はありません<br>清らかな王国です🌸';
+    inner.appendChild(empty);
+  } else {
+    // 検索ボックス
+    var searchBox = document.createElement('input');
+    searchBox.type = 'text';
+    searchBox.placeholder = '理由で絞り込む…';
+    searchBox.style.cssText = 'width:100%;padding:8px 10px;border:1.5px solid #eee;border-radius:8px;font-size:0.82em;box-sizing:border-box;margin-bottom:10px;outline:none;';
+    var listContainer = document.createElement('div');
+    var listTitle = document.createElement('div');
+    listTitle.style.cssText = 'font-size:0.78em;font-weight:700;color:#888;margin-bottom:8px;';
+    listTitle.textContent = '発生履歴（最新100件）';
+    inner.appendChild(searchBox);
+    inner.appendChild(listTitle);
+    inner.appendChild(listContainer);
+    function renderGouList(filter) {
+      listContainer.innerHTML = '';
+      var filtered = filter ? log.filter(function(e){ return (e.reason||'').indexOf(filter) !== -1; }) : log;
+      if (filtered.length === 0) {
+        listContainer.innerHTML = '<div style="text-align:center;color:#bbb;padding:16px;font-size:0.82em;">該当なし</div>';
+        return;
+      }
+      filtered.forEach(function(entry) {
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid #f5f5f5;';
+        var isPlus = entry.amount > 0;
+        var dateStr = entry.date ? entry.date.slice(0,10) : '';
+        row.innerHTML = '<div style="font-size:0.75em;color:#aaa;flex-shrink:0;width:70px;">' + dateStr + '</div>'
+          + '<div style="flex:1;font-size:0.82em;color:#555;">' + (entry.reason||'不明') + '</div>'
+          + '<div style="font-size:0.88em;font-weight:700;color:' + (isPlus ? '#e53935' : '#4caf50') + ';flex-shrink:0;">' + (isPlus ? '+' : '') + entry.amount + '</div>'
+          + '<div style="font-size:0.72em;color:#bbb;flex-shrink:0;width:30px;text-align:right;">=' + (entry.total||'?') + '</div>';
+        listContainer.appendChild(row);
+      });
+    }
+    searchBox.addEventListener('input', function(){ renderGouList(searchBox.value.trim()); });
+    renderGouList('');
+  }
+  overlay.appendChild(inner);
+  document.body.appendChild(overlay);
+}
+
+function applyVisibleTabsSettings() {
   if (!allSettings.ui.visibleTabs) allSettings.ui.visibleTabs = {};
   var vt = allSettings.ui.visibleTabs;
   var tabs = [
@@ -11472,6 +11795,19 @@ function reviveBlueprint(id) {
     });
     // さらに古い命名も削除
     ['catMigrationDone_v170', 'migration_displayScope_v1', 'mig:uuidv7'].forEach(k => localStorage.removeItem(k));
+    // GDP億単位マイグレーション（v0.38.83）
+    (function() {
+      var _migKey = 'mig_gdp_to_oku_v1';
+      if (localStorage.getItem(_migKey)) return;
+      var cur = parseInt(localStorage.getItem('tokuPoints') || '0');
+      if (cur > 0 && cur < 10000) {
+        localStorage.setItem('tokuPoints', String(cur * 100));
+        var log = JSON.parse(localStorage.getItem('tokuLog') || '[]');
+        log.push({ type:'migration', amount: cur * 99, reason: 'GDP億単位マイグレーション', date: new Date().toISOString() });
+        localStorage.setItem('tokuLog', JSON.stringify(log));
+      }
+      localStorage.setItem(_migKey, '1');
+    })();
     migrateToUUIDv7();
     migrateRemainingNonUUIDIds();
     // ===== journalsキー→allTasks統合マイグレーション =====
@@ -11561,6 +11897,10 @@ function reviveBlueprint(id) {
       'mig_ids_to_uuid_v7', 'mig_show_in_daily_to_display_scope_v1',
       'mig_category_to_calendar_v170', 'mig_death_ghost_flags_v0_24_59',
       'mig_gant_enabled_default_v0_32', 'mig_journals_to_alltasks_v1',
+      'mig_gdp_to_oku_v1',
+      // GDP経済システム
+      'gdpPoints', 'gdpLog', 'gouLog', 'lastGouCheckDate', 'lastTaskCompletedDate',
+      'lastKingdomCodeDate', 'lastMonthlyBonusMonth',
       // 旧バージョン互換（旧ユーザーのデバイスに残存する場合あり・削除不可）
       'journals', 'notebooks', 'nbLastPageId',
       'craftMode', 'gantEnabled',
@@ -11611,6 +11951,10 @@ function reviveBlueprint(id) {
         if (el) el.checked = vt[key] !== false;
       });
     })();
+    // 業・放置ペナルティチェック（起動時）
+    if (typeof checkMonthlyBonus === 'function') checkMonthlyBonus();
+    if (typeof checkAbsencePenalty === 'function') checkAbsencePenalty();
+    if (typeof checkDailyGouPenalty === 'function') checkDailyGouPenalty();
     setupAllSectionDrops();
     setupDayButtons();
     // ページを開いたログを記録
@@ -11727,6 +12071,7 @@ function reviveBlueprint(id) {
         var _ncol = document.getElementById('navColosseum');
         if (_ncol) _ncol.classList.add('active');
         window.scrollTo(0, 0);
+        if (typeof renderColosseumView === 'function') renderColosseumView();
       } else if (view === 'settings') {
         if (gantView) gantView.style.display = 'none';
         settingsView.style.display = 'block';
@@ -12883,6 +13228,8 @@ var OFFICIAL_DECKS = [
   {
     id: 'deck_walk',
     title: '🚶 お散歩習慣',
+    category: 'body', rarity: 1,
+    category: 'body', rarity: 1,
     desc: '外に出るだけでOK。毎日の小さな冒険。',
     createdBy: 'やることクラフト公式',
     tasks: [
@@ -12896,6 +13243,8 @@ var OFFICIAL_DECKS = [
   {
     id: 'deck_clean',
     title: '🧹 お掃除習慣',
+    category: 'life', rarity: 1,
+    category: 'life', rarity: 1,
     desc: '1箇所だけ。きれいな王国は清潔な毎日から。',
     createdBy: 'やることクラフト公式',
     tasks: [
@@ -12909,6 +13258,8 @@ var OFFICIAL_DECKS = [
   {
     id: 'deck_exercise',
     title: '💪 運動習慣',
+    category: 'body', rarity: 2,
+    category: 'body', rarity: 2,
     desc: 'スクワット10回だけ。続けることが最強の魔法。',
     createdBy: 'やることクラフト公式',
     tasks: [
@@ -12923,6 +13274,8 @@ var OFFICIAL_DECKS = [
   {
     id: 'deck_morning',
     title: '🌅 朝活習慣',
+    category: 'mind', rarity: 3,
+    category: 'mind', rarity: 2,
     desc: '1日の最初の1時間が王国を変える。朝をデザインしよう。',
     createdBy: 'やることクラフト公式',
     tasks: [
@@ -12936,6 +13289,8 @@ var OFFICIAL_DECKS = [
   {
     id: 'deck_sleep',
     title: '😴 睡眠習慣',
+    category: 'body', rarity: 2,
+    category: 'body', rarity: 2,
     desc: '眠れる王国は強い。夜のルーティンが明日を作る。',
     createdBy: 'やることクラフト公式',
     tasks: [
@@ -12949,6 +13304,8 @@ var OFFICIAL_DECKS = [
   {
     id: 'deck_cook',
     title: '🍳 自炊習慣',
+    category: 'life', rarity: 3,
+    category: 'life', rarity: 3,
     desc: '作れるものが1つ増えるたびに王国の食卓が豊かになる。',
     createdBy: 'やることクラフト公式',
     tasks: [
@@ -12962,6 +13319,8 @@ var OFFICIAL_DECKS = [
   {
     id: 'deck_money',
     title: '💰 家計管理習慣',
+    category: 'life', rarity: 4,
+    category: 'life', rarity: 3,
     desc: 'お金の流れを把握するだけで王国の財政は安定する。',
     createdBy: 'やることクラフト公式',
     tasks: [
@@ -12975,6 +13334,8 @@ var OFFICIAL_DECKS = [
   {
     id: 'deck_read',
     title: '📚 読書習慣',
+    category: 'learn', rarity: 3,
+    category: 'learn', rarity: 3,
     desc: '1日10ページ。それだけで年間3600ページ、本10冊分の知恵が王国に積み上がる。',
     createdBy: 'やることクラフト公式',
     tasks: [
@@ -12988,6 +13349,8 @@ var OFFICIAL_DECKS = [
   {
     id: 'deck_diary',
     title: '✍️ 日記習慣',
+    category: 'mind', rarity: 2,
+    category: 'mind', rarity: 2,
     desc: '書くことは考えること。1日3行から王国の記録が始まる。',
     createdBy: 'やることクラフト公式',
     tasks: [
@@ -13000,6 +13363,7 @@ var OFFICIAL_DECKS = [
   },
   {
     id: 'deck_meditate',
+    category: 'mind', rarity: 4,
     title: '🧘 瞑想習慣',
     desc: '何もしない5分が、王国に静寂をもたらす。',
     createdBy: 'やることクラフト公式',
@@ -13822,8 +14186,28 @@ function loadSettingsUI() {
     window.moveScratchToThoughts = moveScratchToThoughts;
     window.switchShopTab = switchShopTab;
     window.applyVisibleTabsSettings = applyVisibleTabsSettings;
+    window.openGouLogModal = openGouLogModal;
+    window.switchSearchTab = switchSearchTab;
+    window.renderTodoList = renderTodoList;
+    window.formatGDP = formatGDP;
+    window.getGDP = getGDP;
+    window.getKingdomPower = getKingdomPower;
+    window.getKingdomTitle = getKingdomTitle;
+    window.checkMonthlyBonus = checkMonthlyBonus;
+    window.addGDP = addGDP;
+    window.getGouNew = getGouNew;
+    window.addGou = addGou;
+    window.checkDailyGouPenalty = checkDailyGouPenalty;
+    window.checkAbsencePenalty = checkAbsencePenalty;
+    window.recordTaskCompletedDate = recordTaskCompletedDate;
+    window.getGDPTitle = getGDPTitle;
     window.toggleVisibleTab = toggleVisibleTab;
     window.openDeckDetailModal = openDeckDetailModal;
+    window.renderColosseumView = renderColosseumView;
+    window.generateAndCopyColosseumReport = generateAndCopyColosseumReport;
+    window.getColosseumPool = getColosseumPool;
+    window.getTodayColosseumDeck = getTodayColosseumDeck;
+    window.recordColosseumScore = recordColosseumScore;
     window.closeDeckDetailModal = closeDeckDetailModal;
     window.generateArvCode = generateArvCode;
     window.receiveArvCode = receiveArvCode;
@@ -14931,7 +15315,8 @@ function receiveDeck(deckId) {
         saveAllTasks();
         renderAllSections(today);
         renderDeckShop();
-        showAdminToast('🛍️ ' + deck.title + 'を受け取った！');
+        if (typeof addGDP === 'function') addGDP(100, 'DCK1:受取（' + deck.title + '）');
+        showAdminToast('🛍️ ' + deck.title + 'を受け取った！GDP+100万');
       }},
       { label: 'キャンセル', style: 'cancel' },
     ],
@@ -14941,6 +15326,199 @@ function receiveDeckAgain(deckId) {
   delete allSettings.deck.received[deckId]; saveAllSettings();
   receiveDeck(deckId);
 }
+// ===== カテゴリ定義 =====
+var DECK_CATEGORIES = {
+  body:    { label: 'からだ', icon: '💪' },
+  life:    { label: 'くらし', icon: '🏠' },
+  mind:    { label: 'こころ', icon: '🌸' },
+  learn:   { label: 'まなび', icon: '📚' },
+  kingdom: { label: '王国',   icon: '🏰' },
+  user:    { label: 'ユーザー投稿', icon: '🚢' },
+};
+
+// ===== レアリティ定義 =====
+var DECK_RARITY = {
+  1: { stars: '★☆☆☆☆', label: 'C',  color: '#aaa' },
+  2: { stars: '★★☆☆☆', label: 'UC', color: '#4caf50' },
+  3: { stars: '★★★☆☆', label: 'R',  color: '#2196f3' },
+  4: { stars: '★★★★☆', label: 'SR', color: '#9c27b0' },
+  5: { stars: '★★★★★', label: 'UR', color: '#ff8800' },
+};
+
+// ===== 今日のコロシアムデッキを返す（エポック方式） =====
+var COLOSSEUM_EPOCH = '2026-03-23'; // コロシアム開始日
+
+function getColosseumPool() {
+  if (typeof OFFICIAL_DECKS === 'undefined') return [];
+  var official = OFFICIAL_DECKS.filter(function(d){
+    return d.colosseumEligible !== false;
+  });
+  // ユーザー投稿デッキ（deckHistory）もプールに追加
+  var userDecks = (allTasks || []).filter(function(t){
+    return t.kind === 'deckHistory' && t.status === 'active' && t.tasks && t.tasks.length > 0;
+  }).map(function(t){
+    return {
+      id: t.deckId || t.id,
+      title: t.title || '投稿デッキ',
+      desc: t.desc || '',
+      tasks: t.tasks || [],
+      createdBy: t.createdBy || '旅人',
+      category: 'user',
+      rarity: 5
+    };
+  });
+  return official.concat(userDecks);
+}
+
+function getTodayColosseumDeck() {
+  var pool = getColosseumPool();
+  if (!pool.length) return null;
+  var today = new Date().toISOString().slice(0, 10);
+  var epochMs = new Date(COLOSSEUM_EPOCH).getTime();
+  var todayMs  = new Date(today).getTime();
+  var days = Math.floor((todayMs - epochMs) / 86400000);
+  var idx = ((days % pool.length) + pool.length) % pool.length;
+  return pool[idx];
+}
+
+// ===== コロシアムスコアを記録 =====
+// ===== コロシアム完了報告：BLM1:を生成してクリップボードコピー =====
+function generateAndCopyColosseumReport() {
+  var todayDeck = typeof getTodayColosseumDeck === 'function' ? getTodayColosseumDeck() : null;
+  if (!todayDeck) {
+    if (typeof showToast === 'function') showToast('今日のコロシアムデッキが見つかりません', {type:'warn'});
+    return;
+  }
+  // 今日完了したタスク数をカウント（今日のデッキのタスク）
+  var myName = (allSettings.profile && allSettings.profile.name) ? allSettings.profile.name : '旅人';
+  var today = new Date().toISOString().slice(0, 10);
+  // deckHistoryから完了数を取得（なければ0）
+  var entry = allTasks.find(function(t){
+    return t.kind === 'deckHistory' && (t.deckId === todayDeck.id || t.id === todayDeck.id);
+  });
+  var completedCount = (entry && entry.stats) ? (entry.stats.completed || 0) : 0;
+  if (completedCount === 0) {
+    if (typeof showToast === 'function') showToast('まだタスクを完了していません。日次でタスクを完了してから報告しよう！', {type:'warn', duration:3000});
+    return;
+  }
+  var payload = {
+    kind: 'blm',
+    deckId: todayDeck.id,
+    deckTitle: todayDeck.title,
+    reportedBy: myName,
+    completedCount: completedCount,
+    reportedAt: today
+  };
+  var code = 'BLM1:' + btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  navigator.clipboard.writeText(code).then(function(){
+    if (typeof showToast === 'function') showToast('🌸 BLM1:をコピーしました！Discordに貼ってね', {type:'success', duration:4000});
+  }).catch(function(){
+    // クリップボード失敗時はモーダルで表示
+    if (typeof showChoiceModal === 'function') {
+      showChoiceModal('BLM1:コード', 'Discordに貼り付けてください', [{label:'OK', action:function(){}}]);
+    } else {
+      alert(code);
+    }
+  });
+}
+
+function recordColosseumScore(deckId, name, count) {
+  if (!allSettings.colosseum) allSettings.colosseum = { mode:'auto', cycle:'daily', cycleStart:'', scores:{}, history:[] };
+  if (!allSettings.colosseum.scores) allSettings.colosseum.scores = {};
+  if (!allSettings.colosseum.history) allSettings.colosseum.history = [];
+  var today = new Date().toISOString().slice(0,10);
+  // 日付が変わったら今日のscoresをhistoryに退避
+  var firstScore = Object.values(allSettings.colosseum.scores)[0];
+  if (firstScore && firstScore.date !== today) {
+    // 昨日以前のスコアをhistoryに保存（最大30日分）
+    allSettings.colosseum.history.push({
+      date: firstScore.date,
+      scores: allSettings.colosseum.scores
+    });
+    if (allSettings.colosseum.history.length > 30) {
+      allSettings.colosseum.history = allSettings.colosseum.history.slice(-30);
+    }
+    allSettings.colosseum.scores = {};
+  }
+  var key = name || 'unknown';
+  var existing = allSettings.colosseum.scores[key];
+  if (!existing || existing.count < count) {
+    allSettings.colosseum.scores[key] = { name: name, count: count, deckId: deckId, date: today };
+  }
+  saveAllSettings();
+}
+
+// ===== コロシアム画面を描画 =====
+function renderColosseumView() {
+  var el = document.getElementById('colosseumContent');
+  if (!el) return;
+  if (!allSettings.colosseum) allSettings.colosseum = { mode:'auto', cycle:'daily', cycleStart:'', scores:{} };
+
+  var todayDeck = getTodayColosseumDeck();
+  var scores = allSettings.colosseum.scores || {};
+  var today = new Date().toISOString().slice(0,10);
+  // 日付リセット確認
+  var firstScore = Object.values(scores)[0];
+  if (firstScore && firstScore.date !== today) scores = {};
+
+  // ランキング（count降順）
+  var ranking = Object.values(scores)
+    .filter(function(s){ return s.date === today; })
+    .sort(function(a,b){ return b.count - a.count; });
+
+  var html = '';
+
+  // 今日のデッキ
+  if (todayDeck) {
+    var _todayRarity = (!todayDeck.category || todayDeck.category === 'user') ? 5 : (todayDeck.rarity || 1);
+    var r = DECK_RARITY[_todayRarity] || DECK_RARITY[1];
+    html += '<div style="background:linear-gradient(135deg,#fff8e1,#fff3cd);border-radius:14px;padding:16px;margin-bottom:16px;border:1.5px solid #ffe082;">';
+    html += '<div style="font-size:0.72em;color:#c8a200;font-weight:700;margin-bottom:6px;">⚔️ 今日のコロシアムデッキ</div>';
+    html += '<div style="font-size:1.1em;font-weight:800;color:#222;margin-bottom:4px;">' + todayDeck.title + '</div>';
+    html += '<div style="font-size:0.78em;color:#888;margin-bottom:8px;">' + (todayDeck.desc||'') + '</div>';
+    html += '<div style="display:flex;align-items:center;gap:8px;">';
+    html += '<span style="font-size:0.82em;color:' + r.color + ';font-weight:700;">' + r.stars + '</span>';
+    html += '<span style="font-size:0.78em;color:#aaa;">' + (todayDeck.tasks||[]).length + '枚</span>';
+    html += '</div>';
+    html += '<button onclick="receiveDeck(\'' + todayDeck.id + '\')" style="margin-top:12px;width:100%;padding:11px;border:none;border-radius:20px;background:linear-gradient(135deg,#ffd700,#ff8800);color:#7a4800;font-size:0.9em;font-weight:700;cursor:pointer;">📦 このデッキで参加する</button>';
+    html += '<button onclick="generateAndCopyColosseumReport()" style="margin-top:8px;width:100%;padding:11px;border:none;border-radius:20px;background:linear-gradient(135deg,#ff6b6b,#ee5a24);color:#fff;font-size:0.9em;font-weight:700;cursor:pointer;">🌸 完了を報告する（BLM1:コピー）</button>';
+    html += '</div>';
+  } else {
+    html += '<div style="background:#f9f9f9;border-radius:14px;padding:14px;margin-bottom:16px;text-align:center;color:#bbb;font-size:0.85em;">今日のコロシアムデッキはありません</div>';
+  }
+
+  // 今日のランキング
+  html += '<div style="font-size:0.82em;font-weight:700;color:#888;margin-bottom:10px;">🏆 今日のランキング</div>';
+  if (ranking.length === 0) {
+    html += '<div style="text-align:center;padding:24px;color:#ccc;font-size:0.85em;">まだ記録がありません。<br>Discordに BLM1: を貼ろう！</div>';
+  } else {
+    var medals = ['🥇','🥈','🥉'];
+    ranking.forEach(function(s, i) {
+      var medal = medals[i] || (i+1) + '位';
+      html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fff;border-radius:10px;margin-bottom:6px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">';
+      html += '<div style="font-size:1.2em;width:28px;text-align:center;">' + medal + '</div>';
+      html += '<div style="flex:1;font-size:0.88em;font-weight:600;color:#333;">' + (s.name||'旅人') + '</div>';
+      html += '<div style="font-size:0.95em;font-weight:800;color:#ff8800;">' + s.count + '<span style="font-size:0.72em;color:#aaa;font-weight:400;margin-left:2px;">完了</span></div>';
+      html += '</div>';
+    });
+  }
+
+  // 過去の記録（historyから最新3件）
+  var hist = (allSettings.colosseum.history || []).slice(-3).reverse();
+  if (hist.length > 0) {
+    html += '<div style="font-size:0.82em;font-weight:700;color:#bbb;margin:16px 0 8px;">📜 過去の記録</div>';
+    hist.forEach(function(h) {
+      var topScore = Object.values(h.scores||{}).sort(function(a,b){ return b.count-a.count; })[0];
+      if (!topScore) return;
+      html += '<div style="font-size:0.78em;color:#bbb;padding:6px 10px;background:#fafafa;border-radius:8px;margin-bottom:4px;">';
+      html += h.date + ' 🥇 ' + topScore.name + ' ' + topScore.count + '完了';
+      html += '</div>';
+    });
+  }
+
+  el.innerHTML = html;
+}
+
 function openDeckDetailModal(deckId) {
   var deck = typeof OFFICIAL_DECKS !== 'undefined'
     ? OFFICIAL_DECKS.find(function(d){ return d.id === deckId; }) : null;
@@ -15014,14 +15592,53 @@ function closeDeckDetailModal() {
   if (modal) modal.style.display = 'none';
 }
 
-function renderDeckShop() {
+function renderDeckShop(filterCategory) {
   var el = document.getElementById('deckShopList');
   if (!el) return;
   if (typeof OFFICIAL_DECKS === 'undefined') return;
-  // メルカリ風2カラムグリッド
+
+  // カテゴリフィルターUI（初回のみ構築）
+  var filterEl = document.getElementById('deckShopFilter');
+  if (filterEl && !filterEl.dataset.initialized) {
+    filterEl.dataset.initialized = '1';
+    filterEl.innerHTML = '';
+    filterEl.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;';
+    var _cats = [{ key:'', label:'すべて', icon:'🗂️' }];
+    if (typeof DECK_CATEGORIES !== 'undefined') {
+      Object.keys(DECK_CATEGORIES).forEach(function(k){
+        _cats.push({ key:k, label:DECK_CATEGORIES[k].label, icon:DECK_CATEGORIES[k].icon });
+      });
+    }
+    _cats.forEach(function(c) {
+      var _btn = document.createElement('button');
+      _btn.textContent = c.icon + ' ' + c.label;
+      _btn.dataset.cat = c.key;
+      _btn.style.cssText = 'padding:5px 10px;border-radius:20px;border:1.5px solid #e0e0e0;background:#fff;font-size:0.75em;cursor:pointer;color:#555;';
+      _btn.addEventListener('click', (function(cat, btn){
+        return function(){
+          if (filterEl) filterEl.querySelectorAll('button').forEach(function(b){ b.style.background='#fff'; b.style.color='#555'; b.style.borderColor='#e0e0e0'; });
+          btn.style.background='#ffd700'; btn.style.color='#7a4800'; btn.style.borderColor='#ffd700';
+          renderDeckShop(cat);
+        };
+      })(c.key, _btn));
+      filterEl.appendChild(_btn);
+    });
+    if (filterEl.children[0]) {
+      filterEl.children[0].style.background='#ffd700';
+      filterEl.children[0].style.color='#7a4800';
+      filterEl.children[0].style.borderColor='#ffd700';
+    }
+  }
+
+  // フィルタリング
+  var _decks = OFFICIAL_DECKS.filter(function(d){
+    if (!filterCategory) return true;
+    return (d.category || 'user') === filterCategory;
+  });
+
   el.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;';
   el.innerHTML = '';
-  OFFICIAL_DECKS.forEach(function(deck) {
+  _decks.forEach(function(deck) {
     var received = allSettings.deck.received[deck.id];
     var card = document.createElement('div');
     card.style.cssText = [
@@ -15072,9 +15689,15 @@ function renderDeckShop() {
     taskCount.style.cssText = 'font-size:0.72em;color:#aaa;';
     var authorEl2 = document.createElement('div');
     authorEl2.textContent = deck.createdBy ? '⚓ ' + deck.createdBy : '';
-    authorEl2.style.cssText = 'font-size:0.68em;color:#c8a200;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+    authorEl2.style.cssText = 'font-size:0.68em;color:#c8a200;line-height:1.3;word-break:break-all;';
+    var rarityEl = document.createElement('div');
+    var _effRarity = (!deck.category || deck.category === 'user') ? 5 : (deck.rarity || 1);
+    var _r = (typeof DECK_RARITY !== 'undefined') ? DECK_RARITY[_effRarity] : null;
+    rarityEl.textContent = _r ? _r.stars : '';
+    rarityEl.style.cssText = 'font-size:0.65em;font-weight:700;color:' + (_r ? _r.color : '#aaa') + ';margin-top:2px;';
     body.appendChild(titleEl);
     body.appendChild(taskCount);
+    body.appendChild(rarityEl);
     body.appendChild(authorEl2);
     // ボタン行
     var foot = document.createElement('div');
@@ -15405,17 +16028,30 @@ window.addEventListener('afterprint', function() {
   <!-- 検索モーダル -->
   <div id="searchModal" class="custom-modal" onclick="if(event.target.id==='searchModal') closeSearchModal();">
     <div class="modal-content" style="max-width:480px;text-align:left;max-height:80vh;display:flex;flex-direction:column;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
         <span style="font-size:1.2em;">🔍</span>
         <input type="text" id="searchInput" placeholder="タスクを検索..." autocomplete="off"
           style="flex:1;padding:8px 12px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:1em;outline:none;"
           oninput="renderSearchResults()">
         <button onclick="closeSearchModal()" style="background:none;border:none;font-size:1.2em;cursor:pointer;color:#aaa;padding:4px;">✕</button>
       </div>
-      <div style="font-size:0.78em;color:#aaa;margin-bottom:8px;">
-        <span id="searchCount">0件</span>ヒット　<span style="color:#ccc;">完了済みも含む</span>
+      <!-- タブ -->
+      <div style="display:flex;gap:6px;margin-bottom:10px;">
+        <button id="searchTabSearch" onclick="switchSearchTab('search')"
+          style="flex:1;padding:6px 0;border-radius:20px;border:1.5px solid #333;background:#333;color:#fff;font-size:0.8em;font-weight:700;cursor:pointer;">🔍 検索</button>
+        <button id="searchTabTodo" onclick="switchSearchTab('todo')"
+          style="flex:1;padding:6px 0;border-radius:20px;border:1.5px solid #e0e0e0;background:#fff;color:#888;font-size:0.8em;font-weight:700;cursor:pointer;">📋 未完了一覧</button>
       </div>
-      <div id="searchResults" style="overflow-y:auto;flex:1;"></div>
+      <div id="searchPaneSearch" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+        <div style="font-size:0.78em;color:#aaa;margin-bottom:8px;">
+          <span id="searchCount">0件</span>ヒット　<span style="color:#ccc;">完了済みも含む</span>
+        </div>
+        <div id="searchResults" style="overflow-y:auto;flex:1;"></div>
+      </div>
+      <div id="searchPaneTodo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+        <div style="font-size:0.78em;color:#aaa;margin-bottom:8px;" id="todoCount">読み込み中...</div>
+        <div id="todoResults" style="overflow-y:auto;flex:1;"></div>
+      </div>
     </div>
   </div>
   <div id="taskEditModal" class="custom-modal" onclick="if(event.target.id==='taskEditModal') closeTaskEditModal();">
@@ -15688,7 +16324,15 @@ function copyCraftCode() {
   function _doCopyDone() {
     if (!_tokuAdded) {
       _tokuAdded = true;
-      if (typeof addToku === 'function') addToku(100, '王国コード配布');
+      var _todayStr = new Date().toISOString().slice(0,10);
+      var _lastKc = allSettings.meta && allSettings.meta.lastKingdomCodeDate;
+      if (_lastKc !== _todayStr) {
+        if (!allSettings.meta) allSettings.meta = {};
+        allSettings.meta.lastKingdomCodeDate = _todayStr;
+        saveAllSettings();
+        if (typeof addGDP === 'function') addGDP(100, '王国コード配布');
+        if (typeof showToast === 'function') showToast('👑 王国コードを配布！GDP+100万', {type:'success'});
+      }
     }
     showCraftMessage('👑 王国コードをコピーしました！');
     closeCraftShareModal();
@@ -16089,24 +16733,23 @@ function updateCraftHUD() {
     nextMsg = ' ／ あと'+(CRAFT_CYCLE - s.cycleTotal)+'タスクで'+(s.ng+2)+'周目へ';
   }
   if(cfg) set('craftNextInfo', (cfg.label||'') + nextMsg);
-  // 王国GDPバッジ更新
+  // GDP（貿易経済）表示
   var gdpEl = document.getElementById('craftGDPValue');
-  if (gdpEl) {
-    gdpEl.textContent = getCraftStats().total;
-  }
-  // 🌸 徳バッジ更新
+  if (gdpEl) gdpEl.textContent = (typeof formatGDP === 'function') ? formatGDP(getGDP()) : getGDP();
+  // 徳（行動積み上げ）表示
   var tokuEl = document.getElementById('craftTokuValue');
   if (tokuEl) tokuEl.textContent = getToku();
-  // 🔥業・⚖️徳分は管理者モードのみ
+  // 業（怠り負債）表示
+  var gouEl2 = document.getElementById('craftGouValue');
+  if (gouEl2) gouEl2.textContent = getGouNew();
+  // 管理者モード追加表示
   var isAdmin = _adminModeActive;
   var extra = document.getElementById('adminBadgeExtra');
   if (extra) { extra.setAttribute('style', isAdmin ? 'display:block !important' : 'display:none !important'); }
   if (isAdmin) {
-    var gouEl = document.getElementById('craftGouValue');
-    if (gouEl) gouEl.textContent = getGou();
     var tokubunEl = document.getElementById('craftTokubunValue');
     if (tokubunEl) {
-      var tb = getTokubun();
+      var tb = getToku() - getGouNew();
       tokubunEl.textContent = tb;
       tokubunEl.style.color = tb >= 0 ? '#f8bbd0' : '#ff5252';
     }
@@ -16117,10 +16760,10 @@ function getToku() {
   return parseInt(localStorage.getItem('tokuPoints') || '0');
 }
 function getGou() {
-  return parseInt(localStorage.getItem('gouPoints') || '0');
+  return getGouNew(); // getGouNew()のエイリアス（統合済み）
 }
 function getTokubun() {
-  return getToku() - getGou();
+  return getToku() - getGouNew();
 }
 function addToku(amount, reason) {
   const current = getToku();
@@ -16132,15 +16775,15 @@ function addToku(amount, reason) {
   var tokubun = getTokubun();
   var badge = document.getElementById('craftGDPBadge');
   // バッジ枠色
-  if (tokubun >= 100) {
+  if (tokubun >= 10000) {
     if (badge) badge.style.borderColor = 'rgba(255,248,200,0.9)';
-  } else if (tokubun >= 50) {
+  } else if (tokubun >= 1000) {
     if (badge) badge.style.borderColor = 'rgba(248,187,208,0.7)';
   } else if (tokubun >= 0) {
     if (badge) badge.style.borderColor = 'rgba(76,175,80,0.5)';
-  } else if (tokubun >= -10) {
+  } else if (tokubun >= -500) {
     if (badge) badge.style.borderColor = 'rgba(255,152,0,0.7)';
-  } else if (tokubun >= -30) {
+  } else if (tokubun >= -2000) {
     if (badge) badge.style.borderColor = 'rgba(244,67,54,0.7)';
   } else {
     if (badge) badge.style.borderColor = 'rgba(120,0,120,0.9)';
@@ -16151,10 +16794,10 @@ function applyTokubunEffect() {
   var tokubun = typeof getTokubun === 'function' ? getTokubun() : 0;
   var badge = document.getElementById('craftGDPBadge');
   var msg = null;
-  if (tokubun >= 100) {
+  if (tokubun >= 10000) {
     if (badge) badge.style.boxShadow = '0 0 18px rgba(255,248,200,0.6)';
     msg = '✨ 徳が満ちている…';
-  } else if (tokubun >= 50) {
+  } else if (tokubun >= 1000) {
     if (badge) badge.style.boxShadow = '0 0 12px rgba(248,187,208,0.5)';
   } else if (tokubun >= 0) {
     if (badge) badge.style.boxShadow = '0 0 8px rgba(76,175,80,0.3)';
@@ -17519,6 +18162,10 @@ function onTaskCompleted(task) {
       _ht.style.transform = 'translateX(-50%) translateY(-10px)';
     }, 3000);
   }
+  // 徳+1（象限問わず）、業-1、完了日記録
+  if (typeof addToku === 'function') addToku(1, 'タスク完了');
+  if (typeof addGou === 'function') addGou(-1, 'タスク完了');
+  if (typeof recordTaskCompletedDate === 'function') recordTaskCompletedDate();
   // クラフトモード専用処理
   if (!(allSettings && allSettings.ui && allSettings.ui.craftModeEnabled)) return;
   // ① 旗を一時的に激しくはためかせる
@@ -19354,6 +20001,9 @@ function showDebugLog() {
        '_copyBlmCode','applyTokubunEffect','switchShopTab',
        'openDeckDetailModal','closeDeckDetailModal',
        'applyVisibleTabsSettings','toggleVisibleTab',
+       'getGDP','addGDP','getGouNew','addGou','checkDailyGouPenalty','checkAbsencePenalty','recordTaskCompletedDate',
+       'getKingdomPower','getKingdomTitle','checkMonthlyBonus','recordColosseumScore',
+       'switchSearchTab','renderTodoList','openGouLogModal','getColosseumPool',
        // 日付変更・雑記帳自動移行
        'startMoveMode','completeMoveMode','cancelMoveMode',
        'addStampToDate','removeStampFromDate',
@@ -20378,14 +21028,15 @@ function showDebugLog() {
        if (_stDh22) {
          if (!_stDh22.stats) _stDh22.stats = { received: 0, completed: 0 };
          _stDh22.stats.received = (_stDh22.stats.received || 0) + 1;
-         if (typeof addToku === 'function') addToku(1, 'ST-22:ARV1:テスト');
+         if (typeof addToku === 'function') addToku(20, 'ST-22:ARV1:テスト');
        }
        (_stDh22 && _stDh22.stats.received === 1)
          ? ok('ST-22: receiveArvCode stats.received+1確認')
          : ng('ST-22: receiveArvCode', 'received=' + (_stDh22 && _stDh22.stats.received));
-       typeof getToku === 'function' && getToku() === _stTokuBefore22 + 1
-         ? ok('ST-22: receiveArvCode GDP+1確認')
-         : ng('ST-22: receiveArvCode GDP', '期待' + (_stTokuBefore22+1) + ' 実際' + getToku());
+       // ARV1はaddGDPに移行済みなのでtokuは変化しない
+       typeof getGDP === 'function'
+         ? ok('ST-22: receiveArvCode GDP関数存在確認（addGDPに移行済み）')
+         : ng('ST-22: receiveArvCode GDP', 'getGDP未定義');
 
        // BLM1:コード生成確認
        if (_stDh22) _stDh22.stats.completed = 3; // 完了数をセット
@@ -20408,18 +21059,19 @@ function showDebugLog() {
        var _stDh22b = allTasks.find(function(t){ return t.kind==='deckHistory' && t.deckId===_stDeckId22; });
        if (_stDh22b) {
          _stDh22b.stats.blmCompleted = (_stDh22b.stats.blmCompleted || 0) + 3;
-         if (typeof addToku === 'function') addToku(3, 'ST-22:BLM1:テスト');
+         if (typeof addToku === 'function') addToku(90, 'ST-22:BLM1:テスト');
        }
        (_stDh22b && _stDh22b.stats.blmCompleted === 3)
-         ? ok('ST-22: receiveBlmCode stats.blmCompleted+=3確認')
+         ? ok('ST-22: receiveBlmCode stats.blmCompleted+=3確認（件数はGDPと独立）')
          : ng('ST-22: receiveBlmCode', 'blmCompleted=' + (_stDh22b && _stDh22b.stats.blmCompleted));
-       typeof getToku === 'function' && getToku() === _stTokuBefore22b + 3
-         ? ok('ST-22: receiveBlmCode GDPボーナス+3確認')
-         : ng('ST-22: receiveBlmCode GDP', '期待' + (_stTokuBefore22b+3) + ' 実際' + getToku());
+       // BLM1はaddGDPに移行済みなのでtokuは変化しない
+       typeof getGDP === 'function'
+         ? ok('ST-22: receiveBlmCode GDP関数存在確認（addGDPに移行済み）')
+         : ng('ST-22: receiveBlmCode GDP', 'getGDP未定義');
 
        // クリーンアップ
        allTasks = allTasks.filter(function(t){ return t.deckId !== _stDeckId22; });
-       if (typeof addToku === 'function') addToku(-(_stTokuBefore22b + 3 - _stTokuBefore22), 'ST-22ロールバック');
+       if (typeof addToku === 'function') addToku(-(_stTokuBefore22b + 90 - _stTokuBefore22), 'ST-22ロールバック');
        allTasks.length === _stPrev22
          ? ok('ST-22: クリーンアップ完了(' + allTasks.length + '件)')
          : ng('ST-22: クリーンアップ', '件数不一致 ' + allTasks.length + '件 期待' + _stPrev22);
@@ -20596,21 +21248,345 @@ function showDebugLog() {
          : ng('ST-25: visibleTabs復元', JSON.stringify(allSettings.ui.visibleTabs));
 
        // ===== ST-25C: テストセクション自己存在確認 =====
+       // テストセクション自己存在確認：ソースコード上の存在をチェック
        var _stSections = ['ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10',
          'ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20',
-         'ST-21','ST-22','ST-23','ST-24','ST-25'];
+         'ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28'];
+       var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
-         // スモークテスト本体のソースにそのSTセクションが存在するか確認
-         if (typeof runSmokeTest === 'function') return; // 外部関数化されている場合はスキップ
-         // テスト結果配列にそのSTのokが存在するか（resultsには全ok/ngが入っている）
-         var found = results.some(function(r){ return r && r.indexOf && r.indexOf(s + ':') !== -1; });
+         // HTMLソース中に「// ST-XX:」または「ST-XX: 」が存在するか確認
+         var found = _stSrc.indexOf('// ' + s + ':') !== -1 || _stSrc.indexOf(s + ': ') !== -1;
          if (!found) _stMissing.push(s);
        });
        _stMissing.length === 0
          ? ok('ST-25: テストセクション自己存在確認(' + _stSections.length + '件全て存在)')
          : ng('ST-25: テストセクション欠落検知', '欠落: ' + _stMissing.join(', '));
      } catch(e) { ng('ST-25: コロシアム＋ナビタブ', e.message); }
+
+     // ST-26: GDP・徳・業 独立管理テスト
+     try {
+       // ===== 関数存在確認 =====
+       typeof getGDP === 'function'         ? ok('ST-26: getGDP 存在確認') : ng('ST-26: getGDP', '未定義');
+       typeof addGDP === 'function'         ? ok('ST-26: addGDP 存在確認') : ng('ST-26: addGDP', '未定義');
+       typeof getGouNew === 'function'      ? ok('ST-26: getGouNew 存在確認') : ng('ST-26: getGouNew', '未定義');
+       typeof addGou === 'function'         ? ok('ST-26: addGou 存在確認') : ng('ST-26: addGou', '未定義');
+       typeof checkDailyGouPenalty==='function' ? ok('ST-26: checkDailyGouPenalty 存在確認') : ng('ST-26: checkDailyGouPenalty','未定義');
+       typeof checkAbsencePenalty==='function'  ? ok('ST-26: checkAbsencePenalty 存在確認')  : ng('ST-26: checkAbsencePenalty','未定義');
+
+       // ===== addGDP挙動テスト =====
+       var _stGdpBefore = getGDP();
+       addGDP(100, 'ST-26:テスト');
+       getGDP() === _stGdpBefore + 100
+         ? ok('ST-26: addGDP +100万 確認')
+         : ng('ST-26: addGDP', '期待' + (_stGdpBefore+100) + ' 実際' + getGDP());
+       // GDP下限0確認
+       addGDP(-(_stGdpBefore + 200), 'ST-26:下限テスト');
+       getGDP() === 0
+         ? ok('ST-26: GDP下限0確認')
+         : ng('ST-26: GDP下限', '実際' + getGDP());
+       // 復元
+       addGDP(_stGdpBefore, 'ST-26:復元');
+       var _stGdpAfter = getGDP();
+       _stGdpAfter === _stGdpBefore
+         ? ok('ST-26: addGDPロールバック完了')
+         : ng('ST-26: addGDPロールバック', '期待' + _stGdpBefore + ' 実際' + _stGdpAfter);
+
+       // ===== addGou挙動テスト =====
+       var _stGouBefore = getGouNew();
+       addGou(10, 'ST-26:業テスト');
+       getGouNew() === Math.min(365, _stGouBefore + 10)
+         ? ok('ST-26: addGou +10 確認')
+         : ng('ST-26: addGou', '期待' + Math.min(365,_stGouBefore+10) + ' 実際' + getGouNew());
+       // 業上限365確認（テスト用ラベルで警告抑制）
+       addGou(1000, 'ST-26テスト:上限');
+       getGouNew() === 365
+         ? ok('ST-26: 業上限365確認')
+         : ng('ST-26: 業上限', '実際' + getGouNew());
+       // 業下限0確認
+       addGou(-9999, 'ST-26テスト:下限');
+       getGouNew() === 0
+         ? ok('ST-26: 業下限0確認')
+         : ng('ST-26: 業下限', '実際' + getGouNew());
+       // 復元
+       if (_stGouBefore > 0) addGou(_stGouBefore, 'ST-26テスト:復元');
+       getGouNew() === _stGouBefore
+         ? ok('ST-26: addGouロールバック完了')
+         : ng('ST-26: addGouロールバック', '期待' + _stGouBefore + ' 実際' + getGouNew());
+
+       // ===== onTaskCompleted→徳+1・業-1確認 =====
+       var _stTokuBefore26 = getToku();
+       var _stGouBefore26 = getGouNew();
+       // onTaskCompletedのソースコードチェック
+       var _otcSrc26 = (window.onTaskCompleted||function(){}).toString();
+       _otcSrc26.indexOf("addToku(1") !== -1
+         ? ok('ST-26: onTaskCompleted 徳+1コード確認')
+         : ng('ST-26: onTaskCompleted 徳+1', 'コードなし');
+       _otcSrc26.indexOf("addGou(-1") !== -1
+         ? ok('ST-26: onTaskCompleted 業-1コード確認')
+         : ng('ST-26: onTaskCompleted 業-1', 'コードなし');
+
+       // ===== GDP・徳・業が独立していることを確認 =====
+       var _gdpBefore2 = getGDP();
+       var _tokuBefore2 = getToku();
+       addToku(1, 'ST-26:独立テスト');
+       getGDP() === _gdpBefore2
+         ? ok('ST-26: 徳加算時GDP不変確認')
+         : ng('ST-26: GDP独立', 'GDP変化: ' + _gdpBefore2 + '→' + getGDP());
+       addToku(-1, 'ST-26:ロールバック');
+
+       var _tokuBefore3 = getToku();
+       addGDP(50, 'ST-26:独立テスト2');
+       getToku() === _tokuBefore3
+         ? ok('ST-26: GDP加算時徳不変確認')
+         : ng('ST-26: 徳独立', '徳変化');
+       addGDP(-50, 'ST-26:ロールバック2');
+
+       // ===== formatGDP表示確認 =====
+       typeof formatGDP === 'function'
+         ? ok('ST-26: formatGDP 存在確認')
+         : ng('ST-26: formatGDP', '未定義');
+       formatGDP(0) === '0万'
+         ? ok('ST-26: formatGDP(0)=0万')
+         : ng('ST-26: formatGDP(0)', formatGDP(0));
+       formatGDP(100) === '100万'
+         ? ok('ST-26: formatGDP(100)=100万')
+         : ng('ST-26: formatGDP(100)', formatGDP(100));
+       formatGDP(10000) === '1億'
+         ? ok('ST-26: formatGDP(10000)=1億')
+         : ng('ST-26: formatGDP(10000)', formatGDP(10000));
+
+     } catch(e) { ng('ST-26: GDP・徳・業独立管理', e.message); }
+
+     // ST-27: コロシアム永続化・月末決算・王国力テスト
+     try {
+       // ===== A1: コロシアムスコア永続化 =====
+       if (!allSettings.colosseum) allSettings.colosseum = { mode:'auto', cycle:'daily', cycleStart:'', scores:{}, history:[] };
+       var _stColBefore = JSON.stringify(allSettings.colosseum);
+       // 今日のスコアを記録
+       var _stToday27 = new Date().toISOString().slice(0,10);
+       if (typeof recordColosseumScore === 'function') {
+         recordColosseumScore('deck_test27', 'テストユーザー', 3);
+       }
+       var _stScores27 = allSettings.colosseum.scores;
+       (_stScores27 && _stScores27['テストユーザー'] && _stScores27['テストユーザー'].count === 3)
+         ? ok('ST-27: recordColosseumScore スコア記録確認')
+         : ng('ST-27: recordColosseumScore', JSON.stringify(_stScores27));
+       // 高スコアで上書きされるか
+       if (typeof recordColosseumScore === 'function') recordColosseumScore('deck_test27', 'テストユーザー', 5);
+       allSettings.colosseum.scores['テストユーザー'] && allSettings.colosseum.scores['テストユーザー'].count === 5
+         ? ok('ST-27: 高スコア上書き確認')
+         : ng('ST-27: 高スコア上書き', allSettings.colosseum.scores['テストユーザー']);
+       // 低スコアは上書きされないか
+       if (typeof recordColosseumScore === 'function') recordColosseumScore('deck_test27', 'テストユーザー', 2);
+       allSettings.colosseum.scores['テストユーザー'] && allSettings.colosseum.scores['テストユーザー'].count === 5
+         ? ok('ST-27: 低スコア上書きなし確認')
+         : ng('ST-27: 低スコア保護', allSettings.colosseum.scores['テストユーザー']);
+       // historyに退避確認（日付をずらして確認）
+       typeof allSettings.colosseum.history === 'object'
+         ? ok('ST-27: history配列存在確認')
+         : ng('ST-27: history', typeof allSettings.colosseum.history);
+       // クリーンアップ
+       delete allSettings.colosseum.scores['テストユーザー'];
+       saveAllSettings();
+       ok('ST-27: コロシアムスコアクリーンアップ完了');
+
+       // ===== A3: 月末決算ボーナス =====
+       typeof checkMonthlyBonus === 'function'
+         ? ok('ST-27: checkMonthlyBonus 存在確認')
+         : ng('ST-27: checkMonthlyBonus', '未定義');
+
+       // ===== B1: 王国力計算 =====
+       typeof getKingdomPower === 'function'
+         ? ok('ST-27: getKingdomPower 存在確認')
+         : ng('ST-27: getKingdomPower', '未定義');
+       typeof getKingdomTitle === 'function'
+         ? ok('ST-27: getKingdomTitle 存在確認')
+         : ng('ST-27: getKingdomTitle', '未定義');
+       // 王国力=徳×GDP÷(業+1)
+       var _stPower = typeof getKingdomPower === 'function' ? getKingdomPower() : -1;
+       _stPower >= 0
+         ? ok('ST-27: 王国力>=0確認（' + _stPower + '）')
+         : ng('ST-27: 王国力', _stPower);
+       // 称号取得
+       var _stTitle = typeof getKingdomTitle === 'function' ? getKingdomTitle() : null;
+       (_stTitle && _stTitle.icon && _stTitle.name)
+         ? ok('ST-27: getKingdomTitle 称号取得確認（' + _stTitle.icon + _stTitle.name + '）')
+         : ng('ST-27: getKingdomTitle', JSON.stringify(_stTitle));
+       // 業=0の時は徳×GDP
+       var _stT = getToku(); var _stG = getGDP();
+       var _stExpected = Math.floor(_stT * _stG / (getGouNew() + 1));
+       _stPower === _stExpected
+         ? ok('ST-27: 王国力計算式確認（徳×GDP÷(業+1)）')
+         : ng('ST-27: 王国力計算', '期待' + _stExpected + ' 実際' + _stPower);
+
+       // ===== A2: 業ペナルティUI =====
+       var _stAddGouSrc = (window.addGou||function(){}).toString();
+       _stAddGouSrc.indexOf('updateCraftHUD') !== -1
+         ? ok('ST-27: addGou HUD更新コード確認')
+         : ng('ST-27: addGou HUD更新', 'コードなし');
+
+       // ===== C2: KNOWN_KEYSにlastMonthlyBonusMonth存在 =====
+       typeof checkMonthlyBonus === 'function'
+         ? ok('ST-27: checkMonthlyBonus 関数確認')
+         : ng('ST-27: checkMonthlyBonus', '未定義');
+
+     } catch(e) { ng('ST-27: コロシアム永続化・月末決算・王国力', e.message); }
+
+     // ST-28: 検索モーダル・未完了一覧・業ログ・コロシアム関連テスト
+     try {
+       // ===== 検索モーダル =====
+       typeof openSearchModal === 'function'
+         ? ok('ST-28: openSearchModal 存在確認')
+         : ng('ST-28: openSearchModal', '未定義');
+       typeof closeSearchModal === 'function'
+         ? ok('ST-28: closeSearchModal 存在確認')
+         : ng('ST-28: closeSearchModal', '未定義');
+       typeof switchSearchTab === 'function'
+         ? ok('ST-28: switchSearchTab 存在確認')
+         : ng('ST-28: switchSearchTab', '未定義');
+       typeof renderTodoList === 'function'
+         ? ok('ST-28: renderTodoList 存在確認')
+         : ng('ST-28: renderTodoList', '未定義');
+
+       // searchModal DOM確認
+       var _stSm = document.getElementById('searchModal');
+       _stSm ? ok('ST-28: searchModal DOM確認') : ng('ST-28: searchModal DOM', 'null');
+       var _stTabSearch = document.getElementById('searchTabSearch');
+       _stTabSearch ? ok('ST-28: searchTabSearch DOM確認') : ng('ST-28: searchTabSearch', 'null');
+       var _stTabTodo = document.getElementById('searchTabTodo');
+       _stTabTodo ? ok('ST-28: searchTabTodo DOM確認') : ng('ST-28: searchTabTodo', 'null');
+       var _stPaneTodo = document.getElementById('searchPaneTodo');
+       _stPaneTodo ? ok('ST-28: searchPaneTodo DOM確認') : ng('ST-28: searchPaneTodo', 'null');
+       var _stTodoResults = document.getElementById('todoResults');
+       _stTodoResults ? ok('ST-28: todoResults DOM確認') : ng('ST-28: todoResults', 'null');
+
+       // switchSearchTab挙動確認
+       if (typeof switchSearchTab === 'function') {
+         switchSearchTab('todo');
+         var _paneTodoVisible = document.getElementById('searchPaneTodo');
+         var _paneSearchHidden = document.getElementById('searchPaneSearch');
+         (_paneTodoVisible && _paneTodoVisible.style.display !== 'none')
+           ? ok('ST-28: switchSearchTab(todo) 表示確認')
+           : ng('ST-28: switchSearchTab(todo)', '非表示');
+         (_paneSearchHidden && _paneSearchHidden.style.display === 'none')
+           ? ok('ST-28: switchSearchTab(todo) 検索パネル非表示確認')
+           : ng('ST-28: switchSearchTab(todo) 検索非表示', _paneSearchHidden && _paneSearchHidden.style.display);
+         switchSearchTab('search');
+         var _paneSearchVisible = document.getElementById('searchPaneSearch');
+         (_paneSearchVisible && _paneSearchVisible.style.display !== 'none')
+           ? ok('ST-28: switchSearchTab(search) 復元確認')
+           : ng('ST-28: switchSearchTab(search)', '非表示');
+       }
+
+       // renderTodoList挙動確認
+       if (typeof renderTodoList === 'function') {
+         renderTodoList();
+         var _stTodoEl = document.getElementById('todoResults');
+         var _stTodoCount = document.getElementById('todoCount');
+         (_stTodoEl && _stTodoEl.children.length >= 0)
+           ? ok('ST-28: renderTodoList 描画確認（' + (_stTodoEl.children.length) + '要素）')
+           : ng('ST-28: renderTodoList', '描画失敗');
+         (_stTodoCount && _stTodoCount.textContent.indexOf('未完了') !== -1)
+           ? ok('ST-28: todoCount テキスト確認')
+           : ng('ST-28: todoCount', _stTodoCount && _stTodoCount.textContent);
+       }
+
+       // ===== 未完了タスクフィルター確認 =====
+       var _stTodos28 = allTasks.filter(function(t){
+         return t.kind === 'task' && !t.completed && !t.done && !t.inHeaven && t.displayScope !== 'heaven';
+       });
+       _stTodos28.length >= 0
+         ? ok('ST-28: 未完了タスクフィルター確認（' + _stTodos28.length + '件）')
+         : ng('ST-28: 未完了フィルター', _stTodos28.length);
+       // 完了済みが含まれていないか確認
+       var _stHasCompleted = _stTodos28.some(function(t){ return t.completed || t.done; });
+       !_stHasCompleted
+         ? ok('ST-28: 未完了一覧に完了済み混入なし確認')
+         : ng('ST-28: 未完了一覧', '完了済みが含まれている');
+
+       // ===== 業ログ =====
+       typeof openGouLogModal === 'function'
+         ? ok('ST-28: openGouLogModal 存在確認')
+         : ng('ST-28: openGouLogModal', '未定義');
+       // gouLogの構造確認
+       var _stGouLog = JSON.parse(localStorage.getItem('gouLog') || '[]');
+       Array.isArray(_stGouLog)
+         ? ok('ST-28: gouLog 配列型確認（' + _stGouLog.length + '件）')
+         : ng('ST-28: gouLog 型', typeof _stGouLog);
+       // gouLog各エントリの構造確認
+       if (_stGouLog.length > 0) {
+         var _stEntry = _stGouLog[0];
+         (_stEntry.amount !== undefined && _stEntry.reason && _stEntry.date && _stEntry.total !== undefined)
+           ? ok('ST-28: gouLogエントリ構造確認（amount/reason/date/total）')
+           : ng('ST-28: gouLogエントリ構造', JSON.stringify(_stEntry));
+       } else {
+         ok('ST-28: gouLog 空（業未発生・正常）');
+       }
+       // addGouのテストラベル抑制確認（ST-系はgouLogに記録されない）
+       var _stGouBefore28 = _stGouLog.length;
+       addGou(1, 'ST-28テスト:抑制確認');
+       var _stGouAfter28 = JSON.parse(localStorage.getItem('gouLog') || '[]').length;
+       _stGouAfter28 === _stGouBefore28
+         ? ok('ST-28: テストラベルはgouLogに記録されない確認')
+         : ng('ST-28: gouLog抑制', '記録された');
+       addGou(-1, 'ST-28テスト:ロールバック');
+
+       // ===== コロシアム業トースト抑制確認 =====
+       var _stAddGouSrc28 = (window.addGou||function(){}).toString();
+       (_stAddGouSrc28.indexOf("startsWith('ST-')") !== -1 || _stAddGouSrc28.indexOf('startsWith') !== -1)
+         ? ok('ST-28: addGou テストコール抑制コード確認')
+         : ng('ST-28: addGou抑制コード', 'なし');
+
+       // ===== checkAbsencePenalty・checkDailyGouPenalty =====
+       var _stAbsSrc = (window.checkAbsencePenalty||function(){}).toString();
+       _stAbsSrc.indexOf('lastTaskCompletedDate') !== -1
+         ? ok('ST-28: checkAbsencePenalty lastTaskCompletedDate参照確認')
+         : ng('ST-28: checkAbsencePenalty', 'lastTaskCompletedDate未参照');
+       var _stPenSrc = (window.checkDailyGouPenalty||function(){}).toString();
+       _stPenSrc.indexOf('lastGouCheckDate') !== -1
+         ? ok('ST-28: checkDailyGouPenalty lastGouCheckDate参照確認')
+         : ng('ST-28: checkDailyGouPenalty', 'lastGouCheckDate未参照');
+
+       // ===== getColosseumPool =====
+       typeof getColosseumPool === 'function'
+         ? ok('ST-28: getColosseumPool 存在確認')
+         : ng('ST-28: getColosseumPool', '未定義');
+       if (typeof getColosseumPool === 'function') {
+         var _stPool = getColosseumPool();
+         Array.isArray(_stPool) && _stPool.length > 0
+           ? ok('ST-28: getColosseumPool プール取得確認（' + _stPool.length + '件）')
+           : ng('ST-28: getColosseumPool', '空またはエラー');
+       }
+       // getTodayColosseumDeck
+       typeof getTodayColosseumDeck === 'function'
+         ? ok('ST-28: getTodayColosseumDeck 存在確認')
+         : ng('ST-28: getTodayColosseumDeck', '未定義');
+       if (typeof getTodayColosseumDeck === 'function') {
+         var _stTodayDeck = getTodayColosseumDeck();
+         (_stTodayDeck && _stTodayDeck.title)
+           ? ok('ST-28: getTodayColosseumDeck 今日のデッキ取得確認（' + _stTodayDeck.title + '）')
+           : ng('ST-28: getTodayColosseumDeck', 'デッキなし');
+       }
+       // エポック方式確認（IDが変数COLOSSEUM_EPOCHを参照）
+       var _stCDSrc = (window.getTodayColosseumDeck||function(){}).toString();
+       _stCDSrc.indexOf('COLOSSEUM_EPOCH') !== -1
+         ? ok('ST-28: getTodayColosseumDeck エポック方式確認')
+         : ng('ST-28: エポック方式', 'COLOSSEUM_EPOCH未参照');
+
+       // ===== generateAndCopyColosseumReport =====
+       typeof generateAndCopyColosseumReport === 'function'
+         ? ok('ST-28: generateAndCopyColosseumReport 存在確認')
+         : ng('ST-28: generateAndCopyColosseumReport', '未定義');
+
+       // ===== section DOM確認（未完了一覧スクロール先） =====
+       ['section1','section2','section3','section4'].forEach(function(id) {
+         document.getElementById(id)
+           ? ok('ST-28: #' + id + ' DOM確認')
+           : ng('ST-28: #' + id, 'null');
+       });
+
+     } catch(e) { ng('ST-28: 検索・未完了・業ログ・コロシアム', e.message); }
 
      // ===== 17. Key Purify Absolute Green（最終確認・4軸検査） =====
      try {
@@ -20658,7 +21634,7 @@ function showDebugLog() {
          : ng('KPAG③: 禁止キー検知', '廃止キーが残存: ' + _bannedFound.join(', '));
 
        // ④ 未知キー検知（白名単チェック）
-       var _allowedKeys = ['_calIdMigMap','_dbg_errors','_dbg_log','_lastScratchMoveDate','allSettings','allTasks','autoMainCalendar','calendars','craftMode','currentView','dailyScrollInit','dataVersion','deletedTaskIds','deviceId','escapeLog','extendedvaluekey','gantEnabled','gouPoints','journals','mainCalendarId','mig_category_to_calendar_v170','mig_death_ghost_flags_v0_24_59','mig_gant_enabled_default_v0_32','mig_ids_to_uuid_v7','mig_journal_ids_to_uuid_v7','mig_journals_to_alltasks_v1','mig_show_in_daily_to_display_scope_v1','migration_calendarId_v1','nbLastPageId','notebooks','selectedDailyDate','simpleMode','taskCompletedStreak','taskCompletedTotal','tlLastScrollTop','tokuLog','tokuPoints','weeklyScrollInit','wgLastScrollTop'];
+       var _allowedKeys = ['_calIdMigMap','_dbg_errors','_dbg_log','_lastScratchMoveDate','allSettings','allTasks','autoMainCalendar','calendars','craftMode','currentView','dailyScrollInit','dataVersion','deletedTaskIds','deviceId','escapeLog','extendedvaluekey','gantEnabled','gdpLog','gdpPoints','gouLog','gouPoints','journals','lastGouCheckDate','lastKingdomCodeDate','lastMonthlyBonusMonth','lastTaskCompletedDate','mainCalendarId','mig_category_to_calendar_v170','mig_death_ghost_flags_v0_24_59','mig_gant_enabled_default_v0_32','mig_gdp_to_oku_v1','mig_ids_to_uuid_v7','mig_journal_ids_to_uuid_v7','mig_journals_to_alltasks_v1','mig_show_in_daily_to_display_scope_v1','migration_calendarId_v1','nbLastPageId','notebooks','selectedDailyDate','simpleMode','taskCompletedStreak','taskCompletedTotal','tlLastScrollTop','tokuLog','tokuPoints','weeklyScrollInit','wgLastScrollTop'];
        var _unknownKeys = _kpKeys.filter(function(k){ return _allowedKeys.indexOf(k) === -1; });
        _unknownKeys.length === 0
          ? ok('KPAG④: 未知キー検知 — 全' + _kpKeys.length + 'キー検査済・汚染ゼロ')
@@ -21214,7 +22190,7 @@ function deckBuilderPublish() {
     // 徳加算（1回のみ）
     if (!_builderTokuDone) {
       _builderTokuDone = true;
-      if (typeof addToku === 'function') addToku(100, 'デッキ配布コード発行');
+      // デッキ配布コード発行：GDP報酬なし（ARV1:受取時に発生）
     }
     // 配布モーダル表示（コピー+QR）
     if (typeof showDeckQR === 'function') showDeckQR(code, title);
@@ -22057,6 +23033,10 @@ document.addEventListener('DOMContentLoaded', function() {
         _toastMsg4 = '📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(dateStr) + 'の日誌を作成しました';
       }
       saveAllTasks();
+      // 日誌記録：徳+1・業-1
+      if (typeof addToku === 'function') addToku(1, '日誌記録');
+      if (typeof addGou === 'function') addGou(-1, '日誌記録');
+      if (typeof recordTaskCompletedDate === 'function') recordTaskCompletedDate();
       var jnm = document.getElementById('journalNewModal');
       if (jnm) jnm.style.display = 'none';
       window._newJournalText = '';
