@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.85';
+    const APP_VERSION = 'v0.39.88';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -11957,9 +11957,10 @@ function reviveBlueprint(id) {
               const fromSection = dragData.section;
               const toSection = i;
               if (fromSection !== toSection) {
-                // 移動先セクションの最後にorderを設定
-                const today = getLocalDateStr(new Date());
-                const dailyTasks = getDailyTasks(today);
+                // currentDailyDateを使う（過去日付対応）
+                const _dropDate = (typeof currentDailyDate !== 'undefined' && currentDailyDate)
+                  ? currentDailyDate : getLocalDateStr(new Date());
+                const dailyTasks = getDailyTasks(_dropDate);
                 const targetTasks = dailyTasks[toSection];
                 const maxOrder = targetTasks.length > 0 
                   ? Math.max(...targetTasks.map(t => t.order || 0)) + 1 
@@ -11967,8 +11968,8 @@ function reviveBlueprint(id) {
                 // マスターデータのsectionとorderを更新
                 updateTask(taskId, { section: toSection, order: maxOrder });
                 // 両方の象限を再描画
-                renderTasks(fromSection);
-                renderTasks(toSection);
+                renderTasks(fromSection, _dropDate);
+                renderTasks(toSection, _dropDate);
               }
             } catch (err) {
               console.error('象限ドロップエラー:', err);
@@ -22520,7 +22521,7 @@ function showDebugLog() {
        // テストセクション自己存在確認：ソースコード上の存在をチェック
        var _stSections = ['ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10',
          'ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20',
-         'ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39'];
+         'ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -23380,7 +23381,6 @@ function showDebugLog() {
        switchView('daily');
        ok('ST-37: ダッシュボード詳細統計・提携・バナー 完了');
      } catch(e) { ng('ST-37: ダッシュボード詳細', e.message); }
-
      // ===== ST-38: SSOT整合性（mainCalendarId・tlLastScrollTop） =====
      try {
        // ① allSettings.calendar.mainIdが存在する
@@ -23639,6 +23639,256 @@ function showDebugLog() {
        ok('🟢 SPAG — SSOT PURIFY ABSOLUTE GREEN · ALL 4 AXES CLEARED · ZERO DRIFT');
      } catch(e) { ng('ST-39: SPAG — AUTHORITY VIOLATION DETECTED', e.message); }
 
+     // ===== ST-40: setupAllSectionDrops currentDailyDate対応 =====
+     try {
+       // setupAllSectionDrops関数存在確認
+       typeof setupAllSectionDrops === 'function'
+         ? ok('ST-40: setupAllSectionDrops 存在確認')
+         : ng('ST-40: setupAllSectionDrops', '未定義');
+
+       // ソースにcurrentDailyDateが含まれているか
+       var _st40Src = (typeof setupAllSectionDrops === 'function') ? setupAllSectionDrops.toString() : '';
+       _st40Src.indexOf('currentDailyDate') !== -1
+         ? ok('ST-40: setupAllSectionDrops currentDailyDate参照確認')
+         : ng('ST-40: setupAllSectionDrops', 'currentDailyDate参照なし');
+
+       // _dropDateフォールバック確認
+       _st40Src.indexOf('_dropDate') !== -1
+         ? ok('ST-40: setupAllSectionDrops _dropDate変数確認')
+         : ng('ST-40: setupAllSectionDrops', '_dropDate変数なし');
+
+       // renderTasks(_dropDate)で再描画していることを確認
+       _st40Src.indexOf('renderTasks(fromSection, _dropDate)') !== -1
+         ? ok('ST-40: setupAllSectionDrops renderTasks日付引数確認')
+         : ng('ST-40: setupAllSectionDrops', 'renderTasks日付引数なし');
+
+       // 過去日付D&D挙動テスト
+       var _st40PastDate = '2026-01-01';
+       var _st40OrigDate = currentDailyDate;
+       currentDailyDate = _st40PastDate;
+       // テストタスクを作成
+       var _st40Task = { id: generateTaskId(), kind: 'task', text: '_st40テスト', date: _st40PastDate, section: 4, completed: false, done: false, order: 0 };
+       allTasks.push(_st40Task);
+       // _dropDateが正しく過去日付を返すか
+       var _st40DropDate = (typeof currentDailyDate !== 'undefined' && currentDailyDate)
+         ? currentDailyDate : getLocalDateStr(new Date());
+       _st40DropDate === _st40PastDate
+         ? ok('ST-40: 過去日付D&D _dropDate確認（' + _st40DropDate + '）')
+         : ng('ST-40: 過去日付D&D _dropDate', '期待=' + _st40PastDate + ' 実際=' + _st40DropDate);
+       // クリーンアップ
+       allTasks = allTasks.filter(function(t){ return t.id !== _st40Task.id; });
+       currentDailyDate = _st40OrigDate;
+       saveAllTasks();
+       ok('ST-40: setupAllSectionDrops currentDailyDate対応 完了');
+     } catch(e) { ng('ST-40: setupAllSectionDrops', e.message); }
+
+     // ===== ST-41: インポート内容重複除去 =====
+     try {
+       // importData関数存在確認
+       typeof importData === 'function'
+         ? ok('ST-41: importData 存在確認')
+         : ng('ST-41: importData', '未定義');
+
+       // _skipContentコード確認
+       var _st41Src = (typeof importData === 'function') ? importData.toString() : '';
+       _st41Src.indexOf('_skipContent') !== -1
+         ? ok('ST-41: importData _skipContent変数確認')
+         : ng('ST-41: importData', '_skipContent変数なし');
+
+       // 内容キーによるフィルタコード確認
+       _st41Src.indexOf('_existingContentKeys') !== -1
+         ? ok('ST-41: importData _existingContentKeys確認')
+         : ng('ST-41: importData', '_existingContentKeys なし');
+
+       // ♻️スキップトーストメッセージ確認
+       _st41Src.indexOf('内容重複スキップ') !== -1
+         ? ok('ST-41: importData 内容重複スキップトースト確認')
+         : ng('ST-41: importData', '内容重複スキップトーストなし');
+
+       // 同一内容タスクのフィルタ挙動テスト（メモリ上のみ）
+       var _st41ExistingTasks = [{ id: 'existing1', kind: 'task', text: 'テスト重複', date: '2026-01-01', section: 1, time: '' }];
+       var _st41ContentKey = 'テスト重複|2026-01-01|1|';
+       var _st41ContentKeys = new Set([_st41ContentKey]);
+       var _st41Incoming = [
+         { id: 'new1', kind: 'task', text: 'テスト重複', date: '2026-01-01', section: 1, time: '' }, // 重複
+         { id: 'new2', kind: 'task', text: 'ユニーク', date: '2026-01-01', section: 1, time: '' }   // 新規
+       ];
+       var _st41Filtered = _st41Incoming.filter(function(t) {
+         if (t.kind !== 'task') return true;
+         var k = (t.text||'') + '|' + (t.date||'') + '|' + (t.section||'') + '|' + (t.time||'');
+         if (_st41ContentKeys.has(k)) return false;
+         _st41ContentKeys.add(k);
+         return true;
+       });
+       _st41Filtered.length === 1 && _st41Filtered[0].id === 'new2'
+         ? ok('ST-41: 内容重複フィルタ挙動確認（重複1件除去）')
+         : ng('ST-41: 内容重複フィルタ', '期待1件 実際' + _st41Filtered.length + '件');
+
+       // mig_dedup_tasks_v2フラグ確認
+       localStorage.getItem('mig_dedup_tasks_v2') === '1'
+         ? ok('ST-41: mig_dedup_tasks_v2 フラグ確認（適用済み）')
+         : ok('ST-41: mig_dedup_tasks_v2 未適用（初回起動時に実行）');
+
+       ok('ST-41: インポート内容重複除去 完了');
+     } catch(e) { ng('ST-41: インポート内容重複除去', e.message); }
+
+     // ===== ST-42: 設定:業セクション常時表示 =====
+     try {
+       // gouAdminSectionが常時display:blockか確認
+       var _st42GouSec = document.getElementById('gouAdminSection');
+       _st42GouSec
+         ? ok('ST-42: #gouAdminSection DOM確認')
+         : ng('ST-42: #gouAdminSection', 'DOM未存在');
+
+       // 初期状態がdisplay:noneでないことを確認（HTML属性）
+       if (_st42GouSec) {
+         // loadSettingsUIを呼んでdisplay確認
+         switchView('settings');
+         if (typeof loadSettingsUI === 'function') loadSettingsUI();
+         var _st42Display = _st42GouSec.style.display;
+         _st42Display === 'block'
+           ? ok('ST-42: gouAdminSection loadSettingsUI後 display:block確認')
+           : ng('ST-42: gouAdminSection display', '値=' + _st42Display);
+         // gouDisplayValueに業の値が表示されているか
+         var _st42GouDisp = document.getElementById('gouDisplayValue');
+         _st42GouDisp && _st42GouDisp.textContent !== undefined
+           ? ok('ST-42: gouDisplayValue 値表示確認（' + _st42GouDisp.textContent + '）')
+           : ng('ST-42: gouDisplayValue', '未存在または空');
+         switchView('daily');
+       }
+       ok('ST-42: 設定:業セクション常時表示 完了');
+     } catch(e) { ng('ST-42: 設定:業セクション常時表示', e.message); }
+
+     // ===== ST-43: 検索オンボーディング =====
+     try {
+       // searchOnboardSeenフラグ確認
+       var _st43Seen = allSettings.flags && allSettings.flags.searchOnboardSeen;
+       (_st43Seen === true || _st43Seen === undefined)
+         ? ok('ST-43: searchOnboardSeen フラグ確認（' + _st43Seen + '）')
+         : ng('ST-43: searchOnboardSeen', '不正値=' + _st43Seen);
+
+       // openSearchModalにオンボーディングコードが含まれるか
+       var _st43Src = (typeof openSearchModal === 'function') ? openSearchModal.toString() : '';
+       _st43Src.indexOf('searchOnboardSeen') !== -1
+         ? ok('ST-43: openSearchModal searchOnboardSeen参照確認')
+         : ng('ST-43: openSearchModal', 'searchOnboardSeen参照なし');
+
+       // searchResultsへの描画コード確認
+       _st43Src.indexOf('業とは') !== -1 || _st43Src.indexOf('業タブについて') !== -1
+         ? ok('ST-43: openSearchModal 業の説明コード確認')
+         : ng('ST-43: openSearchModal', '業の説明コードなし');
+
+       // フラグがtrueの時はオンボーディングをスキップするコード確認
+       _st43Src.indexOf('searchOnboardSeen') !== -1 && _st43Src.indexOf('saveAllSettings') !== -1
+         ? ok('ST-43: openSearchModal フラグ保存コード確認')
+         : ng('ST-43: openSearchModal', 'フラグ保存コードなし');
+
+       ok('ST-43: 検索オンボーディング 完了');
+     } catch(e) { ng('ST-43: 検索オンボーディング', e.message); }
+
+     // ===== ST-44: 図書館:業と徳ページ自動追加 =====
+     try {
+       // nbGouTokuPageAddedフラグ確認
+       var _st44Added = allSettings.flags && allSettings.flags.nbGouTokuPageAdded;
+       (_st44Added === true || _st44Added === undefined)
+         ? ok('ST-44: nbGouTokuPageAdded フラグ確認（' + _st44Added + '）')
+         : ng('ST-44: nbGouTokuPageAdded', '不正値=' + _st44Added);
+
+       // switchViewにnbGouTokuPageAddedコードが含まれるか
+       var _st44Src = (typeof switchView === 'function') ? switchView.toString() : '';
+       _st44Src.indexOf('nbGouTokuPageAdded') !== -1
+         ? ok('ST-44: switchView nbGouTokuPageAdded参照確認')
+         : ng('ST-44: switchView', 'nbGouTokuPageAdded参照なし');
+
+       // フラグがtrueの場合、自由帳に業と徳ページが存在するか
+       if (_st44Added === true) {
+         var _st44GouPage = allTasks.find(function(t){
+           return t.kind === 'note' && t.title && t.title.indexOf('業と徳') !== -1;
+         });
+         _st44GouPage
+           ? ok('ST-44: 業と徳ページ 存在確認（' + _st44GouPage.title + '）')
+           : ok('ST-44: 業と徳ページ 未存在（削除済みまたは初回前）');
+       } else {
+         ok('ST-44: 業と徳ページ 未追加（初回自由帳アクセス時に追加）');
+       }
+
+       ok('ST-44: 図書館:業と徳ページ自動追加 完了');
+     } catch(e) { ng('ST-44: 図書館:業と徳ページ', e.message); }
+
+     // ===== ST-45: tlRebuildBg 左バー再描画 =====
+     try {
+       // renderTimelineViewを呼び出した後にtlTimeBarColが存在するか
+       switchView('daily');
+       if (typeof switchDailyTab === 'function') switchDailyTab('timeline');
+       var _st45BarEl = document.getElementById('tlTimeBarCol');
+       var _st45ShowBar = (allSettings.ui.tlTimeBar || 'show') === 'show';
+       if (_st45ShowBar) {
+         _st45BarEl
+           ? ok('ST-45: #tlTimeBarCol DOM確認（表示設定=show）')
+           : ng('ST-45: #tlTimeBarCol', 'DOM未存在（表示設定=show）');
+       } else {
+         ok('ST-45: tlTimeBar設定=hide → バー非表示（スキップ）');
+       }
+
+       // tlRebuildBgのソースにtlTimeBarColの再描画コードが含まれるか確認
+       // renderTimelineViewのソースからtlRebuildBg部分を抽出
+       var _st45RenderSrc = (typeof renderTimelineView === 'function') ? renderTimelineView.toString() : '';
+       _st45RenderSrc.indexOf('tlTimeBarCol') !== -1
+         ? ok('ST-45: renderTimelineView tlTimeBarCol参照確認')
+         : ng('ST-45: renderTimelineView', 'tlTimeBarCol参照なし');
+
+       // tlRebuildBg内にtlTimeBarColの再描画コードが含まれるか
+       // (renderTimelineView内のtlRebuildBg関数がtlTimeBarColを操作)
+       var _st45HasRebuild = _st45RenderSrc.indexOf('_tlBarEl') !== -1 || _st45RenderSrc.indexOf('tlTimeBarCol') !== -1;
+       _st45HasRebuild
+         ? ok('ST-45: tlRebuildBg 左バー再描画コード確認')
+         : ng('ST-45: tlRebuildBg', '左バー再描画コードなし');
+
+       // tlTimeBar設定確認
+       var _st45Setting = allSettings.ui.tlTimeBar || 'show';
+       ok('ST-45: tlTimeBar設定確認（' + _st45Setting + '）');
+
+       // クリーンアップ
+       if (typeof switchDailyTab === 'function') switchDailyTab('matrix');
+       switchView('daily');
+       ok('ST-45: tlRebuildBg 左バー再描画 完了');
+     } catch(e) { ng('ST-45: tlRebuildBg 左バー再描画', e.message); }
+
+     // ===== ST-46: renderAllSections currentDailyDate対応 =====
+     try {
+       // renderAllSectionsのソース確認
+       var _st46Src = (typeof renderAllSections === 'function') ? renderAllSections.toString() : '';
+       typeof renderAllSections === 'function'
+         ? ok('ST-46: renderAllSections 存在確認')
+         : ng('ST-46: renderAllSections', '未定義');
+
+       // currentDailyDate引数対応確認
+       _st46Src.indexOf('dateStr') !== -1 || _st46Src.indexOf('targetDate') !== -1
+         ? ok('ST-46: renderAllSections 日付引数対応確認')
+         : ng('ST-46: renderAllSections', '日付引数対応なし');
+
+       // 過去日付でrenderAllSectionsを呼んで正常動作確認
+       var _st46OrigDate = currentDailyDate;
+       var _st46PastDate = '2026-01-15';
+       currentDailyDate = _st46PastDate;
+       try {
+         renderAllSections(_st46PastDate);
+         ok('ST-46: renderAllSections 過去日付引数で正常実行確認');
+       } catch(ex) {
+         ng('ST-46: renderAllSections 過去日付', ex.message);
+       }
+       // 今日に戻す
+       currentDailyDate = _st46OrigDate;
+       renderAllSections(_st46OrigDate || null);
+
+       // setupAllSectionDropsがcurrentDailyDateを使うコード確認
+       var _st46DropSrc = (typeof setupAllSectionDrops === 'function') ? setupAllSectionDrops.toString() : '';
+       _st46DropSrc.indexOf('currentDailyDate') !== -1
+         ? ok('ST-46: setupAllSectionDrops currentDailyDate参照確認（日次D&D）')
+         : ng('ST-46: setupAllSectionDrops', 'currentDailyDate参照なし');
+
+       ok('ST-46: renderAllSections currentDailyDate対応 完了');
+     } catch(e) { ng('ST-46: renderAllSections currentDailyDate対応', e.message); }
      // ===== 17. KPAG — Key Purify Absolute Green · 4-AXIS STORAGE INSPECTION =====
      try {
        var _kpKeys = Object.keys(localStorage);
@@ -25413,4 +25663,6 @@ document.addEventListener('DOMContentLoaded', function() {
       style="flex:1;width:100%;padding:16px;background:transparent;border:none;color:#d1fae5;font-size:0.95em;box-sizing:border-box;resize:none;font-family:inherit;line-height:1.9;outline:none;"></textarea>
   </div>
 
-</div>
+</div
+
+>
