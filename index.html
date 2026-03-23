@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.123';
+    const APP_VERSION = 'v0.39.144';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3519,13 +3519,13 @@
           完了済み表示
         </label>
         <div style="position:relative;display:inline-block;"><button onclick="showGantTour()" onmouseenter="this.nextElementSibling.style.display='block'" onmouseleave="this.nextElementSibling.style.display='none'" style="padding:4px 8px;border-radius:50%;border:1px solid #ddd;background:#fff;color:#888;font-size:0.85em;cursor:pointer;width:28px;height:28px;line-height:1;font-weight:700;">?</button><div style="display:none;position:absolute;right:0;top:34px;background:#1a1a2e;color:#fff;font-size:10px;font-weight:600;padding:5px 10px;border-radius:7px;white-space:nowrap;pointer-events:none;z-index:999;box-shadow:0 2px 8px rgba(0,0,0,0.2);">はじめての王国建築</div></div>
-        <button onclick="openBlueprintEditor(null)" style="padding:4px 12px; border-radius:12px; border:none; background:#262626; color:#fff; font-size:0.8em; cursor:pointer;">＋ 造営計画</button>
+        <button onclick="openBlueprintEditor(null)" style="padding:4px 12px; border-radius:12px; border:none; background:#262626; color:#fff; font-size:0.8em; cursor:pointer;">＋ 大きな志を立てる</button>
       </div>
     </div>
     <!-- 下部70%：ガントチャート -->
     <div id="gantChartArea" style="flex:1; overflow:auto; -webkit-overflow-scrolling:touch; position:relative;">
       <div id="gantAddGanttBtn" style="display:none; padding:10px 16px;">
-        <button onclick="openGanttEditor(null)" style="width:100%;padding:10px;background:#f5f5f5;border:1px dashed #ccc;border-radius:8px;font-size:0.9em;color:#666;cursor:pointer;">工程を刻む</button>
+        <button onclick="openGanttEditor(null)" style="width:100%;padding:10px;background:#f5f5f5;border:1px dashed #ccc;border-radius:8px;font-size:0.9em;color:#666;cursor:pointer;">手立てを刻む</button>
       </div>
       <div class="gant-html-chart"></div>
     </div>
@@ -3534,7 +3534,7 @@
   <div id="blueprintEditorModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
     <div style="background:#fff; border-radius:16px; width:90%; max-width:480px; max-height:85vh; overflow:hidden; display:flex; flex-direction:column;">
       <div style="overflow-y:auto; padding:24px; flex:1;">
-      <h3 style="margin:0 0 16px 0; font-size:1.1em; font-weight:700;">志（こころざし）<span style="font-size:0.72em;color:#aaa;font-weight:400;margin-left:6px;">造営計画</span></h3>
+      <h3 style="margin:0 0 16px 0; font-size:1.1em; font-weight:700;">志（こころざし）<span style="font-size:0.72em;color:#aaa;font-weight:400;margin-left:6px;">こころざし</span></h3>
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
         <button id="blueprintEmojiBtn" onclick="toggleBlueprintEmojiPicker()" style="font-size:1.6em;width:44px;height:44px;border:1px solid #ddd;border-radius:8px;background:#fafafa;cursor:pointer;flex-shrink:0;">🏰</button>
         <input id="blueprintTitleInput" type="text" placeholder="計画名（例：英語上達、体を鍛える）" style="flex:1; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:0.95em; box-sizing:border-box;">
@@ -3588,10 +3588,11 @@
   <div id="ganttEditorModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
     <div style="background:#fff; border-radius:16px; width:90%; max-width:480px; max-height:85vh; overflow:hidden; display:flex; flex-direction:column;">
       <div style="overflow-y:auto; padding:24px; flex:1;">
-      <h3 style="margin:0 0 16px 0; font-size:1.1em; font-weight:700;">手立て（てだて）<span style="font-size:0.72em;color:#aaa;font-weight:400;margin-left:6px;">ステップ</span></h3>
+      <h3 style="margin:0 0 4px 0; font-size:1.1em; font-weight:700;">手立て（ステップ）</h3>
+      <div id="ganttBreadcrumb" style="margin-bottom:16px;"></div>
       <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;">
         <button id="ganttEmojiBtn" onclick="toggleGanttEmojiPicker()" title="紋章を変える" style="font-size:1.6em;width:44px;height:44px;border:1px solid #ddd;border-radius:8px;background:#fafafa;cursor:pointer;flex-shrink:0;position:relative;transition:transform 0.15s,box-shadow 0.15s;" onmouseenter="this.style.transform='scale(1.15)';this.style.boxShadow='0 4px 12px rgba(92,107,192,0.3)';this._tip=Object.assign(document.createElement('div'),{textContent:'🏰 紋章を変える',style:'position:absolute;bottom:-30px;left:50%;transform:translateX(-50%);background:#3c3c5c;color:#fff;font-size:10px;padding:3px 8px;border-radius:6px;white-space:nowrap;pointer-events:none;z-index:99;font-family:sans-serif;'});this.appendChild(this._tip);" onmouseleave="this.style.transform='';this.style.boxShadow='';if(this._tip)this._tip.remove();">🏗</button>
-        <input id="ganttTitleInput" type="text" placeholder="工程名（例：基礎固め、仕上げ）" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:0.95em;box-sizing:border-box;">
+        <input id="ganttTitleInput" type="text" placeholder="手立ての名（例：基礎固め、仕上げ）" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:0.95em;box-sizing:border-box;">
       </div>
       <div id="ganttEmojiPicker" style="display:none;margin-bottom:12px;background:#f9f9f9;border:1px solid #e0e0e0;border-radius:10px;padding:10px;">
         <div style="font-size:0.75em;color:#888;margin-bottom:8px;font-weight:600;">絵文字を選ぶ</div>
@@ -8724,7 +8725,7 @@ function toggleGantEnabled(checked) {
     // 志カードのホバーメッセージ生成
     function _getBlueprintHoverMsg(bp, progress, ganttCount, taskCount) {
       var encouragement;
-      if (ganttCount === 0) encouragement = '工程をまだ刻んでいない。|最初の一歩を、ここに。';
+      if (ganttCount === 0) encouragement = '手立てをまだ刻んでいない。|最初の一歩を、ここに。';
       else if (progress === 0) encouragement = '王国の礎は整った。|あとは、動くだけ。';
       else if (progress < 30) encouragement = '歩み始めた。|焦らずに、一歩ずつ。';
       else if (progress < 60) encouragement = '着実に前へ進んでいる。|積み重ねが、王国を育てる。';
@@ -8993,12 +8994,12 @@ function toggleGantEnabled(checked) {
     function renderGantBlueprints() {
       const area = document.getElementById('gantBlueprintArea');
       if (!area) return;
-      // 志選択時のみ「＋工程を刻む」ボタンを表示
+      // 志選択時のみ「＋手立てを刻む」ボタンを表示
       const _addGanttBarBtn = document.getElementById('gantAddGanttBarBtn');
       if (_addGanttBarBtn) _addGanttBarBtn.style.display = _gantSelectedBlueprintId ? '' : 'none';
       const blueprints = getBlueprints();
       if (blueprints.length === 0) {
-        area.innerHTML = '<div style="color:#aaa;font-size:0.85em;padding:8px;">＋ 造営計画を追加してください</div>';
+        area.innerHTML = '<div style="color:#aaa;font-size:0.85em;padding:8px;">＋ 大きな志を立ててください</div>';
         return;
       }
       area.innerHTML = blueprints.map(bp => {
@@ -9031,11 +9032,11 @@ function toggleGantEnabled(checked) {
             <div style="height:4px;background:${color};border-radius:2px;width:${progress}%;transition:width 0.3s;"></div>
           </div>
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-            <div style="font-size:0.75em;color:#888;">${progress}% · ${ganttCount}工程 ${bp.achieved ? '✅' : ''}</div>
+            <div style="font-size:0.75em;color:#888;">${progress}% · ${ganttCount}手立て ${bp.achieved ? '✅' : ''}</div>
             <button onclick="event.stopPropagation();_gantSelectedBlueprintId='${bp.id}';openGanttEditor(null);" style="
               background:${color}; color:${bp.textColor||'#fff'}; border:none; border-radius:8px;
               font-size:0.75em; padding:3px 8px; cursor:pointer; white-space:nowrap;
-            ">＋工程</button>
+            ">＋手立て</button>
           </div>
           <div style="font-size:0.72em;color:${start ? '#1565c0' : '#ffaa44'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
             ${start ? '📅 ' + start + (end && end !== start ? ' 〜 ' + end : '') : '⚠️ タスクに日付を入れると期間が決まります'}
@@ -9116,7 +9117,7 @@ function toggleGantEnabled(checked) {
           items: [
             { n:'💡', color:'#a78bfa', title:'一般ユーザーへ', desc:'日次・週間・月間で管理するだけで十分です。<br>造営は、もっと大きな夢を描きたくなったときに開けばいい。' },
             { n:'👑', color:'#4facfe', title:'管理職・プロジェクトリーダーへ', desc:'志（ゴール）→ 手立て（施策）→ タスク（行動）の3層で<br>プロジェクトの地図を描けます。ここが本領発揮の場所。' },
-            { n:'🏢', color:'#4facfe', title:'社長・経営者へ', desc:'中長期の戦略を「造営計画」として可視化できます。<br>チームと共有する地図として使ってください。' },
+            { n:'🏢', color:'#4facfe', title:'社長・経営者へ', desc:'大きな志と手立てで、戦略を地図にできます。<br>チームと共有する羅針盤として使ってください。' },
           ]
         },
         {
@@ -9124,9 +9125,9 @@ function toggleGantEnabled(checked) {
           title: '造営ビューへようこそ',
           sub: '王国の地図を、あなたの手で描こう。',
           items: [
-            { n:'1', color:'#4facfe', title:'志を立てる', desc:'「＋ 造営計画」で夢や目標をひとつ。<br>大きくなくていい。続けたいことでもいい。' },
-            { n:'2', color:'#4facfe', title:'工程を刻む', desc:'「工程を刻む」でステップに分ける。<br><span style="color:#a78bfa;">基礎固め → 実践 → 仕上げ</span>　細かくしすぎなくていい。' },
-            { n:'3', color:'#a78bfa', title:'タスクを紐づける', desc:'工程行の <span style="background:#4facfe;color:#fff;border-radius:50%;padding:0 5px;font-size:0.82em;">＋</span> でタスクを即作成。「○件」で展開できる。' },
+            { n:'1', color:'#4facfe', title:'大きな志を立てる', desc:'でっかい志を立てよう！！<br>小さきまとまるな。' },
+            { n:'2', color:'#4facfe', title:'手立てを刻む', desc:'「手立てを刻む」でステップに分ける。<br><span style="color:#a78bfa;">基礎固め → 実践 → 仕上げ</span>　細かくしすぎなくていい。' },
+            { n:'3', color:'#a78bfa', title:'タスクを紐づける', desc:'手立て行の <span style="background:#4facfe;color:#fff;border-radius:50%;padding:0 5px;font-size:0.82em;">＋</span> でタスクを即作成。「○件」で展開できる。' },
           ]
         },
         {
@@ -9587,7 +9588,7 @@ function toggleGantEnabled(checked) {
       const headerLabelCell = '<td id="gantLabelResizer" style="width:' + labelW + 'px;min-width:' + labelW + 'px;max-width:' + labelW + 'px;position:sticky;left:0;z-index:4;background:#fff;border-right:2px solid #c8cdd8;border-bottom:2px solid #c8cdd8;border-top:2px solid #c8cdd8;padding:0 6px;vertical-align:middle;position:sticky;left:0;">'
         + '<div style="display:flex;align-items:center;justify-content:space-between;">'
         + '<div>'
-        + '<div style="font-size:9px;color:#aaa;line-height:1.3;">工程</div>'
+        + '<div style="font-size:9px;color:#aaa;line-height:1.3;">手立て（ステップ）</div>'
         + '<div style="font-size:9px;color:#888;font-weight:600;">' + todayLabel + '</div>'
         + '</div>'
         + '<div id="gantResizerHandle" style="position:absolute;right:-6px;top:0;bottom:0;width:12px;cursor:col-resize;z-index:10;display:flex;align-items:center;justify-content:center;touch-action:none;">'
@@ -9747,7 +9748,7 @@ function toggleGantEnabled(checked) {
       htmlChart.innerHTML =
         '<div style="display:flex;border-bottom:2px solid #d0d0d0;background:#fff;position:sticky;top:0;z-index:3;">'
         + '<div style="width:' + labelW + 'px;min-width:' + labelW + 'px;border-right:1px solid #e0e0e0;display:flex;align-items:center;padding:0 6px;">'
-        + '<span style="font-size:10px;color:#aaa;">工程</span></div>'
+        + '<span style="font-size:10px;color:#aaa;">手立て（ステップ）</span></div>'
         + '<div style="position:relative;height:44px;width:' + chartW + 'px;flex-shrink:0;overflow:visible;background:#fafafa;border-right:1px solid #ccc;">'
         + monthHeader + dayHeader + nowLine2 + '</div></div>' + rows;
     }
@@ -9787,8 +9788,8 @@ function toggleGantEnabled(checked) {
         emptyMsg.style.cssText = 'padding:24px;text-align:center;';
         emptyMsg.innerHTML = '<div style="font-size:2em;margin-bottom:8px;">🏗</div>'
           + '<div style="font-size:0.9em;color:#888;margin-bottom:16px;">' + (bp ? '「' + bp.title + '」に' : '') + 'まだ、何も始まっていない。</div>'
-          + (bp ? '<button onclick="openGanttEditor(null)" style="padding:10px 20px;background:#262626;color:#fff;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;">王国の工程を刻む</button>'
-               : '<div style="font-size:0.8em;color:#aaa;">造営計画を選び、工程を刻んでください</div>');
+          + (bp ? '<button onclick="openGanttEditor(null)" style="padding:10px 20px;background:#262626;color:#fff;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;">王国の手立てを刻む</button>'
+               : '<div style="font-size:0.8em;color:#aaa;">志を選び、手立てを刻んでください</div>');
         htmlChart.appendChild(emptyMsg);
         return;
       }
@@ -10012,8 +10013,8 @@ function reviveBlueprint(id) {
       closeBlueprintEditor();
       renderGantView();
       if (!_gantEditingBlueprintId) {
-        showToast('造営計画が生まれました 🏯', {type:'next', duration:6000, action:{
-          label:'工程を刻む →',
+        showToast('志が生まれました 🏯', {type:'next', duration:6000, action:{
+          label:'手立てを刻む →',
           fn: function() {
             if (_savedBpId) _gantSelectedBlueprintId = _savedBpId;
             openGanttEditor(null);
@@ -10034,7 +10035,7 @@ function reviveBlueprint(id) {
       const taskLine     = taskCount > 0 ? `<br>紐づくやること <b>${taskCount}件</b> はどうしますか？` : '';
       const btns = [];
       if (taskCount > 0) btns.push({
-        label: 'やることを残して、計画と工程だけ消す', style: 'primary',
+        label: 'やることを残して、計画と手立てだけ消す', style: 'primary',
         onClick: function() {
           for (var i = allTasks.length - 1; i >= 0; i--) {
             if (allTasks[i].kind === 'gantt' && allTasks[i].blueprintId === id) allTasks.splice(i, 1);
@@ -10042,7 +10043,7 @@ function reviveBlueprint(id) {
           }
           if (_gantSelectedBlueprintId === id) _gantSelectedBlueprintId = null;
           saveAllTasks(); closeBlueprintEditor(); renderGantView();
-          showToast('計画と工程を消しました。やることは残っています。', {type:'success', duration:4000});
+          showToast('計画と手立てを消しました。やることは残っています。', {type:'success', duration:4000});
         }
       });
       btns.push({
@@ -10055,13 +10056,13 @@ function reviveBlueprint(id) {
           }
           if (_gantSelectedBlueprintId === id) _gantSelectedBlueprintId = null;
           saveAllTasks(); closeBlueprintEditor(); renderGantView();
-          showToast('計画・工程・やることをすべて消しました。', {type:'success', duration:3000});
+          showToast('計画・手立て・やることをすべて消しました。', {type:'success', duration:3000});
         }
       });
       btns.push({ label: 'キャンセル', style: 'cancel' });
       showChoiceModal({
-        title: '造営計画を王国から消す',
-        desc: `「${bp.title}」と配下の工程 <b>${ganttCount}件</b> を消します。${taskLine}`,
+        title: '志を王国から消す',
+        desc: `「${bp.title}」と配下の手立て <b>${ganttCount}件</b> を消します。${taskLine}`,
         buttons: btns,
       });
     }
@@ -10072,13 +10073,37 @@ function reviveBlueprint(id) {
     }
     function openGanttEditor(id) {
       if (!_gantSelectedBlueprintId && !id) {
-        showToast('造営計画を選んでから、工程を刻んでください', {type:'warn', duration:3000});
+        showToast('志を選んでから、手立てを刻んでください', {type:'warn', duration:3000});
         return;
       }
       _gantEditingGanttId = id;
       const modal = document.getElementById('ganttEditorModal');
       if (!modal) return;
       const gantt = id ? allTasks.find(t => t.id === id) : null;
+      // パンくず：志名・グランドビジョン名を表示
+      (function() {
+        var _bc = document.getElementById('ganttBreadcrumb');
+        if (!_bc) return;
+        var _bpId = (gantt && gantt.blueprintId) || _gantSelectedBlueprintId;
+        var _bp = _bpId ? allTasks.find(function(t){ return t.id === _bpId; }) : null;
+        var _gv = allTasks.find(function(t){ return t.kind === 'grandvision'; });
+        var _bpName = (_bp && _bp.title) ? _bp.title : '（志未設定）';
+        var _gvName = (_gv && _gv.title) ? _gv.title : null;
+        var _badge = 'font-size:0.65em;font-weight:800;border-radius:5px;padding:3px 0;letter-spacing:0.06em;white-space:nowrap;text-align:center;width:96px;box-sizing:border-box;flex-shrink:0;display:inline-block;';
+        var _gvEmoji = (_gv && _gv.emoji) ? _gv.emoji + ' ' : '🌟 ';
+        var _html = '';
+        if (_gvName) {
+          _html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;">'
+            + '<span style="' + _badge + 'color:#3730a3;background:#ddd6fe;">グランドビジョン</span>'
+            + '<span style="font-size:0.9em;font-weight:600;color:#1f2937;">' + _gvEmoji + _gvName + '</span>'
+            + '</div>';
+        }
+        _html += '<div style="display:flex;align-items:center;gap:8px;">'
+          + '<span style="' + _badge + 'color:#6d28d9;background:#f3e8ff;">志</span>'
+          + '<span style="font-size:0.9em;font-weight:600;color:#1f2937;">' + (_bp && _bp.emoji ? _bp.emoji + ' ' : '') + _bpName + '</span>'
+          + '</div>';
+        _bc.innerHTML = _html;
+      })();
       const titleInput = document.getElementById('ganttTitleInput');
       const memoInput = document.getElementById('ganttMemoInput');
       const deleteBtn = document.getElementById('ganttDeleteBtn');
@@ -10168,7 +10193,7 @@ function reviveBlueprint(id) {
       if (!info) return;
       if (!taskIds || taskIds.length === 0) {
         info.style.cssText = 'font-size:0.8em;background:#f5f5f5;border-radius:8px;padding:8px 12px;margin-bottom:12px;color:#aaa;';
-        info.innerHTML = '📅 やることを紐づけると、工程に命が宿ります<br><span style="font-size:0.9em;">空の工程に、バーは現れません</span>';
+        info.innerHTML = '📅 やることを紐づけると、手立てに命が宿ります<br><span style="font-size:0.9em;">空の手立てに、バーは現れません</span>';
         return;
       }
       const tasks = taskIds.map(id => allTasks.find(t => t.id === id)).filter(Boolean);
@@ -10190,7 +10215,7 @@ function reviveBlueprint(id) {
           ? '<br><span style="color:#e65100;font-size:0.85em;">⚠️ ' + noDateCount + '件は日付なし（バーに反映されません）</span>'
           : '';
         info.style.cssText = 'font-size:0.8em;background:#e8f5e9;border-radius:8px;padding:10px 12px;margin-bottom:12px;color:#2e7d32;border:1px solid #a5d6a7;';
-        info.innerHTML = '✅ 保存すると、工程に命が宿ります<br>' + preview + warnPart;
+        info.innerHTML = '✅ 保存すると、手立てに命が宿ります<br>' + preview + warnPart;
       }
     }
 
@@ -10362,7 +10387,7 @@ function reviveBlueprint(id) {
       const titleInput = document.getElementById('ganttTitleInput');
       if (!titleInput) return;
       const titleVal = titleInput.value.trim();
-      if (!titleVal) { showToast('工程の名を入力してください', {type:'warn'}); return; }
+      if (!titleVal) { showToast('手立ての名を入力してください', {type:'warn'}); return; }
       const memo = document.getElementById('ganttMemoInput');
       const isNew = !_gantEditingGanttId;
       let savedGanttId = null;
@@ -10424,7 +10449,7 @@ function reviveBlueprint(id) {
       renderGantView();
       if (isNew) {
         const g = allTasks.find(t => t.id === savedGanttId);
-        showToast('工程が生まれました 🏗', {type:'next', duration:6000, action:{
+        showToast('手立てが生まれました 🏗', {type:'next', duration:6000, action:{
           label:'タスクを追加 →',
           fn: function() {
             if (g) { _gantSelectedBlueprintId = g.blueprintId || null; _gantAddTaskDirect(g.id); }
@@ -10445,13 +10470,13 @@ function reviveBlueprint(id) {
       const btns = [];
       if (linkedCount > 0) {
         btns.push({
-          label: 'やることを残して、工程だけ消す', style: 'primary',
+          label: 'やることを残して、手立てだけ消す', style: 'primary',
           onClick: function() {
             var _idx = allTasks.findIndex(t => t.id === id); if (_idx !== -1) allTasks.splice(_idx, 1);
             const bp = allTasks.find(t => t.id === gantt.blueprintId);
             if (bp) recalcBlueprintFromGants(bp);
             saveAllTasks(); closeGanttEditor(); renderGantView();
-            showToast('工程を消しました。やることは残っています。', {type:'success', duration:3000});
+            showToast('手立てを消しました。やることは残っています。', {type:'success', duration:3000});
           }
         });
         btns.push({
@@ -10463,12 +10488,12 @@ function reviveBlueprint(id) {
             const bp = allTasks.find(t => t.id === gantt.blueprintId);
             if (bp) recalcBlueprintFromGants(bp);
             saveAllTasks(); closeGanttEditor(); renderGantView();
-            showToast('工程とやることをすべて消しました。', {type:'success', duration:3000});
+            showToast('手立てとやることをすべて消しました。', {type:'success', duration:3000});
           }
         });
       } else {
         btns.push({
-          label: '工程を消す', style: 'danger',
+          label: '手立てを消す', style: 'danger',
           onClick: function() {
             var _idx = allTasks.findIndex(t => t.id === id); if (_idx !== -1) allTasks.splice(_idx, 1);
             const bp = allTasks.find(t => t.id === gantt.blueprintId);
@@ -10479,7 +10504,7 @@ function reviveBlueprint(id) {
       }
       btns.push({ label: 'キャンセル', style: 'cancel' });
       showChoiceModal({
-        title: '工程を王国から消す',
+        title: '手立てを王国から消す',
         desc: `「${gantt.title}」を消します。${taskLine}`,
         buttons: btns,
       });
@@ -11127,7 +11152,7 @@ function reviveBlueprint(id) {
       if (old) old.remove();
       // 志でグループ化したオプション生成
       const blueprints = allTasks.filter(t => t.kind === 'blueprint');
-      let optHtml = '<option value="">工程を選んで紐づけ...</option>';
+      let optHtml = '<option value="">手立てを選んで紐づけ...</option>';
       blueprints.forEach(bp => {
         const children = gants.filter(g => g.blueprintId === bp.id);
         if (!children.length) return;
@@ -11154,7 +11179,7 @@ function reviveBlueprint(id) {
         'animation:_snackIn 0.2s ease'
       ].join(';');
       snack.innerHTML = `
-        <span style="white-space:nowrap;color:#aaa;">🏗 工程に追加？</span>
+        <span style="white-space:nowrap;color:#aaa;">🏗 手立てに追加？</span>
         <select id="_ganttLinkSnackSel" style="flex:1;padding:5px 8px;border-radius:8px;border:none;background:#444;color:#fff;font-size:0.85em;">${optHtml}</select>
         <button onclick="document.getElementById('_ganttLinkSnackbar').remove()" style="background:none;border:none;color:#888;font-size:1.1em;cursor:pointer;padding:0 2px;">✕</button>
       `;
@@ -11292,7 +11317,7 @@ function reviveBlueprint(id) {
           const linkedDiv = document.getElementById('taskEditGantLinked');
           if (linkedDiv) {
             linkedDiv.innerHTML = linked.length === 0
-              ? '<span style="color:#aaa;">まだ、工程に紐づいていません</span>'
+              ? '<span style="color:#aaa;">まだ、手立てに紐づいていません</span>'
               : linked.map(g => {
                   const bp = allTasks.find(b => b.id === g.blueprintId);
                   return `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:#f0f0f0;border-radius:12px;font-size:0.8em;margin:2px;">
@@ -11306,12 +11331,12 @@ function reviveBlueprint(id) {
           if (sel) {
             const gants = allTasks.filter(t => t.kind === 'gantt');
             if (gants.length === 0) {
-              sel.innerHTML = '<option value="">工程がありません（造営タブで追加）</option>';
+              sel.innerHTML = '<option value="">手立てがありません（造営タブで追加）</option>';
               sel.onchange = null;
             } else {
               // 志でグループ分け
               const blueprints = allTasks.filter(t => t.kind === 'blueprint');
-              let html = '<option value="">▼ 工程を選んで即追加...</option>';
+              let html = '<option value="">▼ 手立てを選んで即追加...</option>';
               // 志あり工程
               blueprints.forEach(bp => {
                 const children = gants.filter(g => g.blueprintId === bp.id);
@@ -11426,7 +11451,7 @@ function reviveBlueprint(id) {
           if (hasTime) {
             showToast('時を刻んだ。バーが王国に現れます 📅', {type:'success', duration:3000});
           } else {
-            showToast('タスクが工程に刻まれました 🏗', {type:'next', duration:4000, action:{
+            showToast('タスクが手立てに刻まれました 🏗', {type:'next', duration:4000, action:{
               label:'時を刻む →',
               fn: function() { openTaskEditModal(taskId); }
             }});
@@ -11442,11 +11467,11 @@ function reviveBlueprint(id) {
       // 造営工程への紐づき確認
       const linkedGants = allTasks.filter(t => t.kind === 'gantt' && (t.taskIds||[]).includes(taskId));
       const gantWarn = linkedGants.length > 0
-        ? `\n⚠️ このタスクは${linkedGants.length}件の工程に紐づいています。削除すると紐づきも解除されます。`
+        ? `\n⚠️ このタスクは${linkedGants.length}件の手立てに紐づいています。削除すると紐づきも解除されます。`
         : '';
       showChoiceModal({
         title: `「${task.text}」を王国から消す`,
-        desc: 'この操作は取り消せません。' + (gantWarn ? '<br><span style="color:#ffb74d;">⚠️ ' + linkedGants.length + '件の工程への紐づきも解除されます。</span>' : ''),
+        desc: 'この操作は取り消せません。' + (gantWarn ? '<br><span style="color:#ffb74d;">⚠️ ' + linkedGants.length + '件の手立てへの紐づきも解除されます。</span>' : ''),
         buttons: [
           { label: '消す', style: 'danger', onClick: function() {
             const affectedGanttIds = [];
@@ -17610,12 +17635,12 @@ window.addEventListener('afterprint', function() {
       </div>
       <!-- 造営工程への紐づけ（gantEnabledのときのみ表示） -->
       <div id="taskEditGantSection" style="margin-top:16px;padding-top:16px;border-top:1px solid #f0f0f0;display:none;">
-        <label style="font-size:0.8em;color:#666;display:block;margin-bottom:6px;font-weight:600;">🏗 工程に刻む</label>
+        <label style="font-size:0.8em;color:#666;display:block;margin-bottom:6px;font-weight:600;">🏗 手立てに刻む</label>
         <div id="taskEditGantLinked" style="margin-bottom:8px;font-size:0.8em;color:#888;">
-          <!-- 現在の紐づき工程がJSで挿入される -->
+          <!-- 現在の紐づき手立てがJSで挿入される -->
         </div>
         <select id="taskEditGantSelect" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:0.85em;margin-bottom:2px;">
-          <option value="">▼ 工程を選んで即追加...</option>
+          <option value="">▼ 手立てを選んで即追加...</option>
         </select>
         <div style="font-size:0.75em;color:#aaa;margin-bottom:4px;">選んだ瞬間に紐づきます</div>
       </div>
@@ -20461,7 +20486,7 @@ function _ycGoSlide(n) {
           <div style="font-size:1em;">🎖️</div>
           <div>
             <div style="font-size:0.82em;font-weight:700;color:#e9d5ff;">グランドビジョン</div>
-            <div style="font-size:0.72em;color:#aaa;">大切にしたいこと。自分らしい人生の方向性。</div>
+            <div style="font-size:0.72em;color:#aaa;">大きな志。人生をかけて叶えたいこと。</div>
           </div>
         </div>
         <div style="padding-left:12px;color:#555;font-size:0.75em;">↓</div>
@@ -20469,14 +20494,14 @@ function _ycGoSlide(n) {
           <div style="font-size:1em;">🏰</div>
           <div>
             <div style="font-size:0.82em;font-weight:700;color:#a78bfa;">志（こころざし）</div>
-            <div style="font-size:0.72em;color:#aaa;">叶えたいこと。例：英語を話せるようになりたい</div>
+            <div style="font-size:0.72em;color:#aaa;">志のための具体的な計画。例：英語を話せるようになる</div>
           </div>
         </div>
         <div style="padding-left:12px;color:#555;font-size:0.75em;">↓</div>
         <div style="display:flex;align-items:center;gap:8px;padding-left:16px;">
           <div style="font-size:1em;">🏗️</div>
           <div>
-            <div style="font-size:0.82em;font-weight:700;color:#4facfe;">工程（ステップ）</div>
+            <div style="font-size:0.82em;font-weight:700;color:#4facfe;">手立て（ステップ）</div>
             <div style="font-size:0.72em;color:#aaa;">どう進めるか。例：まず基礎固めから</div>
           </div>
         </div>
@@ -20638,6 +20663,35 @@ function _ycGoSlide(n) {
               徳と業のバランスを示す値です。与えることを大切にしている王国ほど、徳分が高くなります。気にしすぎなくて大丈夫。与えることを楽しんでいれば、自然とプラスになっていきます。
             </div>
           </div>
+          <!-- ダッシュボードの使い方 -->
+          <div style="margin-bottom:6px;">
+            <button onclick="toggleAbout('aboutDashboard')" style="width:100%;text-align:left;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.25);border-radius:8px;padding:8px 12px;color:#818cf8;font-size:0.85em;font-weight:bold;cursor:pointer;">📈 ダッシュボードの見かた</button>
+            <div id="aboutDashboard" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(99,102,241,0.15);border-radius:0 0 8px 8px;padding:14px 12px;font-size:0.82em;color:#ccc;line-height:1.8;">
+              <div style="color:#818cf8;font-weight:bold;margin-bottom:10px;font-size:0.88em;">📈 王国の今がわかる場所</div>
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <div><span style="color:#f59e0b;font-weight:bold;">GDP</span> ― 行動貿易で積み上がる。デッキを渡したり、受け取ったりすると増える。</div>
+                <div><span style="color:#d946ef;font-weight:bold;">徳</span> ― タスクを完了するたびに1ずつ積まれる。王国力の根幹。</div>
+                <div><span style="color:#ef4444;font-weight:bold;">業</span> ― 放置したタスクが積み重なると増える。タスクを完了すると減る。</div>
+                <div><span style="color:#3b82f6;font-weight:bold;">王国力</span> ― 徳・GDP・業から計算される総合力。称号が変わる基準。</div>
+                <div style="margin-top:6px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.08);">
+                  <span style="color:#4ade80;font-weight:bold;">🛡️ 自動バックアップ</span><br>
+                  毎日起動時に自動でデータを保存。最大7世代。復元ボタンで過去に戻れる。
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- コロシアムの使い方 -->
+          <div style="margin-bottom:6px;">
+            <button onclick="toggleAbout('aboutColosseum')" style="width:100%;text-align:left;background:rgba(234,179,8,0.08);border:1px solid rgba(234,179,8,0.25);border-radius:8px;padding:8px 12px;color:#fbbf24;font-size:0.85em;font-weight:bold;cursor:pointer;">⚔️ コロシアムの使いかた</button>
+            <div id="aboutColosseum" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(234,179,8,0.15);border-radius:0 0 8px 8px;padding:14px 12px;font-size:0.82em;color:#ccc;line-height:1.8;">
+              <div style="color:#fbbf24;font-weight:bold;margin-bottom:10px;font-size:0.88em;">⚔️ 毎日デッキが変わる、みんなの競技場</div>
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <div><span style="color:#fbbf24;font-weight:bold;">① デッキを受け取る</span><br>今日のデッキのタスクを自分の日次に追加できる。</div>
+                <div><span style="color:#fbbf24;font-weight:bold;">② タスクをこなす</span><br>完了した数がスコアになる。</div>
+                <div><span style="color:#fbbf24;font-weight:bold;">③ BLM1: を貼る</span><br>「完了を報告する」ボタンでコードをコピー→Discordに貼るとランキングに反映。</div>
+              </div>
+            </div>
+          </div>
           <!-- 造営ビューの使い方 -->
           <div style="margin-bottom:6px;">
             <button onclick="toggleAbout('aboutGantView');if(document.getElementById('aboutGantView').style.display!=='none'){showGantOnboarding();}" style="width:100%;text-align:left;background:rgba(79,172,254,0.08);border:1px solid rgba(79,172,254,0.25);border-radius:8px;padding:8px 12px;color:#4facfe;font-size:0.85em;font-weight:bold;cursor:pointer;">🏯 造営ビューの使い方</button>
@@ -20647,14 +20701,14 @@ function _ycGoSlide(n) {
                 <div style="display:flex;gap:10px;align-items:flex-start;">
                   <div style="width:24px;height:24px;border-radius:50%;background:#4facfe;color:#fff;font-size:0.8em;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</div>
                   <div>
-                    <div style="color:#fff;font-weight:bold;margin-bottom:2px;">「＋ 造営計画」で志を作る</div>
+                    <div style="color:#fff;font-weight:bold;margin-bottom:2px;">「＋ 大きな志を立てる」で志を作る</div>
                     <div style="color:#aaa;">夢・目標・プロジェクト。なんでもいい。</div>
                   </div>
                 </div>
                 <div style="display:flex;gap:10px;align-items:flex-start;">
                   <div style="width:24px;height:24px;border-radius:50%;background:#4facfe;color:#fff;font-size:0.8em;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</div>
                   <div>
-                    <div style="color:#fff;font-weight:bold;margin-bottom:2px;">「工程を刻む」でステップを作る</div>
+                    <div style="color:#fff;font-weight:bold;margin-bottom:2px;">「手立てを刻む」でステップを作る</div>
                     <div style="color:#aaa;">志の中の段階・フェーズ。例：基礎固め、仕上げ。</div>
                   </div>
                 </div>
@@ -20662,13 +20716,13 @@ function _ycGoSlide(n) {
                   <div style="width:24px;height:24px;border-radius:50%;background:#4facfe;color:#fff;font-size:0.8em;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</div>
                   <div>
                     <div style="color:#fff;font-weight:bold;margin-bottom:2px;">タスクに日付・時刻を入れる</div>
-                    <div style="color:#aaa;">タスクを工程に紐づけると、ガントバーが現れる。</div>
+                    <div style="color:#aaa;">タスクを手立てに紐づけると、ガントバーが現れる。</div>
                   </div>
                 </div>
                 <div style="display:flex;gap:10px;align-items:flex-start;">
                   <div style="width:24px;height:24px;border-radius:50%;background:#4facfe;color:#fff;font-size:0.8em;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">4</div>
                   <div>
-                    <div style="color:#fff;font-weight:bold;margin-bottom:2px;">工程行の「○件」を押す</div>
+                    <div style="color:#fff;font-weight:bold;margin-bottom:2px;">手立て行の「○件」を押す</div>
                     <div style="color:#aaa;">紐づいたタスクが展開される。日・週・月スケールで俯瞰できる。</div>
                   </div>
                 </div>
@@ -20680,14 +20734,14 @@ function _ycGoSlide(n) {
                   幅があるバーほど、計画に厚みがある。
                 </div>
                 <div style="background:rgba(167,139,250,0.06);border-left:3px solid #a78bfa;border-radius:0 6px 6px 0;padding:8px 10px;font-size:0.79em;color:#ccc;line-height:1.7;">
-                  <strong style="color:#a78bfa;">🎨 工程のカスタマイズ</strong><br>
-                  工程の ✏️ を押すと色・絵文字を変えられる。<br>
+                  <strong style="color:#a78bfa;">🎨 手立てのカスタマイズ</strong><br>
+                  手立ての ✏️ を押すと色・絵文字を変えられる。<br>
                   自分らしい王国の色に染めていこう。
                 </div>
                 <div style="background:rgba(248,187,208,0.06);border-left:3px solid #f8bbd0;border-radius:0 6px 6px 0;padding:8px 10px;font-size:0.79em;color:#ccc;line-height:1.7;">
                   <strong style="color:#f8bbd0;">📅 スケールの使い分け</strong><br>
                   <strong style="color:#fff;">日</strong>：今日のタスクを時間で管理する<br>
-                  <strong style="color:#fff;">週</strong>：この週の工程の流れを確認する<br>
+                  <strong style="color:#fff;">週</strong>：この週の手立ての流れを確認する<br>
                   <strong style="color:#fff;">月</strong>：長期プロジェクトを俯瞰する
                 </div>
                 <div style="background:rgba(255,215,0,0.06);border-left:3px solid #ffd700;border-radius:0 6px 6px 0;padding:8px 10px;font-size:0.79em;color:#ccc;line-height:1.7;">
@@ -20700,7 +20754,7 @@ function _ycGoSlide(n) {
                 💡 <strong style="color:#ccc;">タスクがゴミなら夢が叶わない。</strong><br>
                 タスクに日付・時刻を刻むほど、バーが育っていく。<br>
                 造営ビューはその王国の地図です。<br>
-                <strong style="color:#4facfe;">本当に輝く王国の地図と工程は、あなたの手にあるよ！</strong>
+                <strong style="color:#4facfe;">本当に輝く王国の地図と手立ては、あなたの手にあるよ！</strong>
               </div>
               <button onclick="showGantOnboarding()" style="width:100%;margin-top:12px;padding:11px;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;border-radius:10px;color:#fff;font-size:0.88em;font-weight:800;cursor:pointer;letter-spacing:0.04em;box-shadow:0 3px 12px rgba(79,172,254,0.3);">🏯 造営ビューのオンボーディングを見る →</button>
             </div>
@@ -20755,16 +20809,16 @@ function showGantOnboarding() {
       items:[
         {n:'💡',color:'#a78bfa',title:'一般ユーザーへ',desc:'日次・週間・月間で管理するだけで十分です。<br>造営は、もっと大きな夢を描きたくなったときに開けばいい。'},
         {n:'👑',color:'#ffd700',title:'管理職・プロジェクトリーダーへ',desc:'志（ゴール）→ 手立て（施策）→ タスク（行動）の3層で<br>プロジェクトの地図を描けます。ここが本領発揮の場所。'},
-        {n:'🏢',color:'#4facfe',title:'社長・経営者へ',desc:'中長期の戦略を「造営計画」として可視化できます。<br>チームと共有する地図として使ってください。'}
+        {n:'🏢',color:'#4facfe',title:'社長・経営者へ',desc:'大きな志と手立てで、戦略を地図にできます。<br>チームと共有する羅針盤として使ってください。'}
       ]
     },
     {
       emoji:'🏯', title:'造営ビューへようこそ',
       sub:'王国の地図を、あなたの手で描こう。',
       items:[
-        {n:'1',color:'#4facfe',title:'志を立てる',desc:'「＋ 造営計画」で夢や目標をひとつ。<br>大きくなくていい。続けたいことでもいい。'},
-        {n:'2',color:'#ffd700',title:'工程を刻む',desc:'「工程を刻む」でステップに分ける。<br>基礎固め → 実践 → 仕上げ　細かくしすぎなくていい。'},
-        {n:'3',color:'#a78bfa',title:'タスクを紐づける',desc:'工程行の ＋ でタスクを即作成。「○件」で展開できる。'}
+        {n:'1',color:'#4facfe',title:'大きな志を立てる',desc:'でっかい志を立てよう！！<br>小さきまとまるな。'},
+        {n:'2',color:'#ffd700',title:'手立てを刻む',desc:'「手立てを刻む」でステップに分ける。<br>基礎固め → 実践 → 仕上げ　細かくしすぎなくていい。'},
+        {n:'3',color:'#a78bfa',title:'タスクを紐づける',desc:'手立て行の ＋ でタスクを即作成。「○件」で展開できる。'}
       ]
     },
     {
@@ -20781,7 +20835,7 @@ function showGantOnboarding() {
       sub:'本気で使い込む人のために、造営ビューは設計されています。',
       isSpecial: true,
       items:[
-        {n:'⚒️',color:'#ffd700',title:'志→工程→タスクの3層構造',desc:'「なぜやるか」から「何をするか」まで、思想と行動がひとつに繋がる地図。'},
+        {n:'⚒️',color:'#ffd700',title:'志→手立て→タスクの3層構造',desc:'「なぜやるか」から「何をするか」まで、思想と行動がひとつに繋がる地図。'},
         {n:'⚡',color:'#4facfe',title:'圧倒的にシンプル',desc:'タスクに日付・時刻を入れるだけ。それだけでガントバーが自動で現れる。'},
         {n:'✦',color:'#a78bfa',title:'細部まで本物',desc:'日・週・月の俯瞰。志カードのホバーメッセージ。絵文字のグループ連動。'}
       ]
@@ -20961,7 +21015,7 @@ var _quizQuestions = [
   { q:'タスクを編集するには？', c:['タップ','長押し','スワイプ','ダブルタップ'], a:1, hint:'長押しで編集モーダルが開くよ', toku:10 },
   { q:'雑記帳はどのビューにある？', c:['月間','週間','日次','年間'], a:2, hint:'日次ビューの上のタブを見てみよう', toku:10 },
   { q:'徳ポイントは何で貯まる？', c:['ログイン','タスク完了','クイズ正解','デッキ受け取り'], a:1, hint:'タスクを完了するたびに徳が積まれる', toku:10 },
-  { q:'志（ビジョン）はどこで管理する？', c:['日次','月間','造営','設定'], a:2, hint:'造営ビューにグランドビジョン・志・工程・タスクの4階層がある', toku:10 },
+  { q:'志（ビジョン）はどこで管理する？', c:['日次','月間','造営','設定'], a:2, hint:'造営ビューにグランドビジョン・志・手立て・タスクの4階層がある', toku:10 },
   { q:'デッキコードは何で始まる？', c:['ACK1:','DCK1:','QRZ1:','GLD1:'], a:1, hint:'Deck → DCK1: だよ', toku:10 },
   { q:'深考モードはどこから開ける？', c:['設定','図書館','雑記帳ヘッダー','造営'], a:2, hint:'雑記帳の日付の右を見てみよう', toku:10 },
   { q:'王国コードを発行する目的は？', c:['バックアップ','徳を贈る','デッキを作る','設定を共有する'], a:1, hint:'コードを渡すと相手に徳が積まれる', toku:10 },
@@ -26038,9 +26092,9 @@ document.addEventListener('DOMContentLoaded', function() {
       _showOnboardingModal([
         { emoji: '📬', title: 'あ、来てる。', body: '昨日の雑記帳が、今日の日誌になっている。<br>整理した覚えはない。<br>それでいい。時間がやってくれた。' },
         { emoji: '💭', title: 'また、考えてみよ。', body: '断片が、行ごとに届いている。<br>捨てなくていい。戻せる。動かせる。<br>思考はまだ、生きている。' },
-        { emoji: '📝', title: 'あ、残ってた。', body: '「雑記帳へ」で今日の作業台へ戻せる。<br>日誌は墓場じゃない。<br>思考の中継地点だ。' },
-        { emoji: '🔗', title: 'あ、続いてる。', body: '昨日と今日が、ここでつながっている。<br>気分・体調・天気も絵文字で刻める。<br>文章がなくても、あの日が残る。' },
-        { emoji: '🗓️', title: '過去の日付にも、書ける。', body: '右上の「＋」から日付を指定して作れる。<br>昨日のことを今日書いてもいい。<br>記録に、締め切りはない。' },
+        { emoji: '📝', title: 'あ、残ってた。', body: '「雑記帳へ」で今日の作業台へ戻せる。<br>複数まとめて戻せるから、流れが途切れない。<br>日誌は墓場じゃない。思考の中継地点だ。' },
+        { emoji: '🎨', title: 'おしゃれな日記帳みたい。', body: '左側に日付・曜日。和紙のような温かみ。<br>気分・体調・天気も絵文字で刻める。<br>文章がなくても、あの日が残る。' },
+        { emoji: '🗓️', title: '過去の日付にも、書ける。', body: '「記す」ボタンから日付を指定して作れる。<br>昨日のことを今日書いてもいい。<br>記録に、締め切りはない。' },
       ]);
     }
 
