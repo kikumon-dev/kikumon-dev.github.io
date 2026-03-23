@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.110';
+    const APP_VERSION = 'v0.39.113';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -5399,7 +5399,17 @@
         calendarId = (mainId && _calList.find(function(c){return c.id===mainId;}) ? mainId : null)
           || (_calList[0] && _calList[0].id)
           || (calendars[0] && calendars[0].id)
-          || 'work';
+          || (function(){
+               // 最終手段：デフォルトカレンダーを動的生成してlistに追加
+               var _newCalId = generateTaskId();
+               var _newCal = { id: _newCalId, name: 'メイン', color: '#90caf9', visible: true, shareable: false };
+               if (!allSettings.calendar.list) allSettings.calendar.list = [];
+               allSettings.calendar.list.push(_newCal);
+               calendars = allSettings.calendar.list;
+               saveAllSettings();
+               window._dbgLog && window._dbgLog('[createTask] デフォルトカレンダー自動生成: ' + _newCalId);
+               return _newCalId;
+             })();
       }
       // calendarIdがallSettings.calendar.listに存在しない場合も修正
       (function(){
@@ -12340,18 +12350,8 @@ function reviveBlueprint(id) {
           function _doImport() {
             allTasks = [...allTasks, ...newTasks];
             // ===== インポート後calendarId整合修正 =====
-            (function() {
-              var _cl = (allSettings.calendar && allSettings.calendar.list) || [];
-              if (_cl.length === 0) return;
-              var _clIds = new Set(_cl.map(function(c){return c.id;}));
-              var _fallbackId = _cl[0].id;
-              allTasks.forEach(function(t) {
-                if (t.kind !== 'task') return;
-                if (!t.calendarId || !_clIds.has(t.calendarId)) {
-                  t.calendarId = _fallbackId;
-                }
-              });
-            })();
+            // validateCalendarIds()に委譲（Guardian統一）
+            if (typeof validateCalendarIds === 'function') validateCalendarIds();
             // ===== インポート後クリーニング =====
           // 1. gantt.taskIdsから孤立ID除去
           var _importAllIdSet = new Set(allTasks.map(function(t){ return t.id; }));
@@ -12822,38 +12822,42 @@ function reviveBlueprint(id) {
       } catch(e) { console.error('[mig_dedup_tasks_v2]', e); }
     })();
 
-    // ===== calendarId→allSettings.calendar.list整合マイグレーション =====
-    // 旧localStorage('calendars'キー)のIDをallSettings.calendar.listのIDに統一する
-    (function() {
-      var _migKey = 'mig_calid_to_settings_v1';
-      if (localStorage.getItem(_migKey)) return;
+    // ===== calendarId Guardian: 全タスクのcalendarIdを毎回検証・修正 =====
+    // 旧マイグレーション(mig_calid_to_settings_v1)を廃止し、毎起動で実行するGuardianに昇格
+    // インポート・createTask・どのルートで入ってきた不正IDも確実に修正する
+    function validateCalendarIds() {
       try {
-        var _validCalIds = new Set();
         var _calList = (allSettings.calendar && allSettings.calendar.list) ? allSettings.calendar.list : [];
-        _calList.forEach(function(c){ if (c.id) _validCalIds.add(c.id); });
+        if (_calList.length === 0) return 0;
+        var _validCalIds = new Set(_calList.map(function(c){ return c.id; }));
         var _calIdMigMap = (allSettings.calendar && allSettings.calendar.calIdMigMap) ? allSettings.calendar.calIdMigMap : {};
-        var _defaultCalId = (_calList.length > 0) ? _calList[0].id : 'default';
-        var _calidFixedCount = 0;
+        var _defaultCalId = _calList[0].id;
+        var _fixedCount = 0;
         allTasks.forEach(function(t) {
-          if (!t.calendarId) return;
-          if (_validCalIds.has(t.calendarId)) return;
-          if (_calIdMigMap[t.calendarId] && _validCalIds.has(_calIdMigMap[t.calendarId])) {
-            t.calendarId = _calIdMigMap[t.calendarId];
-            _calidFixedCount++;
-          } else if (t.calendarId === 'default') {
-            t.calendarId = _defaultCalId;
-            _calidFixedCount++;
+          if (t.kind !== 'task') return;
+          // ① 未設定
+          if (!t.calendarId) {
+            t.calendarId = _defaultCalId; _fixedCount++; return;
           }
+          // ② 有効なID → そのまま
+          if (_validCalIds.has(t.calendarId)) return;
+          // ③ 移行マップに存在する旧ID
+          if (_calIdMigMap[t.calendarId] && _validCalIds.has(_calIdMigMap[t.calendarId])) {
+            t.calendarId = _calIdMigMap[t.calendarId]; _fixedCount++; return;
+          }
+          // ④ それ以外（不正UUID・'work'固定文字列等）→ fallback
+          t.calendarId = _defaultCalId; _fixedCount++;
         });
-        if (_calidFixedCount > 0) {
+        if (_fixedCount > 0) {
           saveAllTasks();
-          window._dbgLog && window._dbgLog('mig_calid_to_settings_v1 done. fixed=' + _calidFixedCount + '件');
-        } else {
-          window._dbgLog && window._dbgLog('mig_calid_to_settings_v1 done. 修正不要');
+          window._dbgLog && window._dbgLog('validateCalendarIds done. fixed=' + _fixedCount + '件');
         }
-        localStorage.setItem(_migKey, '1');
-      } catch(e) { console.error('[mig_calid_to_settings_v1]', e); }
-    })();
+        // 後方互換：旧フラグを立てておく（ST-51等のテストが参照）
+        localStorage.setItem('mig_calid_to_settings_v1', '1');
+        return _fixedCount;
+      } catch(e) { console.error('[validateCalendarIds]', e); return 0; }
+    }
+    validateCalendarIds();
 
     // ===== 自動バックアップ（日次・7世代管理） =====
     (function() {
@@ -15197,6 +15201,7 @@ function loadSettingsUI() {
     window.switchView = switchView;
     window.renderCalendarFilter = renderCalendarFilter;
     window.isCalendarVisible = isCalendarVisible;
+    window.validateCalendarIds = validateCalendarIds;
   // ===== window公開（HTML onclickから呼ばれる全関数） =====
   // _bpReorderはtryブロック外のグローバルスコープで定義（第4条準拠）
   function _bpReorder(fromId, toId) {
@@ -24461,8 +24466,11 @@ function showDebugLog() {
          var _st53Created = allTasks.find(function(t){ return t.id === _st53Task; })
            || allTasks[allTasks.length - 1];
          var _st53CreatedCalOk = _st53Created && _st53CalIds.has(_st53Created.calendarId);
+         (_st53Created && _st53Created.calendarId === 'work')
+           ? ng('ST-53: createTask calendarId work固定', '固定文字列workが使われている（UUID未生成）')
+           : ok('ST-53: createTask calendarId work固定でないこと確認');
          _st53CreatedCalOk
-           ? ok('ST-53: createTask calendarId有効確認（' + (_st53Created.calendarId||'').slice(-8) + '）')
+           ? ok('ST-53: createTask calendarId有効確認（' + (_st53Created && _st53Created.calendarId||'').slice(-8) + '）')
            : ng('ST-53: createTask calendarId', '不正: ' + (_st53Created && _st53Created.calendarId));
          // クリーンアップ
          allTasks = allTasks.filter(function(t){ return t.text !== 'ST-53テスト'; });
@@ -24528,6 +24536,108 @@ function showDebugLog() {
        (localStorage.getItem('mig_display_scope_empty_v1') === '1')
          ? ok('ST-53: mig_display_scope_empty_v1 適用済み確認')
          : ng('ST-53: mig_display_scope_empty_v1', '未適用');
+
+       // ⑨ validateCalendarIds関数が存在すること
+       typeof validateCalendarIds === 'function'
+         ? ok('ST-53: validateCalendarIds 関数存在確認')
+         : ng('ST-53: validateCalendarIds', '未定義');
+
+       // ⑩ validateCalendarIdsが'work'固定を修正すること
+       if (typeof validateCalendarIds === 'function' && _st53FallbackId) {
+         var _st53WorkTask = {
+           id: generateTaskId(), kind: 'task', text: 'ST-53work固定テスト',
+           date: getLocalDateStr(new Date()), section: 1, completed: false, done: false,
+           calendarId: 'work', displayScope: 'both',
+           createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+         };
+         allTasks.push(_st53WorkTask);
+         validateCalendarIds();
+         var _st53WorkFixed = allTasks.find(function(t){ return t.text === 'ST-53work固定テスト'; });
+         (_st53WorkFixed && _st53WorkFixed.calendarId !== 'work' && _st53CalIds.has(_st53WorkFixed.calendarId))
+           ? ok('ST-53: validateCalendarIds work固定→有効UUID修正確認')
+           : ng('ST-53: validateCalendarIds work固定修正', '修正されていない: ' + (_st53WorkFixed && _st53WorkFixed.calendarId));
+         allTasks = allTasks.filter(function(t){ return t.text !== 'ST-53work固定テスト'; });
+         saveAllTasks();
+         ok('ST-53: work固定テスト クリーンアップ完了（' + allTasks.length + '件）');
+       }
+
+       // ⑪ validateCalendarIdsがundefined calendarIdを修正すること
+       if (typeof validateCalendarIds === 'function' && _st53FallbackId) {
+         var _st53UndefTask = {
+           id: generateTaskId(), kind: 'task', text: 'ST-53undefined calendarIdテスト',
+           date: getLocalDateStr(new Date()), section: 1, completed: false, done: false,
+           calendarId: undefined, displayScope: 'both',
+           createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+         };
+         allTasks.push(_st53UndefTask);
+         validateCalendarIds();
+         var _st53UndefFixed = allTasks.find(function(t){ return t.text === 'ST-53undefined calendarIdテスト'; });
+         (_st53UndefFixed && _st53CalIds.has(_st53UndefFixed.calendarId))
+           ? ok('ST-53: validateCalendarIds undefined→有効UUID修正確認')
+           : ng('ST-53: validateCalendarIds undefined修正', '修正されていない: ' + (_st53UndefFixed && _st53UndefFixed.calendarId));
+         allTasks = allTasks.filter(function(t){ return t.text !== 'ST-53undefined calendarIdテスト'; });
+         saveAllTasks();
+         ok('ST-53: undefinedテスト クリーンアップ完了（' + allTasks.length + '件）');
+       }
+
+       // ⑫ validateCalendarIdsが毎起動実行されること（フラグでスキップされないこと）
+       // → ソースコードにif(localStorage.getItem(...)) returnが存在しないことを確認
+       (function(){
+         var _src = typeof validateCalendarIds === 'function' ? validateCalendarIds.toString() : '';
+         var _hasSkipFlag = _src.indexOf('localStorage.getItem') !== -1 && _src.indexOf('return') !== -1
+           && _src.indexOf('mig_calid') !== -1;
+         !_hasSkipFlag
+           ? ok('ST-53: validateCalendarIds フラグスキップなし確認（毎起動実行）')
+           : ng('ST-53: validateCalendarIds フラグスキップ', 'mig_フラグでスキップされる実装になっている');
+       })();
+
+       // ⑬ validateCalendarIdsが不正UUID（work・undefinedでない謎UUID）を修正すること
+       if (typeof validateCalendarIds === 'function' && _st53FallbackId) {
+         var _st53FakeUUID = '00000000-dead-beef-0000-000000000000'; // 存在しないUUID
+         var _st53FakeUUIDTask = {
+           id: generateTaskId(), kind: 'task', text: 'ST-53不正UUIDテスト',
+           date: getLocalDateStr(new Date()), section: 1, completed: false, done: false,
+           calendarId: _st53FakeUUID, displayScope: 'both',
+           createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+         };
+         allTasks.push(_st53FakeUUIDTask);
+         validateCalendarIds();
+         var _st53FakeFixed = allTasks.find(function(t){ return t.text === 'ST-53不正UUIDテスト'; });
+         var _st53FakeOk = _st53FakeFixed
+           && _st53FakeFixed.calendarId !== _st53FakeUUID
+           && _st53CalIds.has(_st53FakeFixed.calendarId);
+         _st53FakeOk
+           ? ok('ST-53: validateCalendarIds 不正UUID→有効UUID修正確認（' + (_st53FakeFixed.calendarId||'').slice(-8) + '）')
+           : ng('ST-53: validateCalendarIds 不正UUID修正', '修正されていない: ' + (_st53FakeFixed && _st53FakeFixed.calendarId));
+         allTasks = allTasks.filter(function(t){ return t.text !== 'ST-53不正UUIDテスト'; });
+         saveAllTasks();
+         ok('ST-53: 不正UUIDテスト クリーンアップ完了（' + allTasks.length + '件）');
+       }
+
+       // ⑭ createTaskがallSettings.calendar.listが空のときデフォルトカレンダーを自動生成すること
+       (function(){
+         if (typeof createTask !== 'function') {
+           ok('ST-53: createTask空listテスト スキップ（createTask未定義）'); return;
+         }
+         // 一時的にcalendar.listを空にしてcreateTaskを呼ぶ
+         var _origList = allSettings.calendar.list.slice();
+         var _origCals = calendars ? calendars.slice() : [];
+         allSettings.calendar.list = [];
+         calendars = [];
+         var _st53EmptyTask = createTask('ST-53空listテスト', getLocalDateStr(new Date()), null, 1, 'both');
+         var _created = allTasks[allTasks.length - 1];
+         var _calIdOk = _created && _created.calendarId && _created.calendarId !== 'work'
+           && /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(_created.calendarId);
+         _calIdOk
+           ? ok('ST-53: createTask 空list→デフォルトカレンダー自動生成確認（UUID=' + (_created.calendarId||'').slice(-8) + '）')
+           : ng('ST-53: createTask 空list自動生成', 'calendarId=' + (_created && _created.calendarId));
+         // 復元
+         allSettings.calendar.list = _origList;
+         calendars = _origCals;
+         allTasks = allTasks.filter(function(t){ return t.text !== 'ST-53空listテスト'; });
+         saveAllTasks();
+         ok('ST-53: 空listテスト クリーンアップ完了（' + allTasks.length + '件）');
+       })();
 
        ok('ST-53: calendarId整合性・createTask・importData後修正 完了');
      } catch(e) { ng('ST-53: calendarId整合性', e.message); }
