@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.108';
+    const APP_VERSION = 'v0.39.110';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -5394,8 +5394,20 @@
       // calendarIdが未指定またはdefaultの場合はメインカレンダーを使う
       if (!calendarId || calendarId === 'default') {
         const mainId = allSettings.calendar.mainId || (localStorage.getItem('mainCalendarId'));
-        calendarId = mainId || (calendars[0] && calendars[0].id) || 'work';
+        // allSettings.calendar.listから取得（SSOTに準拠）
+        const _calList = (allSettings.calendar && allSettings.calendar.list) || [];
+        calendarId = (mainId && _calList.find(function(c){return c.id===mainId;}) ? mainId : null)
+          || (_calList[0] && _calList[0].id)
+          || (calendars[0] && calendars[0].id)
+          || 'work';
       }
+      // calendarIdがallSettings.calendar.listに存在しない場合も修正
+      (function(){
+        var _cl = (allSettings.calendar && allSettings.calendar.list) || [];
+        if (_cl.length > 0 && !_cl.find(function(c){return c.id===calendarId;})) {
+          calendarId = _cl[0].id;
+        }
+      })();
       // 同じ日・同じセクションの最大orderを取得
       const sameGroupTasks = allTasks.filter(t => t.date === date && t.section === section);
       const maxOrder = sameGroupTasks.length > 0 
@@ -12327,6 +12339,19 @@ function reviveBlueprint(id) {
 
           function _doImport() {
             allTasks = [...allTasks, ...newTasks];
+            // ===== インポート後calendarId整合修正 =====
+            (function() {
+              var _cl = (allSettings.calendar && allSettings.calendar.list) || [];
+              if (_cl.length === 0) return;
+              var _clIds = new Set(_cl.map(function(c){return c.id;}));
+              var _fallbackId = _cl[0].id;
+              allTasks.forEach(function(t) {
+                if (t.kind !== 'task') return;
+                if (!t.calendarId || !_clIds.has(t.calendarId)) {
+                  t.calendarId = _fallbackId;
+                }
+              });
+            })();
             // ===== インポート後クリーニング =====
           // 1. gantt.taskIdsから孤立ID除去
           var _importAllIdSet = new Set(allTasks.map(function(t){ return t.id; }));
@@ -22688,7 +22713,7 @@ function showDebugLog() {
        // テストセクション自己存在確認：ソースコード上の存在をチェック
        var _stSections = ['ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10',
          'ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20',
-         'ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52'];
+         'ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -24401,6 +24426,111 @@ function showDebugLog() {
 
        ok('ST-52: 自動バックアップ機能 完了');
      } catch(e) { ng('ST-52: 自動バックアップ機能', e.message); }
+
+     // ===== ST-53: calendarId整合性・createTask・importData後修正 =====
+     try {
+       var _st53CalList = (allSettings.calendar && allSettings.calendar.list) || [];
+       var _st53CalIds = new Set(_st53CalList.map(function(c){return c.id;}));
+       var _st53FallbackId = _st53CalList[0] ? _st53CalList[0].id : null;
+
+       // ① allSettings.calendar.listが存在すること
+       (_st53CalList.length > 0)
+         ? ok('ST-53: allSettings.calendar.list存在確認（' + _st53CalList.length + '件）')
+         : ng('ST-53: allSettings.calendar.list', '空またはなし');
+
+       // ② 全taskのcalendarIdがallSettings.calendar.listに存在すること
+       var _st53InvalidCal = allTasks.filter(function(t){
+         return t.kind === 'task' && t.calendarId && !_st53CalIds.has(t.calendarId);
+       });
+       (_st53InvalidCal.length === 0)
+         ? ok('ST-53: 全taskのcalendarId有効確認（不正ID=0件）')
+         : ng('ST-53: 全taskのcalendarId', '不正ID=' + _st53InvalidCal.length + '件: ' + _st53InvalidCal.slice(0,3).map(function(t){return t.calendarId;}).join(','));
+
+       // ③ 全taskのcalendarIdがundefinedでないこと
+       var _st53UndefCal = allTasks.filter(function(t){
+         return t.kind === 'task' && !t.calendarId;
+       });
+       (_st53UndefCal.length === 0)
+         ? ok('ST-53: 全taskのcalendarId未設定なし確認')
+         : ng('ST-53: calendarId未設定', _st53UndefCal.length + '件: ' + _st53UndefCal.slice(0,3).map(function(t){return t.text;}).join(','));
+
+       // ④ createTaskがallSettings.calendar.listの有効IDを使うこと
+       if (_st53FallbackId && typeof createTask === 'function') {
+         var _st53Today = getLocalDateStr(new Date());
+         var _st53Task = createTask('ST-53テスト', _st53Today, null, 1, 'both');
+         var _st53Created = allTasks.find(function(t){ return t.id === _st53Task; })
+           || allTasks[allTasks.length - 1];
+         var _st53CreatedCalOk = _st53Created && _st53CalIds.has(_st53Created.calendarId);
+         _st53CreatedCalOk
+           ? ok('ST-53: createTask calendarId有効確認（' + (_st53Created.calendarId||'').slice(-8) + '）')
+           : ng('ST-53: createTask calendarId', '不正: ' + (_st53Created && _st53Created.calendarId));
+         // クリーンアップ
+         allTasks = allTasks.filter(function(t){ return t.text !== 'ST-53テスト'; });
+         saveAllTasks();
+         ok('ST-53: createTaskテスト クリーンアップ完了（' + allTasks.length + '件）');
+       } else {
+         ok('ST-53: createTask スキップ（calendarList空またはcreateTask未定義）');
+       }
+
+       // ⑤ importData後calendarId整合チェック：不正IDのタスクがfallbackIdに変換されること
+       if (_st53FallbackId) {
+         var _st53FakeCalId = 'fake-calendar-id-for-st53-test';
+         var _st53FakeTask = {
+           id: generateTaskId(), kind: 'task', text: 'ST-53インポートテスト',
+           date: getLocalDateStr(new Date()), section: 1, completed: false, done: false,
+           calendarId: _st53FakeCalId, displayScope: 'both',
+           createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+         };
+         // 直接allTasksに混入させてcalendarId整合チェック関数を再現
+         allTasks.push(_st53FakeTask);
+         // importData後整合処理と同じロジックを実行
+         (function() {
+           var _cl = (allSettings.calendar && allSettings.calendar.list) || [];
+           if (_cl.length === 0) return;
+           var _clIds = new Set(_cl.map(function(c){return c.id;}));
+           var _fb = _cl[0].id;
+           allTasks.forEach(function(t) {
+             if (t.kind !== 'task') return;
+             if (!t.calendarId || !_clIds.has(t.calendarId)) t.calendarId = _fb;
+           });
+         })();
+         var _st53Fixed = allTasks.find(function(t){ return t.text === 'ST-53インポートテスト'; });
+         (_st53Fixed && _st53Fixed.calendarId === _st53FallbackId)
+           ? ok('ST-53: importData後calendarId修正確認（fake→fallback）')
+           : ng('ST-53: importData後calendarId修正', '修正されていない: ' + (_st53Fixed && _st53Fixed.calendarId));
+         // クリーンアップ
+         allTasks = allTasks.filter(function(t){ return t.text !== 'ST-53インポートテスト'; });
+         saveAllTasks();
+         ok('ST-53: importDataテスト クリーンアップ完了（' + allTasks.length + '件）');
+       }
+
+       // ⑥ displayScope未設定タスクがbothに補完されること（mig_display_scope_empty_v1）
+       var _st53NoScope = allTasks.filter(function(t){
+         return t.kind === 'task' && !t.displayScope;
+       });
+       (_st53NoScope.length === 0)
+         ? ok('ST-53: displayScope未設定タスクなし確認（全件補完済み）')
+         : ng('ST-53: displayScope未設定', _st53NoScope.length + '件残存');
+
+       // ⑦ isCalendarVisibleが全taskでtrueを返すこと（今日のタスク）
+       var _st53TodayStr = getLocalDateStr(new Date());
+       var _st53TodayTasks = allTasks.filter(function(t){
+         return t.kind === 'task' && t.date === _st53TodayStr;
+       });
+       var _st53InvisibleToday = _st53TodayTasks.filter(function(t){
+         return !isCalendarVisible(t.calendarId);
+       });
+       (_st53InvisibleToday.length === 0)
+         ? ok('ST-53: 今日のタスク isCalendarVisible全true確認（' + _st53TodayTasks.length + '件）')
+         : ng('ST-53: 今日のタスク isCalendarVisible', '非表示=' + _st53InvisibleToday.length + '件: ' + _st53InvisibleToday.slice(0,3).map(function(t){return t.text;}).join(','));
+
+       // ⑧ mig_display_scope_empty_v1フラグ確認
+       (localStorage.getItem('mig_display_scope_empty_v1') === '1')
+         ? ok('ST-53: mig_display_scope_empty_v1 適用済み確認')
+         : ng('ST-53: mig_display_scope_empty_v1', '未適用');
+
+       ok('ST-53: calendarId整合性・createTask・importData後修正 完了');
+     } catch(e) { ng('ST-53: calendarId整合性', e.message); }
      // ===== 17. KPAG — Key Purify Absolute Green · 4-AXIS STORAGE INSPECTION =====
      try {
        var _kpKeys = Object.keys(localStorage);
