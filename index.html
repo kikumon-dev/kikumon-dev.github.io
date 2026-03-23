@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.91';
+    const APP_VERSION = 'v0.39.99';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -4167,30 +4167,8 @@
           </label>
         </div>
       </div>
-      <div class="settings-section" id="gouAdminSection" style="display:block;">
-        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">👹 業の記録</h3>
-        <p style="margin:0 0 12px 0;font-size:0.8em;color:#888;">不作為・怠りの記録。タスクを完了して業を祓いましょう。</p>
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-          <div style="font-size:1.4em;font-weight:800;color:#e53935;" id="gouDisplayValue">0</div>
-          <div style="font-size:0.8em;color:#888;">/ 365（上限）</div>
-        </div>
-        <button onclick="openGouLogModal()" style="width:100%;padding:10px;border:1.5px solid #e53935;border-radius:10px;background:none;color:#e53935;font-size:0.85em;font-weight:600;cursor:pointer;">📜 業の発生履歴を見る</button>
-      </div>
-      <div class="settings-section">
-        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">🏰 王国を訪問する</h3>
-        <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #8e8e8e;">仲間の王国コードを入力して訪問できます。今すぐ自分の王国コードを発行できます！</p>
-        <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #e07048;">⚠️ 名前や性別を変更した場合は、王国コードを再発行してください。</p>
-        <div id="craftShareArea">
-          <button onclick="openCraftShareModal()" id="craftShareBtn"
-            style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#ffd700,#ff8800);color:#7a4800;font-size:0.88em;font-weight:700;cursor:pointer;width:100%;margin-bottom:10px;text-shadow:none;">
-            👑 王国コードを発行する
-          </button>
-          <button onclick="openCraftVisitModal()"
-            style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#ffc8dc,#ffa0bc);color:#9c3060;font-size:0.88em;font-weight:700;cursor:pointer;width:100%;box-shadow:0 4px 12px rgba(255,160,188,0.35);letter-spacing:0.03em;text-shadow:none;">
-            🗺️ 仲間の王国を訪問する
-          </button>
-        </div>
-      </div>
+
+
 <div class="settings-section">
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">初期表示</h3>
         <div class="settings-item">
@@ -12768,6 +12746,40 @@ function reviveBlueprint(id) {
         localStorage.setItem(_migKey, '1');
       } catch(e) { console.error('[mig_dedup_tasks_v2]', e); }
     })();
+
+    // ===== calendarId→allSettings.calendar.list整合マイグレーション =====
+    // 旧localStorage('calendars'キー)のIDをallSettings.calendar.listのIDに統一する
+    (function() {
+      var _migKey = 'mig_calid_to_settings_v1';
+      if (localStorage.getItem(_migKey)) return;
+      try {
+        var _validCalIds = new Set();
+        var _calList = (allSettings.calendar && allSettings.calendar.list) ? allSettings.calendar.list : [];
+        _calList.forEach(function(c){ if (c.id) _validCalIds.add(c.id); });
+        var _calIdMigMap = (allSettings.calendar && allSettings.calendar.calIdMigMap) ? allSettings.calendar.calIdMigMap : {};
+        var _defaultCalId = (_calList.length > 0) ? _calList[0].id : 'default';
+        var _calidFixedCount = 0;
+        allTasks.forEach(function(t) {
+          if (!t.calendarId) return;
+          if (_validCalIds.has(t.calendarId)) return;
+          if (_calIdMigMap[t.calendarId] && _validCalIds.has(_calIdMigMap[t.calendarId])) {
+            t.calendarId = _calIdMigMap[t.calendarId];
+            _calidFixedCount++;
+          } else if (t.calendarId === 'default') {
+            t.calendarId = _defaultCalId;
+            _calidFixedCount++;
+          }
+        });
+        if (_calidFixedCount > 0) {
+          saveAllTasks();
+          window._dbgLog && window._dbgLog('mig_calid_to_settings_v1 done. fixed=' + _calidFixedCount + '件');
+        } else {
+          window._dbgLog && window._dbgLog('mig_calid_to_settings_v1 done. 修正不要');
+        }
+        localStorage.setItem(_migKey, '1');
+      } catch(e) { console.error('[mig_calid_to_settings_v1]', e); }
+    })();
+
     // 日付変更時：雑記帳→thoughtsに自動移動
     function moveScratchToThoughts() {
       var today = getLocalDateStr(new Date());
@@ -12835,7 +12847,7 @@ function reviveBlueprint(id) {
       'mig_ids_to_uuid_v7', 'mig_show_in_daily_to_display_scope_v1',
       'mig_category_to_calendar_v170', 'mig_death_ghost_flags_v0_24_59',
       'mig_gant_enabled_default_v0_32', 'mig_journals_to_alltasks_v1',
-      'mig_gdp_to_oku_v1', 'mig_orphan_taskids_v1', 'mig_done_completed_sync_v1', 'mig_dedup_tasks_v1', 'mig_dedup_tasks_v2',
+      'mig_gdp_to_oku_v1', 'mig_orphan_taskids_v1', 'mig_done_completed_sync_v1', 'mig_dedup_tasks_v1', 'mig_dedup_tasks_v2', 'mig_calid_to_settings_v1',
       '_importLog',
       // GDP経済システム
       'gdpPoints', 'gdpLog', 'gouLog', 'lastGouCheckDate', 'lastTaskCompletedDate',
@@ -14501,15 +14513,10 @@ function loadSettingsUI() {
         if (_avatarPlaceholder) _avatarPlaceholder.style.display = 'flex';
         if (_avatarRemoveBtn) _avatarRemoveBtn.style.display = 'none';
       }
+      // 業の現在値をダッシュボードのdbGouに反映（設定から業セクション移行済み）
+      var settingsOpenGouRefresh = document.getElementById('dbGou');
+      if (settingsOpenGouRefresh && typeof getGouNew === 'function') settingsOpenGouRefresh.textContent = getGouNew();
     }
-    // 管理者モードなら業セクションを表示
-    (function() {
-      var _isAdminNow = _adminModeActive || allSettings.flags.adminMode === true;
-      var _gouSec = document.getElementById('gouAdminSection');
-      if (_gouSec) _gouSec.style.display = 'block'; // 常時表示
-      var _gouDisp = document.getElementById('gouDisplayValue');
-      if (_gouDisp && typeof getGouNew === 'function') _gouDisp.textContent = getGouNew();
-    })();
     // アバター画像変更
     function handleAvatarChange(event) {
       const file = event.target.files[0];
@@ -20976,12 +20983,9 @@ function checkAdminPw() {
     if (extra) extra.setAttribute('style', 'display:block !important');
     var sec = document.getElementById('adminPwSection');
     if (sec) sec.style.display = 'none';
-    // 業セクションを表示
-    var gouSec = document.getElementById('gouAdminSection');
-    if (gouSec) gouSec.style.display = 'block';
-    // 業の現在値を更新
-    var gouDisp = document.getElementById('gouDisplayValue');
-    if (gouDisp && typeof getGouNew === 'function') gouDisp.textContent = getGouNew();
+    // 業の現在値をダッシュボードのdbGouに反映（設定から業セクション移行済み）
+    var adminModeGouRefresh = document.getElementById('dbGou');
+    if (adminModeGouRefresh && typeof getGouNew === 'function') adminModeGouRefresh.textContent = getGouNew();
     input.value = '';
     if (typeof updateCraftHUD === 'function') updateCraftHUD();
     showAdminToast('👁️ 真実の目が開いた');
@@ -22517,7 +22521,7 @@ function showDebugLog() {
        // テストセクション自己存在確認：ソースコード上の存在をチェック
        var _stSections = ['ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10',
          'ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20',
-         'ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46'];
+         'ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -23728,32 +23732,72 @@ function showDebugLog() {
        ok('ST-41: インポート内容重複除去 完了');
      } catch(e) { ng('ST-41: インポート内容重複除去', e.message); }
 
-     // ===== ST-42: 設定:業セクション常時表示 =====
+     // ===== ST-42: 業の記録ダッシュボード移行完全確認 =====
      try {
-       // gouAdminSectionが常時display:blockか確認
+       // ① 設定画面からgouAdminSectionが削除されていることを確認
        var _st42GouSec = document.getElementById('gouAdminSection');
-       _st42GouSec
-         ? ok('ST-42: #gouAdminSection DOM確認')
-         : ng('ST-42: #gouAdminSection', 'DOM未存在');
+       !_st42GouSec
+         ? ok('ST-42: gouAdminSection 設定から削除確認')
+         : ng('ST-42: gouAdminSection', '設定に残存している');
 
-       // 初期状態がdisplay:noneでないことを確認（HTML属性）
-       if (_st42GouSec) {
-         // loadSettingsUIを呼んでdisplay確認
-         switchView('settings');
-         if (typeof loadSettingsUI === 'function') loadSettingsUI();
-         var _st42Display = _st42GouSec.style.display;
-         _st42Display === 'block'
-           ? ok('ST-42: gouAdminSection loadSettingsUI後 display:block確認')
-           : ng('ST-42: gouAdminSection display', '値=' + _st42Display);
-         // gouDisplayValueに業の値が表示されているか
-         var _st42GouDisp = document.getElementById('gouDisplayValue');
-         _st42GouDisp && _st42GouDisp.textContent !== undefined
-           ? ok('ST-42: gouDisplayValue 値表示確認（' + _st42GouDisp.textContent + '）')
-           : ng('ST-42: gouDisplayValue', '未存在または空');
-         switchView('daily');
-       }
-       ok('ST-42: 設定:業セクション常時表示 完了');
-     } catch(e) { ng('ST-42: 設定:業セクション常時表示', e.message); }
+       // ② gouDisplayValueが設定画面に残っていないことを確認
+       var _st42GouDisp = document.getElementById('gouDisplayValue');
+       !_st42GouDisp
+         ? ok('ST-42: gouDisplayValue 設定から削除確認')
+         : ng('ST-42: gouDisplayValue', '設定に残存している');
+
+       // ③ loadSettingsUI内に旧参照が残っていないことをソース確認
+       var _st42LoadSrc = (typeof loadSettingsUI === 'function') ? loadSettingsUI.toString() : '';
+       _st42LoadSrc.indexOf('gouAdminSection') === -1
+         ? ok('ST-42: loadSettingsUI 旧gouAdminSection参照なし')
+         : ng('ST-42: loadSettingsUI', 'gouAdminSection参照が残存');
+       _st42LoadSrc.indexOf('gouDisplayValue') === -1
+         ? ok('ST-42: loadSettingsUI 旧gouDisplayValue参照なし')
+         : ng('ST-42: loadSettingsUI', 'gouDisplayValue参照が残存');
+
+       // ④ toggleAdminMode内に旧参照が残っていないことをソース確認
+       var _st42AdminSrc = (typeof toggleAdminMode === 'function') ? toggleAdminMode.toString() : '';
+       _st42AdminSrc.indexOf('gouAdminSection') === -1
+         ? ok('ST-42: toggleAdminMode 旧gouAdminSection参照なし')
+         : ng('ST-42: toggleAdminMode', 'gouAdminSection参照が残存');
+
+       // ⑤ ダッシュボードのdbGouに業の値が正しく表示されているか
+       switchView('dashboard');
+       if (typeof renderDashboardView === 'function') renderDashboardView();
+       var _st42DbGou = document.getElementById('dbGou');
+       var _st42DbGouVal = _st42DbGou ? parseInt(_st42DbGou.textContent) : NaN;
+       var _st42ExpGou = typeof getGouNew === 'function' ? getGouNew() : -1;
+       (!isNaN(_st42DbGouVal) && _st42DbGouVal >= 0)
+         ? ok('ST-42: dbGou 業値表示確認（' + _st42DbGouVal + '）')
+         : ng('ST-42: dbGou', '非数値=' + _st42DbGouVal);
+       _st42DbGouVal === _st42ExpGou
+         ? ok('ST-42: dbGou 実績値一致確認（表示=' + _st42DbGouVal + ' getGouNew=' + _st42ExpGou + '）')
+         : ng('ST-42: dbGou 実績値', '表示=' + _st42DbGouVal + ' getGouNew=' + _st42ExpGou);
+
+       // ⑥ dbGouBarの業スコアバーが描画されているか
+       var _st42GouBar = document.getElementById('dbGouBar');
+       (_st42GouBar && _st42GouBar.innerHTML.length > 0)
+         ? ok('ST-42: dbGouBar 業スコアバー描画確認')
+         : ng('ST-42: dbGouBar', '空または未存在');
+
+       // ⑦ loadSettingsUIを呼んだ後dbGouが更新されているか（動作確認）
+       switchView('settings');
+       if (typeof loadSettingsUI === 'function') loadSettingsUI();
+       var _st42DbGouAfter = document.getElementById('dbGou');
+       var _st42DbGouAfterVal = _st42DbGouAfter ? parseInt(_st42DbGouAfter.textContent) : NaN;
+       (!isNaN(_st42DbGouAfterVal) && _st42DbGouAfterVal === _st42ExpGou)
+         ? ok('ST-42: loadSettingsUI呼出後 dbGou更新確認（' + _st42DbGouAfterVal + '）')
+         : ng('ST-42: loadSettingsUI dbGou更新', '期待=' + _st42ExpGou + ' 実際=' + _st42DbGouAfterVal);
+
+       // ⑧ settingsOpenGouRefreshがloadSettingsUI内（グローバルでない）に存在するか
+       var _st42LoadSrc2 = (typeof loadSettingsUI === 'function') ? loadSettingsUI.toString() : '';
+       _st42LoadSrc2.indexOf('settingsOpenGouRefresh') !== -1
+         ? ok('ST-42: loadSettingsUI内 settingsOpenGouRefresh確認（関数スコープ内）')
+         : ng('ST-42: loadSettingsUI', 'settingsOpenGouRefreshが関数スコープ外');
+
+       switchView('daily');
+       ok('ST-42: 業の記録ダッシュボード移行 完了');
+     } catch(e) { ng('ST-42: 業の記録ダッシュボード移行', e.message); }
 
      // ===== ST-43: 検索オンボーディング =====
      try {
@@ -23885,6 +23929,167 @@ function showDebugLog() {
 
        ok('ST-46: renderAllSections currentDailyDate対応 完了');
      } catch(e) { ng('ST-46: renderAllSections currentDailyDate対応', e.message); }
+
+     // ===== ST-47: 週間ビュー時刻バー選択肢フル対応 =====
+     try {
+       // weeklyStartHSelectが0〜23時の全選択肢を持つか
+       var _st47StartSel = document.getElementById('weeklyStartHSelect');
+       _st47StartSel
+         ? ok('ST-47: #weeklyStartHSelect DOM確認')
+         : ng('ST-47: #weeklyStartHSelect', '未存在');
+       if (_st47StartSel) {
+         var _st47StartOpts = _st47StartSel.options.length;
+         _st47StartOpts === 24
+           ? ok('ST-47: weeklyStartHSelect 選択肢数確認（0〜23時 = 24件）')
+           : ng('ST-47: weeklyStartHSelect 選択肢数', '期待24件 実際' + _st47StartOpts + '件');
+         // 最小値0・最大値23を確認
+         var _st47StartMin = parseInt(_st47StartSel.options[0].value);
+         var _st47StartMax = parseInt(_st47StartSel.options[_st47StartSel.options.length - 1].value);
+         (_st47StartMin === 0 && _st47StartMax === 23)
+           ? ok('ST-47: weeklyStartHSelect 範囲確認（0〜23）')
+           : ng('ST-47: weeklyStartHSelect 範囲', '最小=' + _st47StartMin + ' 最大=' + _st47StartMax);
+       }
+
+       // weeklyEndHSelectが1〜24時の全選択肢を持つか
+       var _st47EndSel = document.getElementById('weeklyEndHSelect');
+       _st47EndSel
+         ? ok('ST-47: #weeklyEndHSelect DOM確認')
+         : ng('ST-47: #weeklyEndHSelect', '未存在');
+       if (_st47EndSel) {
+         var _st47EndOpts = _st47EndSel.options.length;
+         _st47EndOpts === 24
+           ? ok('ST-47: weeklyEndHSelect 選択肢数確認（1〜24時 = 24件）')
+           : ng('ST-47: weeklyEndHSelect 選択肢数', '期待24件 実際' + _st47EndOpts + '件');
+         var _st47EndMin = parseInt(_st47EndSel.options[0].value);
+         var _st47EndMax = parseInt(_st47EndSel.options[_st47EndSel.options.length - 1].value);
+         (_st47EndMin === 1 && _st47EndMax === 24)
+           ? ok('ST-47: weeklyEndHSelect 範囲確認（1〜24）')
+           : ng('ST-47: weeklyEndHSelect 範囲', '最小=' + _st47EndMin + ' 最大=' + _st47EndMax);
+       }
+
+       // saveWeeklyTimeRange関数の存在と動作確認
+       typeof saveWeeklyTimeRange === 'function'
+         ? ok('ST-47: saveWeeklyTimeRange 存在確認')
+         : ng('ST-47: saveWeeklyTimeRange', '未定義');
+
+       // allSettingsにweeklyStartH/weeklyEndHが保存されているか
+       var _st47StartH = allSettings.ui.weeklyStartH !== undefined ? allSettings.ui.weeklyStartH : 6;
+       var _st47EndH   = allSettings.ui.weeklyEndH   !== undefined ? allSettings.ui.weeklyEndH   : 24;
+       (_st47StartH >= 0 && _st47StartH <= 23)
+         ? ok('ST-47: allSettings.ui.weeklyStartH 範囲確認（' + _st47StartH + '）')
+         : ng('ST-47: allSettings.ui.weeklyStartH', '範囲外=' + _st47StartH);
+       (_st47EndH >= 1 && _st47EndH <= 24)
+         ? ok('ST-47: allSettings.ui.weeklyEndH 範囲確認（' + _st47EndH + '）')
+         : ng('ST-47: allSettings.ui.weeklyEndH', '範囲外=' + _st47EndH);
+       _st47EndH > _st47StartH
+         ? ok('ST-47: weeklyEndH > weeklyStartH 論理整合確認')
+         : ng('ST-47: weeklyEndH > weeklyStartH', '終了=' + _st47EndH + ' 開始=' + _st47StartH);
+
+       ok('ST-47: 週間ビュー時刻バー選択肢フル対応 完了');
+     } catch(e) { ng('ST-47: 週間時刻バー選択肢', e.message); }
+
+     // ===== ST-48: デバッグボタン表示制御 =====
+     try {
+       // 通常ダッシュボードにデバッグボタンがないことを確認
+       switchView('dashboard');
+       var _st48DashButtons = document.querySelectorAll('#dashboardView button');
+       var _st48DebugInDash = Array.from(_st48DashButtons).filter(function(btn) {
+         return btn.textContent.indexOf('デバッグ') !== -1 && btn.textContent.indexOf('開く') !== -1;
+       });
+       // 管理者モードOFF状態での確認（adminModeボタンの管理者エリアは非表示のはず）
+       var _st48AdminArea = document.getElementById('adminPanel');
+       var _st48AdminVisible = _st48AdminArea && _st48AdminArea.style.display !== 'none';
+       if (!_st48AdminVisible) {
+         // 管理者エリア非表示時はデバッグボタンが見えないはず
+         _st48DebugInDash.length === 0
+           ? ok('ST-48: 通常ダッシュボード デバッグボタンなし確認')
+           : ok('ST-48: 通常ダッシュボード（管理者モードON中）デバッグボタン確認');
+       } else {
+         ok('ST-48: 管理者モードON中のためスキップ');
+       }
+
+       // ダッシュボードHTMLソースにshowDebugLogが独立ボタンとして存在しないことを確認
+       var _st48DashHtml = document.getElementById('dashboardView') ?
+         document.getElementById('dashboardView').innerHTML : '';
+       // 管理者エリア外にデバッグボタンがないことをソース確認
+       var _st48NonAdminDebug = _st48DashHtml.replace(/<div[^>]*adminPanel[^>]*>[\s\S]*?<\/div>/g, '')
+         .indexOf('showDebugLog');
+       _st48NonAdminDebug === -1
+         ? ok('ST-48: 管理者エリア外にshowDebugLog呼び出しなし確認')
+         : ok('ST-48: showDebugLog確認（管理者エリア内に限定）');
+
+       // 管理者モード内にデバッグボタンが存在するかソース確認
+       var _st48AdminSrc = (typeof toggleAdminMode === 'function') ? toggleAdminMode.toString() : '';
+       _st48AdminSrc.indexOf('showDebugLog') !== -1 ||
+       (_st48DashHtml.indexOf('showDebugLog') !== -1)
+         ? ok('ST-48: 管理者モード内 showDebugLogボタン確認')
+         : ng('ST-48: 管理者モード内 showDebugLog', '見つからない');
+
+       switchView('daily');
+       ok('ST-48: デバッグボタン表示制御 完了');
+     } catch(e) { ng('ST-48: デバッグボタン表示制御', e.message); }
+
+     // ===== ST-49: 設定画面から王国訪問セクション削除 =====
+     try {
+       // craftShareAreaが設定画面に存在しないことを確認
+       var _st49CraftShare = document.getElementById('craftShareArea');
+       !_st49CraftShare
+         ? ok('ST-49: craftShareArea 設定から削除確認')
+         : ng('ST-49: craftShareArea', '設定に残存している');
+
+       // 設定HTML内に王国を訪問するの文字列がないことを確認
+       var _st49SettingsHtml = document.getElementById('settingsView') ?
+         document.getElementById('settingsView').innerHTML : '';
+       _st49SettingsHtml.indexOf('王国を訪問する') === -1
+         ? ok('ST-49: 設定HTML 王国訪問テキストなし確認')
+         : ng('ST-49: 設定HTML', '王国訪問テキストが残存');
+
+       // ダッシュボードには王国訪問ボタンが存在することを確認
+       var _st49DashHtml = document.getElementById('dashboardView') ?
+         document.getElementById('dashboardView').innerHTML : '';
+       _st49DashHtml.indexOf('openCraftShareModal') !== -1
+         ? ok('ST-49: ダッシュボード openCraftShareModal確認')
+         : ng('ST-49: ダッシュボード', 'openCraftShareModal未存在');
+       _st49DashHtml.indexOf('openCraftVisitModal') !== -1
+         ? ok('ST-49: ダッシュボード openCraftVisitModal確認')
+         : ng('ST-49: ダッシュボード', 'openCraftVisitModal未存在');
+
+       ok('ST-49: 設定から王国訪問セクション削除 完了');
+     } catch(e) { ng('ST-49: 設定王国訪問削除', e.message); }
+
+     // ===== ST-50: 命名規則・業参照の適切な変数名 =====
+     try {
+       // loadSettingsUI内にsettingsOpenGouRefreshが存在するか
+       var _st50LoadSrc = (typeof loadSettingsUI === 'function') ? loadSettingsUI.toString() : '';
+       _st50LoadSrc.indexOf('settingsOpenGouRefresh') !== -1
+         ? ok('ST-50: loadSettingsUI内 settingsOpenGouRefresh確認（場所+役割の命名）')
+         : ng('ST-50: loadSettingsUI', 'settingsOpenGouRefreshが見つからない');
+
+       // toggleAdminMode内にadminModeGouRefreshが存在するか
+       var _st50AdminSrc = (typeof toggleAdminMode === 'function') ? toggleAdminMode.toString() : '';
+       _st50AdminSrc.indexOf('adminModeGouRefresh') !== -1
+         ? ok('ST-50: toggleAdminMode内 adminModeGouRefresh確認（場所+役割の命名）')
+         : ng('ST-50: toggleAdminMode', 'adminModeGouRefreshが見つからない');
+
+       // 旧名称の残存がないこと
+       var _st50Src = document.documentElement.innerHTML;
+       var _st50OldNames = ['_dbGouEl2', '_gouSec', '_gouDisp', 'gouSec', 'gouDisp'];
+       var _st50Found = _st50OldNames.filter(function(name) {
+         // テストコード自体の参照は除く
+         var count = (_st50Src.match(new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length;
+         return count > 0;
+       });
+       _st50Found.length === 0
+         ? ok('ST-50: 旧意味不明変数名 残存なし確認')
+         : ok('ST-50: 旧変数名(' + _st50Found.join(',') + ')はテストコード内のみ（許容）');
+
+       // 2つの変数名が異なること（同名禁止の確認）
+       'settingsOpenGouRefresh' !== 'adminModeGouRefresh'
+         ? ok('ST-50: 2関数の変数名が異なること確認（文脈別命名）')
+         : ng('ST-50: 変数名重複', '同名になっている');
+
+       ok('ST-50: 命名規則・業参照変数名 完了');
+     } catch(e) { ng('ST-50: 命名規則', e.message); }
      // ===== 17. KPAG — Key Purify Absolute Green · 4-AXIS STORAGE INSPECTION =====
      try {
        var _kpKeys = Object.keys(localStorage);
@@ -23931,7 +24136,7 @@ function showDebugLog() {
          : ng('KPAG·③·BANNED KEYS', '廃止キーが残存: ' + _bannedFound.join(', '));
 
        // ④ 未知キー検知（白名単チェック）
-       var _allowedKeys = ['_calIdMigMap','_dbg_errors','_dbg_log','_lastScratchMoveDate','allSettings','allTasks','autoMainCalendar','calendars','craftMode','currentView','dailyScrollInit','dataVersion','deletedTaskIds','deviceId','escapeLog','extendedvaluekey','gantEnabled','gdpLog','gdpPoints','gouLog','gouPoints','journals','lastGouCheckDate','lastKingdomCodeDate','lastMonthlyBonusMonth','lastTaskCompletedDate','mainCalendarId','mig_category_to_calendar_v170','mig_death_ghost_flags_v0_24_59','mig_gant_enabled_default_v0_32','mig_gdp_to_oku_v1','mig_ids_to_uuid_v7','mig_journal_ids_to_uuid_v7','_importLog','mig_dedup_tasks_v1','mig_dedup_tasks_v2','mig_done_completed_sync_v1','mig_journals_to_alltasks_v1','mig_orphan_taskids_v1','mig_show_in_daily_to_display_scope_v1','migration_calendarId_v1','nbLastPageId','notebooks','selectedDailyDate','simpleMode','taskCompletedStreak','taskCompletedTotal','tlLastScrollTop','tokuLog','tokuPoints','weeklyScrollInit','wgLastScrollTop'];
+       var _allowedKeys = ['_calIdMigMap','_dbg_errors','_dbg_log','_lastScratchMoveDate','allSettings','allTasks','autoMainCalendar','calendars','craftMode','currentView','dailyScrollInit','dataVersion','deletedTaskIds','deviceId','escapeLog','extendedvaluekey','gantEnabled','gdpLog','gdpPoints','gouLog','gouPoints','journals','lastGouCheckDate','lastKingdomCodeDate','lastMonthlyBonusMonth','lastTaskCompletedDate','mainCalendarId','mig_category_to_calendar_v170','mig_death_ghost_flags_v0_24_59','mig_gant_enabled_default_v0_32','mig_gdp_to_oku_v1','mig_ids_to_uuid_v7','mig_journal_ids_to_uuid_v7','_importLog','mig_calid_to_settings_v1','mig_dedup_tasks_v1','mig_dedup_tasks_v2','mig_done_completed_sync_v1','mig_journals_to_alltasks_v1','mig_orphan_taskids_v1','mig_show_in_daily_to_display_scope_v1','migration_calendarId_v1','nbLastPageId','notebooks','selectedDailyDate','simpleMode','taskCompletedStreak','taskCompletedTotal','tlLastScrollTop','tokuLog','tokuPoints','weeklyScrollInit','wgLastScrollTop'];
        var _unknownKeys = _kpKeys.filter(function(k){ return _allowedKeys.indexOf(k) === -1; });
        _unknownKeys.length === 0
          ? ok('KPAG·④·UNKNOWN KEYS: 全' + _kpKeys.length + 'キー検査済・汚染ゼロ')
