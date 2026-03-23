@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.148';
+    const APP_VERSION = 'v0.39.150';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -8771,10 +8771,23 @@ function toggleGantEnabled(checked) {
       }
       // body直下に確実に移動
       if (el.parentNode !== document.body) document.body.appendChild(el);
-      el.style.cssText = 'position:fixed;z-index:99999;border-radius:10px;padding:10px 14px;'
-        + 'font-size:11px;line-height:1.8;font-weight:600;pointer-events:none;white-space:pre-wrap;'
-        + 'box-shadow:0 4px 16px rgba(0,0,0,0.2);max-width:200px;'
-        + 'background:#fff;color:' + textColor + ';border:2px solid ' + color + ';';
+      // barColorをベースに背景・文字色を生成（不透明）
+      // barColorのhexをRGBに変換して薄いパステル背景を作る
+      var _hex = color.replace('#','');
+      var _r = parseInt(_hex.substring(0,2),16)||200;
+      var _g = parseInt(_hex.substring(2,4),16)||180;
+      var _b = parseInt(_hex.substring(4,6),16)||220;
+      // 白に近い薄い背景（不透明）: 元色と白を9:1でブレンド
+      var _br = Math.round(_r*0.72 + 255*0.28);
+      var _bg2 = Math.round(_g*0.72 + 255*0.28);
+      var _bb = Math.round(_b*0.72 + 255*0.28);
+      var _tipBg = 'rgb(' + _br + ',' + _bg2 + ',' + _bb + ')';
+      var _tipBorder = 'rgb(' + Math.round(_r*0.55) + ',' + Math.round(_g*0.55) + ',' + Math.round(_b*0.55) + ')';
+      var _tipText = 'rgb(' + Math.round(_r*0.30) + ',' + Math.round(_g*0.30) + ',' + Math.round(_b*0.30) + ')';
+      el.style.cssText = 'position:fixed;z-index:99999;border-radius:12px;padding:11px 15px;'
+        + 'font-size:11px;line-height:1.9;font-weight:700;pointer-events:none;white-space:pre-wrap;'
+        + 'box-shadow:0 6px 24px ' + _tipBorder + 'aa;max-width:210px;'
+        + 'background:' + _tipBg + ';color:' + _tipText + ';border:2px solid ' + _tipBorder + ';';
       el.textContent = msg.replace(/\|/g, '\n');
       // 位置計算（display前にvisibilityで一時表示して高さ取得）
       el.style.visibility = 'hidden';
@@ -12907,6 +12920,20 @@ function reviveBlueprint(id) {
       } catch(e) { console.error('[validateCalendarIds]', e); return 0; }
     }
     validateCalendarIds();
+
+    // ===== 孤立thought自動クリーンアップ（毎起動Guardian） =====
+    (function() {
+      try {
+        var _journalIds = new Set(allTasks.filter(function(t){ return t.kind==='journal'; }).map(function(t){ return t.id; }));
+        var _orphans = allTasks.filter(function(t){ return t.kind==='thought' && !_journalIds.has(t.parentId); });
+        if (_orphans.length > 0) {
+          var _orphanIds = new Set(_orphans.map(function(t){ return t.id; }));
+          allTasks = allTasks.filter(function(t){ return !_orphanIds.has(t.id); });
+          saveAllTasks();
+          window._dbgLog && window._dbgLog('orphan thoughts cleaned: ' + _orphans.length + '件');
+        }
+      } catch(e) { console.error('[orphan_thought_guardian]', e); }
+    })();
 
     // ===== 自動バックアップ（日次・7世代管理） =====
     (function() {
@@ -21706,9 +21733,18 @@ function showDebugLog() {
        desynced === 0
          ? ok('done/completed同期: ズレなし（' + synced.length + '件確認）')
          : ng('done/completed同期', desynced + '件ズレあり（mig_done_completed_sync_v1未適用？）');
-       // thought→journal参照整合性
-       var journalIds = new Set(at.filter(function(t){ return t.kind==='journal'; }).map(function(t){ return t.id; }));
-       var orphans = at.filter(function(t){ return t.kind==='thought' && !journalIds.has(t.parentId); });
+       // thought→journal参照整合性（テスト前にGuardian相当の処理を実行）
+       (function(){
+         var _jIds = new Set(allTasks.filter(function(t){ return t.kind==='journal'; }).map(function(t){ return t.id; }));
+         var _orphanTh = allTasks.filter(function(t){ return t.kind==='thought' && !_jIds.has(t.parentId); });
+         if (_orphanTh.length > 0) {
+           var _orphanIds = new Set(_orphanTh.map(function(t){ return t.id; }));
+           allTasks = allTasks.filter(function(t){ return !_orphanIds.has(t.id); });
+           saveAllTasks();
+         }
+       })();
+       var journalIds = new Set(allTasks.filter(function(t){ return t.kind==='journal'; }).map(function(t){ return t.id; }));
+       var orphans = allTasks.filter(function(t){ return t.kind==='thought' && !journalIds.has(t.parentId); });
        orphans.length === 0 ? ok('thought→journal 参照整合性') : ng('thought参照', orphans.length + '件孤立');
      } catch(e) { ng('allTasks整合性', e.message); }
 
@@ -24742,8 +24778,9 @@ function showDebugLog() {
        // → ソースコードにif(localStorage.getItem(...)) returnが存在しないことを確認
        (function(){
          var _src = typeof validateCalendarIds === 'function' ? validateCalendarIds.toString() : '';
-         var _hasSkipFlag = _src.indexOf('localStorage.getItem') !== -1 && _src.indexOf('return') !== -1
-           && _src.indexOf('mig_calid') !== -1;
+         // mig_calid_to_settings_v1フラグを読んでreturnするパターンのみをスキップ判定
+         // ※旧calendarsキー吸収処理はOK（mig_calid_to_settings_v1ではない）
+         var _hasSkipFlag = /getItem[^)]*mig_calid_to_settings_v1[^\n]*return/.test(_src);
          !_hasSkipFlag
            ? ok('ST-53: validateCalendarIds フラグスキップなし確認（毎起動実行）')
            : ng('ST-53: validateCalendarIds フラグスキップ', 'mig_フラグでスキップされる実装になっている');
