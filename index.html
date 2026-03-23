@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.39';
+    const APP_VERSION = 'v0.39.41';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -4697,9 +4697,9 @@
         weeklyRowH:       80,
         weeklyCellScale:  100,
         weeklyTimeBar:    'show',
-        tlScrollMode:     'now',
+        tlScrollMode:     'last',
         tlRowHeights:     null,
-        wgScrollMode:     'now',
+        wgScrollMode:     'last',
         weeklyStartH:     6,
         weeklyEndH:       24,
         useColors:        true,
@@ -6511,23 +6511,31 @@ function myDeckApply(idx) {
       container.appendChild(body);
       // 週間ビュースクロール位置
       setTimeout(function() {
-        var _wgMode = allSettings.ui.wgScrollMode || 'now';
+        var _wgMode = allSettings.ui.wgScrollMode || 'last';
         var scrollArea = document.getElementById('weeklyScrollArea');
         if (!scrollArea) return;
         if (_wgMode === 'last') {
           var lastTop = parseInt(localStorage.getItem('wgLastScrollTop') || '0');
-          scrollArea.scrollTop = lastTop;
+          if (lastTop > 0) {
+            scrollArea.scrollTop = lastTop;
+          } else {
+            // 初回のみ現在時刻にフォールバック
+            var now2 = new Date();
+            var h2 = now2.getHours(), m2 = now2.getMinutes();
+            var scrollTop = Math.max(0, (h2 - _wgStartH) * ROW_H + Math.round(m2 / 60 * ROW_H) - ROW_H);
+            scrollArea.scrollTop = scrollTop;
+          }
         } else {
           var now2 = new Date();
           var h2 = now2.getHours(), m2 = now2.getMinutes();
           var scrollTop = Math.max(0, (h2 - _wgStartH) * ROW_H + Math.round(m2 / 60 * ROW_H) - ROW_H);
           scrollArea.scrollTop = scrollTop;
         }
-        // スクロール位置を随時保存
+        // スクロール位置を随時保存（重複登録防止）
         if (!scrollArea._wgScrollSaving) {
           scrollArea._wgScrollSaving = true;
           scrollArea.addEventListener('scroll', function() {
-            localStorage.setItem('wgLastScrollTop', scrollArea.scrollTop);
+            localStorage.setItem('wgLastScrollTop', String(scrollArea.scrollTop));
           });
         }
       }, 50);
