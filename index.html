@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.51';
+    const APP_VERSION = 'v0.39.60';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -4529,6 +4529,19 @@
       const day = String(date.getDate()).padStart(2, '0');
       return `${year}-${month}-${day}`;
     }
+    // 放置日数に応じた背景色を返す（未完了タスクの過去日付用）
+    function getStaleColor(taskDate, completed) {
+      if (completed) return null;
+      var today = getLocalDateStr(new Date());
+      if (!taskDate || taskDate >= today) return null;
+      var ms = new Date(taskDate.replace(/-/g,'/')).getTime();
+      var todayMs = new Date(today.replace(/-/g,'/')).getTime();
+      var days = Math.floor((todayMs - ms) / 86400000);
+      if (days >= 14) return '#ffcdd2';
+      if (days >= 7)  return '#ffebee';
+      if (days >= 3)  return '#fff5f5';
+      return null;
+    }
     // ローカル時間のISO形式文字列（タイムゾーンオフセット付き）
     function getLocalISOString(date) {
       const y = date.getFullYear();
@@ -5308,101 +5321,169 @@ function renderGouTaskList() {
   if (!container || !countEl) return;
   var today = getLocalDateStr(new Date());
   var todayMs = new Date(today.replace(/-/g,'/')).getTime();
-  // 未完了タスクを日付順（古い順）
+
+  // 業タスク＝過去日付の未完了のみ
   var tasks = allTasks.filter(function(t) {
-    return t.kind === 'task' && !t.completed && !t.done && !t.inHeaven && t.displayScope !== 'heaven';
+    return t.kind === 'task' && !t.completed && !t.done && !t.inHeaven && t.displayScope !== 'heaven'
+      && t.date && t.date < today;
   }).sort(function(a, b) { return (a.date || '').localeCompare(b.date || ''); });
 
-  // 放置日数を計算するヘルパー
   function getDaysOld(dateStr) {
     if (!dateStr || dateStr >= today) return 0;
     var ms = new Date(dateStr.replace(/-/g,'/')).getTime();
     return isNaN(ms) ? 0 : Math.floor((todayMs - ms) / 86400000);
   }
-  // 危険度分類
-  var over14 = tasks.filter(function(t){ return getDaysOld(t.date) >= 14; }).length;
-  var over7  = tasks.filter(function(t){ var d=getDaysOld(t.date); return d>=7&&d<14; }).length;
-  var over3  = tasks.filter(function(t){ var d=getDaysOld(t.date); return d>=3&&d<7; }).length;
 
   countEl.textContent = tasks.length + '件';
   container.innerHTML = '';
 
+  // ===== 業ゼロ =====
   if (tasks.length === 0) {
-    container.innerHTML = '<div style="text-align:center;color:#bbb;padding:32px 0;font-size:0.9em;">業ゼロ！清らかです 🌸</div>';
+    container.innerHTML = '<div style="text-align:center;padding:32px 0;">' +
+      '<div style="font-size:2em;margin-bottom:8px;">🌸</div>' +
+      '<div style="color:#4caf50;font-weight:700;font-size:1em;margin-bottom:4px;">業ゼロ！清らかです</div>' +
+      '<div style="color:#bbb;font-size:0.8em;">今日も精進を続けましょう</div>' +
+      '</div>';
     return;
   }
 
-  // ===== 警告バナー =====
-  if (over3 > 0 || over7 > 0 || over14 > 0) {
-    var banner = document.createElement('div');
-    banner.style.cssText = 'background:#fff0f0;border:1.5px solid #ffcdd2;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:0.78em;color:#c62828;line-height:1.7;';
-    var parts = [];
-    if (over14 > 0) parts.push('<span style="font-weight:800;color:#b71c1c;">🔥 14日以上: ' + over14 + '件</span>');
-    if (over7  > 0) parts.push('<span style="font-weight:700;color:#c62828;">⚠️ 7日以上: ' + over7  + '件</span>');
-    if (over3  > 0) parts.push('<span style="color:#e53935;">3日以上: ' + over3 + '件</span>');
-    banner.innerHTML = parts.join('　');
-    container.appendChild(banner);
-  }
-
-  var lastDate = '';
+  // ===== 案2: 業スコア =====
+  var maxDays = 0;
+  var totalWeight = 0;
   tasks.forEach(function(t) {
-    var dateStr = t.date || '';
+    var d = getDaysOld(t.date);
+    if (d > maxDays) maxDays = d;
+    totalWeight += d;
+  });
+  var scoreRatio = Math.min(1, totalWeight / (tasks.length * 30));
+  var scoreBar = '';
+  var barCount = 10;
+  var filled = Math.round(scoreRatio * barCount);
+  for (var _b = 0; _b < barCount; _b++) {
+    scoreBar += _b < filled
+      ? '<span style="color:' + (_b < 3 ? '#ffcdd2' : _b < 6 ? '#e53935' : '#b71c1c') + ';">█</span>'
+      : '<span style="color:#eee;">░</span>';
+  }
+  var scoreBanner = document.createElement('div');
+  scoreBanner.style.cssText = 'background:#fff8f8;border:1.5px solid #ffcdd2;border-radius:10px;padding:10px 14px;margin-bottom:10px;';
+  scoreBanner.innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">' +
+    '<span style="font-size:0.82em;font-weight:700;color:#c62828;">👹 業の重さ</span>' +
+    '<span style="font-size:0.75em;color:#aaa;">最長 ' + maxDays + '日放置</span>' +
+    '</div>' +
+    '<div style="font-family:monospace;font-size:1em;letter-spacing:2px;margin-bottom:4px;">' + scoreBar + '</div>' +
+    '<div style="display:flex;gap:10px;font-size:0.72em;">' +
+    (tasks.filter(function(t){return getDaysOld(t.date)>=14;}).length > 0 ? '<span style="color:#b71c1c;font-weight:800;">🔥 14日以上: ' + tasks.filter(function(t){return getDaysOld(t.date)>=14;}).length + '件</span>' : '') +
+    (tasks.filter(function(t){var d=getDaysOld(t.date);return d>=7&&d<14;}).length > 0 ? '<span style="color:#c62828;font-weight:700;">⚠️ 7日以上: ' + tasks.filter(function(t){var d=getDaysOld(t.date);return d>=7&&d<14;}).length + '件</span>' : '') +
+    (tasks.filter(function(t){var d=getDaysOld(t.date);return d>=3&&d<7;}).length > 0 ? '<span style="color:#e53935;">3日以上: ' + tasks.filter(function(t){var d=getDaysOld(t.date);return d>=3&&d<7;}).length + '件</span>' : '') +
+    '</div>';
+  container.appendChild(scoreBanner);
+
+  // ===== 案3: 日付グループを折りたたみ =====
+  var groups = {};
+  var groupOrder = [];
+  tasks.forEach(function(t) {
+    var d = t.date || '';
+    if (!groups[d]) { groups[d] = []; groupOrder.push(d); }
+    groups[d].push(t);
+  });
+
+  groupOrder.forEach(function(dateStr, gi) {
+    var groupTasks = groups[dateStr];
     var daysOld = getDaysOld(dateStr);
-    var isPast  = dateStr < today;
-    var isToday2 = dateStr === today;
+    var weekdays = ['日','月','火','水','木','金','土'];
+    var dObj = new Date(dateStr.replace(/-/g,'/'));
+    var ageLabel = daysOld >= 14 ? ' 🔥' + daysOld + '日放置' : daysOld >= 7 ? ' ⚠️' + daysOld + '日' : ' ' + daysOld + '日';
+    var dLabel = (!isNaN(dObj) ? dateStr + '（' + weekdays[dObj.getDay()] + '）' : dateStr) + ageLabel;
+    var headerColor = daysOld >= 14 ? '#b71c1c' : daysOld >= 7 ? '#c62828' : '#e53935';
 
-    // 危険度に応じた背景色
-    var rowBg   = daysOld >= 14 ? '#ffcdd2' : daysOld >= 7 ? '#ffebee' : daysOld >= 3 ? '#fff5f5' : '';
-    var textColor = daysOld >= 14 ? '#b71c1c' : daysOld >= 7 ? '#c62828' : daysOld >= 3 ? '#e53935' : '#333';
-    var fontWeight = daysOld >= 7 ? '700' : '500';
+    // グループヘッダー（折りたたみ）
+    var isOpen = daysOld >= 7; // 7日以上は最初から開く
+    var header = document.createElement('div');
+    header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;' +
+      'padding:7px 6px;cursor:pointer;border-radius:6px;margin-top:' + (gi > 0 ? '6px' : '0') + ';' +
+      'background:' + (daysOld >= 14 ? '#ffebee' : daysOld >= 7 ? '#fff5f5' : '#fafafa') + ';' +
+      'border-left:3px solid ' + headerColor + ';';
+    var headerLeft = document.createElement('span');
+    headerLeft.style.cssText = 'font-size:0.75em;font-weight:700;color:' + headerColor + ';';
+    headerLeft.textContent = dLabel;
+    var headerRight = document.createElement('span');
+    headerRight.style.cssText = 'font-size:0.72em;color:#aaa;display:flex;align-items:center;gap:4px;';
+    headerRight.innerHTML = '<span class="_gou-count">' + groupTasks.length + '件</span>' +
+      '<span class="_gou-arrow" style="transition:transform 0.2s;">' + (isOpen ? '▼' : '▶') + '</span>';
+    header.appendChild(headerLeft);
+    header.appendChild(headerRight);
 
-    // 日付セパレータ
-    if (dateStr !== lastDate) {
-      var sep = document.createElement('div');
-      var weekdays = ['日','月','火','水','木','金','土'];
-      var dObj = dateStr ? new Date(dateStr.replace(/-/g,'/')) : null;
-      var ageLabel = daysOld >= 14 ? ' 🔥' + daysOld + '日放置' : daysOld >= 7 ? ' ⚠️' + daysOld + '日' : daysOld >= 3 ? ' ' + daysOld + '日' : '';
-      var dLabel = dObj && !isNaN(dObj) ?
-        dateStr + '（' + weekdays[dObj.getDay()] + '）' + ageLabel + (isToday2 ? ' 今日' : '') : dateStr;
-      sep.style.cssText = 'font-size:0.72em;font-weight:700;padding:8px 4px 4px;letter-spacing:0.05em;' +
-        'color:' + (daysOld >= 14 ? '#b71c1c' : daysOld >= 7 ? '#c62828' : isPast ? '#e53935' : isToday2 ? '#e65100' : '#aaa') + ';' +
-        (lastDate ? 'border-top:1px solid #f0f0f0;margin-top:4px;' : '');
-      sep.textContent = dLabel;
-      container.appendChild(sep);
-      lastDate = dateStr;
-    }
+    // グループ本体
+    var body = document.createElement('div');
+    body.style.cssText = 'overflow:hidden;transition:max-height 0.25s ease;max-height:' + (isOpen ? '2000px' : '0') + ';';
 
-    var row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:flex-start;gap:8px;padding:8px 6px;border-bottom:1px solid #fdf0f0;cursor:pointer;border-radius:6px;transition:background 0.1s;' +
-      (rowBg ? 'background:' + rowBg + ';' : '');
-    row.onmouseover = function(){ row.style.background = daysOld >= 14 ? '#ffb3b3' : daysOld >= 7 ? '#ffd0d0' : '#fff5f5'; };
-    row.onmouseout  = function(){ row.style.background = rowBg; };
-    row.onclick = function() {
-      closeSearchModal();
-      if (dateStr) {
-        currentDailyDate = dateStr;
-        localStorage.setItem('selectedDailyDate', dateStr);
-      }
-      switchView('daily');
-      setTimeout(function(){ switchDailyTab('matrix'); }, 50);
+    groupTasks.forEach(function(t) {
+      var rowBg = daysOld >= 14 ? '#ffcdd2' : daysOld >= 7 ? '#ffebee' : '#fff5f5';
+      var textColor = daysOld >= 14 ? '#b71c1c' : daysOld >= 7 ? '#c62828' : '#e53935';
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:7px 6px;' +
+        'border-bottom:1px solid #fdf0f0;border-radius:4px;background:' + rowBg + ';';
+
+      // セクションドット
+      var secColors = ['#ef5350','#42a5f5','#66bb6a','#ffa726'];
+      var dot = document.createElement('div');
+      dot.style.cssText = 'width:7px;height:7px;border-radius:50%;flex-shrink:0;background:' + secColors[(t.section||1)-1] + ';';
+
+      // テキスト
+      var info = document.createElement('div');
+      info.style.cssText = 'flex:1;min-width:0;cursor:pointer;';
+      var textEl = document.createElement('div');
+      textEl.style.cssText = 'font-size:0.85em;font-weight:' + (daysOld >= 7 ? '700' : '500') + ';color:' + textColor + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+      textEl.textContent = t.text || '（無題）';
+      var secLabel = ['緊急×重要','重要のみ','緊急のみ','どちらでもない'];
+      var meta = document.createElement('div');
+      meta.style.cssText = 'font-size:0.7em;color:#bbb;margin-top:1px;';
+      meta.textContent = secLabel[(t.section||1)-1] + (t.time ? ' · ' + t.time : '');
+      info.appendChild(textEl);
+      info.appendChild(meta);
+      info.onclick = (function(task, ds){ return function(e) {
+        e.stopPropagation();
+        closeSearchModal();
+        currentDailyDate = ds;
+        localStorage.setItem('selectedDailyDate', ds);
+        switchView('daily');
+        setTimeout(function(){ switchDailyTab('matrix'); }, 50);
+      }; })(t, dateStr);
+
+      // 案1: インライン完了ボタン
+      var doneBtn = document.createElement('button');
+      doneBtn.textContent = '✅';
+      doneBtn.title = '完了にする';
+      doneBtn.style.cssText = 'background:none;border:1.5px solid #ccc;border-radius:6px;padding:2px 6px;cursor:pointer;font-size:0.85em;flex-shrink:0;transition:all 0.15s;';
+      doneBtn.onmouseover = function(){ doneBtn.style.borderColor='#4caf50';doneBtn.style.background='#f1f8e9'; };
+      doneBtn.onmouseout  = function(){ doneBtn.style.borderColor='#ccc';doneBtn.style.background='none'; };
+      doneBtn.onclick = (function(task){ return function(e) {
+        e.stopPropagation();
+        task.completed = true;
+        task.done = true;
+        task.updatedAt = new Date().toISOString();
+        saveAllTasks();
+        if (typeof onTaskCompleted === 'function') onTaskCompleted(task);
+        renderGouTaskList();
+      }; })(t);
+
+      row.appendChild(dot);
+      row.appendChild(info);
+      row.appendChild(doneBtn);
+      body.appendChild(row);
+    });
+
+    // 折りたたみトグル
+    header.onclick = function() {
+      isOpen = !isOpen;
+      body.style.maxHeight = isOpen ? '2000px' : '0';
+      var arrow = header.querySelector('._gou-arrow');
+      if (arrow) arrow.textContent = isOpen ? '▼' : '▶';
     };
-    var secColors = ['#ef5350','#42a5f5','#66bb6a','#ffa726'];
-    var dot = document.createElement('div');
-    dot.style.cssText = 'width:8px;height:8px;border-radius:50%;background:' + (secColors[(t.section||1)-1]) + ';flex-shrink:0;margin-top:5px;';
-    var info = document.createElement('div');
-    info.style.cssText = 'flex:1;min-width:0;';
-    var textEl = document.createElement('div');
-    textEl.style.cssText = 'font-size:0.88em;font-weight:' + fontWeight + ';color:' + textColor + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
-    textEl.textContent = t.text || '（無題）';
-    var meta = document.createElement('div');
-    meta.style.cssText = 'font-size:0.72em;color:#bbb;margin-top:2px;';
-    var secLabel = ['緊急×重要','緊急×重要でない','緊急でない×重要','どちらでもない'];
-    meta.textContent = secLabel[(t.section||1)-1] + (t.time ? ' · ' + t.time : '');
-    info.appendChild(textEl);
-    info.appendChild(meta);
-    row.appendChild(dot);
-    row.appendChild(info);
-    container.appendChild(row);
+
+    container.appendChild(header);
+    container.appendChild(body);
   });
 }
 
@@ -5491,6 +5572,31 @@ function renderTodoList() {
       document.getElementById('searchCount').textContent = '0件';
       if (typeof switchSearchTab === 'function') switchSearchTab('search');
       setTimeout(() => { var el = document.getElementById('searchInput'); if(el) el.focus(); }, 100);
+      // 初回オンボーディング
+      if (!allSettings.flags.searchOnboardSeen) {
+        var ob = document.getElementById('searchResults');
+        if (ob) ob.innerHTML =
+          '<div style="padding:16px 8px;line-height:1.8;font-size:0.85em;color:#555;">' +
+          '<div style="font-weight:700;font-size:1em;color:#333;margin-bottom:10px;">🔍 検索の使い方</div>' +
+          '<div style="margin-bottom:14px;">タスク名・メモを全文検索できます。<br>完了済みも含めて過去のタスクを探せます。</div>' +
+          '<div style="background:#fff5f5;border-radius:10px;padding:12px 14px;margin-bottom:10px;border-left:3px solid #e53935;">' +
+          '<div style="font-weight:700;color:#c62828;margin-bottom:6px;">👹 業タブについて</div>' +
+          '<div style="color:#555;font-size:0.92em;line-height:1.7;">' +
+          '<b>業</b>とは、<b>不作為・怠り</b>のこと。<br>' +
+          'やるべきことをやらずに放置することで積み上がります。<br><br>' +
+          '<b>徳</b>とは、<b>具体的行動・精進努力</b>のこと。<br>' +
+          'タスクを完了するたびに積み上がります。<br><br>' +
+          '業タブでは、過去の日付に置かれたまま未完了のタスクを<br>' +
+          '放置日数ごとに色分けして表示します。<br>' +
+          '<span style="color:#b71c1c;font-weight:700;">🔥 14日以上</span>　' +
+          '<span style="color:#c62828;">⚠️ 7日以上</span>　' +
+          '<span style="color:#e53935;">3日以上</span>' +
+          '</div></div>' +
+          '<div style="font-size:0.78em;color:#bbb;text-align:right;">タップして検索を始めると閉じます</div>' +
+          '</div>';
+        allSettings.flags.searchOnboardSeen = true;
+        saveAllSettings();
+      }
     }
     function closeSearchModal() {
       document.getElementById('searchModal').classList.remove('show');
@@ -6539,6 +6645,7 @@ function myDeckApply(idx) {
           const colors = calColor || ownerColor || SEC_COLOR[task.section] || SEC_COLOR[2];
           const bgC = task.completed ? '#e8e8e8' : colors.bg;
           const bdC = task.completed ? '#bbb'    : colors.bd;
+          const _wgStaleBg = getStaleColor(task.date, task.completed);
           // 列幅計算
           const leftPct  = (colIdx / totalCols * 100).toFixed(2) + '%';
           const widthPct = (1 / totalCols * 100).toFixed(2) + '%';
@@ -6549,7 +6656,7 @@ function myDeckApply(idx) {
           taskDiv.style.left   = 'calc(' + leftPct + ' + 3px)';
           taskDiv.style.width  = 'calc(' + widthPct + ' - 6px)';
           taskDiv.style.right  = 'auto';
-          taskDiv.style.backgroundColor = bgC;
+          taskDiv.style.backgroundColor = _wgStaleBg || bgC;
           taskDiv.style.borderLeftColor = bdC;
           taskDiv.style.borderColor     = bdC;
           if (task.completed) taskDiv.style.opacity = '0.65';
@@ -7054,7 +7161,8 @@ function myDeckApply(idx) {
             4: { bg: '#f0f0f0', border: '#999999' }
           };
           const color = colors[task.section] || colors[4];
-          taskDiv.style.backgroundColor = color.bg;
+          const _mnStaleBg = getStaleColor(task.date, task.completed);
+          taskDiv.style.backgroundColor = _mnStaleBg || color.bg;
           taskDiv.style.borderLeft = `3px solid ${color.border}`;
           // 完了状態
           if (task.completed) {
@@ -10229,7 +10337,17 @@ function reviveBlueprint(id) {
           } else if (taskCount > 0) {
             cellContent += `<span class="yearly-task-count">${taskCount}</span>`;
           }
-          const cellStyle = (isSimpleY && stampBgColor) ? ` style="background:${stampBgColor};"` : '';
+          const cellStyle = (isSimpleY && stampBgColor) ? ` style="background:${stampBgColor};"` : (function(){
+            // 未完了タスクの放置色チェック
+            var _yStaleBg = null;
+            if (!isSimpleY) {
+              var _yIncompleteTasks = dayTasks.filter(function(t){ return t.kind === 'task' && !t.completed && !t.done; });
+              if (_yIncompleteTasks.length > 0) {
+                _yStaleBg = getStaleColor(dateStr, false);
+              }
+            }
+            return _yStaleBg ? ` style="background:${_yStaleBg};"` : '';
+          })();
           html += `<div class="${cellClass}"${cellStyle} data-date="${dateStr}" onclick="onYearlyCellClick('${dateStr}')">${cellContent}</div>`;
         }
       }
@@ -11459,6 +11577,9 @@ function reviveBlueprint(id) {
         const li = document.createElement('li');
         li.className = 'task-item' + (task.completed ? ' completed' : '');
         li.dataset.taskId = task.id;  // IDを保存
+        // 未完了タスクの放置日数に応じて背景色を設定
+        var _staleCol = getStaleColor(task.date, task.completed || task.done);
+        if (_staleCol) li.style.background = _staleCol;
         // 選択されたタスクにハイライト（IDで照合）
         if (selectedTaskText && task.text === selectedTaskText) {
           li.classList.add('selected-task');
@@ -12332,6 +12453,46 @@ function reviveBlueprint(id) {
         window._dbgLog && window._dbgLog('mig_done_completed_sync_v1 done. fixed=' + fixed);
       } catch(e) { console.error('[mig_done_completed_sync_v1]', e); }
     })();
+
+    // ===== 重複タスク削除マイグレーション =====
+    (function() {
+      var _migKey = 'mig_dedup_tasks_v1';
+      if (localStorage.getItem(_migKey)) return;
+      try {
+        var seen = {};
+        var toDelete = new Set();
+        // kind='task'のみ対象。text+date+section+timeをキーにする
+        allTasks.forEach(function(t) {
+          if (t.kind !== 'task') return;
+          var key = (t.text || '') + '|' + (t.date || '') + '|' + (t.section || '') + '|' + (t.time || '');
+          if (!seen[key]) {
+            seen[key] = t;
+          } else {
+            // createdAtが古い方を残す
+            var existing = seen[key];
+            var existMs = new Date(existing.createdAt || 0).getTime();
+            var thisMs  = new Date(t.createdAt || 0).getTime();
+            if (thisMs < existMs) {
+              // こちらの方が古い → 既存を削除対象に、こちらを採用
+              toDelete.add(existing.id);
+              seen[key] = t;
+            } else {
+              // 既存の方が古い → こちらを削除対象に
+              toDelete.add(t.id);
+            }
+          }
+        });
+        if (toDelete.size > 0) {
+          var before = allTasks.length;
+          allTasks = allTasks.filter(function(t){ return !toDelete.has(t.id); });
+          saveAllTasks();
+          window._dbgLog && window._dbgLog('mig_dedup_tasks_v1 done. removed=' + (before - allTasks.length) + '件');
+        } else {
+          window._dbgLog && window._dbgLog('mig_dedup_tasks_v1 done. 重複なし');
+        }
+        localStorage.setItem(_migKey, '1');
+      } catch(e) { console.error('[mig_dedup_tasks_v1]', e); }
+    })();
     // 日付変更時：雑記帳→thoughtsに自動移動
     function moveScratchToThoughts() {
       var today = getLocalDateStr(new Date());
@@ -12399,7 +12560,7 @@ function reviveBlueprint(id) {
       'mig_ids_to_uuid_v7', 'mig_show_in_daily_to_display_scope_v1',
       'mig_category_to_calendar_v170', 'mig_death_ghost_flags_v0_24_59',
       'mig_gant_enabled_default_v0_32', 'mig_journals_to_alltasks_v1',
-      'mig_gdp_to_oku_v1', 'mig_orphan_taskids_v1', 'mig_done_completed_sync_v1',
+      'mig_gdp_to_oku_v1', 'mig_orphan_taskids_v1', 'mig_done_completed_sync_v1', 'mig_dedup_tasks_v1',
       '_importLog',
       // GDP経済システム
       'gdpPoints', 'gdpLog', 'gouLog', 'lastGouCheckDate', 'lastTaskCompletedDate',
@@ -12591,6 +12752,43 @@ function reviveBlueprint(id) {
         document.getElementById('navNotebook').classList.add('active');
         // 初回のみObserver起動（以降は自動追従）
         if (!nbSpreadMode) { nbInitSpreadObserver(); } else { nbRender(); }
+        // 初回：業と徳の定義ページを自動追加
+        if (!allSettings.flags.nbGouTokuPageAdded) {
+          allSettings.flags.nbGouTokuPageAdded = true;
+          saveAllSettings();
+          var _gtId = generateTaskId();
+          var _gtNow = new Date().toISOString();
+          var _gtPage = {
+            id: _gtId, kind: 'note',
+            title: '👹 業と徳の定義',
+            textL:
+              '【業とは】\n不作為・怠り。\nやるべきことをやらずに放置すること。\n\n' +
+              '● タスクを3日以上放置 → 業が積む\n' +
+              '● 放置が長いほど業は重くなる\n' +
+              '● 業が多いほどGDPが毎日削られる\n\n' +
+              '【業の可視化】\n🔍検索 → 👹業タブ\n' +
+              'で放置タスクを色別に確認できる\n' +
+              '🔥 14日以上（濃赤）\n' +
+              '⚠️ 7日以上（中赤）\n' +
+              '　　3日以上（薄赤）',
+            textR:
+              '【徳とは】\n具体的行動・精進努力。\nタスクを完了するたびに積み上がる。\n\n' +
+              '● タスク完了 → 徳+1\n' +
+              '● 日誌を書く → 徳+1\n' +
+              '● 月末に先月の完了件数分ボーナス\n\n' +
+              '【王国力の計算式】\n徳 × GDP ÷ (業+1)\n\n' +
+              '業が多いと王国力が下がる。\n業を祓い、徳を積め。\n\n' +
+              '【心得】\n不作為は業。\n具体的行動は徳。\n今日できることを今日やる。',
+            dateL: '', dateR: '',
+            text: '', margin: '',
+            order: 999,
+            createdAt: _gtNow, updatedAt: _gtNow
+          };
+          var _pages = nbPages();
+          _pages.push(_gtPage);
+          nbPagesSet(_pages);
+          setTimeout(function(){ nbRender(); }, 100);
+        }
       } else if (view === 'gant') {
         if (gantView) {
           gantView.style.display = 'flex';
@@ -16590,7 +16788,7 @@ window.addEventListener('afterprint', function() {
         <div id="todoResults" style="overflow-y:auto;flex:1;"></div>
       </div>
       <div id="searchPaneGou" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
-        <div style="font-size:0.78em;color:#e53935;margin-bottom:8px;">👹 未完了タスク＝業の種。完了して業を祓おう。<span id="gouTaskCount" style="margin-left:6px;font-weight:700;"></span></div>
+        <div style="font-size:0.78em;color:#e53935;margin-bottom:8px;">👹 過去の放置タスク＝業の種。完了して業を祓おう。<span id="gouTaskCount" style="margin-left:6px;font-weight:700;"></span></div>
         <div id="gouTaskResults" style="overflow-y:auto;flex:1;"></div>
       </div>
     </div>
@@ -21822,7 +22020,7 @@ function showDebugLog() {
        // テストセクション自己存在確認：ソースコード上の存在をチェック
        var _stSections = ['ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10',
          'ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20',
-         'ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32'];
+         'ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -22395,6 +22593,116 @@ function showDebugLog() {
        ok('ST-32: クリーンアップ完了');
      } catch(e) { ng('ST-32: 日次日付ナビゲーション', e.message); }
 
+     // ===== ST-33: タイムライン左時刻バー =====
+     try {
+       // DOM確認
+       var _st33Body = document.getElementById('timelineBody');
+       _st33Body ? ok('ST-33: #timelineBody DOM確認') : ng('ST-33: #timelineBody', 'DOM未存在');
+
+       // getStaleColor関数確認
+       typeof getStaleColor === 'function'
+         ? ok('ST-33: getStaleColor 存在確認')
+         : ng('ST-33: getStaleColor', '未定義');
+
+       // getStaleColor動作確認
+       if (typeof getStaleColor === 'function') {
+         var _st33Today = getLocalDateStr(new Date());
+         var _st33D3 = (function(){ var d=new Date(); d.setDate(d.getDate()-3); return getLocalDateStr(d); })();
+         var _st33D7 = (function(){ var d=new Date(); d.setDate(d.getDate()-7); return getLocalDateStr(d); })();
+         var _st33D14 = (function(){ var d=new Date(); d.setDate(d.getDate()-14); return getLocalDateStr(d); })();
+         getStaleColor(_st33Today, false) === null
+           ? ok('ST-33: getStaleColor 今日→null確認')
+           : ng('ST-33: getStaleColor 今日', '今日はnullのはず');
+         getStaleColor(_st33D3, false) === '#fff5f5'
+           ? ok('ST-33: getStaleColor 3日前→薄赤確認')
+           : ng('ST-33: getStaleColor 3日前', getStaleColor(_st33D3, false));
+         getStaleColor(_st33D7, false) === '#ffebee'
+           ? ok('ST-33: getStaleColor 7日前→中赤確認')
+           : ng('ST-33: getStaleColor 7日前', getStaleColor(_st33D7, false));
+         getStaleColor(_st33D14, false) === '#ffcdd2'
+           ? ok('ST-33: getStaleColor 14日前→濃赤確認')
+           : ng('ST-33: getStaleColor 14日前', getStaleColor(_st33D14, false));
+         getStaleColor(_st33D3, true) === null
+           ? ok('ST-33: getStaleColor 完了済み→null確認')
+           : ng('ST-33: getStaleColor 完了済み', '完了済みはnullのはず');
+       }
+
+       // tlTimeBar設定確認
+       typeof allSettings.ui.tlTimeBar !== 'undefined'
+         ? ok('ST-33: allSettings.ui.tlTimeBar 設定確認（' + allSettings.ui.tlTimeBar + '）')
+         : ng('ST-33: tlTimeBar', '設定未定義');
+
+       ok('ST-33: タイムライン左時刻バー 完了');
+     } catch(e) { ng('ST-33: タイムライン左時刻バー', e.message); }
+
+     // ===== ST-34: 業タブ・renderGouTaskList =====
+     try {
+       // DOM確認
+       var _st34GouPane = document.getElementById('searchPaneGou');
+       _st34GouPane ? ok('ST-34: #searchPaneGou DOM確認') : ng('ST-34: #searchPaneGou', 'DOM未存在');
+       var _st34GouBtn = document.getElementById('searchTabGou');
+       _st34GouBtn ? ok('ST-34: #searchTabGou DOM確認') : ng('ST-34: #searchTabGou', 'DOM未存在');
+
+       // 関数確認
+       typeof renderGouTaskList === 'function'
+         ? ok('ST-34: renderGouTaskList 存在確認')
+         : ng('ST-34: renderGouTaskList', '未定義');
+
+       // 業タスクフィルター確認（過去日付のみ）
+       if (typeof renderGouTaskList === 'function') {
+         var _st34Today = getLocalDateStr(new Date());
+         var _st34Past = (function(){ var d=new Date(); d.setDate(d.getDate()-5); return getLocalDateStr(d); })();
+         var _st34Future = (function(){ var d=new Date(); d.setDate(d.getDate()+1); return getLocalDateStr(d); })();
+         var _st34GouTasks = allTasks.filter(function(t){
+           return t.kind==='task' && !t.completed && !t.done && !t.inHeaven && t.displayScope!=='heaven'
+             && t.date && t.date < _st34Today;
+         });
+         var _st34FutureTasks = allTasks.filter(function(t){
+           return t.kind==='task' && !t.completed && !t.done && t.date && t.date > _st34Today;
+         });
+         ok('ST-34: 業タスク（過去日付のみ）= ' + _st34GouTasks.length + '件');
+         _st34FutureTasks.length >= 0
+           ? ok('ST-34: 未来タスクは業に含まれない確認（未来: ' + _st34FutureTasks.length + '件）')
+           : ng('ST-34: 未来タスクフィルター', 'エラー');
+       }
+
+       // switchSearchTab gou確認
+       typeof switchSearchTab === 'function'
+         ? ok('ST-34: switchSearchTab 存在確認')
+         : ng('ST-34: switchSearchTab', '未定義');
+
+       ok('ST-34: 業タブ 完了');
+     } catch(e) { ng('ST-34: 業タブ', e.message); }
+
+     // ===== ST-35: 重複タスク削除マイグレーション =====
+     try {
+       // フラグ確認
+       localStorage.getItem('mig_dedup_tasks_v1') === '1'
+         ? ok('ST-35: mig_dedup_tasks_v1 フラグ確認（適用済み）')
+         : ok('ST-35: mig_dedup_tasks_v1 未適用（初回起動時に実行される）');
+
+       // ID重複なし確認
+       var _st35Ids = allTasks.map(function(t){ return t.id; });
+       var _st35IdSet = new Set(_st35Ids);
+       _st35Ids.length === _st35IdSet.size
+         ? ok('ST-35: ID重複なし確認（' + _st35Ids.length + '件）')
+         : ng('ST-35: ID重複', (_st35Ids.length - _st35IdSet.size) + '件重複');
+
+       // text+date+section重複チェック
+       var _st35Keys = {};
+       var _st35Dups = 0;
+       allTasks.filter(function(t){ return t.kind==='task'; }).forEach(function(t){
+         var k = (t.text||'')+'|'+(t.date||'')+'|'+(t.section||'')+'|'+(t.time||'');
+         if (_st35Keys[k]) _st35Dups++;
+         else _st35Keys[k] = true;
+       });
+       _st35Dups === 0
+         ? ok('ST-35: タスク重複なし確認（text+date+section+time）')
+         : ng('ST-35: タスク重複', _st35Dups + '件の重複あり');
+
+       ok('ST-35: 重複タスク削除マイグレーション 完了');
+     } catch(e) { ng('ST-35: 重複タスク削除マイグレーション', e.message); }
+
      // ===== 17. Key Purify Absolute Green（最終確認・4軸検査） =====
      try {
        var _kpKeys = Object.keys(localStorage);
@@ -22441,7 +22749,7 @@ function showDebugLog() {
          : ng('KPAG③: 禁止キー検知', '廃止キーが残存: ' + _bannedFound.join(', '));
 
        // ④ 未知キー検知（白名単チェック）
-       var _allowedKeys = ['_calIdMigMap','_dbg_errors','_dbg_log','_lastScratchMoveDate','allSettings','allTasks','autoMainCalendar','calendars','craftMode','currentView','dailyScrollInit','dataVersion','deletedTaskIds','deviceId','escapeLog','extendedvaluekey','gantEnabled','gdpLog','gdpPoints','gouLog','gouPoints','journals','lastGouCheckDate','lastKingdomCodeDate','lastMonthlyBonusMonth','lastTaskCompletedDate','mainCalendarId','mig_category_to_calendar_v170','mig_death_ghost_flags_v0_24_59','mig_gant_enabled_default_v0_32','mig_gdp_to_oku_v1','mig_ids_to_uuid_v7','mig_journal_ids_to_uuid_v7','_importLog','mig_done_completed_sync_v1','mig_journals_to_alltasks_v1','mig_orphan_taskids_v1','mig_show_in_daily_to_display_scope_v1','migration_calendarId_v1','nbLastPageId','notebooks','selectedDailyDate','simpleMode','taskCompletedStreak','taskCompletedTotal','tlLastScrollTop','tokuLog','tokuPoints','weeklyScrollInit','wgLastScrollTop'];
+       var _allowedKeys = ['_calIdMigMap','_dbg_errors','_dbg_log','_lastScratchMoveDate','allSettings','allTasks','autoMainCalendar','calendars','craftMode','currentView','dailyScrollInit','dataVersion','deletedTaskIds','deviceId','escapeLog','extendedvaluekey','gantEnabled','gdpLog','gdpPoints','gouLog','gouPoints','journals','lastGouCheckDate','lastKingdomCodeDate','lastMonthlyBonusMonth','lastTaskCompletedDate','mainCalendarId','mig_category_to_calendar_v170','mig_death_ghost_flags_v0_24_59','mig_gant_enabled_default_v0_32','mig_gdp_to_oku_v1','mig_ids_to_uuid_v7','mig_journal_ids_to_uuid_v7','_importLog','mig_dedup_tasks_v1','mig_done_completed_sync_v1','mig_journals_to_alltasks_v1','mig_orphan_taskids_v1','mig_show_in_daily_to_display_scope_v1','migration_calendarId_v1','nbLastPageId','notebooks','selectedDailyDate','simpleMode','taskCompletedStreak','taskCompletedTotal','tlLastScrollTop','tokuLog','tokuPoints','weeklyScrollInit','wgLastScrollTop'];
        var _unknownKeys = _kpKeys.filter(function(k){ return _allowedKeys.indexOf(k) === -1; });
        _unknownKeys.length === 0
          ? ok('KPAG④: 未知キー検知 — 全' + _kpKeys.length + 'キー検査済・汚染ゼロ')
