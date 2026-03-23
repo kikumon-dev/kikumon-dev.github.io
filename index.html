@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.44';
+    const APP_VERSION = 'v0.39.49';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -7444,8 +7444,27 @@ function myDeckApply(idx) {
           return (i < _tlStartH || i >= _tlEndH) ? TL_ROW_H : v;
         }); saveAllSettings();
       }
-      // 時間グリッド線（独立div・ドラッグ可能）
+      // 時間グリッド線（独立div・ドラッグ可能）+ :30/:15/:45補助線
       for (var h = 0; h < 24; h++) {
+        // :30/:15/:45 補助線を背景セルに追加
+        if (h >= _tlStartH && h < _tlEndH && tlRowHeights[h] >= 45) {
+          (function(hh) {
+            var baseTop = tlTopPx(hh);
+            var rowH = tlRowHeights[hh];
+            [15, 30, 45].forEach(function(min) {
+              if (min !== 30 && rowH < 60) return;
+              if (min === 45 && rowH < 75) return;
+              var subLine = document.createElement('div');
+              var is30 = min === 30;
+              subLine.style.cssText =
+                'position:absolute;left:0;right:0;top:' + (baseTop + Math.round(min / 60 * rowH)) + 'px;' +
+                'height:1px;pointer-events:none;z-index:5;' +
+                'background:' + (is30 ? 'rgba(180,180,195,0.5)' : 'rgba(210,210,220,0.35)') + ';' +
+                (is30 ? '' : 'background:repeating-linear-gradient(90deg,rgba(200,200,215,0.3) 0,rgba(200,200,215,0.3) 4px,transparent 4px,transparent 8px);');
+              container.appendChild(subLine);
+            });
+          })(h);
+        }
         (function(hour) {
           var isMajor = (hour === 6 || hour === 12 || hour === 18);
           var isCurrent = isToday && hour === nowHour;
@@ -7460,11 +7479,11 @@ function myDeckApply(idx) {
             container.appendChild(line);
             return;
           }
-          line.style.cssText = 'position:absolute;left:0;right:0;height:' + (isMajor ? '10px' : '8px') + ';top:' + topPxInit + 'px;z-index:20;cursor:ns-resize;display:flex;align-items:center;';
-          // 実際の線（細め）
+          line.style.cssText = 'position:absolute;left:0;right:0;height:' + (isMajor ? '12px' : '10px') + ';top:' + topPxInit + 'px;z-index:20;cursor:ns-resize;display:flex;align-items:center;';
+          // 実際の線（:00は太め・濃い）
           var lineBar = document.createElement('div');
-          lineBar.style.cssText = 'position:absolute;left:0;right:0;height:' + (isMajor ? '2px' : '1px') + ';top:50%;transform:translateY(-50%);' +
-            'background:' + (isMajor ? '#d0d0d0' : '#eee') + ';transition:background 0.15s,height 0.15s;';
+          lineBar.style.cssText = 'position:absolute;left:0;right:0;height:' + (isMajor ? '2px' : '1.5px') + ';top:50%;transform:translateY(-50%);' +
+            'background:' + (isMajor ? 'rgba(160,160,175,0.7)' : 'rgba(190,190,205,0.55)') + ';transition:background 0.15s,height 0.15s;';
           // グリップ（中央）
           var grip = document.createElement('div');
           grip.style.cssText = 'position:absolute;left:50%;transform:translateX(-50%);top:50%;transform:translate(-50%,-50%);' +
@@ -7478,6 +7497,10 @@ function myDeckApply(idx) {
           label.style.cssText = 'position:absolute;left:2px;top:50%;transform:translateY(-50%);font-size:0.72em;font-weight:600;padding-right:6px;width:44px;text-align:right;' +
             'color:' + (isCurrent ? '#e65100' : '#bbb') + ';pointer-events:none;transition:font-size 0.15s,color 0.15s;';
           label.textContent = String(hour).padStart(2,'0') + ':00';
+          // 左バーが表示されるときはcontainer内ラベル非表示
+          if ((allSettings.ui.tlTimeBar || 'show') === 'show') {
+            label.style.display = 'none';
+          }
           line.appendChild(lineBar);
           line.appendChild(grip);
           line.appendChild(label);
@@ -7493,7 +7516,7 @@ function myDeckApply(idx) {
           });
           line.addEventListener('mouseleave', function() {
             if (tlDraggingLine !== line) {
-              lineBar.style.background = isMajor ? '#d0d0d0' : '#eee';
+              lineBar.style.background = isMajor ? 'rgba(160,160,175,0.7)' : 'rgba(190,190,205,0.55)';
               lineBar.style.height = isMajor ? '2px' : '1px';
               grip.style.opacity = '0';
               label.style.color = isCurrent ? '#e65100' : '#bbb';
@@ -7762,29 +7785,49 @@ function myDeckApply(idx) {
       // ===== 時刻バー列を左に追加 =====
       var _showTlTimeBar = (allSettings.ui.tlTimeBar || 'show') === 'show';
       if (_showTlTimeBar) {
+        var TL_BAR_W = 52;
         var tlTimeBarCol = document.createElement('div');
-        tlTimeBarCol.style.cssText = 'position:absolute;left:0;top:0;width:44px;pointer-events:none;';
+        tlTimeBarCol.id = 'tlTimeBarCol';
+        tlTimeBarCol.style.cssText = 'position:absolute;left:0;top:0;width:' + TL_BAR_W + 'px;pointer-events:none;box-sizing:border-box;';
         tlTimeBarCol.style.height = tlTotalHeight() + 'px';
         for (var _tbh = _tlStartH; _tbh < _tlEndH; _tbh++) {
+          var _tbRowH = tlRowHeights[_tbh];
+          if (_tbRowH <= 0) continue;
+          var _tbTopBase = tlTopPx(_tbh);
+          var _isCurHour = isToday && _tbh === nowHour;
+          // :00ラベル（グリッド線と同じtopに揃える）
           var _tbLabel = document.createElement('div');
-          var _tbTop = tlTopPx(_tbh);
-          var _tbH = tlRowHeights[_tbh];
-          if (_tbH <= 0) continue;
           _tbLabel.style.cssText =
-            'position:absolute;left:0;width:42px;top:' + _tbTop + 'px;height:' + _tbH + 'px;' +
-            'display:flex;align-items:flex-start;justify-content:flex-end;padding-right:6px;padding-top:3px;box-sizing:border-box;' +
-            'font-size:0.62em;color:' + (isToday && _tbh === nowHour ? 'rgba(244,67,54,0.8)' : 'rgba(150,150,160,0.75)') + ';' +
-            'font-family:monospace;font-weight:600;letter-spacing:0.02em;pointer-events:none;white-space:nowrap;';
+            'position:absolute;right:6px;' +
+            'top:' + (_tbTopBase - 9) + 'px;' +
+            'font-size:0.72em;font-family:monospace;font-weight:700;letter-spacing:0.03em;' +
+            'color:' + (_isCurHour ? '#e65100' : 'rgba(80,80,95,0.75)') + ';' +
+            'pointer-events:none;white-space:nowrap;line-height:1;';
           _tbLabel.textContent = String(_tbh).padStart(2,'0') + ':00';
           tlTimeBarCol.appendChild(_tbLabel);
+          // :15 :30 :45（行高45px以上のとき）
+          if (_tbRowH >= 45) {
+            [15, 30, 45].forEach(function(min) {
+              if (min !== 30 && _tbRowH < 60) return;
+              if (min === 45 && _tbRowH < 75) return;
+              var _qTop = _tbTopBase + Math.round(min / 60 * _tbRowH) - 7;
+              var _qLabel = document.createElement('div');
+              var _is30 = min === 30;
+              _qLabel.style.cssText =
+                'position:absolute;right:8px;top:' + _qTop + 'px;' +
+                'font-size:' + (_is30 ? '0.63em' : '0.55em') + ';font-family:monospace;font-weight:' + (_is30 ? '600' : '400') + ';' +
+                'color:rgba(130,130,148,' + (_is30 ? '0.7' : '0.45') + ');' +
+                'pointer-events:none;white-space:nowrap;line-height:1;';
+              _qLabel.textContent = '─' + min;
+              tlTimeBarCol.appendChild(_qLabel);
+            });
+          }
         }
-        // bodyをflex化して時刻バーとcontainerを並べる
         body.style.position = 'relative';
-        body.style.paddingLeft = '44px';
+        body.style.paddingLeft = TL_BAR_W + 'px';
         body.style.boxSizing = 'border-box';
         body.appendChild(tlTimeBarCol);
-        // containerに区切り線
-        container.style.borderLeft = '1px solid rgba(200,200,210,0.35)';
+        container.style.borderLeft = '1px solid rgba(180,180,195,0.4)';
       }
       // 時刻なしタスクセクション（下部に固定）
       if (noTimeTasks.length > 0) {
