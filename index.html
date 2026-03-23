@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.88';
+    const APP_VERSION = 'v0.39.91';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -4032,10 +4032,6 @@
       </div>
     </div>
 
-    <!-- デバッグ -->
-    <div style="text-align:center;margin-top:6px;">
-      <button onclick="showDebugLog()" style="padding:7px 18px;background:#fff;border:1.5px solid #e2e8f0;border-radius:20px;color:#cbd5e1;font-size:0.75em;cursor:pointer;font-weight:600;">🔍 デバッグパネル</button>
-    </div>
   </div>
 </div>
 <div id="settingsView"  class="settings-view" style="display: none; background:#f5f5f5; position:relative; z-index:1;">
@@ -4336,11 +4332,11 @@
           <label style="font-size:0.8em;color:#666;display:block;margin-bottom:8px;font-weight:600;">⏰ 週間ビューの表示時間帯</label>
           <div style="display:flex;align-items:center;gap:10px;">
             <select id="weeklyStartHSelect" onchange="saveWeeklyTimeRange()" style="padding:6px 10px;border:1px solid #ddd;border-radius:8px;font-size:0.88em;">
-              <option value="0">0時</option><option value="1">1時</option><option value="2">2時</option><option value="3">3時</option><option value="4">4時</option><option value="5">5時</option><option value="6">6時</option><option value="7">7時</option><option value="8">8時</option><option value="9">9時</option><option value="10">10時</option><option value="11">11時</option><option value="12">12時</option>
+              <option value="0">0時</option><option value="1">1時</option><option value="2">2時</option><option value="3">3時</option><option value="4">4時</option><option value="5">5時</option><option value="6">6時</option><option value="7">7時</option><option value="8">8時</option><option value="9">9時</option><option value="10">10時</option><option value="11">11時</option><option value="12">12時</option><option value="13">13時</option><option value="14">14時</option><option value="15">15時</option><option value="16">16時</option><option value="17">17時</option><option value="18">18時</option><option value="19">19時</option><option value="20">20時</option><option value="21">21時</option><option value="22">22時</option><option value="23">23時</option>
             </select>
             <span style="color:#888;font-size:0.9em;">〜</span>
             <select id="weeklyEndHSelect" onchange="saveWeeklyTimeRange()" style="padding:6px 10px;border:1px solid #ddd;border-radius:8px;font-size:0.88em;">
-              <option value="13">13時</option><option value="14">14時</option><option value="15">15時</option><option value="16">16時</option><option value="17">17時</option><option value="18">18時</option><option value="19">19時</option><option value="20">20時</option><option value="21">21時</option><option value="22">22時</option><option value="23">23時</option><option value="24">24時</option>
+              <option value="1">1時</option><option value="2">2時</option><option value="3">3時</option><option value="4">4時</option><option value="5">5時</option><option value="6">6時</option><option value="7">7時</option><option value="8">8時</option><option value="9">9時</option><option value="10">10時</option><option value="11">11時</option><option value="12">12時</option><option value="13">13時</option><option value="14">14時</option><option value="15">15時</option><option value="16">16時</option><option value="17">17時</option><option value="18">18時</option><option value="19">19時</option><option value="20">20時</option><option value="21">21時</option><option value="22">22時</option><option value="23">23時</option><option value="24">24時</option>
             </select>
           </div>
           <p style="margin:6px 0 0 0;font-size:0.8em;color:#888;">この時間帯だけ表示されます。寝てる時間を非表示にできます。</p>
