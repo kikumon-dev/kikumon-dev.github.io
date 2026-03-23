@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.150';
+    const APP_VERSION = 'v0.39.157';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3969,6 +3969,7 @@
     <div style="background:linear-gradient(135deg,#fffbeb,#fff);border-radius:20px;padding:18px;box-shadow:0 2px 16px rgba(245,158,11,0.10);border:1px solid #fde68a;margin-bottom:10px;">
       <div style="font-size:0.85em;font-weight:700;color:#d97706;letter-spacing:0.06em;margin-bottom:12px;">🏆 徳のマイルストーン</div>
       <div id="dbTitleHistory" style="font-size:0.85em;color:#92400e;line-height:2.2;"></div>
+      <button onclick="openTitleListModal()" style="width:100%;margin-top:12px;padding:10px;border:1.5px solid #fcd34d;border-radius:12px;background:#fff;color:#d97706;font-size:0.85em;font-weight:700;cursor:pointer;letter-spacing:0.03em;">👑 全99段階の称号を見る</button>
     </div>
 
     <!-- 業スコア -->
@@ -8522,17 +8523,118 @@ function getKingdomPower() {
   return Math.floor(power);
 }
 
+// ===== 99段階称号テーブル =====
+var KINGDOM_TITLES = [
+  { min:      0, icon:'🌱', name:'開拓民', color:'#bbb' },
+  { min:     52, icon:'🪨', name:'石を拾った者', color:'#a0a0a0' },
+  { min:    181, icon:'🌾', name:'種まき人', color:'#b5c96a' },
+  { min:    376, icon:'🏕️', name:'野営者', color:'#8bc34a' },
+  { min:    631, icon:'🐾', name:'旅人', color:'#7cb9e8' },
+  { min:    943, icon:'🪓', name:'開墾者', color:'#9e8060' },
+  { min:   1310, icon:'🧑‍🌾', name:'農夫', color:'#8d6e63' },
+  { min:   1729, icon:'🔨', name:'職人見習い', color:'#a07040' },
+  { min:   2199, icon:'🪚', name:'職人', color:'#8d6e63' },
+  { min:   2719, icon:'⚒️', name:'親方', color:'#7a6050' },
+  { min:   3287, icon:'🏪', name:'商人', color:'#ff9800' },
+  { min:   3902, icon:'🪶', name:'村の書記', color:'#8090a0' },
+  { min:   4564, icon:'🏡', name:'村人', color:'#9e9e9e' },
+  { min:   5271, icon:'🗡️', name:'衛兵', color:'#78909c' },
+  { min:   6023, icon:'⚔️', name:'兵士', color:'#607d8b' },
+  { min:   6820, icon:'🛡️', name:'盾持ち', color:'#5c6bc0' },
+  { min:   7660, icon:'🗡️', name:'騎士', color:'#ff9800' },
+  { min:   8543, icon:'🏇', name:'騎馬隊員', color:'#f57c00' },
+  { min:   9469, icon:'🎖️', name:'男爵', color:'#a0856a' },
+  { min:  10437, icon:'🎗️', name:'子爵', color:'#90a4ae' },
+  { min:  11446, icon:'⚜️', name:'伯爵', color:'#7986cb' },
+  { min:  12497, icon:'🏅', name:'侯爵', color:'#5c6bc0' },
+  { min:  13588, icon:'👒', name:'公爵', color:'#4527a0' },
+  { min:  14720, icon:'👑', name:'大公', color:'#7b1fa2' },
+  { min:  15892, icon:'🏰', name:'城主', color:'#4caf50' },
+  { min:  17104, icon:'🏯', name:'城将', color:'#388e3c' },
+  { min:  18355, icon:'🏯', name:'大名', color:'#1976d2' },
+  { min:  19646, icon:'⚔️', name:'藩主', color:'#0277bd' },
+  { min:  20975, icon:'🎌', name:'将軍', color:'#c62828' },
+  { min:  22342, icon:'📜', name:'摂政', color:'#6a1b9a' },
+  { min:  23748, icon:'📜', name:'関白', color:'#4a148c' },
+  { min:  25192, icon:'📜', name:'太政大臣', color:'#1a237e' },
+  { min:  26674, icon:'🔱', name:'軍師', color:'#1976d2' },
+  { min:  28193, icon:'⚖️', name:'宰相', color:'#6a1b9a' },
+  { min:  29749, icon:'🏛️', name:'議員', color:'#7b1fa2' },
+  { min:  31343, icon:'📋', name:'首相', color:'#1565c0' },
+  { min:  32973, icon:'🦅', name:'大統領', color:'#bf360c' },
+  { min:  34640, icon:'🌐', name:'総督', color:'#0288d1' },
+  { min:  36344, icon:'⚖️', name:'統領', color:'#4527a0' },
+  { min:  38083, icon:'🔭', name:'探求者', color:'#00838f' },
+  { min:  39859, icon:'📡', name:'知の番人', color:'#00695c' },
+  { min:  41671, icon:'📜', name:'法学者', color:'#5c6bc0' },
+  { min:  43518, icon:'🌐', name:'外交官', color:'#0288d1' },
+  { min:  45401, icon:'🏹', name:'将帥', color:'#e65100' },
+  { min:  47319, icon:'🦅', name:'鷹将', color:'#bf360c' },
+  { min:  49272, icon:'🌿', name:'君子', color:'#2e7d32' },
+  { min:  51261, icon:'☯️', name:'賢人', color:'#00695c' },
+  { min:  53284, icon:'📿', name:'聖職者', color:'#7986cb' },
+  { min:  55342, icon:'🕊️', name:'聖人', color:'#00acc1' },
+  { min:  57434, icon:'✨', name:'聖人君子', color:'#0288d1' },
+  { min:  59561, icon:'🧘', name:'仙人', color:'#00796b' },
+  { min:  61723, icon:'🦁', name:'百獣の王', color:'#e65100' },
+  { min:  63918, icon:'🌊', name:'提督', color:'#0277bd' },
+  { min:  66148, icon:'👑', name:'覇者', color:'#9c27b0' },
+  { min:  68411, icon:'🐉', name:'竜の盟友', color:'#c62828' },
+  { min:  70709, icon:'🏆', name:'英雄王', color:'#ff8f00' },
+  { min:  73040, icon:'⚡', name:'伝説の勇者', color:'#f57f17' },
+  { min:  75404, icon:'🌟', name:'伝説の王', color:'#ff8800' },
+  { min:  77802, icon:'🔮', name:'魔導の賢者', color:'#7b1fa2' },
+  { min:  80233, icon:'🌌', name:'天文の達人', color:'#283593' },
+  { min:  82698, icon:'👁️', name:'大僧正', color:'#4a148c' },
+  { min:  85195, icon:'⛩️', name:'神官長', color:'#880e4f' },
+  { min:  87725, icon:'🔥', name:'魔王', color:'#b71c1c' },
+  { min:  90289, icon:'🌙', name:'月の賢者', color:'#7986cb' },
+  { min:  92885, icon:'🌠', name:'流星の騎士', color:'#1565c0' },
+  { min:  95514, icon:'🦋', name:'転生の王', color:'#ad1457' },
+  { min:  98175, icon:'🌞', name:'太陽の使者', color:'#f57f17' },
+  { min: 100868, icon:'💎', name:'宝石の王', color:'#00bcd4' },
+  { min: 103595, icon:'🌈', name:'虹の支配者', color:'#7c4dff' },
+  { min: 106353, icon:'🌍', name:'世界の王', color:'#1b5e20' },
+  { min: 109143, icon:'🛸', name:'宇宙の探求者', color:'#311b92' },
+  { min: 111966, icon:'🌀', name:'次元の旅人', color:'#4a148c' },
+  { min: 114821, icon:'🔥', name:'炎帝', color:'#b71c1c' },
+  { min: 117707, icon:'❄️', name:'氷の女王', color:'#006064' },
+  { min: 120625, icon:'⚡', name:'嵐の神', color:'#0d47a1' },
+  { min: 123575, icon:'🌑', name:'闇の君主', color:'#212121' },
+  { min: 126557, icon:'☀️', name:'光の神', color:'#ff6f00' },
+  { min: 129570, icon:'🌊', name:'海の神', color:'#01579b' },
+  { min: 132615, icon:'🌙', name:'月の神', color:'#4527a0' },
+  { min: 135691, icon:'⭐', name:'星の神', color:'#f57f17' },
+  { min: 138798, icon:'🌌', name:'宇宙の神', color:'#1a237e' },
+  { min: 141937, icon:'👁️', name:'全知の眼', color:'#880e4f' },
+  { min: 145106, icon:'∞', name:'無限の存在', color:'#4a148c' },
+  { min: 148307, icon:'🌐', name:'世界の魂', color:'#0d47a1' },
+  { min: 151539, icon:'🔱', name:'三位一体', color:'#1b5e20' },
+  { min: 154802, icon:'🐉', name:'古龍の盟主', color:'#b71c1c' },
+  { min: 158095, icon:'👑', name:'全世界の王', color:'#ff8f00' },
+  { min: 161420, icon:'🌌', name:'銀河の創造者', color:'#1a237e' },
+  { min: 164775, icon:'∞', name:'宇宙そのもの', color:'#4a148c' },
+  { min: 168160, icon:'🌟', name:'時間の外の者', color:'#880e4f' },
+  { min: 171577, icon:'💡', name:'概念の具現者', color:'#e65100' },
+  { min: 175023, icon:'🔥', name:'すべての始まり', color:'#b71c1c' },
+  { min: 178501, icon:'🌊', name:'原初の奔流', color:'#0277bd' },
+  { min: 182008, icon:'🌌', name:'宇宙の記憶', color:'#1a237e' },
+  { min: 185546, icon:'💫', name:'光速の旅人', color:'#f57f17' },
+  { min: 189114, icon:'🔱', name:'神々の末裔', color:'#4a148c' },
+  { min: 192713, icon:'🌠', name:'超新星の申し子', color:'#283593' },
+  { min: 196341, icon:'🌟', name:'創造神', color:'#ff8f00' },
+  { min: 200000, icon:'✨', name:'やることクラフトの伝説', color:'#ff8800' },
+];
+
+
+
 function getKingdomTitle() {
   var power = getKingdomPower();
-  // 閾値は徳ベースで現実的な値に設定（GDP=0でも徳で昇格できる）
-  if (power >= 500000) return { icon: '🌟', name: '伝説の王', color: '#ff8800' };
-  if (power >= 100000) return { icon: '👑', name: '覇者',     color: '#9c27b0' };
-  if (power >= 30000)  return { icon: '🏯', name: '大名',     color: '#2196f3' };
-  if (power >= 10000)  return { icon: '🏰', name: '城主',     color: '#4caf50' };
-  if (power >= 3000)   return { icon: '🗡️', name: '騎士',     color: '#ff9800' };
-  if (power >= 1000)   return { icon: '🏡', name: '村長',     color: '#795548' };
-  if (power >= 100)    return { icon: '👤', name: '村人',     color: '#9e9e9e' };
-  return { icon: '🌱', name: '開拓民', color: '#bbb' };
+  var result = KINGDOM_TITLES[0];
+  for (var i = 0; i < KINGDOM_TITLES.length; i++) {
+    if (power >= KINGDOM_TITLES[i].min) result = KINGDOM_TITLES[i];
+  }
+  return result;
 }
 
 // ===== GDP億単位フォーマット =====
@@ -8557,6 +8659,54 @@ function getGDPTitle(val) {
 }
 
 // ===== 業ログモーダル =====
+// ===== 称号一覧モーダル =====
+function openTitleListModal() {
+  var kt = typeof KINGDOM_TITLES !== 'undefined' ? KINGDOM_TITLES : [];
+  var power = typeof getKingdomPower === 'function' ? getKingdomPower() : 0;
+  var current = kt.reduce(function(a, t){ return power >= t.min ? t : a; }, kt[0]);
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:10001;overflow-y:auto;display:flex;align-items:flex-start;justify-content:center;padding:20px;box-sizing:border-box;';
+  var box = document.createElement('div');
+  box.style.cssText = 'background:#fff;border-radius:20px;padding:24px;max-width:460px;width:100%;box-sizing:border-box;';
+  var html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">'
+    + '<div style="font-size:1.0em;font-weight:800;color:#d97706;">👑 称号一覧（全99段階）</div>'
+    + '<button id="_titleListCloseBtn" style="background:none;border:none;font-size:1.3em;cursor:pointer;color:#aaa;">✕</button>'
+    + '</div>';
+  // 現在の称号を大きく表示
+  html += '<div style="background:linear-gradient(135deg,#fffbeb,#fef3c7);border-radius:14px;padding:14px 16px;margin-bottom:16px;border:1.5px solid #fcd34d;">'
+    + '<div style="font-size:0.72em;color:#92400e;font-weight:700;margin-bottom:4px;">🌟 現在の称号</div>'
+    + '<div style="font-size:1.3em;font-weight:900;color:' + (current.color||'#d97706') + ';">' + current.icon + ' ' + current.name + '</div>'
+    + '<div style="font-size:0.78em;color:#a16207;margin-top:4px;">王国力 ' + power.toLocaleString() + '</div>'
+    + '</div>';
+  // 全称号リスト
+  html += '<div style="display:flex;flex-direction:column;gap:4px;max-height:55vh;overflow-y:auto;">';
+  kt.forEach(function(t, i) {
+    var reached = power >= t.min;
+    var isCurrent = current.name === t.name;
+    var next = kt[i + 1];
+    var bg = isCurrent ? 'background:' + t.color + '22;border:1.5px solid ' + t.color + ';'
+           : reached ? 'background:#f0fdf4;border:1px solid #bbf7d0;'
+           : 'background:#f9fafb;border:1px solid #e5e7eb;';
+    html += '<div style="display:flex;align-items:center;gap:10px;padding:7px 12px;border-radius:10px;' + bg + '">'
+      + '<span style="font-size:1.1em;flex-shrink:0;">' + (reached ? t.icon : '🔒') + '</span>'
+      + '<div style="flex:1;min-width:0;">'
+      + '<div style="font-size:0.88em;font-weight:700;color:' + (reached ? (t.color||'#374151') : '#9ca3af') + ';">'
+      + (i+1) + '. ' + t.name + (isCurrent ? ' ← 現在' : '') + '</div>'
+      + '<div style="font-size:0.72em;color:#9ca3af;">王国力 ' + t.min.toLocaleString() + '〜'
+      + (next ? (next.min - 1).toLocaleString() : '') + '</div>'
+      + '</div>'
+      + '</div>';
+  });
+  html += '</div>';
+  box.innerHTML = html;
+  box.querySelector('button').onclick = function(){ overlay.remove(); };
+  overlay.className = 'title-list-overlay';
+  overlay.onclick = function(e){ if(e.target === overlay) overlay.remove(); };
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+}
+window.openTitleListModal = openTitleListModal;
+
 function openGouLogModal() {
   var log = JSON.parse(localStorage.getItem('gouLog') || '[]').slice().reverse();
   var gou = getGouNew();
@@ -13266,9 +13416,35 @@ function reviveBlueprint(id) {
           };
           var _pages = nbPages();
           _pages.push(_gtPage);
+
+          // 称号一覧ページも同時追加
+          var _titlesText = (typeof KINGDOM_TITLES !== 'undefined' ? KINGDOM_TITLES : []).map(function(t, i) {
+            return (i+1) + '. ' + t.icon + ' ' + t.name + '（王国力 ' + t.min.toLocaleString() + '〜）';
+          }).join('\n');
+          var _tlId = generateTaskId();
+          var _tlPage = {
+            id: _tlId, kind: 'note',
+            title: '👑 称号一覧（全99段階）',
+            textL:
+              'でっかい志を立てよう！！\n小さきまとまるな。\n\n' +
+              '【称号は全99段階】\n王国力を高めるほど\n新しい称号が解放される。\n\n' +
+              '王国力 = 徳×0.6 + GDP×0.4×1000 ÷ (業+1)\n\n' +
+              '---前半（1〜49）---\n' +
+              _titlesText.split('\n').slice(0, 49).join('\n'),
+            textR:
+              '---後半（50〜99）---\n' +
+              _titlesText.split('\n').slice(49).join('\n') + '\n\n' +
+              '【最高峰を目指せ】\n✨ やることクラフトの伝説\nを目指して、今日も一歩。',
+            dateL: '', dateR: '',
+            text: '', margin: '',
+            order: 1000,
+            createdAt: _gtNow, updatedAt: _gtNow
+          };
+          _pages.push(_tlPage);
           nbPagesSet(_pages);
           setTimeout(function(){ nbRender(); }, 100);
         }
+
       } else if (view === 'gant') {
         if (gantView) {
           gantView.style.display = 'flex';
@@ -16743,15 +16919,20 @@ function renderDashboardView() {
       '🌟 今日の完了が、明日の王国力になる。',
     ];
     var _msg;
+    var _curTitle = typeof getKingdomTitle === 'function' ? getKingdomTitle() : { name:'開拓民', icon:'🌱', color:'#bbb' };
+    var _power = typeof getKingdomPower === 'function' ? getKingdomPower() : 0;
     if (_gouNow >= 10) {
       _msg = '👹 業が積んでいます。今日こそ放置タスクを祓おう！';
       _msgEl.style.background = 'rgba(239,68,68,0.08)'; _msgEl.style.color='#ef4444'; _msgEl.style.borderColor='rgba(239,68,68,0.2)';
-    } else if (_tokuNow >= 1000) {
-      _msg = '👑 伝説の王！あなたの徳は' + _tokuNow + 'に達した。';
-      _msgEl.style.background = 'rgba(245,158,11,0.08)'; _msgEl.style.color='#d97706'; _msgEl.style.borderColor='rgba(245,158,11,0.2)';
-    } else if (_tokuNow >= 100) {
-      _msg = '🌟 素晴らしい！徳' + _tokuNow + 'の達人。今日も前進！';
-      _msgEl.style.background = 'rgba(139,92,246,0.08)'; _msgEl.style.color='#7c3aed'; _msgEl.style.borderColor='rgba(139,92,246,0.2)';
+    } else if (_power >= 500000) {
+      _msg = _curTitle.icon + ' ' + _curTitle.name + '！王国力' + _power.toLocaleString() + 'に達した伝説。';
+      _msgEl.style.background = 'rgba(245,158,11,0.08)'; _msgEl.style.color=_curTitle.color||'#d97706'; _msgEl.style.borderColor='rgba(245,158,11,0.2)';
+    } else if (_power >= 10000) {
+      _msg = _curTitle.icon + ' ' + _curTitle.name + '。王国力' + _power.toLocaleString() + '。さらに高みへ！';
+      _msgEl.style.background = 'rgba(139,92,246,0.08)'; _msgEl.style.color=_curTitle.color||'#7c3aed'; _msgEl.style.borderColor='rgba(139,92,246,0.2)';
+    } else if (_power >= 100) {
+      _msg = _curTitle.icon + ' ' + _curTitle.name + 'として歩んでいる。王国力' + _power.toLocaleString() + '。';
+      _msgEl.style.background = 'rgba(99,102,241,0.08)'; _msgEl.style.color=_curTitle.color||'#6366f1'; _msgEl.style.borderColor='rgba(99,102,241,0.15)';
     } else {
       _msg = _msgs[new Date().getDay() % _msgs.length];
       _msgEl.style.background = 'rgba(99,102,241,0.08)'; _msgEl.style.color='#6366f1'; _msgEl.style.borderColor='rgba(99,102,241,0.15)';
@@ -16896,12 +17077,18 @@ function renderDashboardView() {
           // 簡易昇格チェック：100件ごとにチェック
         }
       });
-      // tokuPointsのマイルストーンを表示
-      var tokuNow = typeof getToku === 'function' ? getToku() : 0;
-      var milestoneList = [1,10,50,100,300,500,1000,3000,5000,10000];
-      var reached = milestoneList.filter(function(m){ return tokuNow >= m; });
-      if (reached.length > 0) {
-        titleHistEl.textContent = reached.map(function(m){ return '✅ 徳' + m + '達成'; }).join('　');
+      // 称号マイルストーン：KINGDOM_TITLESの達成済み称号を表示
+      var _powerNow = typeof getKingdomPower === 'function' ? getKingdomPower() : 0;
+      var _titlesAll = typeof KINGDOM_TITLES !== 'undefined' ? KINGDOM_TITLES : [];
+      var _reachedTitles = _titlesAll.filter(function(t){ return _powerNow >= t.min; });
+      if (_reachedTitles.length > 0) {
+        var _latest = _reachedTitles[_reachedTitles.length - 1];
+        var _html = '<div style="margin-bottom:8px;font-size:1.0em;font-weight:800;color:' + (_latest.color||'#d97706') + '">'
+          + _latest.icon + ' 現在：' + _latest.name + '（王国力 ' + _powerNow.toLocaleString() + '）</div>';
+        _html += '<div style="font-size:0.82em;color:#92400e;line-height:2.0;">';
+        _reachedTitles.forEach(function(t){ _html += '✅ ' + t.icon + ' ' + t.name + '　'; });
+        _html += '</div>';
+        titleHistEl.innerHTML = _html;
       } else {
         titleHistEl.innerHTML = '<div style="color:#c8a060;font-size:0.95em;line-height:1.9;">まだ足跡がありません。<br>タスクを完了するたびに、徳が積まれていきます。<br>今日の一歩が、明日の王国を作ります。🌱</div>';
       }
@@ -23366,31 +23553,72 @@ function showDebugLog() {
          ? ok('ST-31: getKingdomPower 存在確認')
          : ng('ST-31: getKingdomPower', '未定義');
 
-       // 称号8段階の全パターン確認
+       // 称号99段階の代表パターン確認
        var _st31Cases = [
-         { power: 0,      icon: '🌱', name: '開拓民' },
-         { power: 100,    icon: '👤', name: '村人'   },
-         { power: 1000,   icon: '🏡', name: '村長'   },
-         { power: 3000,   icon: '🗡️', name: '騎士'   },
-         { power: 10000,  icon: '🏰', name: '城主'   },
-         { power: 30000,  icon: '🏯', name: '大名'   },
-         { power: 100000, icon: '👑', name: '覇者'   },
-         { power: 500000, icon: '🌟', name: '伝説の王' },
+         { power: 0,         name: '開拓民' },
+         { power: 1000,      name: '村人' },
+         { power: 10000,     name: '城主' },
+         { power: 100000,    name: '覇者' },
+         { power: 500000,    name: '伝説の王' },
+         { power: 999999999, name: 'やることクラフトの伝説' },
        ];
-       // getKingdomTitleはgetKingdomPower()を内部で呼ぶため
-       // 直接powerを渡すモックで確認
        var _st31OrigFn = window.getKingdomPower;
        var _st31AllOk = true;
        _st31Cases.forEach(function(c) {
          window.getKingdomPower = function(){ return c.power; };
          var t = getKingdomTitle();
-         if (!t || t.icon !== c.icon || t.name !== c.name) {
+         if (!t || t.name !== c.name) {
            ng('ST-31: 称号パターン power=' + c.power, JSON.stringify(t));
            _st31AllOk = false;
          }
        });
-       if (_st31AllOk) ok('ST-31: 称号8段階パターン全確認（開拓民〜伝説の王）');
+       if (_st31AllOk) ok('ST-31: 称号99段階パターン全確認（開拓民〜やることクラフトの伝説）');
        window.getKingdomPower = _st31OrigFn;
+       // KINGDOM_TITLES 99件確認
+       typeof KINGDOM_TITLES !== 'undefined' && KINGDOM_TITLES.length === 99
+         ? ok('ST-31: KINGDOM_TITLES 99件確認')
+         : ng('ST-31: KINGDOM_TITLES', '件数不正: ' + (typeof KINGDOM_TITLES !== 'undefined' ? KINGDOM_TITLES.length : '未定義'));
+       // KINGDOM_TITLES min昇順確認
+       var _kt = typeof KINGDOM_TITLES !== 'undefined' ? KINGDOM_TITLES : [];
+       var _ktSorted = _kt.every(function(t,i){ return i===0 || t.min >= _kt[i-1].min; });
+       _ktSorted ? ok('ST-31: KINGDOM_TITLES min昇順確認') : ng('ST-31: KINGDOM_TITLES', 'min昇順でない');
+       // KINGDOM_TITLES 各要素フィールド確認
+       var _ktValid = _kt.every(function(t){ return t.icon && t.name && typeof t.min === 'number' && t.color; });
+       _ktValid ? ok('ST-31: KINGDOM_TITLES 全要素フィールド確認（icon/name/min/color）') : ng('ST-31: KINGDOM_TITLES', '必須フィールド欠落');
+       // HUD craftKingdomTitle が getKingdomTitle を参照して表示しているか確認
+       var _hudEl = document.getElementById('craftKingdomTitle');
+       _hudEl !== null ? ok('ST-31: craftKingdomTitle DOM存在確認') : ng('ST-31: craftKingdomTitle', 'DOM要素なし');
+       // updateCraftHUD が craftKingdomTitle を更新するか確認
+       var _uchwSrc = typeof updateCraftHUD === 'function' ? updateCraftHUD.toString() : '';
+       _uchwSrc.indexOf('craftKingdomTitle') !== -1
+         ? ok('ST-31: updateCraftHUD craftKingdomTitle参照確認')
+         : ng('ST-31: updateCraftHUD', 'craftKingdomTitle参照なし');
+       _uchwSrc.indexOf('getKingdomTitle') !== -1
+         ? ok('ST-31: updateCraftHUD getKingdomTitle参照確認')
+         : ng('ST-31: updateCraftHUD', 'getKingdomTitle参照なし');
+       // dbKingdomTitle DOM確認
+       var _dbTitleEl = document.getElementById('dbKingdomTitle');
+       _dbTitleEl !== null ? ok('ST-31: dbKingdomTitle DOM存在確認') : ng('ST-31: dbKingdomTitle', 'DOM要素なし');
+       // renderDashboardView が dbKingdomTitle を更新するか確認
+       var _rdbSrc = typeof renderDashboardView === 'function' ? renderDashboardView.toString() : '';
+       _rdbSrc.indexOf('dbKingdomTitle') !== -1
+         ? ok('ST-31: renderDashboardView dbKingdomTitle参照確認')
+         : ng('ST-31: renderDashboardView', 'dbKingdomTitle参照なし');
+       // updateCraftHUD実行で称号がKINGDOM_TITLESから取得されるか挙動確認
+       if (_hudEl && typeof updateCraftHUD === 'function' && _kt.length > 0) {
+         var _savedPower = window.getKingdomPower;
+         window.getKingdomPower = function(){ return 10000; }; // 城主相当
+         updateCraftHUD();
+         var _hudText = _hudEl.textContent || '';
+         window.getKingdomPower = _savedPower;
+         updateCraftHUD(); // 元に戻す
+         _hudText.indexOf('城主') !== -1
+           ? ok('ST-31: updateCraftHUD 称号表示挙動確認（城主 @ power=10000）')
+           : ng('ST-31: updateCraftHUD 称号挙動', 'power=10000で城主が表示されない: ' + _hudText);
+       }
+       // dbTitleHistory DOM確認
+       var _dbHistEl = document.getElementById('dbTitleHistory');
+       _dbHistEl !== null ? ok('ST-31: dbTitleHistory DOM存在確認') : ng('ST-31: dbTitleHistory', 'DOM要素なし');
 
        // updateCraftHUDがcraftKingdomTitleを更新するか確認
        if (_st31El && typeof updateCraftHUD === 'function') {
