@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.104';
+    const APP_VERSION = 'v0.39.106';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -25475,28 +25475,46 @@ document.addEventListener('DOMContentLoaded', function() {
       if (!area) return;
       const journals = loadJournals();
       if (journals.length === 0) {
-        area.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--ink-faint);font-family:serif;"><div style="font-size:2em;margin-bottom:16px;opacity:0.4;">📖</div><div style="font-size:0.85em;line-height:2;letter-spacing:0.05em;">まだ日誌がありません。<br>左上の「記す」から始めましょう。</div></div>';
+        area.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--ink-faint);font-family:serif;"><div style="font-size:2.2em;margin-bottom:16px;opacity:0.35;">📖</div><div style="font-size:0.85em;line-height:2.2;letter-spacing:0.1em;">まだ日誌がありません。<br>左上の「記す」から始めましょう。</div></div>';
         return;
       }
       const MOOD_E = ['','😞','😐','🙂','😊','🌟'];
       const COND_E = ['','🤒','😴','😐','💪','⚡'];
-      area.innerHTML = '<div style="max-width:560px;margin:0 auto;">'
-        + '<div style="font-size:0.72em;color:var(--ink-light);margin:12px 0 8px 2px;font-weight:400;letter-spacing:0.08em;font-family:serif;">全 ' + journals.length + ' 件</div>'
+      const WEEKDAY = ['日','月','火','水','木','金','土'];
+      area.innerHTML = '<div style="max-width:560px;margin:0 auto;padding-bottom:24px;">'
+        + '<div style="font-size:0.68em;color:var(--ink-faint);margin:8px 0 16px 4px;font-family:serif;letter-spacing:0.12em;">全 ' + journals.length + ' 件</div>'
         + journals.map(function(j) {
-          const preview = (j.text || '').replace(/\n/g,' ').slice(0,60) + ((j.text||'').length > 60 ? '…' : '');
           const _thoughts = getThoughts(j.id);
-          const _tBadge = _thoughts.length > 0 ? '<span style="font-size:0.65em;background:rgba(74,96,128,0.08);color:var(--washi-blue);border:1px solid rgba(74,96,128,0.2);border-radius:3px;padding:1px 6px;margin-left:6px;font-family:sans-serif;">💭 ' + _thoughts.length + '</span>' : '';
           const _dp = j.date.split('-');
-          const _dateDisp = parseInt(_dp[0]) + '年' + parseInt(_dp[1]) + '月' + parseInt(_dp[2]) + '日';
-          return '<div class="jnl-card" onclick="openJournalDetail(\'' + j.id + '\')"'  
-            + ' style="background:#ffffff;border:none;border-bottom:1px solid rgba(200,190,175,0.7);padding:14px 16px 12px;margin-bottom:0;cursor:pointer;position:relative;overflow:hidden;">'
-            + ''
-            + '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;padding-left:10px;">'
-            + '<div style="font-family:serif;font-size:0.88em;font-weight:600;color:var(--ink);letter-spacing:0.05em;">' + _dateDisp + _tBadge + '</div>'
-            + '<div style="display:flex;gap:3px;font-size:0.95em;opacity:0.8;">'
-            + (j.weather || '') + (j.mood ? MOOD_E[j.mood] : '') + (j.condition ? COND_E[j.condition] : '')
-            + '</div></div>'
-            + '<div style="font-size:0.81em;color:var(--ink-mid);line-height:1.75;padding-left:10px;font-family:serif;">' + (preview || '<span style="color:var(--ink-faint);">今日考えたこと ' + (_thoughts.length > 0 ? _thoughts.length + '件' : '') + '</span>') + '</div>'
+          const _wday = WEEKDAY[new Date(j.date.replace(/-/g,'/')).getDay()];
+          const _monthDay = parseInt(_dp[1]) + '月' + parseInt(_dp[2]) + '日';
+          const _year = parseInt(_dp[0]) + '年';
+          const preview = (j.text || '').replace(/\n/g,' ').slice(0,55) + ((j.text||'').length > 55 ? '…' : '');
+          const _hasMeta = j.weather || j.mood || j.condition;
+          const _metaHtml = _hasMeta
+            ? '<div style="font-size:0.95em;opacity:0.75;">' + (j.weather||'') + (j.mood ? MOOD_E[j.mood] : '') + (j.condition ? COND_E[j.condition] : '') + '</div>'
+            : '';
+          const _thoughtBadge = _thoughts.length > 0
+            ? '<span style="font-size:0.62em;background:rgba(74,96,128,0.07);color:var(--washi-blue);border:1px solid rgba(74,96,128,0.18);border-radius:3px;padding:1px 7px;margin-left:7px;font-family:sans-serif;vertical-align:middle;">💭 ' + _thoughts.length + '</span>'
+            : '';
+          return '<div class="jnl-card" onclick="openJournalDetail(\'' + j.id + '\')" style="display:flex;align-items:stretch;background:linear-gradient(135deg,#faf8f3 0%,#f5f1ea 100%);border:none;border-bottom:1px solid rgba(180,165,140,0.4);padding:0;margin-bottom:0;cursor:pointer;position:relative;overflow:hidden;">'
+            // 左側：日付縦並び
+            + '<div style="width:52px;flex-shrink:0;background:rgba(44,36,22,0.035);border-right:1px solid rgba(180,165,140,0.35);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 0;gap:2px;">'
+            + '<div style="font-size:0.58em;color:var(--ink-faint);font-family:serif;letter-spacing:0.05em;">' + _year + '</div>'
+            + '<div style="font-size:0.88em;font-weight:700;color:var(--ink);font-family:\'Noto Serif JP\',serif;letter-spacing:0.03em;">' + parseInt(_dp[1]) + '/' + parseInt(_dp[2]) + '</div>'
+            + '<div style="font-size:0.68em;color:var(--ink-light);font-family:serif;">(' + _wday + ')</div>'
+            + (_hasMeta ? '<div style="font-size:0.85em;margin-top:4px;opacity:0.7;">' + (j.weather||'') + '</div>' : '')
+            + '</div>'
+            // 右側：本文・バッジ
+            + '<div style="flex:1;padding:13px 14px 12px;min-width:0;">'
+            + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">'
+            + '<div style="font-size:0.78em;font-weight:600;color:var(--ink);font-family:serif;letter-spacing:0.05em;">' + _monthDay + '(' + _wday + ')' + _thoughtBadge + '</div>'
+            + (j.mood || j.condition ? '<div style="font-size:0.88em;opacity:0.72;">' + (j.mood ? MOOD_E[j.mood] : '') + (j.condition ? COND_E[j.condition] : '') + '</div>' : '')
+            + '</div>'
+            + '<div style="font-size:0.8em;color:var(--ink-mid);line-height:1.75;font-family:\'Noto Serif JP\',serif;">'
+            + (preview || '<span style="color:var(--ink-faint);font-style:italic;">今日考えたこと ' + (_thoughts.length > 0 ? _thoughts.length + '件' : '') + '</span>')
+            + '</div>'
+            + '</div>'
             + '</div>';
         }).join('')
         + '</div>';
@@ -25507,18 +25525,18 @@ document.addEventListener('DOMContentLoaded', function() {
       if (!j) return;
       const MOOD_E = ['','😞','😐','🙂','😊','🌟'];
       const COND_E = ['','🤒','😴','😐','💪','⚡'];
-      // モーダル表示
+      const WEEKDAY = ['日','月','火','水','木','金','土'];
       let modal = document.getElementById('journalDetailModal');
       if (!modal) {
         modal = document.createElement('div');
         modal.id = 'journalDetailModal';
-        modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;';
-        modal.innerHTML = '<div style="background:#fff;border-radius:12px;width:92%;max-width:480px;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,0.12);border:1px solid #efefef;">'
-          + '<div style="overflow-y:auto;padding:24px;flex:1;" id="journalDetailBody"></div>'
-          + '<div style="display:flex;gap:8px;padding:12px 20px 18px;border-top:1px solid #f0f0f0;background:#fff;flex-shrink:0;">'
-          + '<button onclick="editJournal(window._currentJournalId)" style="flex:1;padding:10px;background:#262626;color:#fff;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;">編集</button>'
-          + '<button onclick="deleteJournal(window._currentJournalId)" style="padding:10px 14px;background:#fff;border:1px solid #ff3b30;color:#ff3b30;border-radius:8px;font-size:0.9em;cursor:pointer;">削除</button>'
-          + '<button onclick="document.getElementById(\'journalDetailModal\').style.display=\'none\'" style="padding:10px 14px;background:#f5f5f5;border:none;color:#555;border-radius:8px;font-size:0.9em;cursor:pointer;">閉じる</button>'
+        modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(44,36,22,0.45);z-index:1000;align-items:center;justify-content:center;';
+        modal.innerHTML = '<div style="background:linear-gradient(160deg,#faf8f3 0%,#f2ede3 100%);border-radius:16px;width:92%;max-width:480px;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 12px 48px rgba(44,36,22,0.18),0 2px 8px rgba(44,36,22,0.1);border:1px solid rgba(180,165,140,0.4);">'
+          + '<div style="overflow-y:auto;padding:0;flex:1;" id="journalDetailBody"></div>'
+          + '<div style="display:flex;gap:8px;padding:12px 18px 18px;border-top:1px solid rgba(180,165,140,0.35);background:rgba(242,237,227,0.8);flex-shrink:0;">'
+          + '<button onclick="editJournal(window._currentJournalId)" style="flex:1;padding:10px;background:var(--ink);color:#f5f0e8;border:none;border-radius:10px;font-size:0.88em;cursor:pointer;font-family:serif;letter-spacing:0.06em;">編集</button>'
+          + '<button onclick="deleteJournal(window._currentJournalId)" style="padding:10px 14px;background:rgba(139,32,32,0.06);border:1px solid rgba(139,32,32,0.25);color:var(--washi-red);border-radius:10px;font-size:0.88em;cursor:pointer;">削除</button>'
+          + '<button onclick="document.getElementById(\'journalDetailModal\').style.display=\'none\'" style="padding:10px 14px;background:rgba(44,36,22,0.06);border:1px solid rgba(44,36,22,0.15);color:var(--ink-mid);border-radius:10px;font-size:0.88em;cursor:pointer;">閉じる</button>'
           + '</div></div>';
         document.body.appendChild(modal);
       }
@@ -25526,27 +25544,43 @@ document.addEventListener('DOMContentLoaded', function() {
       const body = document.getElementById('journalDetailBody');
       if (!body) return;
       const _jThoughts = getThoughts(j.id);
+      const _dp2 = j.date.split('-');
+      const _wday2 = WEEKDAY[new Date(j.date.replace(/-/g,'/')).getDay()];
+      const _dateDisp2 = parseInt(_dp2[0]) + '年' + parseInt(_dp2[1]) + '月' + parseInt(_dp2[2]) + '日（' + _wday2 + '）';
       const _thoughtsHtml = _jThoughts.length > 0
-        ? '<div style="margin-top:16px;padding-top:14px;border-top:1px solid #f0f0f0;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"><div style="font-size:0.7em;color:#aaa;font-weight:600;letter-spacing:0.1em;">今日考えたこと</div><button onclick="thoughtsToText(\'' + j.id + '\')" style="font-size:0.68em;padding:2px 8px;border-radius:4px;border:1px solid #e0e0e0;background:#fff;color:#888;cursor:pointer;">↩ まとめて戻す</button></div>'
+        ? '<div style="margin:0;padding:16px 20px 4px;border-top:1px solid rgba(180,165,140,0.35);">'
+          + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">'
+          + '<div style="font-size:0.68em;color:var(--ink-light);font-weight:600;letter-spacing:0.12em;font-family:serif;">今日考えたこと</div>'
+          + '<button onclick="thoughtsToText(\'' + j.id + '\')" style="font-size:0.65em;padding:2px 10px;border-radius:4px;border:1px solid rgba(44,36,22,0.18);background:rgba(44,36,22,0.04);color:var(--ink-light);cursor:pointer;">↩ まとめて戻す</button>'
+          + '</div>'
           + _jThoughts.map(function(th) {
-              return '<div id="th_' + th.id + '" style="display:flex;align-items:flex-start;gap:8px;margin-bottom:5px;padding:8px 10px;background:#fafafa;border-radius:8px;">'
-                + '<div style="width:5px;height:5px;border-radius:50%;background:#bbb;margin-top:7px;flex-shrink:0;"></div>'
-                + '<div contenteditable="true" onblur="thoughtSaveEdit(\'' + j.id + '\',\'' + th.id + '\',this.textContent)" style="font-size:0.84em;color:#444;line-height:1.7;flex:1;outline:none;min-height:1.4em;">' + escapeHtml(th.text) + '</div>'
+              return '<div id="th_' + th.id + '" style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;padding:9px 11px;background:rgba(74,96,128,0.05);border-radius:8px;border:1px solid rgba(74,96,128,0.1);">'
+                + '<div style="width:4px;height:4px;border-radius:50%;background:var(--washi-blue);margin-top:8px;flex-shrink:0;opacity:0.6;"></div>'
+                + '<div contenteditable="true" onblur="thoughtSaveEdit(\'' + j.id + '\',\'' + th.id + '\',this.textContent)" style="font-size:0.83em;color:var(--ink-mid);line-height:1.75;flex:1;outline:none;min-height:1.4em;font-family:\'Noto Serif JP\',serif;">' + escapeHtml(th.text) + '</div>'
                 + '<div style="display:flex;flex-direction:row;gap:4px;flex-shrink:0;align-items:center;">'
-                + '<button onclick="thoughtToScratch(\'' + j.id + '\',\'' + th.id + '\')" style="padding:3px 8px;border-radius:4px;border:1px solid #e0e0e0;background:#fff;color:#555;font-size:0.7em;cursor:pointer;white-space:nowrap;">📝 雑記帳へ</button>'
-                + '<button onclick="thoughtDelete(\'' + j.id + '\',\'' + th.id + '\')" style="padding:3px 6px;border-radius:4px;border:1px solid #ffcccc;background:#fff;color:#e05a5a;font-size:0.7em;cursor:pointer;">✕</button>'
+                + '<button onclick="thoughtToScratch(\'' + j.id + '\',\'' + th.id + '\')" style="padding:3px 8px;border-radius:4px;border:1px solid rgba(44,36,22,0.18);background:rgba(44,36,22,0.04);color:var(--ink-light);font-size:0.68em;cursor:pointer;white-space:nowrap;">📝 雑記帳へ</button>'
+                + '<button onclick="thoughtDelete(\'' + j.id + '\',\'' + th.id + '\')" style="padding:3px 6px;border-radius:4px;border:1px solid rgba(139,32,32,0.2);background:transparent;color:var(--washi-red);font-size:0.68em;cursor:pointer;">✕</button>'
                 + '</div></div>';
             }).join('')
           + '</div>'
         : '';
-      const _dp2 = j.date.split('-');
-      const _dateDisp2 = parseInt(_dp2[0]) + '年' + parseInt(_dp2[1]) + '月' + parseInt(_dp2[2]) + '日';
-      body.innerHTML = '<div style="font-family:serif;font-size:1.05em;font-weight:600;color:var(--ink);margin-bottom:6px;letter-spacing:0.08em;border-bottom:1px solid var(--ink-border);padding-bottom:10px;">' + _dateDisp2 + '</div>'
-        + '<div style="display:flex;gap:6px;font-size:1.05em;margin-bottom:14px;padding-top:8px;">'
+      body.innerHTML =
+        // ヘッダー部
+        '<div style="padding:20px 20px 14px;border-bottom:1px solid rgba(180,165,140,0.35);">'
+        + '<div style="font-family:\'Noto Serif JP\',serif;font-size:1.1em;font-weight:700;color:var(--ink);letter-spacing:0.08em;margin-bottom:8px;">' + _dateDisp2 + '</div>'
+        + '<div style="display:flex;gap:5px;font-size:1.05em;opacity:0.8;">'
         + (j.weather||'') + (j.mood ? MOOD_E[j.mood] : '') + (j.condition ? COND_E[j.condition] : '')
-        + '</div>'
-        + (j.text ? '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"><div style="font-size:0.68em;color:var(--ink-light);font-weight:400;letter-spacing:0.12em;font-family:serif;">今日の日誌</div><button onclick="textToThoughts(\''  + j.id + '\')" style="font-size:0.65em;padding:2px 8px;border-radius:3px;border:1px solid rgba(74,96,128,0.3);background:rgba(74,96,128,0.06);color:var(--washi-blue);cursor:pointer;">✂️ 切り分けて使う</button></div>' : '')
-        + '<div style="font-size:0.88em;color:var(--ink-mid);line-height:1.9;white-space:pre-wrap;font-family:serif;">' + (j.text||'') + '</div>'
+        + '</div></div>'
+        // 本文
+        + (j.text
+          ? '<div style="padding:16px 20px;">'
+            + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">'
+            + '<div style="font-size:0.65em;color:var(--ink-light);font-weight:600;letter-spacing:0.14em;font-family:serif;">今日の日誌</div>'
+            + '<button onclick="textToThoughts(\'' + j.id + '\')" style="font-size:0.63em;padding:2px 9px;border-radius:4px;border:1px solid rgba(74,96,128,0.25);background:rgba(74,96,128,0.05);color:var(--washi-blue);cursor:pointer;">✂️ 切り分けて使う</button>'
+            + '</div>'
+            + '<div style="font-size:0.87em;color:var(--ink-mid);line-height:1.95;white-space:pre-wrap;font-family:\'Noto Serif JP\',serif;">' + (j.text||'') + '</div>'
+            + '</div>'
+          : '')
         + _thoughtsHtml;
       modal.style.display = 'flex';
     }
@@ -25563,15 +25597,15 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1001;align-items:center;justify-content:center;';
         document.body.appendChild(modal);
       }
-      modal.innerHTML = '<div style="background:#fff;border-radius:16px;width:90%;max-width:480px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;">'
-        + '<div style="overflow-y:auto;padding:24px;flex:1;">'
-        + '<h3 style="margin:0 0 16px;font-size:1em;font-weight:700;">日誌を編集</h3>'
-        + '<input id="journalEditDate" type="date" value="' + j.date + '" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:0.9em;box-sizing:border-box;margin-bottom:12px;">'
-        + '<textarea id="journalEditText" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:0.9em;box-sizing:border-box;height:120px;resize:none;margin-bottom:12px;">' + (j.text||'') + '</textarea>'
+      modal.innerHTML = '<div style="background:linear-gradient(160deg,#faf8f3 0%,#f2ede3 100%);border-radius:16px;width:90%;max-width:480px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 12px 48px rgba(44,36,22,0.18);border:1px solid rgba(180,165,140,0.4);">'
+        + '<div style="overflow-y:auto;padding:22px 20px 16px;flex:1;">'
+        + '<h3 style="margin:0 0 16px;font-size:0.92em;font-weight:700;font-family:serif;color:var(--ink);letter-spacing:0.1em;">日誌を編集</h3>'
+        + '<input id="journalEditDate" type="date" value="' + j.date + '" style="width:100%;padding:9px 12px;border:1px solid rgba(44,36,22,0.2);border-radius:8px;font-size:0.88em;box-sizing:border-box;margin-bottom:12px;background:rgba(255,255,255,0.7);color:var(--ink);">'
+        + '<textarea id="journalEditText" style="width:100%;padding:11px 12px;border:1px solid rgba(44,36,22,0.2);border-radius:8px;font-size:0.88em;box-sizing:border-box;height:130px;resize:none;margin-bottom:12px;background:rgba(255,255,255,0.7);color:var(--ink-mid);font-family:\'Noto Serif JP\',serif;line-height:1.85;">' + (j.text||'') + '</textarea>'
         + '</div>'
-        + '<div style="display:flex;gap:8px;padding:12px 24px 20px;border-top:1px solid #f0f0f0;border-radius:0 0 16px 16px;background:#fff;flex-shrink:0;">'
-        + '<button onclick="saveJournalEdit(\'' + id + '\')" style="flex:1;padding:10px;background:#262626;color:#fff;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;font-weight:600;">保存</button>'
-        + '<button onclick="document.getElementById(\'journalEditModal\').style.display=\'none\'" style="padding:10px 16px;background:#f5f5f5;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;">キャンセル</button>'
+        + '<div style="display:flex;gap:8px;padding:12px 20px 18px;border-top:1px solid rgba(180,165,140,0.35);background:rgba(242,237,227,0.8);flex-shrink:0;">'
+        + '<button onclick="saveJournalEdit(\'' + id + '\')" style="flex:1;padding:10px;background:var(--ink);color:#f5f0e8;border:none;border-radius:10px;font-size:0.88em;cursor:pointer;font-family:serif;letter-spacing:0.06em;">保存</button>'
+        + '<button onclick="document.getElementById(\'journalEditModal\').style.display=\'none\'" style="padding:10px 16px;background:rgba(44,36,22,0.06);border:1px solid rgba(44,36,22,0.15);color:var(--ink-mid);border-radius:10px;font-size:0.88em;cursor:pointer;">キャンセル</button>'
         + '</div></div>';
       modal.style.display = 'flex';
     }
@@ -25612,8 +25646,9 @@ document.addEventListener('DOMContentLoaded', function() {
       addScratchItem(th.text);
       deleteThought(thoughtId);
       saveAllTasks();
-      document.getElementById('journalDetailModal').style.display = 'none';
-      renderJournalView();
+      // モーダルを閉じずにDOM要素だけ削除（複数件連続操作のためモーダルは維持）
+      var _el = document.getElementById('th_' + thoughtId);
+      if (_el) _el.remove();
       showToast('📝 雑記帳へ戻しました', {type:'success'});
     }
     function thoughtToTask(journalId, thoughtId) {
@@ -25739,22 +25774,22 @@ document.addEventListener('DOMContentLoaded', function() {
       function buildNewModal() {
         const m = window._newJournalMeta;
         modal.innerHTML =
-          '<div style="background:#fff;border-radius:16px;width:90%;max-width:480px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;">'
-          + '<div style="overflow-y:auto;padding:24px;flex:1;">'
-          + '<h3 style="margin:0 0 16px;font-size:1em;font-weight:700;">📖 新しい日誌</h3>'
-          + '<label style="font-size:0.8em;color:#666;display:block;margin-bottom:4px;">日付</label>'
-          + '<input id="journalNewDate" type="date" value="' + todayStr + '" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:0.9em;box-sizing:border-box;margin-bottom:12px;">'
-          + '<label style="font-size:0.8em;color:#666;display:block;margin-bottom:8px;">気分・体調・天気</label>'
-          + '<div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;">'
-          + '<div style="display:flex;gap:6px;align-items:center;">' + [1,2,3,4,5].map(function(i){ return '<button class="emoji-pick-btn' + (m.mood===i?' selected':'') + '" data-type="mood" data-val="' + i + '">' + MOOD_E[i] + '</button>'; }).join('') + '</div>'
-          + '<div style="display:flex;gap:6px;align-items:center;">' + [1,2,3,4,5].map(function(i){ return '<button class="emoji-pick-btn' + (m.condition===i?' selected':'') + '" data-type="condition" data-val="' + i + '">' + COND_E[i] + '</button>'; }).join('') + '</div>'
-          + '<div style="display:flex;gap:6px;align-items:center;" id="newWeatPicker">' + WEAT_E.map(function(e){ return '<button class="emoji-pick-btn' + (m.weather===e?' selected':'') + '" data-weat="' + e + '" data-type="weather" data-val="' + e + '">' + e + '</button>'; }).join('') + '</div>'
+          '<div style="background:linear-gradient(160deg,#faf8f3 0%,#f2ede3 100%);border-radius:16px;width:90%;max-width:480px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 12px 48px rgba(44,36,22,0.18);border:1px solid rgba(180,165,140,0.4);">'
+          + '<div style="overflow-y:auto;padding:22px 20px 16px;flex:1;">'
+          + '<h3 style="margin:0 0 16px;font-size:0.92em;font-weight:700;font-family:serif;color:var(--ink);letter-spacing:0.12em;">📖 新しい日誌</h3>'
+          + '<label style="font-size:0.7em;color:var(--ink-light);display:block;margin-bottom:5px;font-family:serif;letter-spacing:0.1em;">日付</label>'
+          + '<input id="journalNewDate" type="date" value="' + todayStr + '" style="width:100%;padding:9px 12px;border:1px solid rgba(44,36,22,0.2);border-radius:8px;font-size:0.88em;box-sizing:border-box;margin-bottom:14px;background:rgba(255,255,255,0.7);color:var(--ink);">'
+          + '<label style="font-size:0.7em;color:var(--ink-light);display:block;margin-bottom:8px;font-family:serif;letter-spacing:0.1em;">気分・体調・天気</label>'
+          + '<div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap;">'
+          + '<div style="display:flex;gap:5px;align-items:center;">' + [1,2,3,4,5].map(function(i){ return '<button class="emoji-pick-btn' + (m.mood===i?' selected':'') + '" data-type="mood" data-val="' + i + '" style="padding:5px 7px;border-radius:8px;border:1px solid rgba(44,36,22,0.15);background:' + (m.mood===i?'rgba(44,36,22,0.1)':'rgba(255,255,255,0.6)') + ';font-size:1.05em;cursor:pointer;">' + MOOD_E[i] + '</button>'; }).join('') + '</div>'
+          + '<div style="display:flex;gap:5px;align-items:center;">' + [1,2,3,4,5].map(function(i){ return '<button class="emoji-pick-btn' + (m.condition===i?' selected':'') + '" data-type="condition" data-val="' + i + '" style="padding:5px 7px;border-radius:8px;border:1px solid rgba(44,36,22,0.15);background:' + (m.condition===i?'rgba(44,36,22,0.1)':'rgba(255,255,255,0.6)') + ';font-size:1.05em;cursor:pointer;">' + COND_E[i] + '</button>'; }).join('') + '</div>'
+          + '<div style="display:flex;gap:5px;align-items:center;" id="newWeatPicker">' + WEAT_E.map(function(e){ return '<button class="emoji-pick-btn' + (m.weather===e?' selected':'') + '" data-weat="' + e + '" data-type="weather" data-val="' + e + '" style="padding:5px 7px;border-radius:8px;border:1px solid rgba(44,36,22,0.15);background:' + (m.weather===e?'rgba(44,36,22,0.1)':'rgba(255,255,255,0.6)') + ';font-size:1.05em;cursor:pointer;">' + e + '</button>'; }).join('') + '</div>'
           + '</div>'
-          + '<textarea id="journalNewText" placeholder="今日の記録..." style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:0.9em;box-sizing:border-box;height:140px;resize:none;"></textarea>'
+          + '<textarea id="journalNewText" placeholder="今日の記録..." style="width:100%;padding:11px 12px;border:1px solid rgba(44,36,22,0.2);border-radius:8px;font-size:0.88em;box-sizing:border-box;height:140px;resize:none;background:rgba(255,255,255,0.7);color:var(--ink-mid);font-family:\'Noto Serif JP\',serif;line-height:1.85;"></textarea>'
           + '</div>'
-          + '<div style="display:flex;gap:8px;padding:12px 24px 20px;border-top:1px solid #f0f0f0;border-radius:0 0 16px 16px;background:#fff;flex-shrink:0;">'
-          + '<button onclick="saveNewJournal()" style="flex:1;padding:10px;background:#262626;color:#fff;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;font-weight:600;">保存</button>'
-          + '<button onclick="document.getElementById(\'journalNewModal\').style.display=\'none\'" style="padding:10px 16px;background:#f5f5f5;border:none;border-radius:8px;font-size:0.9em;cursor:pointer;">キャンセル</button>'
+          + '<div style="display:flex;gap:8px;padding:12px 20px 18px;border-top:1px solid rgba(180,165,140,0.35);background:rgba(242,237,227,0.8);flex-shrink:0;">'
+          + '<button onclick="saveNewJournal()" style="flex:1;padding:10px;background:var(--ink);color:#f5f0e8;border:none;border-radius:10px;font-size:0.88em;cursor:pointer;font-family:serif;letter-spacing:0.06em;">記す</button>'
+          + '<button onclick="document.getElementById(\'journalNewModal\').style.display=\'none\'" style="padding:10px 16px;background:rgba(44,36,22,0.06);border:1px solid rgba(44,36,22,0.15);color:var(--ink-mid);border-radius:10px;font-size:0.88em;cursor:pointer;">キャンセル</button>'
           + '</div></div>';
         modal.style.display = 'flex';
       }
