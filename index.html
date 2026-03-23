@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.113';
+    const APP_VERSION = 'v0.39.123';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3887,24 +3887,24 @@
 
     <!-- 王国ヘッダー -->
     <div style="text-align:center;margin-bottom:16px;padding:22px 16px 18px;background:#fff;border-radius:24px;box-shadow:0 4px 24px rgba(99,102,241,0.10);border:1px solid rgba(99,102,241,0.08);">
-      <div style="font-size:0.72em;font-weight:700;color:#a0aec0;letter-spacing:0.18em;margin-bottom:4px;">MY KINGDOM</div>
+      <div style="font-size:0.82em;font-weight:700;color:#a0aec0;letter-spacing:0.18em;margin-bottom:4px;">MY KINGDOM</div>
       <div id="dbKingdomName" style="font-size:1.25em;font-weight:800;color:#1a1a2e;letter-spacing:0.02em;margin-bottom:4px;">王国</div>
       <div id="dbKingdomTitle" style="display:inline-block;font-size:0.92em;font-weight:700;color:#6366f1;background:#f0f0ff;border-radius:20px;padding:3px 14px;margin-bottom:14px;">🌱 開拓民</div>
       <div style="display:flex;justify-content:center;gap:0;background:#f8f9ff;border-radius:16px;overflow:hidden;border:1px solid #e8e8f8;">
         <div style="flex:1;text-align:center;padding:12px 6px;border-right:1px solid #e8e8f8;">
-          <div style="font-size:0.6em;color:#c8a0d0;font-weight:700;letter-spacing:0.12em;margin-bottom:4px;">徳</div>
-          <div id="dbToku" style="font-size:1.6em;font-weight:900;color:#d946ef;line-height:1;">0</div>
-        </div>
-        <div style="flex:1;text-align:center;padding:12px 6px;border-right:1px solid #e8e8f8;">
-          <div style="font-size:0.6em;color:#d4a050;font-weight:700;letter-spacing:0.12em;margin-bottom:4px;">GDP</div>
+          <div style="font-size:0.75em;color:#d4a050;font-weight:700;letter-spacing:0.08em;margin-bottom:4px;">GDP</div>
           <div id="dbGdp" style="font-size:1.6em;font-weight:900;color:#f59e0b;line-height:1;">0万</div>
         </div>
         <div style="flex:1;text-align:center;padding:12px 6px;border-right:1px solid #e8e8f8;">
-          <div style="font-size:0.6em;color:#f87171;font-weight:700;letter-spacing:0.12em;margin-bottom:4px;">業</div>
+          <div style="font-size:0.75em;color:#c8a0d0;font-weight:700;letter-spacing:0.08em;margin-bottom:4px;">徳</div>
+          <div id="dbToku" style="font-size:1.6em;font-weight:900;color:#d946ef;line-height:1;">0</div>
+        </div>
+        <div style="flex:1;text-align:center;padding:12px 6px;border-right:1px solid #e8e8f8;">
+          <div style="font-size:0.75em;color:#f87171;font-weight:700;letter-spacing:0.08em;margin-bottom:4px;">業</div>
           <div id="dbGou" style="font-size:1.6em;font-weight:900;color:#ef4444;line-height:1;">0</div>
         </div>
         <div style="flex:1;text-align:center;padding:12px 6px;">
-          <div style="font-size:0.6em;color:#60a5fa;font-weight:700;letter-spacing:0.12em;margin-bottom:4px;">王国力</div>
+          <div style="font-size:0.75em;color:#60a5fa;font-weight:700;letter-spacing:0.08em;margin-bottom:4px;">王国力</div>
           <div id="dbPower" style="font-size:1.6em;font-weight:900;color:#3b82f6;line-height:1;">0</div>
         </div>
       </div>
@@ -3919,37 +3919,37 @@
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
       <div style="background:#fff;border-radius:18px;padding:16px;box-shadow:0 2px 16px rgba(79,172,254,0.10);border:1px solid #e8f0fe;position:relative;overflow:hidden;min-height:110px;">
         <div style="position:absolute;right:-8px;top:-8px;font-size:2.8em;opacity:0.08;">📅</div>
-        <div style="font-size:0.65em;color:#93c5fd;font-weight:700;letter-spacing:0.12em;margin-bottom:6px;">今月完了</div>
+        <div style="font-size:0.78em;color:#93c5fd;font-weight:700;letter-spacing:0.06em;margin-bottom:6px;">今月完了</div>
         <div id="dbMonthCount" style="font-size:2.2em;font-weight:900;color:#1e40af;line-height:1;">0</div>
         <div style="font-size:0.82em;color:#93c5fd;margin-top:5px;font-weight:700;">件</div>
       </div>
       <div style="background:#fff;border-radius:18px;padding:16px;box-shadow:0 2px 16px rgba(79,172,254,0.10);border:1px solid #e8f0fe;position:relative;overflow:hidden;min-height:110px;">
         <div style="position:absolute;right:-8px;top:-8px;font-size:2.8em;opacity:0.08;">📆</div>
-        <div style="font-size:0.65em;color:#93c5fd;font-weight:700;letter-spacing:0.12em;margin-bottom:6px;">今週完了</div>
+        <div style="font-size:0.78em;color:#93c5fd;font-weight:700;letter-spacing:0.06em;margin-bottom:6px;">今週完了</div>
         <div id="dbWeekCount" style="font-size:2.2em;font-weight:900;color:#1e40af;line-height:1;">0</div>
         <div style="font-size:0.82em;color:#93c5fd;margin-top:5px;font-weight:700;">件</div>
       </div>
       <div style="background:linear-gradient(135deg,#fff7ed,#fff);border-radius:18px;padding:16px;box-shadow:0 2px 16px rgba(245,158,11,0.12);border:1px solid #fed7aa;position:relative;overflow:hidden;min-height:110px;">
         <div style="position:absolute;right:-8px;top:-8px;font-size:2.8em;opacity:0.12;">🔥</div>
-        <div style="font-size:0.65em;color:#fb923c;font-weight:700;letter-spacing:0.12em;margin-bottom:6px;">連続稼働</div>
+        <div style="font-size:0.78em;color:#fb923c;font-weight:700;letter-spacing:0.06em;margin-bottom:6px;">連続稼働</div>
         <div id="dbStreak" style="font-size:2.2em;font-weight:900;color:#ea580c;line-height:1;">0</div>
         <div style="font-size:0.82em;color:#fb923c;margin-top:5px;font-weight:700;">日</div>
       </div>
       <div style="background:#fff;border-radius:18px;padding:16px;box-shadow:0 2px 16px rgba(79,172,254,0.10);border:1px solid #e8f0fe;position:relative;overflow:hidden;min-height:110px;">
         <div style="position:absolute;right:-8px;top:-8px;font-size:2.8em;opacity:0.08;">🏅</div>
-        <div style="font-size:0.65em;color:#93c5fd;font-weight:700;letter-spacing:0.12em;margin-bottom:6px;">総完了</div>
+        <div style="font-size:0.78em;color:#93c5fd;font-weight:700;letter-spacing:0.06em;margin-bottom:6px;">総完了</div>
         <div id="dbTotalCount" style="font-size:2.2em;font-weight:900;color:#1e40af;line-height:1;">0</div>
         <div style="font-size:0.82em;color:#93c5fd;margin-top:5px;font-weight:700;">件</div>
       </div>
       <div style="background:linear-gradient(135deg,#f0fdf4,#fff);border-radius:18px;padding:16px;box-shadow:0 2px 16px rgba(34,197,94,0.10);border:1px solid #bbf7d0;position:relative;overflow:hidden;min-height:110px;">
         <div style="position:absolute;right:-8px;top:-8px;font-size:2.8em;opacity:0.12;">🗓️</div>
-        <div style="font-size:0.65em;color:#4ade80;font-weight:700;letter-spacing:0.12em;margin-bottom:6px;">今月稼働</div>
+        <div style="font-size:0.78em;color:#4ade80;font-weight:700;letter-spacing:0.06em;margin-bottom:6px;">今月稼働</div>
         <div id="dbMonthDays" style="font-size:2.2em;font-weight:900;color:#16a34a;line-height:1;">0</div>
         <div style="font-size:0.82em;color:#4ade80;margin-top:5px;font-weight:700;" id="dbMonthDaysLabel">日</div>
       </div>
       <div style="background:linear-gradient(135deg,#fdf4ff,#fff);border-radius:18px;padding:16px;box-shadow:0 2px 16px rgba(168,85,247,0.10);border:1px solid #e9d5ff;position:relative;overflow:hidden;min-height:110px;">
         <div style="position:absolute;right:-8px;top:-8px;font-size:2.8em;opacity:0.12;">⚔️</div>
-        <div style="font-size:0.65em;color:#c084fc;font-weight:700;letter-spacing:0.12em;margin-bottom:6px;">コロシアム最高</div>
+        <div style="font-size:0.78em;color:#c084fc;font-weight:700;letter-spacing:0.06em;margin-bottom:6px;">コロシアム最高</div>
         <div id="dbColosseumBest" style="font-size:2.2em;font-weight:900;color:#9333ea;line-height:1;">0</div>
         <div style="font-size:0.82em;color:#c084fc;margin-top:5px;font-weight:700;">点</div>
       </div>
@@ -3957,7 +3957,7 @@
 
     <!-- 円グラフ＋セクション別完了比率 -->
     <div style="background:#fff;border-radius:20px;padding:18px;box-shadow:0 2px 16px rgba(79,172,254,0.10);border:1px solid #e8f0fe;margin-bottom:10px;">
-      <div style="font-size:0.7em;font-weight:700;color:#a0aec0;letter-spacing:0.12em;margin-bottom:14px;">📊 セクション別 完了比率</div>
+      <div style="font-size:0.82em;font-weight:700;color:#a0aec0;letter-spacing:0.06em;margin-bottom:14px;">📊 セクション別 完了比率</div>
       <div style="display:flex;align-items:center;gap:18px;">
         <canvas id="dbPieChart" width="120" height="120" style="flex-shrink:0;"></canvas>
         <div id="dbSectionBars" style="flex:1;min-width:0;"></div>
@@ -3966,13 +3966,13 @@
 
     <!-- 称号マイルストーン -->
     <div style="background:linear-gradient(135deg,#fffbeb,#fff);border-radius:20px;padding:18px;box-shadow:0 2px 16px rgba(245,158,11,0.10);border:1px solid #fde68a;margin-bottom:10px;">
-      <div style="font-size:0.7em;font-weight:700;color:#d97706;letter-spacing:0.12em;margin-bottom:12px;">🏆 徳のマイルストーン</div>
+      <div style="font-size:0.85em;font-weight:700;color:#d97706;letter-spacing:0.06em;margin-bottom:12px;">🏆 徳のマイルストーン</div>
       <div id="dbTitleHistory" style="font-size:0.85em;color:#92400e;line-height:2.2;"></div>
     </div>
 
     <!-- 業スコア -->
     <div style="background:linear-gradient(135deg,#fff5f5,#fff);border-radius:20px;padding:18px;box-shadow:0 2px 16px rgba(239,68,68,0.08);border:1px solid #fecaca;margin-bottom:10px;">
-      <div style="font-size:0.7em;font-weight:700;color:#f87171;letter-spacing:0.12em;margin-bottom:10px;">👹 業の重さ</div>
+      <div style="font-size:0.85em;font-weight:700;color:#f87171;letter-spacing:0.06em;margin-bottom:10px;">👹 業の重さ</div>
       <div id="dbGouBar" style="font-family:monospace;font-size:1.3em;letter-spacing:3px;margin-bottom:8px;"></div>
       <div id="dbGouDetail" style="font-size:0.8em;color:#f87171;font-weight:600;"></div>
       <button onclick="openGouLogModal()" style="width:100%;margin-top:12px;padding:10px;border:1.5px solid #fca5a5;border-radius:12px;background:#fff;color:#ef4444;font-size:0.85em;font-weight:700;cursor:pointer;letter-spacing:0.03em;">📜 業の発生履歴を見る</button>
@@ -3980,62 +3980,62 @@
 
     <!-- 提携統計 -->
     <div style="background:#fff;border-radius:20px;padding:18px;box-shadow:0 2px 16px rgba(99,102,241,0.08);border:1px solid #e0e7ff;margin-bottom:10px;">
-      <div style="font-size:0.7em;font-weight:700;color:#a0aec0;letter-spacing:0.12em;margin-bottom:14px;">🤝 提携・交流</div>
+      <div style="font-size:0.85em;font-weight:700;color:#a0aec0;letter-spacing:0.06em;margin-bottom:14px;">🤝 提携・交流</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
         <div style="text-align:center;background:#f5f3ff;border-radius:14px;padding:12px 6px;">
           <div style="font-size:1.6em;margin-bottom:2px;">📦</div>
           <div id="dbArvReceived" style="font-size:1.5em;font-weight:900;color:#6366f1;line-height:1;">0</div>
-          <div style="font-size:0.62em;color:#a5b4fc;font-weight:600;margin-top:3px;">受取デッキ</div>
+          <div style="font-size:0.78em;color:#a5b4fc;font-weight:600;margin-top:3px;">受取デッキ</div>
         </div>
         <div style="text-align:center;background:#f0fdf4;border-radius:14px;padding:12px 6px;">
           <div style="font-size:1.6em;margin-bottom:2px;">✅</div>
           <div id="dbArvCompleted" style="font-size:1.5em;font-weight:900;color:#22c55e;line-height:1;">0</div>
-          <div style="font-size:0.62em;color:#86efac;font-weight:600;margin-top:3px;">完了タスク</div>
+          <div style="font-size:0.78em;color:#86efac;font-weight:600;margin-top:3px;">完了タスク</div>
         </div>
         <div style="text-align:center;background:#fff7ed;border-radius:14px;padding:12px 6px;">
           <div style="font-size:1.6em;margin-bottom:2px;">⚔️</div>
           <div id="dbBlmTotal" style="font-size:1.5em;font-weight:900;color:#f97316;line-height:1;">0</div>
-          <div style="font-size:0.62em;color:#fdba74;font-weight:600;margin-top:3px;">報告回数</div>
+          <div style="font-size:0.78em;color:#fdba74;font-weight:600;margin-top:3px;">報告回数</div>
         </div>
         <div style="text-align:center;background:#fdf4ff;border-radius:14px;padding:12px 6px;">
           <div style="font-size:1.6em;margin-bottom:2px;">👨‍👩‍👧</div>
           <div id="dbFamilyCount" style="font-size:1.5em;font-weight:900;color:#d946ef;line-height:1;">0</div>
-          <div style="font-size:0.62em;color:#f0abfc;font-weight:600;margin-top:3px;">家族共有</div>
+          <div style="font-size:0.78em;color:#f0abfc;font-weight:600;margin-top:3px;">家族共有</div>
         </div>
         <div style="text-align:center;background:#f0f9ff;border-radius:14px;padding:12px 6px;">
           <div style="font-size:1.6em;margin-bottom:2px;">🃏</div>
           <div id="dbMyDeckCount" style="font-size:1.5em;font-weight:900;color:#0ea5e9;line-height:1;">0</div>
-          <div style="font-size:0.62em;color:#7dd3fc;font-weight:600;margin-top:3px;">マイデッキ</div>
+          <div style="font-size:0.78em;color:#7dd3fc;font-weight:600;margin-top:3px;">マイデッキ</div>
         </div>
         <div style="text-align:center;background:#fefce8;border-radius:14px;padding:12px 6px;">
           <div style="font-size:1.6em;margin-bottom:2px;">🏅</div>
           <div id="dbDeckHistoryCount" style="font-size:1.5em;font-weight:900;color:#eab308;line-height:1;">0</div>
-          <div style="font-size:0.62em;color:#fde047;font-weight:600;margin-top:3px;">デッキ歴</div>
+          <div style="font-size:0.78em;color:#fde047;font-weight:600;margin-top:3px;">デッキ歴</div>
         </div>
       </div>
     </div>
 
     <!-- 王国訪問 -->
     <div style="background:#fff;border-radius:20px;padding:18px;box-shadow:0 2px 16px rgba(79,172,254,0.08);border:1px solid #e8f0fe;margin-bottom:10px;">
-      <div style="font-size:0.7em;font-weight:700;color:#a0aec0;letter-spacing:0.12em;margin-bottom:12px;">🏰 王国</div>
-      <button onclick="openCraftShareModal()" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border:none;border-radius:14px;background:linear-gradient(135deg,#ffd700,#ff8800);color:#7a4800;font-size:0.9em;font-weight:800;cursor:pointer;width:100%;margin-bottom:8px;box-shadow:0 4px 14px rgba(255,180,0,0.3);letter-spacing:0.02em;">👑 王国コードを発行する</button>
-      <button onclick="openCraftVisitModal()" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border:none;border-radius:14px;background:linear-gradient(135deg,#ffc8dc,#ffa0bc);color:#9c3060;font-size:0.9em;font-weight:800;cursor:pointer;width:100%;box-shadow:0 4px 14px rgba(255,160,188,0.3);letter-spacing:0.02em;">🗺️ 仲間の王国を訪問する</button>
+      <div style="font-size:0.88em;font-weight:700;color:#a0aec0;letter-spacing:0.06em;margin-bottom:12px;">🏰 王国</div>
+      <button onclick="openCraftShareModal()" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border:none;border-radius:14px;background:linear-gradient(135deg,#ffd700,#ff8800);color:#7a4800;font-size:1.0em;font-weight:800;cursor:pointer;width:100%;margin-bottom:8px;box-shadow:0 4px 14px rgba(255,180,0,0.3);letter-spacing:0.02em;">👑 王国コードを発行する</button>
+      <button onclick="openCraftVisitModal()" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border:none;border-radius:14px;background:linear-gradient(135deg,#ffc8dc,#ffa0bc);color:#9c3060;font-size:1.0em;font-weight:800;cursor:pointer;width:100%;box-shadow:0 4px 14px rgba(255,160,188,0.3);letter-spacing:0.02em;">🗺️ 仲間の王国を訪問する</button>
     </div>
 
     <!-- データ操作 -->
     <div style="background:#fff;border-radius:20px;padding:18px;box-shadow:0 2px 16px rgba(79,172,254,0.08);border:1px solid #e8f0fe;margin-bottom:10px;">
-      <div style="font-size:0.7em;font-weight:700;color:#a0aec0;letter-spacing:0.12em;margin-bottom:12px;">💾 データ</div>
+      <div style="font-size:0.88em;font-weight:700;color:#a0aec0;letter-spacing:0.06em;margin-bottom:12px;">💾 データ</div>
       <!-- 自動バックアップ状態 -->
       <div id="dbBackupStatus" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
         <div>
-          <div style="font-size:0.72em;font-weight:700;color:#16a34a;">🛡️ 自動バックアップ</div>
-          <div id="dbBackupLabel" style="font-size:0.78em;color:#4ade80;margin-top:2px;">確認中...</div>
+          <div style="font-size:0.88em;font-weight:700;color:#16a34a;">🛡️ 自動バックアップ</div>
+          <div id="dbBackupLabel" style="font-size:0.88em;color:#4ade80;margin-top:2px;">確認中...</div>
         </div>
         <button onclick="openRestoreModal()" style="padding:7px 14px;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;border-radius:10px;color:#fff;font-size:0.78em;font-weight:700;cursor:pointer;">🔄 復元</button>
       </div>
       <div style="display:flex;gap:8px;">
-        <button onclick="exportData()" style="flex:1;padding:13px;border:2px solid #4facfe;border-radius:14px;background:#f0f8ff;color:#2563eb;font-size:0.88em;font-weight:800;cursor:pointer;letter-spacing:0.02em;">📤 エクスポート</button>
-        <button onclick="document.getElementById('dbImportInput').click()" style="flex:1;padding:13px;border:2px solid #4facfe;border-radius:14px;background:#f0f8ff;color:#2563eb;font-size:0.88em;font-weight:800;cursor:pointer;letter-spacing:0.02em;">📥 インポート</button>
+        <button onclick="exportData()" style="flex:1;padding:13px;border:2px solid #4facfe;border-radius:14px;background:#f0f8ff;color:#2563eb;font-size:1.0em;font-weight:800;cursor:pointer;letter-spacing:0.02em;">📤 エクスポート</button>
+        <button onclick="document.getElementById('dbImportInput').click()" style="flex:1;padding:13px;border:2px solid #4facfe;border-radius:14px;background:#f0f8ff;color:#2563eb;font-size:1.0em;font-weight:800;cursor:pointer;letter-spacing:0.02em;">📥 インポート</button>
         <input type="file" id="dbImportInput" accept=".json" style="display:none;" onchange="importData(event)">
       </div>
     </div>
@@ -16742,12 +16742,21 @@ function renderDashboardView() {
     var secLabels = ['緊急×重要','重要のみ','緊急のみ','その他'];
     var secColors = ['#ef4444','#3b82f6','#22c55e','#f59e0b'];
     secBarsEl.innerHTML = '';
+    if (secTotal === 0) {
+      // 0件のとき：円グラフを非表示、メッセージを全幅で表示
+      if (pieCanvas) pieCanvas.style.display = 'none';
+      secBarsEl.style.textAlign = 'center';
+      secBarsEl.innerHTML = '<div style="padding:20px 0 8px;color:#a0aec0;font-size:0.92em;line-height:2.2;">まだ完了したタスクがありません。<br>ひとつ完了するたびに、<br>この地図に色が灯ります。🗺️</div>';
+    } else {
+      if (pieCanvas) pieCanvas.style.display = '';
+      secBarsEl.style.textAlign = '';
+    }
     secCounts.forEach(function(cnt, i) {
       var pct = secTotal > 0 ? Math.round(cnt/secTotal*100) : 0;
       var row = document.createElement('div');
       row.style.cssText = 'margin-bottom:9px;';
       row.innerHTML =
-        '<div style="display:flex;justify-content:space-between;font-size:0.68em;color:#718096;margin-bottom:3px;">' +
+        '<div style="display:flex;justify-content:space-between;font-size:0.82em;color:#718096;margin-bottom:3px;">' +
         '<span>' + secLabels[i] + '</span><span style="font-weight:600;color:#1a2a3a;">' + pct + '% <span style="color:#a0aec0;font-weight:400;">(' + cnt + '件)</span></span></div>' +
         '<div style="height:7px;background:#f0f4f8;border-radius:4px;overflow:hidden;">' +
         '<div style="height:100%;width:' + pct + '%;background:' + secColors[i] + ';border-radius:4px;transition:width 0.6s;"></div></div>';
@@ -16761,6 +16770,14 @@ function renderDashboardView() {
       if (secTotal === 0) {
         ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
         ctx.fillStyle = '#f0f4f8'; ctx.fill();
+        // 中央テキスト（データなし）
+        ctx.beginPath(); ctx.arc(cx,cy,28,0,Math.PI*2);
+        ctx.fillStyle = '#fff'; ctx.fill();
+        ctx.fillStyle = '#c0ccd8';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('記録なし', cx, cy);
       } else {
         var startAngle = -Math.PI / 2;
         secCounts.forEach(function(cnt, i) {
@@ -16809,7 +16826,7 @@ function renderDashboardView() {
       if (reached.length > 0) {
         titleHistEl.textContent = reached.map(function(m){ return '✅ 徳' + m + '達成'; }).join('　');
       } else {
-        titleHistEl.textContent = 'まだ記録がありません';
+        titleHistEl.innerHTML = '<div style="color:#c8a060;font-size:0.95em;line-height:1.9;">まだ足跡がありません。<br>タスクを完了するたびに、徳が積まれていきます。<br>今日の一歩が、明日の王国を作ります。🌱</div>';
       }
     } catch(e) { titleHistEl.textContent = '読み込みエラー'; }
   }
@@ -16919,7 +16936,7 @@ function renderColosseumView() {
 
   html += '<div style="font-size:0.82em;font-weight:700;color:#888;margin-bottom:10px;">🏆 今日のランキング</div>';
   if (ranking.length === 0) {
-    html += '<div style="text-align:center;padding:24px;color:#ccc;font-size:0.85em;">まだ記録がありません。<br>Discordに BLM1: を貼ろう！</div>';
+    html += '<div style="text-align:center;padding:24px;color:#aaa;font-size:0.88em;line-height:2;">今日はまだ記録がありません。<br>デッキで戦い、BLM1: をDiscordに貼ると<br>ここに結果が刻まれます。⚔️</div>';
   } else {
     var medals = ['🥇','🥈','🥉'];
     ranking.forEach(function(s, i) {
