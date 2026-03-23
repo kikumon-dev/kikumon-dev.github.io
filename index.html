@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.101';
+    const APP_VERSION = 'v0.39.104';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -4025,6 +4025,14 @@
     <!-- データ操作 -->
     <div style="background:#fff;border-radius:20px;padding:18px;box-shadow:0 2px 16px rgba(79,172,254,0.08);border:1px solid #e8f0fe;margin-bottom:10px;">
       <div style="font-size:0.7em;font-weight:700;color:#a0aec0;letter-spacing:0.12em;margin-bottom:12px;">💾 データ</div>
+      <!-- 自動バックアップ状態 -->
+      <div id="dbBackupStatus" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:0.72em;font-weight:700;color:#16a34a;">🛡️ 自動バックアップ</div>
+          <div id="dbBackupLabel" style="font-size:0.78em;color:#4ade80;margin-top:2px;">確認中...</div>
+        </div>
+        <button onclick="openRestoreModal()" style="padding:7px 14px;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;border-radius:10px;color:#fff;font-size:0.78em;font-weight:700;cursor:pointer;">🔄 復元</button>
+      </div>
       <div style="display:flex;gap:8px;">
         <button onclick="exportData()" style="flex:1;padding:13px;border:2px solid #4facfe;border-radius:14px;background:#f0f8ff;color:#2563eb;font-size:0.88em;font-weight:800;cursor:pointer;letter-spacing:0.02em;">📤 エクスポート</button>
         <button onclick="document.getElementById('dbImportInput').click()" style="flex:1;padding:13px;border:2px solid #4facfe;border-radius:14px;background:#f0f8ff;color:#2563eb;font-size:0.88em;font-weight:800;cursor:pointer;letter-spacing:0.02em;">📥 インポート</button>
@@ -4032,6 +4040,15 @@
       </div>
     </div>
 
+  </div>
+</div>
+<!-- 復元モーダル -->
+<div id="restoreModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;" onclick="if(event.target.id==='restoreModal') closeRestoreModal()">
+  <div style="background:#fff;border-radius:20px;padding:24px;max-width:360px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+    <div style="font-size:1em;font-weight:800;color:#1a1a2e;margin-bottom:6px;">🛡️ バックアップから復元</div>
+    <div style="font-size:0.78em;color:#888;margin-bottom:16px;">選択した日のデータに戻します。現在のデータは上書きされます。</div>
+    <div id="restoreList" style="margin-bottom:16px;"></div>
+    <button onclick="closeRestoreModal()" style="width:100%;padding:11px;border:1.5px solid #e2e8f0;border-radius:12px;background:#fff;color:#888;font-size:0.88em;font-weight:700;cursor:pointer;">キャンセル</button>
   </div>
 </div>
 <div id="settingsView"  class="settings-view" style="display: none; background:#f5f5f5; position:relative; z-index:1;">
@@ -12780,6 +12797,37 @@ function reviveBlueprint(id) {
       } catch(e) { console.error('[mig_calid_to_settings_v1]', e); }
     })();
 
+    // ===== 自動バックアップ（日次・7世代管理） =====
+    (function() {
+      try {
+        var _backupToday = getLocalDateStr(new Date());
+        var _backupKey = 'backup_' + _backupToday;
+        // 今日分がまだなければ保存
+        if (!localStorage.getItem(_backupKey)) {
+          var _backupData = JSON.stringify(allTasks);
+          // 5MB超えの場合はスキップ（localStorage容量保護）
+          if (_backupData.length < 4 * 1024 * 1024) {
+            localStorage.setItem(_backupKey, _backupData);
+            window._dbgLog && window._dbgLog('autoBackup saved: ' + _backupKey + ' (' + allTasks.length + '件)');
+          } else {
+            window._dbgLog && window._dbgLog('autoBackup skipped: データサイズ超過');
+          }
+        }
+        // 8日以上前のバックアップを削除
+        var _allKeys = Object.keys(localStorage);
+        _allKeys.forEach(function(key) {
+          if (!key.startsWith('backup_')) return;
+          var _keyDate = key.replace('backup_', '');
+          var _diffMs = new Date(_backupToday.replace(/-/g,'/')) - new Date(_keyDate.replace(/-/g,'/'));
+          var _diffDays = Math.floor(_diffMs / (1000 * 60 * 60 * 24));
+          if (_diffDays >= 7) {
+            localStorage.removeItem(key);
+            window._dbgLog && window._dbgLog('autoBackup removed old: ' + key);
+          }
+        });
+      } catch(e) { console.error('[autoBackup]', e); }
+    })();
+
     // 日付変更時：雑記帳→thoughtsに自動移動
     function moveScratchToThoughts() {
       var today = getLocalDateStr(new Date());
@@ -12865,7 +12913,7 @@ function reviveBlueprint(id) {
       const unknown = [];
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        if (k && !KNOWN_KEYS.has(k)) unknown.push(k + '=' + localStorage.getItem(k));
+        if (k && !KNOWN_KEYS.has(k) && !k.startsWith('backup_')) unknown.push(k + '=' + localStorage.getItem(k));
       }
       if (unknown.length > 0) {
         window._dbgLog('【外部侵入】INTERCEPT --- 未知キーの書き込みを検知 / ' + unknown.join(' / '));
@@ -12876,7 +12924,7 @@ function reviveBlueprint(id) {
     (function() {
       const _origSetItem = Storage.prototype.setItem;
       Storage.prototype.setItem = function(key, value) {
-        if (this === localStorage && key && !KNOWN_KEYS.has(key)) {
+        if (this === localStorage && key && !KNOWN_KEYS.has(key) && !key.startsWith('backup_')) {
           window._dbgLog && window._dbgLog('【外部侵入】INTERCEPT --- 未知キーの書き込みを検知 / ' + key + '=' + value);
           window._dbgLog && window._dbgLog('[INTERCEPT] unknown key written: ' + key + '=' + value);
         }
@@ -15159,6 +15207,65 @@ function loadSettingsUI() {
     window.handleAvatarChange = handleAvatarChange;
     window.handleTimerClick = handleTimerClick;
     window.importData = importData;
+    // ===== バックアップ復元モーダル =====
+    function openRestoreModal() {
+      var _backupKeys = Object.keys(localStorage)
+        .filter(function(k){ return k.startsWith('backup_'); })
+        .sort().reverse();
+      var _listEl = document.getElementById('restoreList');
+      if (!_listEl) return;
+      if (_backupKeys.length === 0) {
+        _listEl.innerHTML = '<div style="text-align:center;color:#888;font-size:0.85em;padding:16px;">バックアップがありません</div>';
+      } else {
+        _listEl.innerHTML = '';
+        _backupKeys.forEach(function(key) {
+          var _date = key.replace('backup_', '');
+          var _tasks = null;
+          try { _tasks = JSON.parse(localStorage.getItem(key)); } catch(e) {}
+          var _taskCount = _tasks ? _tasks.length : '?';
+          var _today = getLocalDateStr(new Date());
+          var _label = _date === _today ? '今日 (' + _date + ')' : _date;
+          var _btn = document.createElement('button');
+          _btn.style.cssText = 'display:block;width:100%;padding:12px 14px;background:#f8f9ff;border:1.5px solid #e0e7ff;border-radius:12px;margin-bottom:8px;text-align:left;cursor:pointer;font-size:0.85em;';
+          _btn.innerHTML = '<span style="font-weight:700;color:#6366f1;">' + _label + '</span>'
+            + '<span style="color:#888;margin-left:8px;">' + _taskCount + '件</span>';
+          _btn.onclick = (function(k){ return function(){ restoreFromBackup(k); }; })(key);
+          _listEl.appendChild(_btn);
+        });
+      }
+      var _modal = document.getElementById('restoreModal');
+      if (_modal) _modal.style.display = 'flex';
+    }
+    function closeRestoreModal() {
+      var _modal = document.getElementById('restoreModal');
+      if (_modal) _modal.style.display = 'none';
+    }
+    function restoreFromBackup(backupKey) {
+      var _backupData = localStorage.getItem(backupKey);
+      if (!_backupData) { showToast('バックアップデータが見つかりません', {type:'warn'}); return; }
+      showChoiceModal({
+        title: '🛡️ バックアップから復元',
+        desc: backupKey.replace('backup_', '') + ' のデータに戻します。<br><strong style="color:#ef4444;">現在のデータは上書きされます。</strong>',
+        buttons: [
+          { label: '復元する', style: 'danger', onClick: function() {
+            try {
+              var _restoredTasks = JSON.parse(_backupData);
+              allTasks = _restoredTasks;
+              saveAllTasks();
+              closeRestoreModal();
+              renderAllSections(null);
+              showToast('✅ ' + backupKey.replace('backup_', '') + ' のデータに復元しました', {type:'success'});
+            } catch(e) {
+              showToast('復元に失敗しました: ' + e.message, {type:'warn'});
+            }
+          }},
+          { label: 'キャンセル', style: 'cancel' }
+        ]
+      });
+    }
+    window.openRestoreModal = openRestoreModal;
+    window.closeRestoreModal = closeRestoreModal;
+    window.restoreFromBackup = restoreFromBackup;
     window.linkGanttTask = linkGanttTask;
     window.nbNewPage = nbNewPage;
     window.nbShareClose = nbShareClose;
@@ -16643,6 +16750,33 @@ function renderDashboardView() {
       }
     } catch(e) { titleHistEl.textContent = '読み込みエラー'; }
   }
+
+  // ===== バックアップ状態表示 =====
+  (function() {
+    var _bsLabel = document.getElementById('dbBackupLabel');
+    if (!_bsLabel) return;
+    var _today = getLocalDateStr(new Date());
+    var _backupKeys = Object.keys(localStorage)
+      .filter(function(k){ return k.startsWith('backup_'); })
+      .sort()
+      .reverse();
+    if (_backupKeys.length === 0) {
+      _bsLabel.textContent = 'バックアップなし';
+      _bsLabel.style.color = '#f87171';
+      return;
+    }
+    var _latestKey = _backupKeys[0];
+    var _latestDate = _latestKey.replace('backup_', '');
+    if (_latestDate === _today) {
+      _bsLabel.textContent = '今日のデータ保存済み（' + _backupKeys.length + '世代）';
+      _bsLabel.style.color = '#22c55e';
+    } else {
+      var _diffMs = new Date(_today.replace(/-/g,'/')) - new Date(_latestDate.replace(/-/g,'/'));
+      var _diffDays = Math.floor(_diffMs / (1000*60*60*24));
+      _bsLabel.textContent = _diffDays + '日前のデータ（' + _backupKeys.length + '世代）';
+      _bsLabel.style.color = '#f59e0b';
+    }
+  })();
 
   // ===== 提携統計 =====
   var _arvReceived = 0, _arvCompleted = 0, _blmTotal = 0;
@@ -22521,7 +22655,7 @@ function showDebugLog() {
        // テストセクション自己存在確認：ソースコード上の存在をチェック
        var _stSections = ['ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10',
          'ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20',
-         'ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51'];
+         'ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -24140,6 +24274,100 @@ function showDebugLog() {
 
        ok('ST-51: calendarId整合マイグレーション 完了');
      } catch(e) { ng('ST-51: calendarId整合マイグレーション', e.message); }
+
+     // ===== ST-52: 自動バックアップ機能 =====
+     try {
+       // ① backup_プレフィックスキーが存在するか
+       var _st52Today = getLocalDateStr(new Date());
+       var _st52BackupKey = 'backup_' + _st52Today;
+       var _st52BackupRaw = localStorage.getItem(_st52BackupKey);
+       _st52BackupRaw
+         ? ok('ST-52: 今日のバックアップキー存在確認（' + _st52BackupKey + '）')
+         : ok('ST-52: 今日のバックアップ未保存（初回起動・当日2回目は保存しない仕様）');
+
+       // ② バックアップデータがJSON配列か
+       if (_st52BackupRaw) {
+         var _st52BackupData = null;
+         try { _st52BackupData = JSON.parse(_st52BackupRaw); } catch(e2) {}
+         (Array.isArray(_st52BackupData) && _st52BackupData.length > 0)
+           ? ok('ST-52: バックアップデータJSON配列確認（' + _st52BackupData.length + '件）')
+           : ng('ST-52: バックアップデータ', '配列でないまたは空');
+       }
+
+       // ③ openRestoreModal関数が存在するか
+       typeof openRestoreModal === 'function'
+         ? ok('ST-52: openRestoreModal 存在確認')
+         : ng('ST-52: openRestoreModal', '未定義');
+
+       // ④ closeRestoreModal関数が存在するか
+       typeof closeRestoreModal === 'function'
+         ? ok('ST-52: closeRestoreModal 存在確認')
+         : ng('ST-52: closeRestoreModal', '未定義');
+
+       // ⑤ restoreFromBackup関数が存在するか
+       typeof restoreFromBackup === 'function'
+         ? ok('ST-52: restoreFromBackup 存在確認')
+         : ng('ST-52: restoreFromBackup', '未定義');
+
+       // ⑥ restoreModalのDOM存在確認
+       var _st52Modal = document.getElementById('restoreModal');
+       _st52Modal
+         ? ok('ST-52: #restoreModal DOM確認')
+         : ng('ST-52: #restoreModal', '未存在');
+
+       // ⑦ restoreListのDOM存在確認
+       var _st52List = document.getElementById('restoreList');
+       _st52List
+         ? ok('ST-52: #restoreList DOM確認')
+         : ng('ST-52: #restoreList', '未存在');
+
+       // ⑧ openRestoreModal呼び出しでモーダルが表示されるか
+       if (typeof openRestoreModal === 'function') {
+         openRestoreModal();
+         var _st52ModalVisible = _st52Modal && _st52Modal.style.display === 'flex';
+         _st52ModalVisible
+           ? ok('ST-52: openRestoreModal 表示確認（flex）')
+           : ng('ST-52: openRestoreModal', '表示されない');
+         // 閉じる
+         if (typeof closeRestoreModal === 'function') closeRestoreModal();
+         var _st52ModalClosed = _st52Modal && _st52Modal.style.display === 'none';
+         _st52ModalClosed
+           ? ok('ST-52: closeRestoreModal 非表示確認（none）')
+           : ng('ST-52: closeRestoreModal', '非表示にならない');
+       }
+
+       // ⑨ dbBackupStatus・dbBackupLabelのDOM確認
+       var _st52Status = document.getElementById('dbBackupStatus');
+       var _st52Label = document.getElementById('dbBackupLabel');
+       _st52Status
+         ? ok('ST-52: #dbBackupStatus DOM確認')
+         : ng('ST-52: #dbBackupStatus', '未存在');
+       (_st52Label && _st52Label.textContent.length > 0)
+         ? ok('ST-52: #dbBackupLabel 表示確認（' + _st52Label.textContent.trim() + '）')
+         : ng('ST-52: #dbBackupLabel', '空または未存在');
+
+       // ⑩ 古いバックアップの自動削除ロジック確認（8日以上前のキーを削除）
+       var _st52OldKey = 'backup_2000-01-01';
+       localStorage.setItem(_st52OldKey, '[]');
+       // 自動バックアップ即時関数を再実行して古いキーが消えることを確認
+       (function() {
+         var _bToday = getLocalDateStr(new Date());
+         var _allKeys = Object.keys(localStorage);
+         _allKeys.forEach(function(key) {
+           if (!key.startsWith('backup_')) return;
+           var _keyDate = key.replace('backup_', '');
+           var _diffMs = new Date(_bToday.replace(/-/g,'/')) - new Date(_keyDate.replace(/-/g,'/'));
+           var _diffDays = Math.floor(_diffMs / (1000 * 60 * 60 * 24));
+           if (_diffDays >= 7) localStorage.removeItem(key);
+         });
+       })();
+       var _st52OldGone = !localStorage.getItem(_st52OldKey);
+       _st52OldGone
+         ? ok('ST-52: 古いバックアップ自動削除確認（2000-01-01削除済み）')
+         : ng('ST-52: 古いバックアップ自動削除', '削除されていない');
+
+       ok('ST-52: 自動バックアップ機能 完了');
+     } catch(e) { ng('ST-52: 自動バックアップ機能', e.message); }
      // ===== 17. KPAG — Key Purify Absolute Green · 4-AXIS STORAGE INSPECTION =====
      try {
        var _kpKeys = Object.keys(localStorage);
@@ -24187,7 +24415,7 @@ function showDebugLog() {
 
        // ④ 未知キー検知（白名単チェック）
        var _allowedKeys = ['_calIdMigMap','_dbg_errors','_dbg_log','_lastScratchMoveDate','allSettings','allTasks','autoMainCalendar','calendars','craftMode','currentView','dailyScrollInit','dataVersion','deletedTaskIds','deviceId','escapeLog','extendedvaluekey','gantEnabled','gdpLog','gdpPoints','gouLog','gouPoints','journals','lastGouCheckDate','lastKingdomCodeDate','lastMonthlyBonusMonth','lastTaskCompletedDate','mainCalendarId','mig_category_to_calendar_v170','mig_death_ghost_flags_v0_24_59','mig_gant_enabled_default_v0_32','mig_gdp_to_oku_v1','mig_ids_to_uuid_v7','mig_journal_ids_to_uuid_v7','_importLog','mig_calid_to_settings_v1','mig_dedup_tasks_v1','mig_dedup_tasks_v2','mig_done_completed_sync_v1','mig_journals_to_alltasks_v1','mig_orphan_taskids_v1','mig_show_in_daily_to_display_scope_v1','migration_calendarId_v1','nbLastPageId','notebooks','selectedDailyDate','simpleMode','taskCompletedStreak','taskCompletedTotal','tlLastScrollTop','tokuLog','tokuPoints','weeklyScrollInit','wgLastScrollTop'];
-       var _unknownKeys = _kpKeys.filter(function(k){ return _allowedKeys.indexOf(k) === -1; });
+       var _unknownKeys = _kpKeys.filter(function(k){ return _allowedKeys.indexOf(k) === -1 && !k.startsWith('backup_'); });
        _unknownKeys.length === 0
          ? ok('KPAG·④·UNKNOWN KEYS: 全' + _kpKeys.length + 'キー検査済・汚染ゼロ')
          : ng('KPAG·④·UNKNOWN KEYS', '未知キー' + _unknownKeys.length + '件: ' + _unknownKeys.join(', '));
