@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.49';
+    const APP_VERSION = 'v0.39.51';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -5283,21 +5283,127 @@
 function switchSearchTab(tab) {
   var btnSearch = document.getElementById('searchTabSearch');
   var btnTodo   = document.getElementById('searchTabTodo');
+  var btnGou    = document.getElementById('searchTabGou');
   var paneSearch = document.getElementById('searchPaneSearch');
   var paneTodo   = document.getElementById('searchPaneTodo');
+  var paneGou    = document.getElementById('searchPaneGou');
   if (!btnSearch || !btnTodo || !paneSearch || !paneTodo) return;
-  if (tab === 'search') {
-    btnSearch.style.cssText = 'flex:1;padding:6px 0;border-radius:20px;border:1.5px solid #333;background:#333;color:#fff;font-size:0.8em;font-weight:700;cursor:pointer;';
-    btnTodo.style.cssText   = 'flex:1;padding:6px 0;border-radius:20px;border:1.5px solid #e0e0e0;background:#fff;color:#888;font-size:0.8em;font-weight:700;cursor:pointer;';
-    paneSearch.style.display = 'flex';
-    paneTodo.style.display   = 'none';
-  } else {
-    btnSearch.style.cssText = 'flex:1;padding:6px 0;border-radius:20px;border:1.5px solid #e0e0e0;background:#fff;color:#888;font-size:0.8em;font-weight:700;cursor:pointer;';
-    btnTodo.style.cssText   = 'flex:1;padding:6px 0;border-radius:20px;border:1.5px solid #333;background:#333;color:#fff;font-size:0.8em;font-weight:700;cursor:pointer;';
-    paneSearch.style.display = 'none';
-    paneTodo.style.display   = 'flex';
-    renderTodoList();
+  var _styleOn  = 'flex:1;padding:6px 0;border-radius:20px;border:1.5px solid #333;background:#333;color:#fff;font-size:0.8em;font-weight:700;cursor:pointer;';
+  var _styleOff = 'flex:1;padding:6px 0;border-radius:20px;border:1.5px solid #e0e0e0;background:#fff;color:#888;font-size:0.8em;font-weight:700;cursor:pointer;';
+  var _styleGouOn = 'flex:1;padding:6px 0;border-radius:20px;border:1.5px solid #e53935;background:#e53935;color:#fff;font-size:0.8em;font-weight:700;cursor:pointer;';
+  btnSearch.style.cssText = tab === 'search' ? _styleOn : _styleOff;
+  btnTodo.style.cssText   = tab === 'todo'   ? _styleOn : _styleOff;
+  if (btnGou) btnGou.style.cssText = tab === 'gou' ? _styleGouOn : _styleOff;
+  paneSearch.style.display = tab === 'search' ? 'flex' : 'none';
+  paneTodo.style.display   = tab === 'todo'   ? 'flex' : 'none';
+  if (paneGou) paneGou.style.display = tab === 'gou' ? 'flex' : 'none';
+  if (tab === 'todo') renderTodoList();
+  if (tab === 'gou')  renderGouTaskList();
+}
+
+// ===== 業タスク一覧 =====
+function renderGouTaskList() {
+  var container = document.getElementById('gouTaskResults');
+  var countEl   = document.getElementById('gouTaskCount');
+  if (!container || !countEl) return;
+  var today = getLocalDateStr(new Date());
+  var todayMs = new Date(today.replace(/-/g,'/')).getTime();
+  // 未完了タスクを日付順（古い順）
+  var tasks = allTasks.filter(function(t) {
+    return t.kind === 'task' && !t.completed && !t.done && !t.inHeaven && t.displayScope !== 'heaven';
+  }).sort(function(a, b) { return (a.date || '').localeCompare(b.date || ''); });
+
+  // 放置日数を計算するヘルパー
+  function getDaysOld(dateStr) {
+    if (!dateStr || dateStr >= today) return 0;
+    var ms = new Date(dateStr.replace(/-/g,'/')).getTime();
+    return isNaN(ms) ? 0 : Math.floor((todayMs - ms) / 86400000);
   }
+  // 危険度分類
+  var over14 = tasks.filter(function(t){ return getDaysOld(t.date) >= 14; }).length;
+  var over7  = tasks.filter(function(t){ var d=getDaysOld(t.date); return d>=7&&d<14; }).length;
+  var over3  = tasks.filter(function(t){ var d=getDaysOld(t.date); return d>=3&&d<7; }).length;
+
+  countEl.textContent = tasks.length + '件';
+  container.innerHTML = '';
+
+  if (tasks.length === 0) {
+    container.innerHTML = '<div style="text-align:center;color:#bbb;padding:32px 0;font-size:0.9em;">業ゼロ！清らかです 🌸</div>';
+    return;
+  }
+
+  // ===== 警告バナー =====
+  if (over3 > 0 || over7 > 0 || over14 > 0) {
+    var banner = document.createElement('div');
+    banner.style.cssText = 'background:#fff0f0;border:1.5px solid #ffcdd2;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:0.78em;color:#c62828;line-height:1.7;';
+    var parts = [];
+    if (over14 > 0) parts.push('<span style="font-weight:800;color:#b71c1c;">🔥 14日以上: ' + over14 + '件</span>');
+    if (over7  > 0) parts.push('<span style="font-weight:700;color:#c62828;">⚠️ 7日以上: ' + over7  + '件</span>');
+    if (over3  > 0) parts.push('<span style="color:#e53935;">3日以上: ' + over3 + '件</span>');
+    banner.innerHTML = parts.join('　');
+    container.appendChild(banner);
+  }
+
+  var lastDate = '';
+  tasks.forEach(function(t) {
+    var dateStr = t.date || '';
+    var daysOld = getDaysOld(dateStr);
+    var isPast  = dateStr < today;
+    var isToday2 = dateStr === today;
+
+    // 危険度に応じた背景色
+    var rowBg   = daysOld >= 14 ? '#ffcdd2' : daysOld >= 7 ? '#ffebee' : daysOld >= 3 ? '#fff5f5' : '';
+    var textColor = daysOld >= 14 ? '#b71c1c' : daysOld >= 7 ? '#c62828' : daysOld >= 3 ? '#e53935' : '#333';
+    var fontWeight = daysOld >= 7 ? '700' : '500';
+
+    // 日付セパレータ
+    if (dateStr !== lastDate) {
+      var sep = document.createElement('div');
+      var weekdays = ['日','月','火','水','木','金','土'];
+      var dObj = dateStr ? new Date(dateStr.replace(/-/g,'/')) : null;
+      var ageLabel = daysOld >= 14 ? ' 🔥' + daysOld + '日放置' : daysOld >= 7 ? ' ⚠️' + daysOld + '日' : daysOld >= 3 ? ' ' + daysOld + '日' : '';
+      var dLabel = dObj && !isNaN(dObj) ?
+        dateStr + '（' + weekdays[dObj.getDay()] + '）' + ageLabel + (isToday2 ? ' 今日' : '') : dateStr;
+      sep.style.cssText = 'font-size:0.72em;font-weight:700;padding:8px 4px 4px;letter-spacing:0.05em;' +
+        'color:' + (daysOld >= 14 ? '#b71c1c' : daysOld >= 7 ? '#c62828' : isPast ? '#e53935' : isToday2 ? '#e65100' : '#aaa') + ';' +
+        (lastDate ? 'border-top:1px solid #f0f0f0;margin-top:4px;' : '');
+      sep.textContent = dLabel;
+      container.appendChild(sep);
+      lastDate = dateStr;
+    }
+
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:flex-start;gap:8px;padding:8px 6px;border-bottom:1px solid #fdf0f0;cursor:pointer;border-radius:6px;transition:background 0.1s;' +
+      (rowBg ? 'background:' + rowBg + ';' : '');
+    row.onmouseover = function(){ row.style.background = daysOld >= 14 ? '#ffb3b3' : daysOld >= 7 ? '#ffd0d0' : '#fff5f5'; };
+    row.onmouseout  = function(){ row.style.background = rowBg; };
+    row.onclick = function() {
+      closeSearchModal();
+      if (dateStr) {
+        currentDailyDate = dateStr;
+        localStorage.setItem('selectedDailyDate', dateStr);
+      }
+      switchView('daily');
+      setTimeout(function(){ switchDailyTab('matrix'); }, 50);
+    };
+    var secColors = ['#ef5350','#42a5f5','#66bb6a','#ffa726'];
+    var dot = document.createElement('div');
+    dot.style.cssText = 'width:8px;height:8px;border-radius:50%;background:' + (secColors[(t.section||1)-1]) + ';flex-shrink:0;margin-top:5px;';
+    var info = document.createElement('div');
+    info.style.cssText = 'flex:1;min-width:0;';
+    var textEl = document.createElement('div');
+    textEl.style.cssText = 'font-size:0.88em;font-weight:' + fontWeight + ';color:' + textColor + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+    textEl.textContent = t.text || '（無題）';
+    var meta = document.createElement('div');
+    meta.style.cssText = 'font-size:0.72em;color:#bbb;margin-top:2px;';
+    var secLabel = ['緊急×重要','緊急×重要でない','緊急でない×重要','どちらでもない'];
+    meta.textContent = secLabel[(t.section||1)-1] + (t.time ? ' · ' + t.time : '');
+    info.appendChild(textEl);
+    info.appendChild(meta);
+    row.appendChild(dot);
+    row.appendChild(info);
+    container.appendChild(row);
+  });
 }
 
 // ===== 未完了タスク一覧 =====
@@ -14600,6 +14706,7 @@ function loadSettingsUI() {
     window.openGouLogModal = openGouLogModal;
     window.switchSearchTab = switchSearchTab;
     window.renderTodoList = renderTodoList;
+    window.renderGouTaskList = renderGouTaskList;
     window.formatGDP = formatGDP;
     window.getGDP = getGDP;
     window.getKingdomPower = getKingdomPower;
@@ -16468,7 +16575,9 @@ window.addEventListener('afterprint', function() {
         <button id="searchTabSearch" onclick="switchSearchTab('search')"
           style="flex:1;padding:6px 0;border-radius:20px;border:1.5px solid #333;background:#333;color:#fff;font-size:0.8em;font-weight:700;cursor:pointer;">🔍 検索</button>
         <button id="searchTabTodo" onclick="switchSearchTab('todo')"
-          style="flex:1;padding:6px 0;border-radius:20px;border:1.5px solid #e0e0e0;background:#fff;color:#888;font-size:0.8em;font-weight:700;cursor:pointer;">📋 未完了一覧</button>
+          style="flex:1;padding:6px 0;border-radius:20px;border:1.5px solid #e0e0e0;background:#fff;color:#888;font-size:0.8em;font-weight:700;cursor:pointer;">📋 未完了</button>
+        <button id="searchTabGou" onclick="switchSearchTab('gou')"
+          style="flex:1;padding:6px 0;border-radius:20px;border:1.5px solid #e0e0e0;background:#fff;color:#888;font-size:0.8em;font-weight:700;cursor:pointer;">👹 業</button>
       </div>
       <div id="searchPaneSearch" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
         <div style="font-size:0.78em;color:#aaa;margin-bottom:8px;">
@@ -16479,6 +16588,10 @@ window.addEventListener('afterprint', function() {
       <div id="searchPaneTodo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
         <div style="font-size:0.78em;color:#aaa;margin-bottom:8px;" id="todoCount">読み込み中...</div>
         <div id="todoResults" style="overflow-y:auto;flex:1;"></div>
+      </div>
+      <div id="searchPaneGou" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+        <div style="font-size:0.78em;color:#e53935;margin-bottom:8px;">👹 未完了タスク＝業の種。完了して業を祓おう。<span id="gouTaskCount" style="margin-left:6px;font-weight:700;"></span></div>
+        <div id="gouTaskResults" style="overflow-y:auto;flex:1;"></div>
       </div>
     </div>
   </div>
