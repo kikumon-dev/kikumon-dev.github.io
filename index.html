@@ -12275,11 +12275,24 @@ function reviveBlueprint(id) {
 
           // ===== 第1段：ID重複の厳格スキップ（上書き廃止） =====
           // 既存IDは一切触らない。追加のみ。
+          // また既存タスクとtext+date+section+timeが同じものもスキップ。
           var _skipDup = 0;
           var _skipDeleted = 0;
+          var _skipContent = 0;
+          // 既存タスクの内容キーセットを構築
+          var _existingContentKeys = new Set();
+          allTasks.forEach(function(t) {
+            if (t.kind !== 'task') return;
+            _existingContentKeys.add((t.text||'') + '|' + (t.date||'') + '|' + (t.section||'') + '|' + (t.time||''));
+          });
           const newTasks = fixedTasks.filter(t => {
             if (existingIds.has(t.id)) { _skipDup++; return false; }
             if (myDeletedIds.has(t.id)) { _skipDeleted++; return false; }
+            if (t.kind === 'task') {
+              var _ck = (t.text||'') + '|' + (t.date||'') + '|' + (t.section||'') + '|' + (t.time||'');
+              if (_existingContentKeys.has(_ck)) { _skipContent++; return false; }
+              _existingContentKeys.add(_ck); // 同インポート内の重複も弾く
+            }
             return true;
           });
 
@@ -12311,6 +12324,32 @@ function reviveBlueprint(id) {
             if (t.kind !== 'gantt' || !Array.isArray(t.taskIds)) return;
             t.taskIds = t.taskIds.filter(function(tid){ return _importAllIdSet.has(tid); });
           });
+          // 1b. タスク内容重複除去（text+date+section+timeが同じものは古い方を残す）
+          var _taskKeyMap = {};
+          var _dedupIds = new Set();
+          allTasks.forEach(function(t) {
+            if (t.kind !== 'task') return;
+            var key = (t.text||'') + '|' + (t.date||'') + '|' + (t.section||'') + '|' + (t.time||'');
+            if (!_taskKeyMap[key]) {
+              _taskKeyMap[key] = t;
+            } else {
+              // createdAtが古い方を残す
+              var existing = _taskKeyMap[key];
+              var existMs = new Date(existing.createdAt || 0).getTime();
+              var thisMs  = new Date(t.createdAt || 0).getTime();
+              if (thisMs < existMs) {
+                _dedupIds.add(existing.id);
+                _taskKeyMap[key] = t;
+              } else {
+                _dedupIds.add(t.id);
+              }
+            }
+          });
+          if (_dedupIds.size > 0) {
+            var _beforeDedup = allTasks.length;
+            allTasks = allTasks.filter(function(t){ return !_dedupIds.has(t.id); });
+            window._dbgLog && window._dbgLog('importData dedup: removed ' + (_beforeDedup - allTasks.length) + '件の重複タスク');
+          }
           // 2. 同一タイトルのgrandvisionが複数ある場合、古い方（IDが若い方）を削除
           var _gvByTitle = {};
           allTasks.filter(function(t){ return t.kind === 'grandvision'; }).forEach(function(t){
@@ -12396,6 +12435,7 @@ function reviveBlueprint(id) {
           importMsg += '✅ 追加：' + _matched + '件\n';
           if (_skipDup > 0) importMsg += '🔒 重複IDスキップ：' + _skipDup + '件\n';
           if (_skipDeleted > 0) importMsg += '🗑️ 削除済みスキップ：' + _skipDeleted + '件\n';
+          if (_skipContent > 0) importMsg += '♻️ 内容重複スキップ：' + _skipContent + '件\n';
           if (_importUnmatchedCount > 0) {
             importMsg += '⚠️ 先頭の「' + _importFallbackCalName + '」カレンダーに追加：' + _importUnmatchedCount + '件\n';
           }
@@ -12695,6 +12735,42 @@ function reviveBlueprint(id) {
         localStorage.setItem(_migKey, '1');
       } catch(e) { console.error('[mig_dedup_tasks_v1]', e); }
     })();
+
+    // ===== 重複タスク削除マイグレーション v2（インポート後の重複対応） =====
+    (function() {
+      var _migKey = 'mig_dedup_tasks_v2';
+      if (localStorage.getItem(_migKey)) return;
+      try {
+        var seen = {};
+        var toDelete = new Set();
+        allTasks.forEach(function(t) {
+          if (t.kind !== 'task') return;
+          var key = (t.text || '') + '|' + (t.date || '') + '|' + (t.section || '') + '|' + (t.time || '');
+          if (!seen[key]) {
+            seen[key] = t;
+          } else {
+            var existing = seen[key];
+            var existMs = new Date(existing.createdAt || 0).getTime();
+            var thisMs  = new Date(t.createdAt || 0).getTime();
+            if (thisMs < existMs) {
+              toDelete.add(existing.id);
+              seen[key] = t;
+            } else {
+              toDelete.add(t.id);
+            }
+          }
+        });
+        if (toDelete.size > 0) {
+          var before = allTasks.length;
+          allTasks = allTasks.filter(function(t){ return !toDelete.has(t.id); });
+          saveAllTasks();
+          window._dbgLog && window._dbgLog('mig_dedup_tasks_v2 done. removed=' + (before - allTasks.length) + '件');
+        } else {
+          window._dbgLog && window._dbgLog('mig_dedup_tasks_v2 done. 重複なし');
+        }
+        localStorage.setItem(_migKey, '1');
+      } catch(e) { console.error('[mig_dedup_tasks_v2]', e); }
+    })();
     // 日付変更時：雑記帳→thoughtsに自動移動
     function moveScratchToThoughts() {
       var today = getLocalDateStr(new Date());
@@ -12762,7 +12838,7 @@ function reviveBlueprint(id) {
       'mig_ids_to_uuid_v7', 'mig_show_in_daily_to_display_scope_v1',
       'mig_category_to_calendar_v170', 'mig_death_ghost_flags_v0_24_59',
       'mig_gant_enabled_default_v0_32', 'mig_journals_to_alltasks_v1',
-      'mig_gdp_to_oku_v1', 'mig_orphan_taskids_v1', 'mig_done_completed_sync_v1', 'mig_dedup_tasks_v1',
+      'mig_gdp_to_oku_v1', 'mig_orphan_taskids_v1', 'mig_done_completed_sync_v1', 'mig_dedup_tasks_v1', 'mig_dedup_tasks_v2',
       '_importLog',
       // GDP経済システム
       'gdpPoints', 'gdpLog', 'gouLog', 'lastGouCheckDate', 'lastTaskCompletedDate',
@@ -23608,7 +23684,7 @@ function showDebugLog() {
          : ng('KPAG·③·BANNED KEYS', '廃止キーが残存: ' + _bannedFound.join(', '));
 
        // ④ 未知キー検知（白名単チェック）
-       var _allowedKeys = ['_calIdMigMap','_dbg_errors','_dbg_log','_lastScratchMoveDate','allSettings','allTasks','autoMainCalendar','calendars','craftMode','currentView','dailyScrollInit','dataVersion','deletedTaskIds','deviceId','escapeLog','extendedvaluekey','gantEnabled','gdpLog','gdpPoints','gouLog','gouPoints','journals','lastGouCheckDate','lastKingdomCodeDate','lastMonthlyBonusMonth','lastTaskCompletedDate','mainCalendarId','mig_category_to_calendar_v170','mig_death_ghost_flags_v0_24_59','mig_gant_enabled_default_v0_32','mig_gdp_to_oku_v1','mig_ids_to_uuid_v7','mig_journal_ids_to_uuid_v7','_importLog','mig_dedup_tasks_v1','mig_done_completed_sync_v1','mig_journals_to_alltasks_v1','mig_orphan_taskids_v1','mig_show_in_daily_to_display_scope_v1','migration_calendarId_v1','nbLastPageId','notebooks','selectedDailyDate','simpleMode','taskCompletedStreak','taskCompletedTotal','tlLastScrollTop','tokuLog','tokuPoints','weeklyScrollInit','wgLastScrollTop'];
+       var _allowedKeys = ['_calIdMigMap','_dbg_errors','_dbg_log','_lastScratchMoveDate','allSettings','allTasks','autoMainCalendar','calendars','craftMode','currentView','dailyScrollInit','dataVersion','deletedTaskIds','deviceId','escapeLog','extendedvaluekey','gantEnabled','gdpLog','gdpPoints','gouLog','gouPoints','journals','lastGouCheckDate','lastKingdomCodeDate','lastMonthlyBonusMonth','lastTaskCompletedDate','mainCalendarId','mig_category_to_calendar_v170','mig_death_ghost_flags_v0_24_59','mig_gant_enabled_default_v0_32','mig_gdp_to_oku_v1','mig_ids_to_uuid_v7','mig_journal_ids_to_uuid_v7','_importLog','mig_dedup_tasks_v1','mig_dedup_tasks_v2','mig_done_completed_sync_v1','mig_journals_to_alltasks_v1','mig_orphan_taskids_v1','mig_show_in_daily_to_display_scope_v1','migration_calendarId_v1','nbLastPageId','notebooks','selectedDailyDate','simpleMode','taskCompletedStreak','taskCompletedTotal','tlLastScrollTop','tokuLog','tokuPoints','weeklyScrollInit','wgLastScrollTop'];
        var _unknownKeys = _kpKeys.filter(function(k){ return _allowedKeys.indexOf(k) === -1; });
        _unknownKeys.length === 0
          ? ok('KPAG·④·UNKNOWN KEYS: 全' + _kpKeys.length + 'キー検査済・汚染ゼロ')
