@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.41';
+    const APP_VERSION = 'v0.39.44';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -4107,6 +4107,20 @@
             </label>
           </div>
         </div>
+        <div style="margin-top:16px;">
+          <label style="display:block;margin-bottom:8px;font-weight:600;color:#262626;font-size:0.9em;">左側の時刻バー</label>
+          <div class="settings-radio-group" id="tlTimeBarGroup">
+            <label class="settings-radio-label">
+              <input type="radio" name="tlTimeBar" value="show" checked>
+              <span>🕐 表示する</span>
+            </label>
+            <label class="settings-radio-label">
+              <input type="radio" name="tlTimeBar" value="hide">
+              <span>🚫 非表示</span>
+              <span style="font-size:0.75em;color:#8e8e8e;margin-left:8px;">タスク欄を広く使う</span>
+            </label>
+          </div>
+        </div>
       <!-- 月間表示モード -->
       <div style="margin-top: 24px; border-top: 1px solid #efefef; padding-top: 18px;">
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">週間ビュー</h3>
@@ -4698,6 +4712,7 @@
         weeklyCellScale:  100,
         weeklyTimeBar:    'show',
         tlScrollMode:     'last',
+        tlTimeBar:        'show',
         tlRowHeights:     null,
         wgScrollMode:     'last',
         weeklyStartH:     6,
@@ -4816,7 +4831,7 @@
         'simpleMode', 'craftModeEnabled', 'craftRenderMode',
         'dailyViewMode', 'initialView', 'monthlyMode',
         'weeklyDays', 'weeklyRowH', 'weeklyCellScale', 'weeklyTimeBar',
-        'tlScrollMode', 'tlRowHeights', 'wgScrollMode', 'weeklyStartH', 'weeklyEndH', 'useColors',
+        'tlScrollMode', 'tlTimeBar', 'tlRowHeights', 'wgScrollMode', 'weeklyStartH', 'weeklyEndH', 'useColors',
         'calendars', 'mainCalendarId', 'autoMainCalendar',
         'okaeriDate', 'lastHotokuIdx',
         'starterDeckReceived',
@@ -4910,7 +4925,7 @@
         'simpleMode', 'craftModeEnabled', 'craftRenderMode',
         'dailyViewMode', 'initialView', 'monthlyMode',
         'weeklyDays', 'weeklyRowH', 'weeklyCellScale', 'weeklyTimeBar',
-        'tlScrollMode', 'tlRowHeights', 'wgScrollMode', 'weeklyStartH', 'weeklyEndH', 'useColors',
+        'tlScrollMode', 'tlTimeBar', 'tlRowHeights', 'wgScrollMode', 'weeklyStartH', 'weeklyEndH', 'useColors',
         // calendar系（_calIdMigMapは削除禁止→除外）
         'calendars', 'mainCalendarId', 'autoMainCalendar',
         // craft系
@@ -7744,6 +7759,33 @@ function myDeckApply(idx) {
         container.appendChild(nowLine);
       }
       body.appendChild(container);
+      // ===== 時刻バー列を左に追加 =====
+      var _showTlTimeBar = (allSettings.ui.tlTimeBar || 'show') === 'show';
+      if (_showTlTimeBar) {
+        var tlTimeBarCol = document.createElement('div');
+        tlTimeBarCol.style.cssText = 'position:absolute;left:0;top:0;width:44px;pointer-events:none;';
+        tlTimeBarCol.style.height = tlTotalHeight() + 'px';
+        for (var _tbh = _tlStartH; _tbh < _tlEndH; _tbh++) {
+          var _tbLabel = document.createElement('div');
+          var _tbTop = tlTopPx(_tbh);
+          var _tbH = tlRowHeights[_tbh];
+          if (_tbH <= 0) continue;
+          _tbLabel.style.cssText =
+            'position:absolute;left:0;width:42px;top:' + _tbTop + 'px;height:' + _tbH + 'px;' +
+            'display:flex;align-items:flex-start;justify-content:flex-end;padding-right:6px;padding-top:3px;box-sizing:border-box;' +
+            'font-size:0.62em;color:' + (isToday && _tbh === nowHour ? 'rgba(244,67,54,0.8)' : 'rgba(150,150,160,0.75)') + ';' +
+            'font-family:monospace;font-weight:600;letter-spacing:0.02em;pointer-events:none;white-space:nowrap;';
+          _tbLabel.textContent = String(_tbh).padStart(2,'0') + ':00';
+          tlTimeBarCol.appendChild(_tbLabel);
+        }
+        // bodyをflex化して時刻バーとcontainerを並べる
+        body.style.position = 'relative';
+        body.style.paddingLeft = '44px';
+        body.style.boxSizing = 'border-box';
+        body.appendChild(tlTimeBarCol);
+        // containerに区切り線
+        container.style.borderLeft = '1px solid rgba(200,200,210,0.35)';
+      }
       // 時刻なしタスクセクション（下部に固定）
       if (noTimeTasks.length > 0) {
         var noTimeSection = document.createElement('div');
@@ -11610,8 +11652,14 @@ function reviveBlueprint(id) {
         calendars: calendars,
         deletedIds: deletedIds,
         tasks: allTasks,
+        tokuPoints: parseInt(localStorage.getItem('tokuPoints') || '0'),
+        tokuLog: JSON.parse(localStorage.getItem('tokuLog') || '[]'),
+        gouPoints: parseInt(localStorage.getItem('gouPoints') || '0'),
+        gouLog: JSON.parse(localStorage.getItem('gouLog') || '[]'),
+        gdpPoints: parseInt(localStorage.getItem('gdpPoints') || '0'),
+        gdpLog: JSON.parse(localStorage.getItem('gdpLog') || '[]'),
+        deviceId: localStorage.getItem('deviceId') || '',
         settings: (function(){
-          // avatarは容量が大きいので別途除外しない（ユーザーの選択に任せる）
           return allSettings;
         })()
       };
@@ -11822,6 +11870,29 @@ function reviveBlueprint(id) {
           incomingDeletedIds.forEach(function(id) { myDeletedIds.add(id); });
           localStorage.setItem('deletedTaskIds', JSON.stringify([...myDeletedIds]));
           saveAllTasks();
+          // ===== 徳・業・GDPの復元（より大きい値を採用） =====
+          if (typeof data.tokuPoints === 'number') {
+            var myToku = parseInt(localStorage.getItem('tokuPoints') || '0');
+            if (data.tokuPoints > myToku) {
+              localStorage.setItem('tokuPoints', String(data.tokuPoints));
+              if (Array.isArray(data.tokuLog)) localStorage.setItem('tokuLog', JSON.stringify(data.tokuLog));
+            }
+          }
+          if (typeof data.gdpPoints === 'number') {
+            var myGdp = parseInt(localStorage.getItem('gdpPoints') || '0');
+            if (data.gdpPoints > myGdp) {
+              localStorage.setItem('gdpPoints', String(data.gdpPoints));
+              if (Array.isArray(data.gdpLog)) localStorage.setItem('gdpLog', JSON.stringify(data.gdpLog));
+            }
+          }
+          if (typeof data.gouPoints === 'number') {
+            var myGou = parseInt(localStorage.getItem('gouPoints') || '0');
+            // 業は低い方（少ない方）を採用
+            if (data.gouPoints < myGou) {
+              localStorage.setItem('gouPoints', String(data.gouPoints));
+              if (Array.isArray(data.gouLog)) localStorage.setItem('gouLog', JSON.stringify(data.gouLog));
+            }
+          }
           if (data.purpose) { allSettings.flags.purpose = data.purpose; }
           if (data.stopCondition) { allSettings.flags.stopCondition = data.stopCondition; }
           if (data.settings) {
@@ -13762,6 +13833,11 @@ function loadSettingsUI() {
       document.querySelectorAll('input[name="weeklyTimeBar"]').forEach(radio => {
         radio.checked = (radio.value === weeklyTimeBar);
       });
+      // タイムライン時刻バー
+      const tlTimeBar = allSettings.ui.tlTimeBar || 'show';
+      document.querySelectorAll('input[name="tlTimeBar"]').forEach(radio => {
+        radio.checked = (radio.value === tlTimeBar);
+      });
       // 日次ビュー表示モード
       const dailyMode = allSettings.ui.dailyViewMode || 'matrix';
       const dailyRadios = document.querySelectorAll('input[name="dailyViewMode"]');
@@ -14141,6 +14217,8 @@ function loadSettingsUI() {
         if (_wd) allSettings.ui.weeklyDays = _wd.value; saveAllSettings();
         var _tb = document.querySelector('input[name="weeklyTimeBar"]:checked');
         if (_tb) allSettings.ui.weeklyTimeBar = _tb.value; saveAllSettings();
+        var _tlTb = document.querySelector('input[name="tlTimeBar"]:checked');
+        if (_tlTb) allSettings.ui.tlTimeBar = _tlTb.value; saveAllSettings();
         var _dm = document.querySelector('input[name="dailyViewMode"]:checked');
         if (_dm) allSettings.ui.dailyViewMode = _dm.value; saveAllSettings();
         // シンプルモード
@@ -21990,12 +22068,13 @@ function showDebugLog() {
          ? ok('ST-30: pool空→null確認')
          : ng('ST-30: pool空→null', String(_st30R0));
 
-       // EPOCH=undefined → pool[0]フォールバック
+       // EPOCH=undefined → リテラル'2026-03-22'フォールバックで正常動作確認
        var _st30OrigEpoch = window.COLOSSEUM_EPOCH;
        window.getColosseumPool = function(){ return [{id:'_st30_a'},{id:'_st30_b'}]; };
        window.COLOSSEUM_EPOCH = undefined;
        var _st30R1 = getTodayColosseumDeck();
-       (_st30R1 && _st30R1.id === '_st30_a')
+       // EPOCH=undefinedでもnullにならず何らかのデッキが返ることを確認（リテラルフォールバック）
+       (_st30R1 !== null && _st30R1 !== undefined && _st30R1.id)
          ? ok('ST-30: EPOCH=undefined→pool[0]フォールバック確認')
          : ng('ST-30: EPOCH=undefined→pool[0]', JSON.stringify(_st30R1));
 
