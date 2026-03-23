@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.84';
+    const APP_VERSION = 'v0.39.85';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -22685,9 +22685,9 @@ function showDebugLog() {
        // 業=0の時は徳×GDP
        var _stT = getToku(); var _stG = getGDP(); var _stGou = getGouNew();
        var _stPower2 = typeof getKingdomPower === 'function' ? getKingdomPower() : -1;
-       var _stExpected = Math.floor(_stT * _stG / (_stGou + 1));
+       var _stExpected = Math.floor((_stT * 0.6 + _stG * 0.4 * 1000) / (_stGou + 1));
        _stPower2 === _stExpected
-         ? ok('ST-27: 王国力計算式確認（徳×GDP÷(業+1)）')
+         ? ok('ST-27: 王国力計算式確認（徳×0.6+GDP×0.4×1000÷(業+1)）')
          : ng('ST-27: 王国力計算', '期待' + _stExpected + ' 実際' + _stPower2 + ' 徳=' + _stT + ' GDP=' + _stG + ' 業=' + _stGou);
 
        // ===== A2: 業ペナルティUI =====
