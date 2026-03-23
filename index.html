@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.106';
+    const APP_VERSION = 'v0.39.108';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -6250,7 +6250,7 @@ function myDeckApply(idx) {
         saveAllTasks();
         // migration完了（ログ削除済み）;
       }
-      localStorage.setItem('mig_show_in_daily_to_display_scope_v1', '1');
+      localStorage.setItem('mig_show_in_daily_to_display_scope_v1', 'mig_display_scope_empty_v1', '1');
     }
     function loadAllTasks() {
       loadCalendars();
@@ -12113,6 +12113,7 @@ function reviveBlueprint(id) {
       const exportObj = {
         version: APP_VERSION,
         exportedAt: new Date().toISOString(),
+        isFromArtifact: (function(){ try { return location.href.startsWith('about:') || location.href.startsWith('blob:'); } catch(e){ return false; } })(),
         calendars: calendars,
         deletedIds: deletedIds,
         tasks: allTasks,
@@ -12185,6 +12186,15 @@ function reviveBlueprint(id) {
             }
           }
           const tasksData = data.tasks || data.allTasks;
+          // アーティファクト由来データの日付補正（UTC→JST +9h により日付が1日ずれる問題）
+          const _isFromArtifact = data.isFromArtifact === true;
+          function _fixArtifactDate(dateStr) {
+            if (!_isFromArtifact || !dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+            // UTCで作成された日付にJSTオフセット(+9h)を補正→-1日戻す
+            var _d = new Date(dateStr.replace(/-/g, '/') + 'T09:00:00');
+            _d.setDate(_d.getDate() - 1);
+            return _d.getFullYear() + '-' + String(_d.getMonth()+1).padStart(2,'0') + '-' + String(_d.getDate()).padStart(2,'0');
+          }
           if (!tasksData || !Array.isArray(tasksData)) throw new Error('タスクデータが見つかりません');
           // ③ 完了タスクを含めるか確認
           const includeCompleted = true; // showChoiceModalで分岐（下記）
@@ -12227,6 +12237,8 @@ function reviveBlueprint(id) {
           let _importUnmatchedCount = 0;
           let _importFallbackCalName = '';
           const fixedTasks = validTasks.map(function(t) {
+            // アーティファクト由来の場合、dateを補正（-1日）
+            if (_isFromArtifact && t.date) t = Object.assign({}, t, { date: _fixArtifactDate(t.date) });
             if (!t.calendarId) return t;
             // ① 旧固定IDの場合
             const legacyName = LEGACY_NAME_MAP[t.calendarId];
@@ -12276,6 +12288,12 @@ function reviveBlueprint(id) {
           allTasks.forEach(function(t) {
             if (t.kind !== 'task') return;
             _existingContentKeys.add((t.text||'') + '|' + (t.date||'') + '|' + (t.section||'') + '|' + (t.time||''));
+          });
+          // displayScope未設定タスクを補完（アーティファクト等で作成されたタスクに対応）
+          fixedTasks.forEach(function(t) {
+            if (t.kind === 'task' && !t.displayScope) {
+              t.displayScope = 'both';
+            }
           });
           const newTasks = fixedTasks.filter(t => {
             if (existingIds.has(t.id)) { _skipDup++; return false; }
@@ -12423,7 +12441,7 @@ function reviveBlueprint(id) {
           }
           // ===== 第2段：透明化メッセージ =====
           const _matched = newTasks.length - _importUnmatchedCount;
-          let importMsg = 'インポート完了！\n\n';
+          let importMsg = 'インポート完了！' + (_isFromArtifact ? '\n📅 アーティファクト由来のため日付を-1日補正しました' : '') + '\n\n';
           importMsg += '✅ 追加：' + _matched + '件\n';
           if (_skipDup > 0) importMsg += '🔒 重複IDスキップ：' + _skipDup + '件\n';
           if (_skipDeleted > 0) importMsg += '🗑️ 削除済みスキップ：' + _skipDeleted + '件\n';
@@ -12542,6 +12560,21 @@ function reviveBlueprint(id) {
     window._dbgLog('【印章確認】STAMP SYSTEM ONLINE --- 印章ユニット、全基確認 / 異常なし');
     window._dbgLog('initStampDefs done');
     migrateToDisplayScope();
+    // displayScope空タスク補完マイグレーション（インポート由来等でdisplayScopeが未設定のタスクをbothに修正）
+    (function() {
+      var _migKey2 = 'mig_display_scope_empty_v1';
+      if (localStorage.getItem(_migKey2)) return;
+      var _fixCount = 0;
+      allTasks.forEach(function(t) {
+        if (t.kind === 'task' && !t.displayScope) {
+          t.displayScope = 'both';
+          _fixCount++;
+        }
+      });
+      if (_fixCount > 0) saveAllTasks();
+      localStorage.setItem(_migKey2, '1');
+      window._dbgLog && window._dbgLog('mig_display_scope_empty_v1 done. fixed=' + _fixCount + '件');
+    })();
     window._dbgLog('【照準確認】SCOPE PROTOCOL OK --- 表示制御、正常稼働 / ロックオン');
     window._dbgLog('migrateToDisplayScope done');
     // gantEnabledをデフォルトtrueに（既存ユーザー対応）
@@ -12862,7 +12895,7 @@ function reviveBlueprint(id) {
     window._dbgLog('【昇格完了】UUID ENGINE v7 --- 識別子体系、最新世代 / 時は刻まれました');
     window._dbgLog('migrateToUUIDv7 done');
     // mig_*フラグの値を'1'に正規化（'true'が残っている場合）
-    ['mig_ids_to_uuid_v7','mig_show_in_daily_to_display_scope_v1','mig_category_to_calendar_v170','mig_death_ghost_flags_v0_24_59'].forEach(k => {
+    ['mig_ids_to_uuid_v7','mig_show_in_daily_to_display_scope_v1', 'mig_display_scope_empty_v1','mig_category_to_calendar_v170','mig_death_ghost_flags_v0_24_59'].forEach(k => {
       if (localStorage.getItem(k)) localStorage.setItem(k, '1');
     });
     // deviceIdがv4またはd-prefix形式ならv7に更新
@@ -12892,7 +12925,7 @@ function reviveBlueprint(id) {
       // 雑記帳
       '_lastScratchMoveDate',
       // マイグレーション済みキー
-      'mig_ids_to_uuid_v7', 'mig_show_in_daily_to_display_scope_v1',
+      'mig_ids_to_uuid_v7', 'mig_show_in_daily_to_display_scope_v1', 'mig_display_scope_empty_v1',
       'mig_category_to_calendar_v170', 'mig_death_ghost_flags_v0_24_59',
       'mig_gant_enabled_default_v0_32', 'mig_journals_to_alltasks_v1',
       'mig_gdp_to_oku_v1', 'mig_orphan_taskids_v1', 'mig_done_completed_sync_v1', 'mig_dedup_tasks_v1', 'mig_dedup_tasks_v2', 'mig_calid_to_settings_v1',
@@ -24414,7 +24447,7 @@ function showDebugLog() {
          : ng('KPAG·③·BANNED KEYS', '廃止キーが残存: ' + _bannedFound.join(', '));
 
        // ④ 未知キー検知（白名単チェック）
-       var _allowedKeys = ['_calIdMigMap','_dbg_errors','_dbg_log','_lastScratchMoveDate','allSettings','allTasks','autoMainCalendar','calendars','craftMode','currentView','dailyScrollInit','dataVersion','deletedTaskIds','deviceId','escapeLog','extendedvaluekey','gantEnabled','gdpLog','gdpPoints','gouLog','gouPoints','journals','lastGouCheckDate','lastKingdomCodeDate','lastMonthlyBonusMonth','lastTaskCompletedDate','mainCalendarId','mig_category_to_calendar_v170','mig_death_ghost_flags_v0_24_59','mig_gant_enabled_default_v0_32','mig_gdp_to_oku_v1','mig_ids_to_uuid_v7','mig_journal_ids_to_uuid_v7','_importLog','mig_calid_to_settings_v1','mig_dedup_tasks_v1','mig_dedup_tasks_v2','mig_done_completed_sync_v1','mig_journals_to_alltasks_v1','mig_orphan_taskids_v1','mig_show_in_daily_to_display_scope_v1','migration_calendarId_v1','nbLastPageId','notebooks','selectedDailyDate','simpleMode','taskCompletedStreak','taskCompletedTotal','tlLastScrollTop','tokuLog','tokuPoints','weeklyScrollInit','wgLastScrollTop'];
+       var _allowedKeys = ['_calIdMigMap','_dbg_errors','_dbg_log','_lastScratchMoveDate','allSettings','allTasks','autoMainCalendar','calendars','craftMode','currentView','dailyScrollInit','dataVersion','deletedTaskIds','deviceId','escapeLog','extendedvaluekey','gantEnabled','gdpLog','gdpPoints','gouLog','gouPoints','journals','lastGouCheckDate','lastKingdomCodeDate','lastMonthlyBonusMonth','lastTaskCompletedDate','mainCalendarId','mig_category_to_calendar_v170','mig_death_ghost_flags_v0_24_59','mig_gant_enabled_default_v0_32','mig_gdp_to_oku_v1','mig_ids_to_uuid_v7','mig_journal_ids_to_uuid_v7','_importLog','mig_calid_to_settings_v1','mig_dedup_tasks_v1','mig_dedup_tasks_v2','mig_done_completed_sync_v1','mig_journals_to_alltasks_v1','mig_orphan_taskids_v1','mig_show_in_daily_to_display_scope_v1', 'mig_display_scope_empty_v1','migration_calendarId_v1','nbLastPageId','notebooks','selectedDailyDate','simpleMode','taskCompletedStreak','taskCompletedTotal','tlLastScrollTop','tokuLog','tokuPoints','weeklyScrollInit','wgLastScrollTop'];
        var _unknownKeys = _kpKeys.filter(function(k){ return _allowedKeys.indexOf(k) === -1 && !k.startsWith('backup_'); });
        _unknownKeys.length === 0
          ? ok('KPAG·④·UNKNOWN KEYS: 全' + _kpKeys.length + 'キー検査済・汚染ゼロ')
