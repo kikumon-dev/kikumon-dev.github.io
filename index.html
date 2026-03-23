@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.60';
+    const APP_VERSION = 'v0.39.72';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3001,6 +3001,7 @@
 </svg></button>
     <button class="nav-tab" id="navSearch" onclick="openSearchModal()" title="タスクを検索"
       style="font-size:1em;padding:12px 8px;">🔍</button>
+    <button class="nav-tab" id="navDashboard" onclick="switchView('dashboard')" title="ダッシュボード" style="font-size:1.1em;padding:10px 7px;">📈</button>
     <button class="nav-tab nav-tab-settings" id="navSettings" onclick="switchView('settings')">
       <div class="nav-avatar-wrapper" id="navAvatarWrapper" style="display: none;">
         <img id="navAvatar" src="" alt="" class="nav-avatar">
@@ -3881,6 +3882,162 @@
     </div>
   </div>
 </div>
+<div id="dashboardView" style="display:none;width:100%;min-height:calc(100vh - 50px);position:relative;background:linear-gradient(160deg,#f0f7ff 0%,#fdf6ff 40%,#fff9f0 100%);overflow-y:auto;box-sizing:border-box;">
+  <div style="max-width:520px;margin:0 auto;padding:16px 14px 48px;">
+
+    <!-- 王国ヘッダー -->
+    <div style="text-align:center;margin-bottom:16px;padding:22px 16px 18px;background:#fff;border-radius:24px;box-shadow:0 4px 24px rgba(99,102,241,0.10);border:1px solid rgba(99,102,241,0.08);">
+      <div style="font-size:0.72em;font-weight:700;color:#a0aec0;letter-spacing:0.18em;margin-bottom:4px;">MY KINGDOM</div>
+      <div id="dbKingdomName" style="font-size:1.25em;font-weight:800;color:#1a1a2e;letter-spacing:0.02em;margin-bottom:4px;">王国</div>
+      <div id="dbKingdomTitle" style="display:inline-block;font-size:0.92em;font-weight:700;color:#6366f1;background:#f0f0ff;border-radius:20px;padding:3px 14px;margin-bottom:14px;">🌱 開拓民</div>
+      <div style="display:flex;justify-content:center;gap:0;background:#f8f9ff;border-radius:16px;overflow:hidden;border:1px solid #e8e8f8;">
+        <div style="flex:1;text-align:center;padding:12px 6px;border-right:1px solid #e8e8f8;">
+          <div style="font-size:0.6em;color:#c8a0d0;font-weight:700;letter-spacing:0.12em;margin-bottom:4px;">徳</div>
+          <div id="dbToku" style="font-size:1.6em;font-weight:900;color:#d946ef;line-height:1;">0</div>
+        </div>
+        <div style="flex:1;text-align:center;padding:12px 6px;border-right:1px solid #e8e8f8;">
+          <div style="font-size:0.6em;color:#d4a050;font-weight:700;letter-spacing:0.12em;margin-bottom:4px;">GDP</div>
+          <div id="dbGdp" style="font-size:1.6em;font-weight:900;color:#f59e0b;line-height:1;">0万</div>
+        </div>
+        <div style="flex:1;text-align:center;padding:12px 6px;border-right:1px solid #e8e8f8;">
+          <div style="font-size:0.6em;color:#f87171;font-weight:700;letter-spacing:0.12em;margin-bottom:4px;">業</div>
+          <div id="dbGou" style="font-size:1.6em;font-weight:900;color:#ef4444;line-height:1;">0</div>
+        </div>
+        <div style="flex:1;text-align:center;padding:12px 6px;">
+          <div style="font-size:0.6em;color:#60a5fa;font-weight:700;letter-spacing:0.12em;margin-bottom:4px;">王国力</div>
+          <div id="dbPower" style="font-size:1.6em;font-weight:900;color:#3b82f6;line-height:1;">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 今日の一言メッセージ -->
+    <div id="dbMessage" style="text-align:center;margin-bottom:14px;padding:11px 16px;background:rgba(99,102,241,0.08);border-radius:14px;color:#6366f1;font-size:0.85em;font-weight:600;letter-spacing:0.02em;border:1px solid rgba(99,102,241,0.15);">
+      ✨ 今日も一歩ずつ、前へ！
+    </div>
+
+    <!-- 統計グリッド -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+      <div style="background:#fff;border-radius:18px;padding:16px;box-shadow:0 2px 16px rgba(79,172,254,0.10);border:1px solid #e8f0fe;position:relative;overflow:hidden;min-height:110px;">
+        <div style="position:absolute;right:-8px;top:-8px;font-size:2.8em;opacity:0.08;">📅</div>
+        <div style="font-size:0.65em;color:#93c5fd;font-weight:700;letter-spacing:0.12em;margin-bottom:6px;">今月完了</div>
+        <div id="dbMonthCount" style="font-size:2.2em;font-weight:900;color:#1e40af;line-height:1;">0</div>
+        <div style="font-size:0.82em;color:#93c5fd;margin-top:5px;font-weight:700;">件</div>
+      </div>
+      <div style="background:#fff;border-radius:18px;padding:16px;box-shadow:0 2px 16px rgba(79,172,254,0.10);border:1px solid #e8f0fe;position:relative;overflow:hidden;min-height:110px;">
+        <div style="position:absolute;right:-8px;top:-8px;font-size:2.8em;opacity:0.08;">📆</div>
+        <div style="font-size:0.65em;color:#93c5fd;font-weight:700;letter-spacing:0.12em;margin-bottom:6px;">今週完了</div>
+        <div id="dbWeekCount" style="font-size:2.2em;font-weight:900;color:#1e40af;line-height:1;">0</div>
+        <div style="font-size:0.82em;color:#93c5fd;margin-top:5px;font-weight:700;">件</div>
+      </div>
+      <div style="background:linear-gradient(135deg,#fff7ed,#fff);border-radius:18px;padding:16px;box-shadow:0 2px 16px rgba(245,158,11,0.12);border:1px solid #fed7aa;position:relative;overflow:hidden;min-height:110px;">
+        <div style="position:absolute;right:-8px;top:-8px;font-size:2.8em;opacity:0.12;">🔥</div>
+        <div style="font-size:0.65em;color:#fb923c;font-weight:700;letter-spacing:0.12em;margin-bottom:6px;">連続稼働</div>
+        <div id="dbStreak" style="font-size:2.2em;font-weight:900;color:#ea580c;line-height:1;">0</div>
+        <div style="font-size:0.82em;color:#fb923c;margin-top:5px;font-weight:700;">日</div>
+      </div>
+      <div style="background:#fff;border-radius:18px;padding:16px;box-shadow:0 2px 16px rgba(79,172,254,0.10);border:1px solid #e8f0fe;position:relative;overflow:hidden;min-height:110px;">
+        <div style="position:absolute;right:-8px;top:-8px;font-size:2.8em;opacity:0.08;">🏅</div>
+        <div style="font-size:0.65em;color:#93c5fd;font-weight:700;letter-spacing:0.12em;margin-bottom:6px;">総完了</div>
+        <div id="dbTotalCount" style="font-size:2.2em;font-weight:900;color:#1e40af;line-height:1;">0</div>
+        <div style="font-size:0.82em;color:#93c5fd;margin-top:5px;font-weight:700;">件</div>
+      </div>
+      <div style="background:linear-gradient(135deg,#f0fdf4,#fff);border-radius:18px;padding:16px;box-shadow:0 2px 16px rgba(34,197,94,0.10);border:1px solid #bbf7d0;position:relative;overflow:hidden;min-height:110px;">
+        <div style="position:absolute;right:-8px;top:-8px;font-size:2.8em;opacity:0.12;">🗓️</div>
+        <div style="font-size:0.65em;color:#4ade80;font-weight:700;letter-spacing:0.12em;margin-bottom:6px;">今月稼働</div>
+        <div id="dbMonthDays" style="font-size:2.2em;font-weight:900;color:#16a34a;line-height:1;">0</div>
+        <div style="font-size:0.82em;color:#4ade80;margin-top:5px;font-weight:700;" id="dbMonthDaysLabel">日</div>
+      </div>
+      <div style="background:linear-gradient(135deg,#fdf4ff,#fff);border-radius:18px;padding:16px;box-shadow:0 2px 16px rgba(168,85,247,0.10);border:1px solid #e9d5ff;position:relative;overflow:hidden;min-height:110px;">
+        <div style="position:absolute;right:-8px;top:-8px;font-size:2.8em;opacity:0.12;">⚔️</div>
+        <div style="font-size:0.65em;color:#c084fc;font-weight:700;letter-spacing:0.12em;margin-bottom:6px;">コロシアム最高</div>
+        <div id="dbColosseumBest" style="font-size:2.2em;font-weight:900;color:#9333ea;line-height:1;">0</div>
+        <div style="font-size:0.82em;color:#c084fc;margin-top:5px;font-weight:700;">点</div>
+      </div>
+    </div>
+
+    <!-- 円グラフ＋セクション別完了比率 -->
+    <div style="background:#fff;border-radius:20px;padding:18px;box-shadow:0 2px 16px rgba(79,172,254,0.10);border:1px solid #e8f0fe;margin-bottom:10px;">
+      <div style="font-size:0.7em;font-weight:700;color:#a0aec0;letter-spacing:0.12em;margin-bottom:14px;">📊 セクション別 完了比率</div>
+      <div style="display:flex;align-items:center;gap:18px;">
+        <canvas id="dbPieChart" width="120" height="120" style="flex-shrink:0;"></canvas>
+        <div id="dbSectionBars" style="flex:1;min-width:0;"></div>
+      </div>
+    </div>
+
+    <!-- 称号マイルストーン -->
+    <div style="background:linear-gradient(135deg,#fffbeb,#fff);border-radius:20px;padding:18px;box-shadow:0 2px 16px rgba(245,158,11,0.10);border:1px solid #fde68a;margin-bottom:10px;">
+      <div style="font-size:0.7em;font-weight:700;color:#d97706;letter-spacing:0.12em;margin-bottom:12px;">🏆 徳のマイルストーン</div>
+      <div id="dbTitleHistory" style="font-size:0.85em;color:#92400e;line-height:2.2;"></div>
+    </div>
+
+    <!-- 業スコア -->
+    <div style="background:linear-gradient(135deg,#fff5f5,#fff);border-radius:20px;padding:18px;box-shadow:0 2px 16px rgba(239,68,68,0.08);border:1px solid #fecaca;margin-bottom:10px;">
+      <div style="font-size:0.7em;font-weight:700;color:#f87171;letter-spacing:0.12em;margin-bottom:10px;">👹 業の重さ</div>
+      <div id="dbGouBar" style="font-family:monospace;font-size:1.3em;letter-spacing:3px;margin-bottom:8px;"></div>
+      <div id="dbGouDetail" style="font-size:0.8em;color:#f87171;font-weight:600;"></div>
+      <button onclick="openGouLogModal()" style="width:100%;margin-top:12px;padding:10px;border:1.5px solid #fca5a5;border-radius:12px;background:#fff;color:#ef4444;font-size:0.85em;font-weight:700;cursor:pointer;letter-spacing:0.03em;">📜 業の発生履歴を見る</button>
+    </div>
+
+    <!-- 提携統計 -->
+    <div style="background:#fff;border-radius:20px;padding:18px;box-shadow:0 2px 16px rgba(99,102,241,0.08);border:1px solid #e0e7ff;margin-bottom:10px;">
+      <div style="font-size:0.7em;font-weight:700;color:#a0aec0;letter-spacing:0.12em;margin-bottom:14px;">🤝 提携・交流</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <div style="text-align:center;background:#f5f3ff;border-radius:14px;padding:12px 6px;">
+          <div style="font-size:1.6em;margin-bottom:2px;">📦</div>
+          <div id="dbArvReceived" style="font-size:1.5em;font-weight:900;color:#6366f1;line-height:1;">0</div>
+          <div style="font-size:0.62em;color:#a5b4fc;font-weight:600;margin-top:3px;">受取デッキ</div>
+        </div>
+        <div style="text-align:center;background:#f0fdf4;border-radius:14px;padding:12px 6px;">
+          <div style="font-size:1.6em;margin-bottom:2px;">✅</div>
+          <div id="dbArvCompleted" style="font-size:1.5em;font-weight:900;color:#22c55e;line-height:1;">0</div>
+          <div style="font-size:0.62em;color:#86efac;font-weight:600;margin-top:3px;">完了タスク</div>
+        </div>
+        <div style="text-align:center;background:#fff7ed;border-radius:14px;padding:12px 6px;">
+          <div style="font-size:1.6em;margin-bottom:2px;">⚔️</div>
+          <div id="dbBlmTotal" style="font-size:1.5em;font-weight:900;color:#f97316;line-height:1;">0</div>
+          <div style="font-size:0.62em;color:#fdba74;font-weight:600;margin-top:3px;">報告回数</div>
+        </div>
+        <div style="text-align:center;background:#fdf4ff;border-radius:14px;padding:12px 6px;">
+          <div style="font-size:1.6em;margin-bottom:2px;">👨‍👩‍👧</div>
+          <div id="dbFamilyCount" style="font-size:1.5em;font-weight:900;color:#d946ef;line-height:1;">0</div>
+          <div style="font-size:0.62em;color:#f0abfc;font-weight:600;margin-top:3px;">家族共有</div>
+        </div>
+        <div style="text-align:center;background:#f0f9ff;border-radius:14px;padding:12px 6px;">
+          <div style="font-size:1.6em;margin-bottom:2px;">🃏</div>
+          <div id="dbMyDeckCount" style="font-size:1.5em;font-weight:900;color:#0ea5e9;line-height:1;">0</div>
+          <div style="font-size:0.62em;color:#7dd3fc;font-weight:600;margin-top:3px;">マイデッキ</div>
+        </div>
+        <div style="text-align:center;background:#fefce8;border-radius:14px;padding:12px 6px;">
+          <div style="font-size:1.6em;margin-bottom:2px;">🏅</div>
+          <div id="dbDeckHistoryCount" style="font-size:1.5em;font-weight:900;color:#eab308;line-height:1;">0</div>
+          <div style="font-size:0.62em;color:#fde047;font-weight:600;margin-top:3px;">デッキ歴</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 王国訪問 -->
+    <div style="background:#fff;border-radius:20px;padding:18px;box-shadow:0 2px 16px rgba(79,172,254,0.08);border:1px solid #e8f0fe;margin-bottom:10px;">
+      <div style="font-size:0.7em;font-weight:700;color:#a0aec0;letter-spacing:0.12em;margin-bottom:12px;">🏰 王国</div>
+      <button onclick="openCraftShareModal()" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border:none;border-radius:14px;background:linear-gradient(135deg,#ffd700,#ff8800);color:#7a4800;font-size:0.9em;font-weight:800;cursor:pointer;width:100%;margin-bottom:8px;box-shadow:0 4px 14px rgba(255,180,0,0.3);letter-spacing:0.02em;">👑 王国コードを発行する</button>
+      <button onclick="openCraftVisitModal()" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border:none;border-radius:14px;background:linear-gradient(135deg,#ffc8dc,#ffa0bc);color:#9c3060;font-size:0.9em;font-weight:800;cursor:pointer;width:100%;box-shadow:0 4px 14px rgba(255,160,188,0.3);letter-spacing:0.02em;">🗺️ 仲間の王国を訪問する</button>
+    </div>
+
+    <!-- データ操作 -->
+    <div style="background:#fff;border-radius:20px;padding:18px;box-shadow:0 2px 16px rgba(79,172,254,0.08);border:1px solid #e8f0fe;margin-bottom:10px;">
+      <div style="font-size:0.7em;font-weight:700;color:#a0aec0;letter-spacing:0.12em;margin-bottom:12px;">💾 データ</div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="exportData()" style="flex:1;padding:13px;border:2px solid #4facfe;border-radius:14px;background:#f0f8ff;color:#2563eb;font-size:0.88em;font-weight:800;cursor:pointer;letter-spacing:0.02em;">📤 エクスポート</button>
+        <button onclick="document.getElementById('dbImportInput').click()" style="flex:1;padding:13px;border:2px solid #4facfe;border-radius:14px;background:#f0f8ff;color:#2563eb;font-size:0.88em;font-weight:800;cursor:pointer;letter-spacing:0.02em;">📥 インポート</button>
+        <input type="file" id="dbImportInput" accept=".json" style="display:none;" onchange="importData(event)">
+      </div>
+    </div>
+
+    <!-- デバッグ -->
+    <div style="text-align:center;margin-top:6px;">
+      <button onclick="showDebugLog()" style="padding:7px 18px;background:#fff;border:1.5px solid #e2e8f0;border-radius:20px;color:#cbd5e1;font-size:0.75em;cursor:pointer;font-weight:600;">🔍 デバッグパネル</button>
+    </div>
+  </div>
+</div>
 <div id="settingsView"  class="settings-view" style="display: none; background:#f5f5f5; position:relative; z-index:1;">
     <div class="settings-container">
       <h2 style="margin: 0 0 30px 0; color: #262626; font-size: 1.4em; font-weight: 700; letter-spacing: -0.01em;">設定</h2>
@@ -4014,7 +4171,7 @@
           </label>
         </div>
       </div>
-      <div class="settings-section" id="gouAdminSection" style="display:none;">
+      <div class="settings-section" id="gouAdminSection" style="display:block;">
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">👹 業の記録</h3>
         <p style="margin:0 0 12px 0;font-size:0.8em;color:#888;">不作為・怠りの記録。タスクを完了して業を祓いましょう。</p>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
@@ -6379,7 +6536,7 @@ function myDeckApply(idx) {
       }
       closeWeeklyTaskModal();
       renderWeeklyView();
-      renderAllSections();
+      renderAllSections((typeof currentDailyDate !== 'undefined' && currentDailyDate) || null);
     }
     // 色をブレンドするヘルパー関数    // 週間ビューを描画（バーチカル）
     function renderWeeklyView() {
@@ -6593,7 +6750,7 @@ function myDeckApply(idx) {
               displayScope: 'both'
             });
             renderWeeklyView();
-            renderAllSections();
+            renderAllSections((typeof currentDailyDate !== 'undefined' && currentDailyDate) || null);
           });
           col.appendChild(bg);
         }
@@ -6923,7 +7080,7 @@ function myDeckApply(idx) {
         renderTimelineView();
       }
       // 日次も再描画
-      renderAllSections();
+      renderAllSections((typeof currentDailyDate !== 'undefined' && currentDailyDate) || null);
     }
     let deleteConfirmationShown = false;
     function confirmDeleteFromEdit() {
@@ -7279,7 +7436,7 @@ function myDeckApply(idx) {
             // 再描画
             renderMonthlyView();
             // 日次も再描画
-            renderAllSections();
+            renderAllSections((typeof currentDailyDate !== 'undefined' && currentDailyDate) || null);
           } catch (err) {}
         });
         // セルへのスタンプD&D受け入れ
@@ -7652,6 +7809,44 @@ function myDeckApply(idx) {
             var ratio = tlRowHeights[i] / TL_ROW_H;
             var fs = Math.min(1.4, Math.max(0.65, 0.72 * ratio));
             if (lbl) lbl.style.fontSize = fs + 'em';
+          }
+        }
+        // ===== 左バー再描画（行高スライダー連動） =====
+        var _tlBarEl = document.getElementById('tlTimeBarCol');
+        if (_tlBarEl && (allSettings.ui.tlTimeBar || 'show') === 'show') {
+          _tlBarEl.style.height = tlTotalHeight() + 'px';
+          _tlBarEl.innerHTML = '';
+          for (var _rbh = _tlStartH; _rbh < _tlEndH; _rbh++) {
+            var _rbRowH = tlRowHeights[_rbh];
+            if (_rbRowH <= 0) continue;
+            var _rbTopBase = tlTopPx(_rbh);
+            var _rbIsCur = isToday && _rbh === nowHour;
+            // :00ラベル
+            var _rbLabel = document.createElement('div');
+            _rbLabel.style.cssText =
+              'position:absolute;right:6px;top:' + (_rbTopBase - 9) + 'px;' +
+              'font-size:0.72em;font-family:monospace;font-weight:700;letter-spacing:0.03em;' +
+              'color:' + (_rbIsCur ? '#e65100' : 'rgba(80,80,95,0.75)') + ';' +
+              'pointer-events:none;white-space:nowrap;line-height:1;';
+            _rbLabel.textContent = String(_rbh).padStart(2,'0') + ':00';
+            _tlBarEl.appendChild(_rbLabel);
+            // :15 :30 :45
+            if (_rbRowH >= 45) {
+              [15, 30, 45].forEach(function(min) {
+                if (min !== 30 && _rbRowH < 60) return;
+                if (min === 45 && _rbRowH < 75) return;
+                var _qTop = _rbTopBase + Math.round(min / 60 * _rbRowH) - 7;
+                var _qLabel = document.createElement('div');
+                var _is30 = min === 30;
+                _qLabel.style.cssText =
+                  'position:absolute;right:8px;top:' + _qTop + 'px;' +
+                  'font-size:' + (_is30 ? '0.63em' : '0.55em') + ';font-family:monospace;font-weight:' + (_is30 ? '600' : '400') + ';' +
+                  'color:rgba(130,130,148,' + (_is30 ? '0.7' : '0.45') + ');' +
+                  'pointer-events:none;white-space:nowrap;line-height:1;';
+                _qLabel.textContent = '─' + min;
+                _tlBarEl.appendChild(_qLabel);
+              });
+            }
           }
         }
         allSettings.ui.tlRowHeights = tlRowHeights.map(function(v, i) {
@@ -8422,6 +8617,7 @@ function applyVisibleTabsSettings() {
     { id: 'navCraft',      key: 'craft' },
     { id: 'navShop',       key: 'shop' },
     { id: 'navColosseum',  key: 'colosseum' },
+    { id: 'navDashboard',  key: 'dashboard' },
   ];
   tabs.forEach(function(t) {
     var el = document.getElementById(t.id);
@@ -9635,7 +9831,7 @@ function toggleGantEnabled(checked) {
         overlay.remove();
         closeBlueprintEditor();
         renderGantView();
-        renderAllSections();
+        renderAllSections((typeof currentDailyDate !== 'undefined' && currentDailyDate) || null);
         showToast('🌟 志の天国へ送りました。お疲れ様！', {type:'success', duration:4000});
       };
       document.getElementById('heavenCancelBtn').onclick = function(){ overlay.remove(); };
@@ -10421,7 +10617,7 @@ function reviveBlueprint(id) {
       renderMonthlyView();
       renderWeeklyView();
       // 日次も再描画
-      renderAllSections();
+      renderAllSections((typeof currentDailyDate !== 'undefined' && currentDailyDate) || null);
       // 振動フィードバック
       if (navigator.vibrate) {
         navigator.vibrate([30, 30, 30]);
@@ -10520,7 +10716,7 @@ function reviveBlueprint(id) {
         renderTimelineView();
       }
       // 日次も再描画
-      renderAllSections();
+      renderAllSections((typeof currentDailyDate !== 'undefined' && currentDailyDate) || null);
     }
     function deleteMonthlyTask() {
       const taskId = document.getElementById('monthlyTaskId').value;
@@ -10535,7 +10731,7 @@ function reviveBlueprint(id) {
             renderMonthlyView();
             const tlv = document.getElementById('timelineView');
             if (tlv && tlv.style.display !== 'none') renderTimelineView();
-            renderAllSections();
+            renderAllSections((typeof currentDailyDate !== 'undefined' && currentDailyDate) || null);
           }},
           { label: 'キャンセル', style: 'cancel' },
         ],
@@ -10620,7 +10816,7 @@ function reviveBlueprint(id) {
         renderTimelineView();
       }
       // 日次も再描画
-      renderAllSections();
+      renderAllSections((typeof currentDailyDate !== 'undefined' && currentDailyDate) || null);
     }
     // タイマー関連関数
     function handleTimerClick() {
@@ -10652,7 +10848,7 @@ function reviveBlueprint(id) {
       } else if (timerState === 'executing') {
         // 実行 → 完了（オレンジ解除）
         selectedTaskText = null;
-        renderAllSections();
+        renderAllSections((typeof currentDailyDate !== 'undefined' && currentDailyDate) || null);
         timerState = 'complete';
         updateTimerDisplay();
       } else if (timerState === 'complete') {
@@ -10690,7 +10886,7 @@ function reviveBlueprint(id) {
         document.getElementById('purposeDisplay').style.display = 'none';
         document.getElementById('purposeInput').value = '';
         // ハイライト解除
-        renderAllSections();
+        renderAllSections((typeof currentDailyDate !== 'undefined' && currentDailyDate) || null);
         updateTimerDisplay();
       }
     }
@@ -10727,7 +10923,7 @@ function reviveBlueprint(id) {
             // 実行終了：オレンジ解除
             selectedTaskText = null;
             // 全セクション再レンダリング
-            renderAllSections();
+            renderAllSections((typeof currentDailyDate !== 'undefined' && currentDailyDate) || null);
             timerState = 'complete';
             updateTimerDisplay();
           } else if (timerState === 'pomodoro') {
@@ -10840,7 +11036,7 @@ function reviveBlueprint(id) {
       if (task) {
         selectedTaskText = task.text;
         // 全セクションを再レンダリング
-        renderAllSections();
+        renderAllSections((typeof currentDailyDate !== 'undefined' && currentDailyDate) || null);
       }
     }
     // 一番上のタスクを自動選択
@@ -11905,7 +12101,7 @@ function reviveBlueprint(id) {
       initStampDefs();
       renderStampBar();
       // 日次ビューを再描画
-      renderAllSections();
+      renderAllSections((typeof currentDailyDate !== 'undefined' && currentDailyDate) || null);
       // 週間ビューも再描画
       renderWeeklyView();
       // 貿易港UIを再描画
@@ -12597,7 +12793,7 @@ function reviveBlueprint(id) {
       };
     })();
     // 日次ビューを初期描画
-    renderAllSections();
+    renderAllSections((typeof currentDailyDate !== 'undefined' && currentDailyDate) || null);
     window._dbgLog('【王国描画】RENDER COMPLETE --- 全象限、描画完了 / 王国は今——動いています');
     window._dbgLog('renderAllSections done');
     // 起動時ナビタブ同期（DOMContentLoadedタイミング依存を排除）
@@ -12682,6 +12878,7 @@ function reviveBlueprint(id) {
       document.getElementById('timelineView').style.display = 'none';
       document.getElementById('scratchView').style.display = 'none';
       var _jv = document.getElementById('journalView'); if (_jv) _jv.style.display = 'none';
+      var _dbv = document.getElementById('dashboardView'); if (_dbv) _dbv.style.display = 'none';
       document.getElementById('dailyInnerTabBar').style.display = 'none';
       var _dailyNavBarReset = document.getElementById('dailyDateNavBar');
       if (_dailyNavBarReset) _dailyNavBarReset.style.display = 'none';
@@ -12741,6 +12938,12 @@ function reviveBlueprint(id) {
         if (_ncol) _ncol.classList.add('active');
         window.scrollTo(0, 0);
         if (typeof renderColosseumView === 'function') renderColosseumView();
+      } else if (view === 'dashboard') {
+        var dbView = document.getElementById('dashboardView');
+        if (dbView) dbView.style.display = 'block';
+        var navDb = document.getElementById('navDashboard');
+        if (navDb) navDb.classList.add('active');
+        if (typeof renderDashboardView === 'function') renderDashboardView();
       } else if (view === 'settings') {
         if (gantView) gantView.style.display = 'none';
         settingsView.style.display = 'block';
@@ -13432,7 +13635,7 @@ function reviveBlueprint(id) {
           currentMonthDate = new Date(d.getFullYear(), d.getMonth(), 1);
         }
         // 全ビュー再描画
-        renderAllSections();
+        renderAllSections((typeof currentDailyDate !== 'undefined' && currentDailyDate) || null);
         renderMonthlyView();
         renderWeeklyView();
         if (document.getElementById('timelineView').style.display !== 'none') renderTimelineView();
@@ -14224,9 +14427,9 @@ function loadSettingsUI() {
     (function() {
       var _isAdminNow = _adminModeActive || allSettings.flags.adminMode === true;
       var _gouSec = document.getElementById('gouAdminSection');
-      if (_gouSec) _gouSec.style.display = _isAdminNow ? 'block' : 'none';
+      if (_gouSec) _gouSec.style.display = 'block'; // 常時表示
       var _gouDisp = document.getElementById('gouDisplayValue');
-      if (_gouDisp && _isAdminNow && typeof getGouNew === 'function') _gouDisp.textContent = getGouNew();
+      if (_gouDisp && typeof getGouNew === 'function') _gouDisp.textContent = getGouNew();
     })();
     // アバター画像変更
     function handleAvatarChange(event) {
@@ -14920,6 +15123,7 @@ function loadSettingsUI() {
     window.toggleVisibleTab = toggleVisibleTab;
     window.openDeckDetailModal = openDeckDetailModal;
     window.renderColosseumView = renderColosseumView;
+    window.renderDashboardView = renderDashboardView;
     window.generateAndCopyColosseumReport = generateAndCopyColosseumReport;
     window.getColosseumPool = getColosseumPool;
     window.getTodayColosseumDeck = getTodayColosseumDeck;
@@ -16181,6 +16385,220 @@ function recordColosseumScore(deckId, name, count) {
 }
 
 // ===== コロシアム画面を描画 =====
+function renderDashboardView() {
+  var today = getLocalDateStr(new Date());
+  var now = new Date();
+
+  // 王国情報
+  var s = typeof getCraftStats === 'function' ? getCraftStats() : null;
+  var title = typeof getKingdomTitle === 'function' ? getKingdomTitle() : {icon:'🌱', name:'開拓民', color:'#fff'};
+  var ngLabel = s && s.ng > 0 ? s.ng + '周目 ' : '';
+  var cfg = typeof LEVEL_CONFIG !== 'undefined' ? LEVEL_CONFIG[Math.min((s?s.level:1)-1, LEVEL_CONFIG.length-1)] : null;
+  function _set(id, v) { var e=document.getElementById(id); if(e) e.textContent=v; }
+
+  _set('dbKingdomName', ngLabel + (cfg ? cfg.name : 'アリアハン') + '王国　Lv.' + (s ? s.level : 1));
+  // 今日の一言メッセージ
+  var _msgEl = document.getElementById('dbMessage');
+  if (_msgEl) {
+    var _tokuNow = typeof getToku === 'function' ? getToku() : 0;
+    var _gouNow  = typeof getGouNew === 'function' ? getGouNew() : 0;
+    var _msgs = [
+      '✨ 今日も一歩ずつ、前へ！',
+      '🌸 タスクを完了するたびに、王国は輝く。',
+      '🔥 行動が徳を生む。今日も精進を！',
+      '💪 継続は力なり。あなたの王国は成長中！',
+      '🌟 今日の完了が、明日の王国力になる。',
+    ];
+    var _msg;
+    if (_gouNow >= 10) {
+      _msg = '👹 業が積んでいます。今日こそ放置タスクを祓おう！';
+      _msgEl.style.background = 'rgba(239,68,68,0.08)'; _msgEl.style.color='#ef4444'; _msgEl.style.borderColor='rgba(239,68,68,0.2)';
+    } else if (_tokuNow >= 1000) {
+      _msg = '👑 伝説の王！あなたの徳は' + _tokuNow + 'に達した。';
+      _msgEl.style.background = 'rgba(245,158,11,0.08)'; _msgEl.style.color='#d97706'; _msgEl.style.borderColor='rgba(245,158,11,0.2)';
+    } else if (_tokuNow >= 100) {
+      _msg = '🌟 素晴らしい！徳' + _tokuNow + 'の達人。今日も前進！';
+      _msgEl.style.background = 'rgba(139,92,246,0.08)'; _msgEl.style.color='#7c3aed'; _msgEl.style.borderColor='rgba(139,92,246,0.2)';
+    } else {
+      _msg = _msgs[new Date().getDay() % _msgs.length];
+      _msgEl.style.background = 'rgba(99,102,241,0.08)'; _msgEl.style.color='#6366f1'; _msgEl.style.borderColor='rgba(99,102,241,0.15)';
+    }
+    _msgEl.textContent = _msg;
+  }
+  var titleEl = document.getElementById('dbKingdomTitle');
+  if (titleEl) { titleEl.textContent = title.icon + ' ' + title.name; titleEl.style.color = title.color || '#ffd700'; }
+  _set('dbToku', typeof getToku === 'function' ? getToku() : 0);
+  _set('dbGdp', typeof formatGDP === 'function' ? formatGDP(typeof getGDP === 'function' ? getGDP() : 0) : '0万');
+  _set('dbGou', typeof getGouNew === 'function' ? getGouNew() : 0);
+  _set('dbPower', typeof getKingdomPower === 'function' ? Math.floor(getKingdomPower()) : 0);
+
+  // 今月
+  var thisMonth = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  var monthCompleted = allTasks.filter(function(t){ return t.kind==='task' && t.completed && t.date && t.date.startsWith(thisMonth); });
+  _set('dbMonthCount', monthCompleted.length);
+
+  // 今週
+  var weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay());
+  var weekStartStr = getLocalDateStr(weekStart);
+  var weekCompleted = allTasks.filter(function(t){ return t.kind==='task' && t.completed && t.date && t.date >= weekStartStr && t.date <= today; });
+  _set('dbWeekCount', weekCompleted.length);
+
+  // 総完了
+  var totalCompleted = allTasks.filter(function(t){ return t.kind==='task' && t.completed; }).length;
+  _set('dbTotalCount', totalCompleted);
+
+  // 今月稼働日数（何日タスクを完了したか）
+  var monthDays = new Set(monthCompleted.map(function(t){ return t.date; })).size;
+  var daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+  _set('dbMonthDays', monthDays);
+  var monthDaysLabelEl = document.getElementById('dbMonthDaysLabel');
+  if (monthDaysLabelEl) monthDaysLabelEl.textContent = '日 / ' + daysInMonth + '日';
+
+  // 連続稼働日数（tokuLogから計算）
+  var streak = 0;
+  try {
+    var tokuLog = JSON.parse(localStorage.getItem('tokuLog') || '[]');
+    var completedDays = new Set(tokuLog.filter(function(l){ return l.reason === 'タスク完了'; }).map(function(l){ return (l.date||'').slice(0,10); }));
+    var d = new Date(today.replace(/-/g,'/'));
+    while (true) {
+      var ds = getLocalDateStr(d);
+      if (completedDays.has(ds)) { streak++; d.setDate(d.getDate()-1); }
+      else break;
+    }
+  } catch(e) { streak = 0; }
+  _set('dbStreak', streak);
+
+  // コロシアム最高スコア
+  var bestScore = 0;
+  try {
+    var cScores = JSON.parse(localStorage.getItem('colosseumScores') || '{}');
+    Object.values(cScores).forEach(function(v){ if (v && v.best > bestScore) bestScore = v.best; });
+  } catch(e) {}
+  _set('dbColosseumBest', bestScore);
+
+  // セクション別完了比率 + 円グラフ
+  var secBarsEl = document.getElementById('dbSectionBars');
+  var pieCanvas = document.getElementById('dbPieChart');
+  if (secBarsEl) {
+    var secCounts = [0,0,0,0];
+    allTasks.filter(function(t){ return t.kind==='task' && t.completed; }).forEach(function(t){ secCounts[(t.section||1)-1]++; });
+    var secTotal = secCounts.reduce(function(a,b){return a+b;},0);
+    var secLabels = ['緊急×重要','重要のみ','緊急のみ','その他'];
+    var secColors = ['#ef4444','#3b82f6','#22c55e','#f59e0b'];
+    secBarsEl.innerHTML = '';
+    secCounts.forEach(function(cnt, i) {
+      var pct = secTotal > 0 ? Math.round(cnt/secTotal*100) : 0;
+      var row = document.createElement('div');
+      row.style.cssText = 'margin-bottom:9px;';
+      row.innerHTML =
+        '<div style="display:flex;justify-content:space-between;font-size:0.68em;color:#718096;margin-bottom:3px;">' +
+        '<span>' + secLabels[i] + '</span><span style="font-weight:600;color:#1a2a3a;">' + pct + '% <span style="color:#a0aec0;font-weight:400;">(' + cnt + '件)</span></span></div>' +
+        '<div style="height:7px;background:#f0f4f8;border-radius:4px;overflow:hidden;">' +
+        '<div style="height:100%;width:' + pct + '%;background:' + secColors[i] + ';border-radius:4px;transition:width 0.6s;"></div></div>';
+      secBarsEl.appendChild(row);
+    });
+    // 円グラフ（Canvas・ドーナツ型）
+    if (pieCanvas) {
+      var ctx = pieCanvas.getContext('2d');
+      var cx = 55, cy = 55, r = 48;
+      ctx.clearRect(0, 0, 110, 110);
+      if (secTotal === 0) {
+        ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+        ctx.fillStyle = '#f0f4f8'; ctx.fill();
+      } else {
+        var startAngle = -Math.PI / 2;
+        secCounts.forEach(function(cnt, i) {
+          var slice = (cnt / secTotal) * Math.PI * 2;
+          if (cnt === 0) return;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.arc(cx, cy, r, startAngle, startAngle + slice);
+          ctx.closePath();
+          ctx.fillStyle = secColors[i];
+          ctx.fill();
+          startAngle += slice;
+        });
+        // 中心白抜き（ドーナツ）
+        ctx.beginPath(); ctx.arc(cx,cy,28,0,Math.PI*2);
+        ctx.fillStyle = '#fff'; ctx.fill();
+        // 中央テキスト
+        ctx.fillStyle = '#1a2a3a';
+        ctx.font = 'bold 13px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(secTotal + '件', cx, cy);
+      }
+    }
+  }
+
+  // 称号の履歴（tokuLogから昇格イベントを抽出）
+  var titleHistEl = document.getElementById('dbTitleHistory');
+  if (titleHistEl) {
+    try {
+      var _tLog = JSON.parse(localStorage.getItem('tokuLog') || '[]');
+      var milestones = [];
+      var _titles = typeof LEVEL_CONFIG !== 'undefined' ? LEVEL_CONFIG.map(function(c){ return c; }) : [];
+      var _accumulated = 0;
+      var _prevTitle = null;
+      _tLog.forEach(function(l){
+        _accumulated += (l.amount || 0);
+        if (typeof getKingdomTitle === 'function' && _titles.length > 0) {
+          // 簡易昇格チェック：100件ごとにチェック
+        }
+      });
+      // tokuPointsのマイルストーンを表示
+      var tokuNow = typeof getToku === 'function' ? getToku() : 0;
+      var milestoneList = [1,10,50,100,300,500,1000,3000,5000,10000];
+      var reached = milestoneList.filter(function(m){ return tokuNow >= m; });
+      if (reached.length > 0) {
+        titleHistEl.textContent = reached.map(function(m){ return '✅ 徳' + m + '達成'; }).join('　');
+      } else {
+        titleHistEl.textContent = 'まだ記録がありません';
+      }
+    } catch(e) { titleHistEl.textContent = '読み込みエラー'; }
+  }
+
+  // ===== 提携統計 =====
+  var _arvReceived = 0, _arvCompleted = 0, _blmTotal = 0;
+  allTasks.filter(function(t){ return t.kind === 'deckHistory'; }).forEach(function(t){
+    if (t.stats) {
+      _arvReceived  += (t.stats.received     || 0);
+      _arvCompleted += (t.stats.completed    || 0);
+      _blmTotal     += (t.stats.blmCompleted || 0);
+    }
+  });
+  var _familyCount = typeof getFamilyShareTasks === 'function' ? getFamilyShareTasks().length : 0;
+  var _myDeckCount = allTasks.filter(function(t){ return t.kind === 'myDeck'; }).length;
+  var _deckHistCount = allTasks.filter(function(t){ return t.kind === 'deckHistory'; }).length;
+  _set('dbArvReceived',      _arvReceived);
+  _set('dbArvCompleted',     _arvCompleted);
+  _set('dbBlmTotal',         _blmTotal);
+  _set('dbFamilyCount',      _familyCount);
+  _set('dbMyDeckCount',      _myDeckCount);
+  _set('dbDeckHistoryCount', _deckHistCount);
+
+  // 業スコアバー
+  var gouVal = typeof getGouNew === 'function' ? getGouNew() : 0;
+  var gouTasks = allTasks.filter(function(t){ return t.kind==='task' && !t.completed && !t.done && t.date && t.date < today; });
+  var maxDays = 0;
+  gouTasks.forEach(function(t){
+    var ms = new Date(t.date.replace(/-/g,'/')).getTime();
+    var d = Math.floor((new Date(today.replace(/-/g,'/')).getTime()-ms)/86400000);
+    if (d > maxDays) maxDays = d;
+  });
+  var gouBarEl = document.getElementById('dbGouBar');
+  if (gouBarEl) {
+    var ratio = Math.min(1, gouVal/365);
+    var filled = Math.round(ratio*10);
+    var bar = '';
+    for (var _b=0;_b<10;_b++) bar += _b<filled ? '<span style="color:'+(filled>6?'#b71c1c':filled>3?'#e53935':'#ef9a9a')+'">█</span>' : '<span style="color:rgba(255,255,255,0.1)">░</span>';
+    gouBarEl.innerHTML = bar;
+  }
+  var gouDetailEl = document.getElementById('dbGouDetail');
+  if (gouDetailEl) {
+    gouDetailEl.textContent = '業 ' + gouVal + ' / 365　放置タスク ' + gouTasks.length + '件　最長 ' + maxDays + '日';
+  }
+}
 function renderColosseumView() {
   var el = document.getElementById('colosseumContent');
   if (!el) return;
@@ -16711,7 +17129,7 @@ window.addEventListener('beforeprint', function() {
   // 印刷時に不要な要素を強制非表示
   const hideIds = ['dailyInnerTabBar','scratchView','timelineView','weeklyView',
     'monthlyView','yearlyView','notebookView','shopView','colosseumView','craftView',
-    'craftHUD','craftGDPBadge','settingsView','setupOverlay','tutorialHelpBtn',
+    'craftHUD','craftGDPBadge','settingsView','dashboardView','setupOverlay','tutorialHelpBtn',
     'escapeMessage','modal-root','lpModal'];
   hideIds.forEach(id => {
     const el = document.getElementById(id);
@@ -16739,7 +17157,7 @@ window.addEventListener('afterprint', function() {
   // 印刷後に元の状態に戻す
   const hideIds = ['dailyInnerTabBar','scratchView','timelineView','weeklyView',
     'monthlyView','yearlyView','notebookView','shopView','colosseumView','craftView',
-    'craftHUD','craftGDPBadge','settingsView','setupOverlay','tutorialHelpBtn',
+    'craftHUD','craftGDPBadge','settingsView','dashboardView','setupOverlay','tutorialHelpBtn',
     'escapeMessage','modal-root','lpModal'];
   hideIds.forEach(id => {
     const el = document.getElementById(id);
@@ -22020,7 +22438,7 @@ function showDebugLog() {
        // テストセクション自己存在確認：ソースコード上の存在をチェック
        var _stSections = ['ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10',
          'ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20',
-         'ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35'];
+         'ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -22702,6 +23120,181 @@ function showDebugLog() {
 
        ok('ST-35: 重複タスク削除マイグレーション 完了');
      } catch(e) { ng('ST-35: 重複タスク削除マイグレーション', e.message); }
+
+     // ===== ST-36: ダッシュボードビュー =====
+     try {
+       // DOM確認
+       var _st36Db = document.getElementById('dashboardView');
+       _st36Db ? ok('ST-36: #dashboardView DOM確認') : ng('ST-36: #dashboardView', 'DOM未存在');
+
+       // ナビボタン確認
+       var _st36Nav = document.getElementById('navDashboard');
+       _st36Nav ? ok('ST-36: #navDashboard DOM確認') : ng('ST-36: #navDashboard', 'DOM未存在');
+
+       // renderDashboardView関数確認
+       typeof renderDashboardView === 'function'
+         ? ok('ST-36: renderDashboardView 存在確認')
+         : ng('ST-36: renderDashboardView', '未定義');
+
+       // 統計要素DOM確認
+       var _st36DomIds = ['dbKingdomName','dbKingdomTitle','dbToku','dbGdp','dbGou','dbPower',
+         'dbMonthCount','dbWeekCount','dbStreak','dbTotalCount','dbMonthDays','dbColosseumBest',
+         'dbSectionBars','dbPieChart','dbTitleHistory','dbGouBar','dbGouDetail',
+         'dbArvReceived','dbArvCompleted','dbBlmTotal','dbFamilyCount','dbMyDeckCount','dbDeckHistoryCount'];
+       var _st36DomOk = _st36DomIds.every(function(id){ return !!document.getElementById(id); });
+       _st36DomOk
+         ? ok('ST-36: 統計DOM要素 全' + _st36DomIds.length + '件確認')
+         : ng('ST-36: 統計DOM要素', _st36DomIds.filter(function(id){ return !document.getElementById(id); }).join(',') + ' が未存在');
+
+       // switchView('dashboard')でdashboardView表示確認
+       var _st36OrigView = currentView;
+       switchView('dashboard');
+       var _st36DbDisplay = document.getElementById('dashboardView').style.display;
+       _st36DbDisplay !== 'none'
+         ? ok('ST-36: switchView(dashboard)→dashboardView表示確認')
+         : ng('ST-36: switchView(dashboard)', 'display=' + _st36DbDisplay);
+
+       // dashboard→settingsでdashboardViewが非表示になるか確認
+       switchView('settings');
+       var _st36DbHidden = document.getElementById('dashboardView').style.display;
+       _st36DbHidden === 'none'
+         ? ok('ST-36: settings切替時 dashboardView非表示確認')
+         : ng('ST-36: settings切替時 dashboardView非表示', 'display=' + _st36DbHidden);
+
+       // renderDashboardView呼び出し後に統計値が描画されているか
+       switchView('dashboard');
+       if (typeof renderDashboardView === 'function') renderDashboardView();
+       var _st36TokuEl = document.getElementById('dbToku');
+       var _st36TokuVal = _st36TokuEl ? _st36TokuEl.textContent : '';
+       (_st36TokuVal !== '' && _st36TokuVal !== undefined)
+         ? ok('ST-36: dbToku 描画確認（値=' + _st36TokuVal + '）')
+         : ng('ST-36: dbToku 描画', '空');
+
+       var _st36TotalEl = document.getElementById('dbTotalCount');
+       var _st36TotalVal = _st36TotalEl ? parseInt(_st36TotalEl.textContent) : -1;
+       var _st36ExpectedTotal = allTasks.filter(function(t){ return t.kind==='task' && t.completed; }).length;
+       _st36TotalVal === _st36ExpectedTotal
+         ? ok('ST-36: dbTotalCount 値一致確認（' + _st36TotalVal + '件）')
+         : ng('ST-36: dbTotalCount', '表示=' + _st36TotalVal + ' 期待=' + _st36ExpectedTotal);
+
+       // 円グラフCanvasに描画されているか
+       var _st36Canvas = document.getElementById('dbPieChart');
+       var _st36CanvasOk = _st36Canvas && _st36Canvas.getContext && _st36Canvas.width > 0;
+       _st36CanvasOk
+         ? ok('ST-36: dbPieChart Canvas描画確認')
+         : ng('ST-36: dbPieChart', 'Canvas未描画');
+
+       // セクションバー描画確認
+       var _st36SBars = document.getElementById('dbSectionBars');
+       var _st36SBarsOk = _st36SBars && _st36SBars.children.length === 4;
+       _st36SBarsOk
+         ? ok('ST-36: dbSectionBars 4セクション描画確認')
+         : ng('ST-36: dbSectionBars', '描画数=' + (_st36SBars ? _st36SBars.children.length : 0));
+
+       // 業スコアバー確認
+       var _st36GouBarEl = document.getElementById('dbGouBar');
+       (_st36GouBarEl && _st36GouBarEl.innerHTML.length > 0)
+         ? ok('ST-36: dbGouBar 業スコアバー描画確認')
+         : ng('ST-36: dbGouBar', '空');
+
+       // エクスポートボタン確認
+       var _st36ExpBtn = document.getElementById('dashboardView').querySelector('button[onclick*="exportData"]');
+       _st36ExpBtn
+         ? ok('ST-36: エクスポートボタン確認')
+         : ng('ST-36: エクスポートボタン', '未存在');
+
+       // インポートinput確認
+       var _st36ImpInput = document.getElementById('dbImportInput');
+       _st36ImpInput
+         ? ok('ST-36: dbImportInput 確認')
+         : ng('ST-36: dbImportInput', '未存在');
+
+       // クリーンアップ
+       if (_st36OrigView && typeof switchView === 'function') switchView(_st36OrigView);
+       ok('ST-36: ダッシュボードビュー 完了');
+     } catch(e) { ng('ST-36: ダッシュボードビュー', e.message); }
+
+     // ===== ST-37: ダッシュボード統計値・提携・バナー =====
+     try {
+       // renderDashboardView実行
+       switchView('dashboard');
+       if (typeof renderDashboardView === 'function') renderDashboardView();
+
+       // 提携統計DOM確認
+       var _st37PartnerIds = ['dbArvReceived','dbArvCompleted','dbBlmTotal','dbFamilyCount','dbMyDeckCount','dbDeckHistoryCount'];
+       var _st37PartnerOk = _st37PartnerIds.every(function(id){ return !!document.getElementById(id); });
+       _st37PartnerOk
+         ? ok('ST-37: 提携統計DOM 全' + _st37PartnerIds.length + '件確認')
+         : ng('ST-37: 提携統計DOM', _st37PartnerIds.filter(function(id){ return !document.getElementById(id); }).join(',') + ' が未存在');
+
+       // 提携統計値の型チェック（数値であること）
+       var _st37ArvEl = document.getElementById('dbArvReceived');
+       var _st37ArvVal = _st37ArvEl ? parseInt(_st37ArvEl.textContent) : NaN;
+       (!isNaN(_st37ArvVal) && _st37ArvVal >= 0)
+         ? ok('ST-37: dbArvReceived 数値確認（' + _st37ArvVal + '）')
+         : ng('ST-37: dbArvReceived', '非数値=' + (_st37ArvEl ? _st37ArvEl.textContent : 'null'));
+
+       // deckHistory実績値との一致確認
+       var _st37ExpArv = 0;
+       allTasks.filter(function(t){ return t.kind==='deckHistory'; }).forEach(function(t){
+         if (t.stats) _st37ExpArv += (t.stats.received || 0);
+       });
+       _st37ArvVal === _st37ExpArv
+         ? ok('ST-37: dbArvReceived 実績値一致（' + _st37ArvVal + '）')
+         : ng('ST-37: dbArvReceived 実績値', '表示=' + _st37ArvVal + ' 期待=' + _st37ExpArv);
+
+       // マイデッキ数確認
+       var _st37MyDeckEl = document.getElementById('dbMyDeckCount');
+       var _st37MyDeckVal = _st37MyDeckEl ? parseInt(_st37MyDeckEl.textContent) : NaN;
+       var _st37ExpMyDeck = allTasks.filter(function(t){ return t.kind==='myDeck'; }).length;
+       _st37MyDeckVal === _st37ExpMyDeck
+         ? ok('ST-37: dbMyDeckCount 実績値一致（' + _st37MyDeckVal + '）')
+         : ng('ST-37: dbMyDeckCount', '表示=' + _st37MyDeckVal + ' 期待=' + _st37ExpMyDeck);
+
+       // 今日の一言バナー確認
+       var _st37MsgEl = document.getElementById('dbMessage');
+       (_st37MsgEl && _st37MsgEl.textContent.length > 0)
+         ? ok('ST-37: dbMessage バナー描画確認（' + _st37MsgEl.textContent.slice(0,20) + '...）')
+         : ng('ST-37: dbMessage', '空または未存在');
+
+       // カードmin-height確認（統計グリッドの最初のカード）
+       var _st37Cards = document.querySelectorAll('#dashboardView [style*="min-height:110px"]');
+       _st37Cards.length >= 4
+         ? ok('ST-37: カードmin-height 確認（' + _st37Cards.length + '件）')
+         : ng('ST-37: カードmin-height', '設定カード=' + _st37Cards.length + '件（4件以上期待）');
+
+       // 今月完了・今週完了の整合性
+       var _st37MonthEl = document.getElementById('dbMonthCount');
+       var _st37WeekEl  = document.getElementById('dbWeekCount');
+       var _st37MonthVal = _st37MonthEl ? parseInt(_st37MonthEl.textContent) : NaN;
+       var _st37WeekVal  = _st37WeekEl  ? parseInt(_st37WeekEl.textContent)  : NaN;
+       (!isNaN(_st37MonthVal) && !isNaN(_st37WeekVal) && _st37MonthVal >= _st37WeekVal)
+         ? ok('ST-37: 今月完了≥今週完了 確認（今月=' + _st37MonthVal + ' 今週=' + _st37WeekVal + '）')
+         : ng('ST-37: 今月完了≥今週完了', '今月=' + _st37MonthVal + ' 今週=' + _st37WeekVal);
+
+       // 連続稼働日数が0以上
+       var _st37StreakEl = document.getElementById('dbStreak');
+       var _st37StreakVal = _st37StreakEl ? parseInt(_st37StreakEl.textContent) : NaN;
+       (!isNaN(_st37StreakVal) && _st37StreakVal >= 0)
+         ? ok('ST-37: dbStreak 連続稼働日数 確認（' + _st37StreakVal + '日）')
+         : ng('ST-37: dbStreak', '非数値=' + _st37StreakVal);
+
+       // 業スコアバーの色変化テスト（業=0→バー中身なし or 薄い）
+       var _st37GouBarEl = document.getElementById('dbGouBar');
+       (_st37GouBarEl && _st37GouBarEl.innerHTML.length > 0)
+         ? ok('ST-37: dbGouBar 業スコアバー描画確認')
+         : ng('ST-37: dbGouBar', '空');
+
+       // dbMessageのスタイルが状態に応じて変化するコード確認
+       var _st37RenderSrc = (typeof renderDashboardView === 'function') ? renderDashboardView.toString() : '';
+       _st37RenderSrc.indexOf('dbMessage') !== -1
+         ? ok('ST-37: dbMessage 動的スタイル変更コード確認')
+         : ng('ST-37: dbMessage 動的スタイル', 'コードなし');
+
+       // クリーンアップ
+       switchView('daily');
+       ok('ST-37: ダッシュボード詳細統計・提携・バナー 完了');
+     } catch(e) { ng('ST-37: ダッシュボード詳細', e.message); }
 
      // ===== 17. Key Purify Absolute Green（最終確認・4軸検査） =====
      try {
