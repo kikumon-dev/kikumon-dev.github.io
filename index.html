@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.144';
+    const APP_VERSION = 'v0.39.148';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -9481,6 +9481,7 @@ function toggleGantEnabled(checked) {
       });
     }
     _initGantTaskDrag(); // 造営タスク行D&D初期化
+    setTimeout(function(){ if (typeof window._initGantRowDrag === 'function') window._initGantRowDrag(); }, 0);  // 手立て行D&D初期化
     function _gantMoveTask(btn) {
       var ganttId = btn.dataset.ganttid;
       var tid     = btn.dataset.tid;
@@ -9619,6 +9620,7 @@ function toggleGantEnabled(checked) {
           : '<span style="display:inline-block;width:18px;"></span>';
         const labelCell = '<td style="position:sticky;left:0;z-index:2;background:' + bg + ';border-right:1px solid #d0d8e8;border-bottom:1px solid #efefef;border-left:3px solid ' + barColor + '55;padding:0;width:' + labelW + 'px;min-width:' + labelW + 'px;max-width:' + labelW + 'px;vertical-align:middle;">'
           + '<div style="display:flex;align-items:center;padding:0 2px;min-height:' + rowH + 'px;overflow:hidden;">'
+          + '<span class="gant-row-grip" style="cursor:grab;padding:0 3px;color:#bbb;font-size:12px;flex-shrink:0;user-select:none;">☰</span>'
           + expandBtn
           + '<div style="flex:1;min-width:0;overflow:hidden;display:flex;align-items:center;">'
           + '<button data-gid="' + gantt.id + '" onclick="_gantEdit(this)" style="flex:1;background:none;border:none;text-align:left;padding:4px 2px;cursor:pointer;display:flex;align-items:center;gap:4px;min-width:0;overflow:hidden;min-height:' + rowH + 'px;">'
@@ -9671,7 +9673,7 @@ function toggleGantEnabled(checked) {
           taskRowsHtml = '<tbody id="' + eid + '" style="display:none;">' + taskHtml + '</tbody>';
         }
 
-        return '<tbody><tr>' + labelCell + chartCell + '</tr></tbody>' + taskRowsHtml;
+        return '<tbody><tr data-gid="' + gantt.id + '" data-gidx="' + i + '" class="gant-row-draggable">' + labelCell + chartCell + '</tr></tbody>' + taskRowsHtml;
       }).join('');
 
       htmlChart.innerHTML = '<table style="border-collapse:collapse;table-layout:fixed;width:' + (labelW+chartW) + 'px;">'
@@ -12852,10 +12854,33 @@ function reviveBlueprint(id) {
     // インポート・createTask・どのルートで入ってきた不正IDも確実に修正する
     function validateCalendarIds() {
       try {
-        var _calList = (allSettings.calendar && allSettings.calendar.list) ? allSettings.calendar.list : [];
+        if (!allSettings.calendar) allSettings.calendar = { list: [], mainId: '', calIdMigMap: {} };
+
+        // ── 事前処理：旧 'calendars' キーを allSettings.calendar.list に吸収 ──
+        var _oldCals = null;
+        try { _oldCals = JSON.parse(localStorage.getItem('calendars') || 'null'); } catch(e) {}
+        if (Array.isArray(_oldCals) && _oldCals.length > 0) {
+          var _curList = allSettings.calendar.list || [];
+          var _curIds = new Set(_curList.map(function(c){ return c.id; }));
+          var _absorbed = 0;
+          _oldCals.forEach(function(oc) {
+            if (oc && oc.id && !_curIds.has(oc.id)) {
+              _curList.push(oc);
+              _curIds.add(oc.id);
+              _absorbed++;
+            }
+          });
+          if (_absorbed > 0) {
+            allSettings.calendar.list = _curList;
+            saveAllSettings();
+            window._dbgLog && window._dbgLog('validateCalendarIds: 旧calendarsキーから' + _absorbed + '件吸収');
+          }
+        }
+
+        var _calList = allSettings.calendar.list || [];
         if (_calList.length === 0) return 0;
         var _validCalIds = new Set(_calList.map(function(c){ return c.id; }));
-        var _calIdMigMap = (allSettings.calendar && allSettings.calendar.calIdMigMap) ? allSettings.calendar.calIdMigMap : {};
+        var _calIdMigMap = allSettings.calendar.calIdMigMap || {};
         var _defaultCalId = _calList[0].id;
         var _fixedCount = 0;
         allTasks.forEach(function(t) {
@@ -12870,14 +12895,13 @@ function reviveBlueprint(id) {
           if (_calIdMigMap[t.calendarId] && _validCalIds.has(_calIdMigMap[t.calendarId])) {
             t.calendarId = _calIdMigMap[t.calendarId]; _fixedCount++; return;
           }
-          // ④ それ以外（不正UUID・'work'固定文字列等）→ fallback
+          // ④ それ以外 → fallback
           t.calendarId = _defaultCalId; _fixedCount++;
         });
         if (_fixedCount > 0) {
           saveAllTasks();
           window._dbgLog && window._dbgLog('validateCalendarIds done. fixed=' + _fixedCount + '件');
         }
-        // 後方互換：旧フラグを立てておく（ST-51等のテストが参照）
         localStorage.setItem('mig_calid_to_settings_v1', '1');
         return _fixedCount;
       } catch(e) { console.error('[validateCalendarIds]', e); return 0; }
@@ -15250,6 +15274,7 @@ function loadSettingsUI() {
   window._gantMoveTask = _gantMoveTask;
   window._initBlueprintDrag = _initBlueprintDrag;
   window._initGantTaskDrag = _initGantTaskDrag;
+
   window._gantToggleCompleted = _gantToggleCompleted;
     window.addCalendarSetting = addCalendarSetting;
     window.addStampSetting = addStampSetting;
@@ -17450,6 +17475,68 @@ function renderDeckShop(filterCategory) {
         showToast('コピーに失敗しました', {type:'error'});
       });
     }
+  // 手立て行（gantt行）の並び替えD&D ※第4条：beforeprintより前のグローバル領域
+  function _initGantRowDrag() {
+    var _drag = { gid: null, fromIdx: null, startY: 0 };
+    document.addEventListener('mousedown', function(e) {
+      var grip = e.target.closest ? e.target.closest('.gant-row-grip') : null;
+      if (!grip) return;
+      var tr = grip.closest('.gant-row-draggable');
+      if (!tr) return;
+      tr.setAttribute('draggable', 'true');
+      tr.addEventListener('dragend', function once() {
+        tr.setAttribute('draggable', 'false');
+        tr.removeEventListener('dragend', once);
+      });
+    });
+    document.addEventListener('dragstart', function(e) {
+      var tr = e.target.closest ? e.target.closest('.gant-row-draggable') : null;
+      if (!tr || tr.getAttribute('draggable') !== 'true') return;
+      _drag.gid = tr.dataset.gid;
+      _drag.fromIdx = parseInt(tr.dataset.gidx);
+      e.dataTransfer.effectAllowed = 'move';
+      tr.style.opacity = '0.5';
+    });
+    document.addEventListener('dragover', function(e) {
+      var tr = e.target.closest ? e.target.closest('.gant-row-draggable') : null;
+      if (!tr || !_drag.gid) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      document.querySelectorAll('.gant-row-draggable').forEach(function(r){ r.style.borderTop=''; });
+      tr.style.borderTop = '2px solid #a78bfa';
+    });
+    document.addEventListener('drop', function(e) {
+      var tr = e.target.closest ? e.target.closest('.gant-row-draggable') : null;
+      if (!tr || !_drag.gid) return;
+      e.preventDefault();
+      var toIdx = parseInt(tr.dataset.gidx);
+      if (toIdx !== _drag.fromIdx) _gantRowReorder(_drag.gid, _drag.fromIdx, toIdx);
+      document.querySelectorAll('.gant-row-draggable').forEach(function(r){ r.style.opacity=''; r.style.borderTop=''; });
+      _drag = { gid: null, fromIdx: null, startY: 0 };
+    });
+    document.addEventListener('dragend', function(e) {
+      document.querySelectorAll('.gant-row-draggable').forEach(function(r){ r.style.opacity=''; r.style.borderTop=''; });
+      _drag = { gid: null, fromIdx: null, startY: 0 };
+    });
+  }
+  function _gantRowReorder(fromGid, fromIdx, toIdx) {
+    var bpId = (allTasks.find(function(t){ return t.id === fromGid; }) || {}).blueprintId || _gantSelectedBlueprintId;
+    var gants = allTasks.filter(function(t){ return t.kind==='gantt' && t.blueprintId===bpId; });
+    if (fromIdx < 0 || toIdx < 0 || fromIdx >= gants.length || toIdx >= gants.length) return;
+    var fromId = gants[fromIdx].id;
+    var toId   = gants[toIdx].id;
+    var fromRealIdx = allTasks.findIndex(function(t){ return t.id === fromId; });
+    if (fromRealIdx < 0) return;
+    var moved = allTasks.splice(fromRealIdx, 1)[0];
+    var insertIdx = allTasks.findIndex(function(t){ return t.id === toId; });
+    if (fromIdx < toIdx) insertIdx++;
+    allTasks.splice(insertIdx < 0 ? allTasks.length : insertIdx, 0, moved);
+    saveAllTasks();
+    if (typeof renderGantView === 'function') renderGantView();
+  }
+  window._initGantRowDrag = _initGantRowDrag;
+  window._gantRowReorder  = _gantRowReorder;
+
 window.addEventListener('beforeprint', function() {
   // 印刷時に不要な要素を強制非表示
   const hideIds = ['dailyInnerTabBar','scratchView','timelineView','weeklyView',
@@ -22789,7 +22876,7 @@ function showDebugLog() {
        // テストセクション自己存在確認：ソースコード上の存在をチェック
        var _stSections = ['ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10',
          'ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20',
-         'ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53'];
+         'ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -23772,7 +23859,7 @@ function showDebugLog() {
        var _st39KnownKinds = new Set([
          'task','note','journal','thought','blueprint','gantt',
          'deckHistory','myDeck','guildLicense','stamp','grandvision',
-         'deepfocus','scratch'
+         'deepfocus','scratch','quiz'
        ]);
 
        // 未知kindの混入チェック
@@ -24712,6 +24799,105 @@ function showDebugLog() {
 
        ok('ST-53: calendarId整合性・createTask・importData後修正 完了');
      } catch(e) { ng('ST-53: calendarId整合性', e.message); }
+
+     // ===== 16b. ST-54: 今日追加した機能テスト =====
+     // ① パンくず（工程編集モーダルの志・GV表示）
+     try {
+       ok('ST-54: ganttBreadcrumb DOM存在確認: ' + (document.getElementById('ganttBreadcrumb') ? 'OK' : 'NG'));
+       // ganttEditorModal内に存在するか確認
+       var _gcModal = document.getElementById('ganttEditorModal');
+       var _gcBc = document.getElementById('ganttBreadcrumb');
+       typeof _gcBc === 'object' && _gcBc !== null
+         ? ok('ST-54: ganttBreadcrumb要素存在確認')
+         : ng('ST-54: ganttBreadcrumb', 'DOM要素なし');
+       // openGanttEditor内にパンくず生成コードがあるか確認
+       var _openGanttEditorSrc = (typeof openGanttEditor === 'function') ? openGanttEditor.toString() : '';
+       _openGanttEditorSrc.indexOf('ganttBreadcrumb') !== -1
+         ? ok('ST-54: openGanttEditor内パンくず生成コード確認')
+         : ng('ST-54: パンくず', 'openGanttEditor内にganttBreadcrumb参照なし');
+       _openGanttEditorSrc.indexOf('グランドビジョン') !== -1
+         ? ok('ST-54: パンくず グランドビジョンラベル確認')
+         : ng('ST-54: パンくず', 'グランドビジョンラベルなし');
+       _openGanttEditorSrc.indexOf('志') !== -1
+         ? ok('ST-54: パンくず 志ラベル確認')
+         : ng('ST-54: パンくず', '志ラベルなし');
+     } catch(e) { ng('ST-54: パンくず', e.message); }
+
+     // ② 手立て行D&D（_initGantRowDrag・_gantRowReorder）
+     try {
+       typeof _initGantRowDrag === 'function'
+         ? ok('ST-54: _initGantRowDrag 存在確認')
+         : ng('ST-54: _initGantRowDrag', '未定義');
+       typeof _gantRowReorder === 'function'
+         ? ok('ST-54: _gantRowReorder 存在確認')
+         : ng('ST-54: _gantRowReorder', '未定義');
+       // _gantRowReorderがsaveAllTasks・renderGantViewを参照しているか確認
+       var _grSrc = (typeof _gantRowReorder === 'function') ? _gantRowReorder.toString() : '';
+       _grSrc.indexOf('saveAllTasks') !== -1
+         ? ok('ST-54: _gantRowReorder saveAllTasks参照確認')
+         : ng('ST-54: _gantRowReorder', 'saveAllTasks参照なし');
+       _grSrc.indexOf('renderGantView') !== -1
+         ? ok('ST-54: _gantRowReorder renderGantView参照確認')
+         : ng('ST-54: _gantRowReorder', 'renderGantView参照なし');
+       // _gantRowReorder挙動テスト
+       var _testBpId = generateTaskId();
+       var _testGId1 = generateTaskId();
+       var _testGId2 = generateTaskId();
+       var _testBp = { id: _testBpId, kind: 'blueprint', title: 'テストBP', taskIds: [] };
+       var _testG1 = { id: _testGId1, kind: 'gantt', blueprintId: _testBpId, title: '手立てA', taskIds: [] };
+       var _testG2 = { id: _testGId2, kind: 'gantt', blueprintId: _testBpId, title: '手立てB', taskIds: [] };
+       var _origLen = allTasks.length;
+       allTasks.push(_testBp, _testG1, _testG2);
+       var _beforeOrder = allTasks.filter(function(t){ return t.blueprintId===_testBpId; }).map(function(t){ return t.title; });
+       _gantRowReorder(_testGId1, 0, 1);  // A→B後に移動
+       var _afterOrder = allTasks.filter(function(t){ return t.blueprintId===_testBpId; }).map(function(t){ return t.title; });
+       (_afterOrder[0] === '手立てB' && _afterOrder[1] === '手立てA')
+         ? ok('ST-54: _gantRowReorder 並び替え挙動確認（A→B後に移動）')
+         : ng('ST-54: _gantRowReorder', '並び替え失敗: ' + JSON.stringify(_afterOrder));
+       allTasks = allTasks.filter(function(t){ return t.id !== _testBpId && t.id !== _testGId1 && t.id !== _testGId2; });
+       saveAllTasks();
+       allTasks.length === _origLen
+         ? ok('ST-54: _gantRowReorder クリーンアップ完了（' + allTasks.length + '件）')
+         : ng('ST-54: クリーンアップ', '件数不一致: ' + allTasks.length + '件');
+     } catch(e) { ng('ST-54: 手立てD&D', e.message); }
+
+     // ③ 「工程」残存ゼロ確認（UI文字列）
+     try {
+       // チュートリアルHTML内の「工程」残存確認
+       var _tutEl = document.getElementById('tutorialOverlay');
+       var _tutHtml = _tutEl ? _tutEl.innerHTML : '';
+       _tutHtml.indexOf('工程') === -1
+         ? ok('ST-54: チュートリアル内「工程」残存ゼロ確認')
+         : ng('ST-54: チュートリアル', '「工程」が残存');
+       // ganttEditorModal内の「てだて」残存確認
+       var _ganttModal = document.getElementById('ganttEditorModal');
+       var _ganttHtml = _ganttModal ? _ganttModal.innerHTML : '';
+       _ganttHtml.indexOf('てだて') === -1
+         ? ok('ST-54: ganttEditorModal「てだて」残存ゼロ確認')
+         : ng('ST-54: ganttEditorModal', '「てだて」が残存');
+       // ナビ表示の確認
+       var _plusBp = document.querySelector('[onclick*="openBlueprintEditor(null)"]');
+       var _plusBpText = _plusBp ? _plusBp.textContent.trim() : '';
+       _plusBpText.indexOf('大きな志') !== -1
+         ? ok('ST-54: ＋大きな志ボタン表示確認（' + _plusBpText + '）')
+         : ng('ST-54: ＋大きな志ボタン', '表示テキスト不正: ' + _plusBpText);
+     } catch(e) { ng('ST-54: UI文字列', e.message); }
+
+     // ④ gant-row-draggable クラス存在確認（造営ビューを一時描画）
+     try {
+       typeof _initGantRowDrag === 'function'
+         ? ok('ST-54: _initGantRowDrag グローバル公開確認')
+         : ng('ST-54: _initGantRowDrag', 'window非公開');
+       typeof window._initGantRowDrag === 'function'
+         ? ok('ST-54: window._initGantRowDrag 公開確認')
+         : ng('ST-54: window._initGantRowDrag', '未公開');
+       typeof window._gantRowReorder === 'function'
+         ? ok('ST-54: window._gantRowReorder 公開確認')
+         : ng('ST-54: window._gantRowReorder', '未公開');
+     } catch(e) { ng('ST-54: window公開', e.message); }
+
+     ok('ST-54: 今日追加機能テスト 完了');
+
      // ===== 17. KPAG — Key Purify Absolute Green · 4-AXIS STORAGE INSPECTION =====
      try {
        var _kpKeys = Object.keys(localStorage);
