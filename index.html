@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.159';
+    const APP_VERSION = 'v0.39.163';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -1133,6 +1133,25 @@
       transform: translateY(0) scale(0.96);
     }
     /* スマホのみ：日付と時間を縦積み */
+    /* 横向き（landscape）造営ビュー：完全全画面ガントモード */
+    @media screen and (orientation: landscape) and (max-height: 500px) {
+      #gantBlueprintArea {
+        display: none !important;
+      }
+      #grandVisionBanner {
+        display: none !important;
+      }
+      .nav-tabs {
+        display: none !important;
+      }
+      #gantView {
+        height: 100vh !important;
+      }
+      #gantLandscapeToggle {
+        display: flex !important;
+      }
+    }
+
     @media screen and (max-width: 480px) {
       .task-edit-datetime {
         flex-direction: column !important;
@@ -3464,7 +3483,7 @@
   </div>
   <!-- 年間ビュー（YEARLY PLANNER型） -->
   <!-- 造営ビュー -->
-  <div id="gantView" style="display:none; flex-direction:column; height:calc(100vh - 50px); background:#fafafa; overflow:hidden;">
+  <div id="gantView" style="display:none; flex-direction:column; height:calc(100vh - 50px); background:#fafafa; overflow:hidden; min-height:0;">
     <!-- グランドビジョン表示エリア -->
     <div id="grandVisionBanner" style="display:none;flex-shrink:0;background:linear-gradient(135deg,#2d1b69 0%,#1a0f3c 100%);padding:10px 16px;border-bottom:1px solid rgba(167,139,250,0.3);">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
@@ -3499,7 +3518,7 @@
       <button onclick="openGrandVisionEditor(null)" style="background:none;border:1px dashed #c4b5fd;border-radius:8px;color:#a78bfa;font-size:0.75em;padding:4px 10px;cursor:pointer;">🎖️ グランドビジョンを作る</button>
     </div>
     <!-- 上部：blueprintカード一覧 -->
-    <div id="gantBlueprintArea" style="overflow-x:hidden; overflow-y:auto; display:grid; grid-template-columns:repeat(2,1fr); gap:8px; padding:10px 12px; border-bottom:1px solid #e8e8e8; background:#fff; -webkit-overflow-scrolling:touch; height:280px; flex-shrink:0;">
+    <div id="gantBlueprintArea" style="overflow-x:hidden; overflow-y:auto; display:grid; grid-template-columns:repeat(2,1fr); gap:8px; padding:10px 12px; border-bottom:1px solid #e8e8e8; background:#fff; -webkit-overflow-scrolling:touch; height:clamp(120px, 30vh, 280px); flex-shrink:0;">
     <!-- blueprintカードがJSで挿入される -->
     </div>
     <!-- スプリッター（上下可変） -->
@@ -3523,6 +3542,11 @@
       </div>
     </div>
     <!-- 下部70%：ガントチャート -->
+    <!-- landscape時のみ表示：志エリアトグルボタン -->
+    <div id="gantLandscapeToggle" style="display:none;align-items:center;justify-content:space-between;padding:4px 12px;background:#f0eeff;border-bottom:1px solid #d4c5f9;flex-shrink:0;">
+      <span style="font-size:0.75em;color:#6d28d9;font-weight:600;">⟳ 縦向きに戻すとナビが表示されます</span>
+      <button onclick="toggleGantBlueprintLandscape()" id="gantLandscapeBtn" style="font-size:0.72em;padding:3px 10px;border:1px solid #a78bfa;border-radius:12px;background:#fff;color:#6d28d9;cursor:pointer;font-weight:600;">▼ 志を見る</button>
+    </div>
     <div id="gantChartArea" style="flex:1; overflow:auto; -webkit-overflow-scrolling:touch; position:relative;">
       <div id="gantAddGanttBtn" style="display:none; padding:10px 16px;">
         <button onclick="openGanttEditor(null)" style="width:100%;padding:10px;background:#f5f5f5;border:1px dashed #ccc;border-radius:8px;font-size:0.9em;color:#666;cursor:pointer;">手立てを刻む</button>
@@ -17750,6 +17774,25 @@ function renderDeckShop(filterCategory) {
   }
   window._initGantRowDrag = _initGantRowDrag;
   window._gantRowReorder  = _gantRowReorder;
+
+  // 横向き時：志エリアトグル
+  function toggleGantBlueprintLandscape() {
+    var bp = document.getElementById('gantBlueprintArea');
+    var gv = document.getElementById('grandVisionBanner');
+    var btn = document.getElementById('gantLandscapeBtn');
+    if (!bp || !btn) return;
+    var isHidden = bp.style.display === 'none' || bp.style.display === '';
+    if (isHidden) {
+      bp.style.display = 'grid';
+      if (gv && gv.getAttribute('data-was-visible') === '1') gv.style.display = 'flex';
+      btn.textContent = '▲ 志を隠す';
+    } else {
+      bp.style.display = 'none';
+      gv && (gv.getAttribute('data-was-visible') === '1') && (gv.style.display = 'none');
+      btn.textContent = '▼ 志を見る';
+    }
+  }
+  window.toggleGantBlueprintLandscape = toggleGantBlueprintLandscape;
 
 window.addEventListener('beforeprint', function() {
   // 印刷時に不要な要素を強制非表示
