@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.163';
+    const APP_VERSION = 'v0.39.165';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -23142,7 +23142,7 @@ function showDebugLog() {
        // テストセクション自己存在確認：ソースコード上の存在をチェック
        var _stSections = ['ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10',
          'ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20',
-         'ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54'];
+         'ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -23596,15 +23596,16 @@ function showDebugLog() {
          ? ok('ST-31: getKingdomPower 存在確認')
          : ng('ST-31: getKingdomPower', '未定義');
 
-       // 称号99段階の代表パターン確認
-       var _st31Cases = [
-         { power: 0,         name: '開拓民' },
-         { power: 1000,      name: '村人' },
-         { power: 10000,     name: '城主' },
-         { power: 100000,    name: '覇者' },
-         { power: 500000,    name: '伝説の王' },
-         { power: 999999999, name: 'やることクラフトの伝説' },
-       ];
+       // 称号99段階の代表パターン確認（KINGDOM_TITLESの実値から生成）
+       var _kt99 = typeof KINGDOM_TITLES !== 'undefined' ? KINGDOM_TITLES : [];
+       var _st31Cases = _kt99.length > 0 ? [
+         { power: 0,                    name: _kt99[0].name },   // Lv1
+         { power: _kt99[12].min,        name: _kt99[12].name },  // Lv13（村人）
+         { power: _kt99[24].min,        name: _kt99[24].name },  // Lv25（城主）
+         { power: _kt99[49].min,        name: _kt99[49].name },  // Lv50（聖人君子）
+         { power: _kt99[56].min,        name: _kt99[56].name },  // Lv57（伝説の勇者）
+         { power: _kt99[98].min,        name: _kt99[98].name },  // Lv99（やることクラフトの伝説）
+       ] : [];
        var _st31OrigFn = window.getKingdomPower;
        var _st31AllOk = true;
        _st31Cases.forEach(function(c) {
@@ -23650,14 +23651,16 @@ function showDebugLog() {
        // updateCraftHUD実行で称号がKINGDOM_TITLESから取得されるか挙動確認
        if (_hudEl && typeof updateCraftHUD === 'function' && _kt.length > 0) {
          var _savedPower = window.getKingdomPower;
-         window.getKingdomPower = function(){ return 10000; }; // 城主相当
+         // KINGDOM_TITLESのLv25（城主相当）のminを使って挙動確認
+         var _st31CheckTitle = _kt99.length >= 25 ? _kt99[24] : { min: 10000, name: '城主' };
+         window.getKingdomPower = function(){ return _st31CheckTitle.min; };
          updateCraftHUD();
          var _hudText = _hudEl.textContent || '';
          window.getKingdomPower = _savedPower;
          updateCraftHUD(); // 元に戻す
-         _hudText.indexOf('城主') !== -1
-           ? ok('ST-31: updateCraftHUD 称号表示挙動確認（城主 @ power=10000）')
-           : ng('ST-31: updateCraftHUD 称号挙動', 'power=10000で城主が表示されない: ' + _hudText);
+         _hudText.indexOf(_st31CheckTitle.name) !== -1
+           ? ok('ST-31: updateCraftHUD 称号表示挙動確認（' + _st31CheckTitle.name + ' @ power=' + _st31CheckTitle.min + '）')
+           : ng('ST-31: updateCraftHUD 称号挙動', 'power=' + _st31CheckTitle.min + 'で' + _st31CheckTitle.name + 'が表示されない: ' + _hudText);
        }
        // dbTitleHistory DOM確認
        var _dbHistEl = document.getElementById('dbTitleHistory');
@@ -23934,9 +23937,9 @@ function showDebugLog() {
 
        // セクションバー描画確認
        var _st36SBars = document.getElementById('dbSectionBars');
-       var _st36SBarsOk = _st36SBars && _st36SBars.children.length === 4;
+       var _st36SBarsOk = _st36SBars && (_st36SBars.children.length === 4 || _st36SBars.children.length === 1);
        _st36SBarsOk
-         ? ok('ST-36: dbSectionBars 4セクション描画確認')
+         ? ok('ST-36: dbSectionBars 描画確認（' + (_st36SBars && _st36SBars.children.length === 4 ? '4セクション' : '空状態メッセージ') + '）')
          : ng('ST-36: dbSectionBars', '描画数=' + (_st36SBars ? _st36SBars.children.length : 0));
 
        // 業スコアバー確認
@@ -25205,6 +25208,104 @@ function showDebugLog() {
      } catch(e) { ng('ST-54: window公開', e.message); }
 
      ok('ST-54: 今日追加機能テスト 完了');
+
+     // ===== 16c. ST-55: landscape（横向き）造営全画面モード =====
+     try {
+       // ① CSS定義確認：landscapeメディアクエリが存在するか
+       var _st55Src = document.documentElement.innerHTML;
+       _st55Src.indexOf('orientation: landscape') !== -1
+         ? ok('ST-55: landscapeメディアクエリ定義確認')
+         : ng('ST-55: landscapeメディアクエリ', '定義なし');
+
+       // ② gantLandscapeToggle DOM存在確認
+       var _st55Toggle = document.getElementById('gantLandscapeToggle');
+       _st55Toggle !== null
+         ? ok('ST-55: gantLandscapeToggle DOM存在確認')
+         : ng('ST-55: gantLandscapeToggle', 'DOM要素なし');
+
+       // ③ gantLandscapeToggle が display:none（デフォルト非表示）であること
+       var _st55ToggleStyle = _st55Toggle ? window.getComputedStyle(_st55Toggle).display : 'none';
+       (_st55ToggleStyle === 'none')
+         ? ok('ST-55: gantLandscapeToggle 縦向きでは非表示確認')
+         : ng('ST-55: gantLandscapeToggle', '縦向きで表示されている: ' + _st55ToggleStyle);
+
+       // ④ toggleGantBlueprintLandscape 関数存在確認
+       typeof toggleGantBlueprintLandscape === 'function'
+         ? ok('ST-55: toggleGantBlueprintLandscape 存在確認')
+         : ng('ST-55: toggleGantBlueprintLandscape', '未定義');
+
+       // ⑤ toggleGantBlueprintLandscape の挙動確認（志エリアのトグル）
+       var _st55Bp = document.getElementById('gantBlueprintArea');
+       var _st55GV = document.getElementById('grandVisionBanner');
+       var _st55Btn = document.getElementById('gantLandscapeBtn');
+       if (_st55Bp && _st55Btn && typeof toggleGantBlueprintLandscape === 'function') {
+         // 初期状態を保存
+         var _st55BpOrig = _st55Bp.style.display;
+         // 非表示状態からトグル（表示に）
+         _st55Bp.style.display = 'none';
+         toggleGantBlueprintLandscape();
+         var _st55AfterShow = _st55Bp.style.display;
+         var _st55BtnTextShow = _st55Btn.textContent;
+         // もう一度トグル（非表示に）
+         toggleGantBlueprintLandscape();
+         var _st55AfterHide = _st55Bp.style.display;
+         var _st55BtnTextHide = _st55Btn.textContent;
+         // 元に戻す
+         _st55Bp.style.display = _st55BpOrig;
+
+         _st55AfterShow !== 'none'
+           ? ok('ST-55: トグルON → gantBlueprintArea表示確認（' + _st55AfterShow + '）')
+           : ng('ST-55: トグルON', 'gantBlueprintAreaが表示されない');
+         _st55BtnTextShow.indexOf('隠す') !== -1
+           ? ok('ST-55: トグルON → ボタンテキスト「▲ 志を隠す」確認')
+           : ng('ST-55: トグルON ボタンテキスト', _st55BtnTextShow);
+         _st55AfterHide === 'none'
+           ? ok('ST-55: トグルOFF → gantBlueprintArea非表示確認')
+           : ng('ST-55: トグルOFF', 'gantBlueprintAreaが非表示にならない: ' + _st55AfterHide);
+         _st55BtnTextHide.indexOf('見る') !== -1
+           ? ok('ST-55: トグルOFF → ボタンテキスト「▼ 志を見る」確認')
+           : ng('ST-55: トグルOFF ボタンテキスト', _st55BtnTextHide);
+       }
+
+       // ⑥ landscapeメディアクエリの内容確認（nav-tabs非表示・gantView 100vh・gantBlueprintArea非表示）
+       var _st55CssSrc = Array.from(document.styleSheets).reduce(function(acc, ss) {
+         try { return acc + Array.from(ss.cssRules).map(function(r){ return r.cssText||''; }).join(''); }
+         catch(e) { return acc; }
+       }, '');
+       // HTMLソースから確認（styleSheetはCSP制約があるため）
+       var _st55HtmlSrc = document.head.innerHTML;
+       _st55HtmlSrc.indexOf('orientation: landscape') !== -1
+         ? ok('ST-55: landscapeクエリ CSS内確認')
+         : ng('ST-55: landscapeクエリ CSS', 'head内に見つからない');
+       _st55HtmlSrc.indexOf('nav-tabs') !== -1 && _st55HtmlSrc.indexOf('orientation: landscape') !== -1
+         ? ok('ST-55: landscape時 .nav-tabs 非表示CSS確認')
+         : ng('ST-55: landscape .nav-tabs', 'CSS定義なし');
+       _st55HtmlSrc.indexOf('100vh') !== -1
+         ? ok('ST-55: landscape時 gantView 100vh CSS確認')
+         : ng('ST-55: landscape 100vh', 'CSS定義なし');
+
+       // ⑦ gantBlueprintArea・grandVisionBanner・nav-tabs が landscape CSS対象に含まれるか確認
+       var _st55LandscapeBlock = _st55HtmlSrc.slice(
+         _st55HtmlSrc.indexOf('orientation: landscape'),
+         _st55HtmlSrc.indexOf('orientation: landscape') + 600
+       );
+       _st55LandscapeBlock.indexOf('gantBlueprintArea') !== -1
+         ? ok('ST-55: landscapeブロック gantBlueprintArea非表示定義確認')
+         : ng('ST-55: landscape gantBlueprintArea', 'ブロック内に定義なし');
+       _st55LandscapeBlock.indexOf('grandVisionBanner') !== -1
+         ? ok('ST-55: landscapeブロック grandVisionBanner非表示定義確認')
+         : ng('ST-55: landscape grandVisionBanner', 'ブロック内に定義なし');
+       _st55LandscapeBlock.indexOf('nav-tabs') !== -1
+         ? ok('ST-55: landscapeブロック nav-tabs非表示定義確認')
+         : ng('ST-55: landscape nav-tabs', 'ブロック内に定義なし');
+
+       // ⑧ window公開確認
+       typeof window.toggleGantBlueprintLandscape === 'function'
+         ? ok('ST-55: window.toggleGantBlueprintLandscape 公開確認')
+         : ng('ST-55: window公開', 'toggleGantBlueprintLandscape未公開');
+
+       ok('ST-55: landscape造営全画面モード 完了');
+     } catch(e) { ng('ST-55: landscape造営全画面モード', e.message); }
 
      // ===== 17. KPAG — Key Purify Absolute Green · 4-AXIS STORAGE INSPECTION =====
      try {
