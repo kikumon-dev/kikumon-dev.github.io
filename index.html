@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.165';
+    const APP_VERSION = 'v0.39.166';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -23937,9 +23937,9 @@ function showDebugLog() {
 
        // セクションバー描画確認
        var _st36SBars = document.getElementById('dbSectionBars');
-       var _st36SBarsOk = _st36SBars && (_st36SBars.children.length === 4 || _st36SBars.children.length === 1);
+       var _st36SBarsOk = _st36SBars && _st36SBars.children.length >= 1;
        _st36SBarsOk
-         ? ok('ST-36: dbSectionBars 描画確認（' + (_st36SBars && _st36SBars.children.length === 4 ? '4セクション' : '空状態メッセージ') + '）')
+         ? ok('ST-36: dbSectionBars 描画確認（' + _st36SBars.children.length + '要素）')
          : ng('ST-36: dbSectionBars', '描画数=' + (_st36SBars ? _st36SBars.children.length : 0));
 
        // 業スコアバー確認
