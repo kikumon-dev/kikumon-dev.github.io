@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.166';
+    const APP_VERSION = 'v0.39.172';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -6080,7 +6080,9 @@ function renderTodoList() {
       // コロシアムランキングに記録
       if (typeof recordColosseumScore === 'function') {
         recordColosseumScore(data.deckId, data.reportedBy || '旅人', data.completedCount || 0);
-        if (typeof renderColosseumView === 'function') renderColosseumView();
+        if (typeof renderColosseumView === 'function') {
+          renderColosseumView();
+        }
       }
       showToast('🌸 ' + (data.reportedBy||'旅人') + 'さんが' + bonus + '件完了！GDP+' + (bonus*100) + '万', {type:'success', duration:4000});
     }
@@ -13388,7 +13390,14 @@ function reviveBlueprint(id) {
         var _ncol = document.getElementById('navColosseum');
         if (_ncol) _ncol.classList.add('active');
         window.scrollTo(0, 0);
-        if (typeof renderColosseumView === 'function') renderColosseumView();
+        if (typeof renderColosseumView === 'function') {
+          if (typeof _colosseumBattle !== 'undefined' && typeof startColosseumBattle === 'function'
+              && _colosseumBattle.phase === 'select' && _colosseumBattle.playerCards.length === 0) {
+            startColosseumBattle();
+          } else if (typeof renderColosseumView === 'function') {
+            renderColosseumView();
+          }
+        }
       } else if (view === 'dashboard') {
         var dbView = document.getElementById('dashboardView');
         if (dbView) dbView.style.display = 'block';
@@ -15659,6 +15668,13 @@ function loadSettingsUI() {
     window.renderDashboardView = renderDashboardView;
     window.generateAndCopyColosseumReport = generateAndCopyColosseumReport;
     window.getColosseumPool = getColosseumPool;
+    window.calcTaskPower = calcTaskPower;
+    window.getCardRarity = getCardRarity;
+    window.getColosseumCards = getColosseumCards;
+    window.getCpuColosseumCards = getCpuColosseumCards;
+    window.startColosseumBattle = startColosseumBattle;
+    window.toggleColosseumCardPick = toggleColosseumCardPick;
+    window.executeColosseumBattle = executeColosseumBattle;
     window.getTodayColosseumDeck = getTodayColosseumDeck;
     window.recordColosseumScore = recordColosseumScore;
     window.closeDeckDetailModal = closeDeckDetailModal;
@@ -16752,29 +16768,20 @@ function renderDeckHistory() {
 function receiveDeck(deckId) {
   var deck = OFFICIAL_DECKS.find(function(d){ return d.id === deckId; });
   if (!deck) return;
-  showChoiceModal({
-    title: '🎁 ' + (deck.title||'デッキ') + 'を受け取る',
-    desc: (deck.tasks||[]).length + '枚のやることが王国に加わります。',
-    buttons: [
-      { label: '受け取る', style: 'primary', onClick: function() {
-        var today = getLocalDateStr(new Date());
-        deck.tasks.forEach(function(t) {
-          var newTask = createTask(t.text, today, t.time || null, t.section, 'daily_only');
-          if (t.memo) updateTask(newTask.id, { memo: t.memo });
-          if (t.endTime) updateTask(newTask.id, { endTime: t.endTime });
-          updateTask(newTask.id, { deckId: deck.id });
-        });
-        addDeckHistory({ deckId: deck.id, title: deck.title, status: 'active', createdBy: 'やることクラフト公式', tasks: deck.tasks });
-        allSettings.deck.received[deckId] = true; saveAllSettings();
-        saveAllTasks();
-        renderAllSections(today);
-        renderDeckShop();
-        if (typeof addGDP === 'function') addGDP(100, 'DCK1:受取（' + deck.title + '）');
-        showAdminToast('🛍️ ' + deck.title + 'を受け取った！GDP+100万');
-      }},
-      { label: 'キャンセル', style: 'cancel' },
-    ],
+  var today = getLocalDateStr(new Date());
+  deck.tasks.forEach(function(t) {
+    var newTask = createTask(t.text, today, t.time || null, t.section, 'daily_only');
+    if (t.memo) updateTask(newTask.id, { memo: t.memo });
+    if (t.endTime) updateTask(newTask.id, { endTime: t.endTime });
+    updateTask(newTask.id, { deckId: deck.id });
   });
+  addDeckHistory({ deckId: deck.id, title: deck.title, status: 'active', createdBy: 'やることクラフト公式', tasks: deck.tasks });
+  allSettings.deck.received[deckId] = true; saveAllSettings();
+  saveAllTasks();
+  renderAllSections(today);
+  renderDeckShop();
+  if (typeof addGDP === 'function') addGDP(100, 'DCK1:受取（' + deck.title + '）');
+  showToast('🛍️ ' + deck.title + ' を受け取った！');
 }
 function receiveDeckAgain(deckId) {
   delete allSettings.deck.received[deckId]; saveAllSettings();
@@ -16802,6 +16809,212 @@ var DECK_RARITY = {
 // ===== 今日のコロシアムデッキを返す（エポック方式） =====
 var COLOSSEUM_EPOCH = '2026-03-22'; // コロシアム開始日
 window.COLOSSEUM_EPOCH = COLOSSEUM_EPOCH;
+
+// ===== コロシアム カードバトル =====
+
+// タスクテキストの戦闘力スコアを計算（0〜100）
+function calcTaskPower(text, task) {
+  if (!text) return 1;
+  var score = 0;
+
+  // ① 文字数（最大20点）
+  var len = text.length;
+  if      (len >= 31) score += 20;
+  else if (len >= 21) score += 17;
+  else if (len >= 11) score += 12;
+  else if (len >=  6) score +=  6;
+  else                score +=  2;
+
+  // ② 漢字密度（最大15点）
+  var kanjiCount = (text.match(/[一-龯]/g) || []).length;
+  var kanjiRate = kanjiCount / text.length;
+  if      (kanjiRate >= 0.30) score += 15;
+  else if (kanjiRate >= 0.20) score += 10;
+  else if (kanjiRate >= 0.10) score +=  6;
+  else                        score +=  2;
+
+  // ③ 達成系キーワード（最大25点）
+  var kw15 = ['合格','優勝','完走','昇格','内定','受賞','優秀','首席','満点','最高点'];
+  var kw10 = ['完了','達成','成功','突破','クリア','解決','改善','締切','提出','発表'];
+  var kw7  = ['読了','習得','制作','完成','実装','設計','企画','交渉','説得','取得'];
+  var kw5  = ['開始','着手','確認','実施','対応','処理','連絡','報告','相談'];
+  var kwScore = 0;
+  kw15.forEach(function(k){ if (text.indexOf(k) !== -1) kwScore = Math.max(kwScore, 15); });
+  kw10.forEach(function(k){ if (text.indexOf(k) !== -1) kwScore = Math.max(kwScore,  10); });
+  kw7 .forEach(function(k){ if (text.indexOf(k) !== -1) kwScore = Math.max(kwScore,   7); });
+  kw5 .forEach(function(k){ if (text.indexOf(k) !== -1) kwScore = Math.max(kwScore,   5); });
+  score += kwScore;
+
+  // ④ 日常系ペナルティ（最大-15点）
+  var pen10 = ['飲んだ','食べた','起きた','寝た','入った','つけた','消した'];
+  var pen5  = ['メモ','確認','チェック'];
+  var penalty = 0;
+  // 単体で終わるかチェック（前後に具体内容なし→ペナルティ）
+  if (len <= 12) {
+    pen10.forEach(function(k){ if (text.indexOf(k) !== -1) penalty = Math.max(penalty, 10); });
+    pen5 .forEach(function(k){ if (text.indexOf(k) !== -1) penalty = Math.max(penalty,  5); });
+  }
+  score -= penalty;
+
+  // ⑤ 数字・固有名詞ボーナス（最大20点）
+  if (/[0-9０-９]+[万円ドル]/.test(text))           score += 8;
+  if (/[0-9０-９]+[時間分hH]/.test(text))            score += 6;
+  if (/[0-9０-９]+[%％]/.test(text))                 score += 6;
+  if (/[ァ-ヶー]{4,}/.test(text))                    score += 5; // カタカナ4文字以上
+  if (/[A-Z]{2,}/.test(text))                        score += 5; // 英大文字2文字以上
+  var numMatches = text.match(/[0-9０-９]+/g);
+  if (numMatches && numMatches.length >= 2)           score += 4;
+
+  // ⑥ 感情・強度ボーナス（最大10点）
+  if (/[!！]{1,}/.test(text))                        score += 4;
+  if (/[【「].*[】」]/.test(text))                   score += 3;
+  // 深夜完了（task.completedAt or task.time）
+  if (task) {
+    var _hr = -1;
+    if (task.completedAt) {
+      try { _hr = new Date(task.completedAt).getHours(); } catch(e){}
+    } else if (task.time) {
+      _hr = parseInt((task.time||'').split(':')[0]) || -1;
+    }
+    if (_hr >= 0 && _hr <= 4) score += 5;
+  }
+
+  // ⑦ 特殊称号ワード（最大15点）
+  var sp15 = ['東大','京大','医師','弁護士','司法書士','TOEIC','英検','税理士','公認会計士','弁理士'];
+  var sp12 = ['プレゼン','商談','契約','決算','上場','特許','論文','学会','訴訟','判決'];
+  var sp9  = ['資格','試験','検定','免許','認定','修了','卒業','入学'];
+  var spScore = 0;
+  sp15.forEach(function(k){ if (text.indexOf(k) !== -1) spScore = Math.max(spScore, 15); });
+  sp12.forEach(function(k){ if (text.indexOf(k) !== -1) spScore = Math.max(spScore, 12); });
+  sp9 .forEach(function(k){ if (text.indexOf(k) !== -1) spScore = Math.max(spScore,  9); });
+  score += spScore;
+
+  return Math.min(100, Math.max(1, score));
+}
+
+// スコアからレアリティを返す
+function getCardRarity(score) {
+  if (score >= 90) return { rank: 5, label: 'LEGENDARY', color: '#ff8800', bg: 'linear-gradient(135deg,#fff3cd,#ffe082)', border: '#ffd700', star: '★★★★★' };
+  if (score >= 70) return { rank: 4, label: 'EPIC',      color: '#7b1fa2', bg: 'linear-gradient(135deg,#f3e5f5,#e1bee7)', border: '#ab47bc', star: '★★★★☆' };
+  if (score >= 50) return { rank: 3, label: 'RARE',      color: '#1565c0', bg: 'linear-gradient(135deg,#e3f2fd,#bbdefb)', border: '#42a5f5', star: '★★★☆☆' };
+  if (score >= 30) return { rank: 2, label: 'UNCOMMON',  color: '#2e7d32', bg: 'linear-gradient(135deg,#e8f5e9,#c8e6c9)', border: '#66bb6a', star: '★★☆☆☆' };
+  return              { rank: 1, label: 'COMMON',    color: '#757575', bg: 'linear-gradient(135deg,#fafafa,#f5f5f5)', border: '#bdbdbd', star: '★☆☆☆☆' };
+}
+
+// 直近7日間の完了タスクからカード候補を取得（スコア降順・上位20件）
+function getColosseumCards() {
+  var since = new Date();
+  since.setDate(since.getDate() - 7);
+  var sinceStr = since.toISOString().slice(0, 10).replace(/-/g, '/');
+  var candidates = allTasks.filter(function(t) {
+    if (t.kind !== 'task') return false;
+    if (!t.completed) return false;
+    if (!t.date) return false;
+    var d = t.date.replace(/-/g, '/');
+    return d >= sinceStr;
+  });
+  // スコア付与してソート
+  var scored = candidates.map(function(t) {
+    return { task: t, score: calcTaskPower(t.text, t) };
+  });
+  scored.sort(function(a, b){ return b.score - a.score; });
+  return scored.slice(0, 20);
+}
+
+// CPUの3枚を今日のデッキから選出
+function getCpuColosseumCards() {
+  var deck = getTodayColosseumDeck();
+  if (!deck || !deck.tasks || deck.tasks.length === 0) return [];
+  var tasks = deck.tasks.slice();
+  // ハッシュで毎日変わる3枚を選出
+  var today = getLocalDateStr(new Date());
+  var hash = today.split('').reduce(function(a, c){ return a + c.charCodeAt(0); }, 0);
+  var result = [];
+  for (var i = 0; i < Math.min(3, tasks.length); i++) {
+    var idx = (hash + i * 7) % tasks.length;
+    result.push({ task: tasks[idx], score: calcTaskPower(tasks[idx].text, null) });
+  }
+  return result;
+}
+
+// バトル状態管理
+var _colosseumBattle = {
+  phase: 'select',   // select | reveal | result
+  playerCards: [],   // {task, score} 上位20件
+  playerPick: [],    // 選んだ3枚のindex
+  cpuCards: [],      // CPU3枚
+  results: [],       // {player, cpu, win} × 3本
+  round: 0,
+};
+
+// バトル開始
+function startColosseumBattle() {
+  var cards = getColosseumCards();
+  if (cards.length < 1) {
+    _colosseumBattle = { phase: 'select', playerCards: [], playerPick: [], cpuCards: [], results: [], round: 0 };
+    if (typeof renderColosseumView === 'function') renderColosseumView();
+    showToast('⚠️ 直近7日間の完了タスクがありません！タスクを完了してから挑戦しよう', {type:'warn'});
+    return;
+  }
+  _colosseumBattle = {
+    phase: 'select',
+    playerCards: cards,
+    playerPick: [],
+    cpuCards: getCpuColosseumCards(),
+    results: [],
+    round: 0,
+  };
+  renderColosseumView();
+}
+
+// カード選択トグル
+function toggleColosseumCardPick(idx) {
+  var pick = _colosseumBattle.playerPick;
+  var pos = pick.indexOf(idx);
+  if (pos !== -1) {
+    pick.splice(pos, 1);
+  } else {
+    if (pick.length >= 3) {
+      showToast('3枚まで選べます', {type:'warn'}); return;
+    }
+    pick.push(idx);
+  }
+  renderColosseumView();
+}
+
+// いっせーのせ！バトル実行
+function executeColosseumBattle() {
+  var b = _colosseumBattle;
+  if (b.playerPick.length !== 3) {
+    showToast('3枚選んでください', {type:'warn'}); return;
+  }
+  var results = [];
+  for (var i = 0; i < 3; i++) {
+    var playerCard = b.playerCards[b.playerPick[i]];
+    var cpuCard    = b.cpuCards[i] || { task: { text: '???'}, score: 50 };
+    var win = playerCard.score > cpuCard.score ? 'win'
+            : playerCard.score < cpuCard.score ? 'lose' : 'draw';
+    results.push({ player: playerCard, cpu: cpuCard, win: win });
+  }
+  b.results  = results;
+  b.phase    = 'reveal';
+  renderColosseumView();
+
+  // 報酬付与
+  var wins = results.filter(function(r){ return r.win === 'win'; }).length;
+  setTimeout(function() {
+    if (wins >= 2) {
+      if (typeof addGDP === 'function') addGDP(3, 'コロシアム勝利');
+      showToast('⚔️ ' + wins + '勝！勝利！GDP+3万獲得！', {type:'success', duration:4000});
+    } else if (wins === 1) {
+      if (typeof addGDP === 'function') addGDP(1, 'コロシアム引き分け');
+      showToast('🤝 ' + wins + '勝…接戦でした。GDP+1万', {type:'info', duration:3000});
+    } else {
+      if (typeof addGou === 'function') addGou(1, 'コロシアム敗北');
+      showToast('💀 敗北…業が積まれた。明日リベンジ！', {type:'warn', duration:4000});
+    }
+  }, 1200);
+}
 
 function getColosseumPool() {
   if (typeof OFFICIAL_DECKS === 'undefined') return [];
@@ -17191,6 +17404,107 @@ function renderColosseumView() {
   var el = document.getElementById('colosseumContent');
   if (!el) return;
   if (!allSettings.colosseum) allSettings.colosseum = { mode:'auto', cycle:'daily', cycleStart:'', scores:{} };
+  // _colosseumBattleが未初期化の場合のフォールバック
+  if (typeof _colosseumBattle === 'undefined' || !_colosseumBattle) { if (typeof startColosseumBattle === 'function') startColosseumBattle(); return; }
+  // escapeHtmlのローカルフォールバック
+  var _esc = typeof escapeHtml === 'function' ? escapeHtml : function(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+  var b = _colosseumBattle;
+  var html = '';
+
+  // ===== SELECT フェーズ：カード選択 =====
+  if (b.phase === 'select') {
+    var cards = b.playerCards;
+    if (cards.length === 0) {
+      html += '<div style="background:linear-gradient(135deg,#1a2a1a,#0a1a0a);border-radius:16px;padding:24px;text-align:center;">';
+      html += '<div style="font-size:2em;margin-bottom:12px;">⚔️</div>';
+      html += '<div style="font-size:0.95em;font-weight:700;color:#ffd700;margin-bottom:8px;">コロシアムカードバトル</div>';
+      html += '<div style="font-size:0.82em;color:#aaa;line-height:1.8;margin-bottom:16px;">直近7日間の完了タスクが<br>あなたのカードになる。<br>タスクを完了してから挑もう！</div>';
+      html += '<button onclick="startColosseumBattle()" style="padding:12px 24px;border:none;border-radius:20px;background:linear-gradient(135deg,#ffd700,#ff8800);color:#7a4800;font-size:0.9em;font-weight:700;cursor:pointer;">⚔️ バトル開始</button>';
+      html += '</div>';
+    } else {
+      var picked = b.playerPick;
+      html += '<div style="background:linear-gradient(135deg,#1a1a2e,#0f0f1a);border-radius:16px;padding:16px;margin-bottom:12px;">';
+      html += '<div style="font-size:0.72em;color:#a78bfa;font-weight:700;margin-bottom:4px;">⚔️ コロシアムカードバトル</div>';
+      html += '<div style="font-size:0.95em;font-weight:800;color:#fff;margin-bottom:4px;">3枚選んで戦え！</div>';
+      html += '<div style="font-size:0.75em;color:#888;">直近7日の完了タスクがカードに。強そうな3枚をピックしよう。</div>';
+      html += '<div style="font-size:0.82em;color:#a78bfa;margin-top:6px;font-weight:700;">' + picked.length + '/3枚選択中</div>';
+      html += '</div>';
+      // カード一覧
+      html += '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">';
+      cards.forEach(function(c, i) {
+        var rarity = getCardRarity(c.score);
+        var isSelected = picked.indexOf(i) !== -1;
+        var pickNum = picked.indexOf(i) + 1;
+        html += '<div onclick="toggleColosseumCardPick(' + i + ')" style="cursor:pointer;border-radius:12px;padding:12px 14px;border:2px solid ' + (isSelected ? rarity.border : '#333') + ';background:' + (isSelected ? rarity.bg : '#1a1a2e') + ';display:flex;align-items:center;gap:10px;transition:all 0.15s;position:relative;">';
+        // 選択番号バッジ
+        if (isSelected) {
+          html += '<div style="position:absolute;top:8px;right:10px;width:20px;height:20px;border-radius:50%;background:' + rarity.border + ';color:#fff;font-size:0.72em;font-weight:900;display:flex;align-items:center;justify-content:center;">' + pickNum + '</div>';
+        }
+        html += '<div style="flex-shrink:0;width:36px;height:36px;border-radius:8px;background:' + rarity.border + '33;border:1.5px solid ' + rarity.border + ';display:flex;align-items:center;justify-content:center;font-size:1.2em;">⚔️</div>';
+        html += '<div style="flex:1;min-width:0;">';
+        html += '<div style="font-size:0.88em;font-weight:700;color:' + (isSelected ? rarity.color : '#ddd') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _esc(c.task.text) + '</div>';
+        html += '<div style="font-size:0.68em;color:' + rarity.color + ';font-weight:700;margin-top:2px;">' + rarity.star + ' ' + rarity.label + '</div>';
+        html += '</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+      // 決定ボタン
+      html += '<button onclick="executeColosseumBattle()" style="width:100%;padding:14px;border:none;border-radius:20px;font-size:1.0em;font-weight:800;cursor:pointer;' + (picked.length === 3 ? 'background:linear-gradient(135deg,#ff6b35,#ee0979);color:#fff;box-shadow:0 4px 16px rgba(238,9,121,0.4);' : 'background:#2a2a3a;color:#555;') + '">' + (picked.length === 3 ? '⚔️ いっせーのせ！' : '3枚選んでください（' + picked.length + '/3）') + '</button>';
+    }
+  }
+
+  // ===== REVEAL フェーズ：結果表示 =====
+  else if (b.phase === 'reveal') {
+    var wins = b.results.filter(function(r){ return r.win === 'win'; }).length;
+    var loses = b.results.filter(function(r){ return r.win === 'lose'; }).length;
+    var overall = wins >= 2 ? 'WIN' : loses >= 2 ? 'LOSE' : 'DRAW';
+    var overallColor = overall === 'WIN' ? '#ffd700' : overall === 'LOSE' ? '#ef4444' : '#aaa';
+    var overallBg = overall === 'WIN'
+      ? 'linear-gradient(135deg,#1a1400,#2a2000)'
+      : overall === 'LOSE' ? 'linear-gradient(135deg,#1a0000,#2a0a0a)'
+      : 'linear-gradient(135deg,#1a1a1a,#2a2a2a)';
+
+    html += '<div style="background:' + overallBg + ';border-radius:16px;padding:18px;margin-bottom:12px;text-align:center;border:2px solid ' + overallColor + ';">';
+    html += '<div style="font-size:2.0em;font-weight:900;color:' + overallColor + ';letter-spacing:0.15em;">' + (overall === 'WIN' ? '⚔️ 勝利！' : overall === 'LOSE' ? '💀 敗北…' : '🤝 引き分け') + '</div>';
+    html += '<div style="font-size:0.82em;color:#aaa;margin-top:4px;">' + wins + '勝 ' + b.results.filter(function(r){ return r.win === 'draw'; }).length + '分 ' + loses + '敗</div>';
+    html += '</div>';
+
+    // 3本の結果
+    b.results.forEach(function(r, i) {
+      var pr = getCardRarity(r.player.score);
+      var cr = getCardRarity(r.cpu.score);
+      var wColor = r.win === 'win' ? '#ffd700' : r.win === 'lose' ? '#ef4444' : '#aaa';
+      var wLabel = r.win === 'win' ? '✅ 勝ち' : r.win === 'lose' ? '❌ 負け' : '➖ 分け';
+      html += '<div style="background:#1a1a2e;border-radius:12px;padding:12px;margin-bottom:8px;border:1.5px solid ' + wColor + '40;">';
+      html += '<div style="font-size:0.68em;color:#888;margin-bottom:6px;">第' + (i+1) + '戦</div>';
+      html += '<div style="display:flex;align-items:center;gap:8px;">';
+      // プレイヤーカード
+      html += '<div style="flex:1;background:' + pr.bg + ';border-radius:8px;padding:8px;border:1.5px solid ' + pr.border + ';">';
+      html += '<div style="font-size:0.72em;font-weight:700;color:' + pr.color + ';">' + pr.star + '</div>';
+      html += '<div style="font-size:0.78em;color:#333;font-weight:700;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _esc(r.player.task.text) + '</div>';
+      html += '<div style="font-size:0.85em;font-weight:900;color:' + pr.color + ';margin-top:4px;">POW ' + r.player.score + '</div>';
+      html += '</div>';
+      // VS
+      html += '<div style="flex-shrink:0;font-size:0.82em;font-weight:900;color:' + wColor + ';text-align:center;"><div>' + wLabel + '</div><div style="font-size:0.8em;color:#555;margin-top:2px;">VS</div></div>';
+      // CPUカード
+      html += '<div style="flex:1;background:' + cr.bg + ';border-radius:8px;padding:8px;border:1.5px solid ' + cr.border + ';">';
+      html += '<div style="font-size:0.72em;font-weight:700;color:' + cr.color + ';">' + cr.star + '</div>';
+      html += '<div style="font-size:0.78em;color:#333;font-weight:700;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _esc(r.cpu.task.text) + '</div>';
+      html += '<div style="font-size:0.85em;font-weight:900;color:' + cr.color + ';margin-top:4px;">POW ' + r.cpu.score + '</div>';
+      html += '</div>';
+      html += '</div></div>';
+    });
+
+    html += '<button onclick="startColosseumBattle()" style="width:100%;padding:14px;border:none;border-radius:20px;background:linear-gradient(135deg,#ffd700,#ff8800);color:#7a4800;font-size:0.95em;font-weight:800;cursor:pointer;margin-top:4px;">🔄 もう一度バトル</button>';
+  }
+
+  el.innerHTML = html;
+}
+
+function _renderColosseumLegacy() {
+  var el = document.getElementById('colosseumContent');
+  if (!el) return;
+  if (!allSettings.colosseum) allSettings.colosseum = { mode:'auto', cycle:'daily', cycleStart:'', scores:{} };
 
   var todayDeck = getTodayColosseumDeck();
   var scores = allSettings.colosseum.scores || {};
@@ -17216,7 +17530,6 @@ function renderColosseumView() {
     html += '<span style="font-size:0.78em;color:#aaa;">' + (todayDeck.tasks||[]).length + '枚</span>';
     html += '</div>';
     html += '<button onclick="receiveDeck(\'' + todayDeck.id + '\')" style="margin-top:12px;width:100%;padding:11px;border:none;border-radius:20px;background:linear-gradient(135deg,#ffd700,#ff8800);color:#7a4800;font-size:0.9em;font-weight:700;cursor:pointer;">📦 このデッキで参加する</button>';
-    html += '<button onclick="generateAndCopyColosseumReport()" style="margin-top:8px;width:100%;padding:11px;border:none;border-radius:20px;background:linear-gradient(135deg,#ff6b6b,#ee5a24);color:#fff;font-size:0.9em;font-weight:700;cursor:pointer;">🌸 完了を報告する（BLM1:コピー）</button>';
     html += '</div>';
   } else {
     html += '<div style="background:#f9f9f9;border-radius:14px;padding:14px;margin-bottom:16px;text-align:center;color:#bbb;font-size:0.85em;">今日のコロシアムデッキはありません</div>';
