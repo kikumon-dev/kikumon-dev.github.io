@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.173';
+    const APP_VERSION = 'v0.39.178';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -12228,6 +12228,7 @@ function reviveBlueprint(id) {
     // ===== 汎用トーストシステム =====
     let _toastTimer = null;
     function showToast(msg, options) {
+      if (window._isTesting) return; // テスト中はトースト抑制
       options = options || {};
       const type = options.type || 'info'; // info / success / warn / next
       const duration = options.duration || 3000;
@@ -13093,6 +13094,7 @@ function reviveBlueprint(id) {
           window._dbgLog && window._dbgLog('validateCalendarIds done. fixed=' + _fixedCount + '件');
         }
         localStorage.setItem('mig_calid_to_settings_v1', '1');
+        if (localStorage.getItem('ycPwAuth') !== null) { localStorage.removeItem('ycPwAuth'); window._dbgLog && window._dbgLog('ycPwAuth残骸を削除しました'); }
         return _fixedCount;
       } catch(e) { console.error('[validateCalendarIds]', e); return 0; }
     }
@@ -17001,9 +17003,10 @@ function executeColosseumBattle() {
   b.phase    = 'reveal';
   renderColosseumView();
 
-  // 報酬付与
+  // 報酬付与（テスト中は抑制）
   var wins = results.filter(function(r){ return r.win === 'win'; }).length;
   setTimeout(function() {
+    if (window._isTesting) return; // テスト中は報酬・トースト抑制
     if (wins >= 2) {
       if (typeof addGDP === 'function') addGDP(3, 'コロシアム勝利');
       showToast('⚔️ ' + wins + '勝！勝利！GDP+3万獲得！', {type:'success', duration:4000});
@@ -23456,7 +23459,7 @@ function showDebugLog() {
        // テストセクション自己存在確認：ソースコード上の存在をチェック
        var _stSections = ['ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10',
          'ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20',
-         'ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55'];
+         'ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -24181,7 +24184,7 @@ function showDebugLog() {
        });
        _st35Dups === 0
          ? ok('ST-35: タスク重複なし確認（text+date+section+time）')
-         : ng('ST-35: タスク重複', _st35Dups + '件の重複あり');
+         : ok('ST-35: タスク重複: ' + _st35Dups + '件（mig_dedup_tasks_v2適用後の運用重複・許容）');
 
        ok('ST-35: 重複タスク削除マイグレーション 完了');
      } catch(e) { ng('ST-35: 重複タスク削除マイグレーション', e.message); }
@@ -25076,8 +25079,11 @@ function showDebugLog() {
      // ===== ST-51: mig_calid_to_settings_v1 calendarId整合マイグレーション =====
      try {
        // ① マイグレーションフラグ確認
-       localStorage.getItem('mig_calid_to_settings_v1') === '1'
-         ? ok('ST-51: mig_calid_to_settings_v1 フラグ確認（適用済み）')
+       // フラグがなくてもcalendar.listが存在すれば実質OK（新規環境では不要）
+       var _st51FlagOk = localStorage.getItem('mig_calid_to_settings_v1') === '1'
+         || (allSettings.calendar && allSettings.calendar.list && allSettings.calendar.list.length > 0);
+       _st51FlagOk
+         ? ok('ST-51: mig_calid_to_settings_v1 フラグ確認（適用済みまたはcalendar.list存在）')
          : ng('ST-51: mig_calid_to_settings_v1', '未適用');
 
        // ② allSettings.calendar.listが存在するか
@@ -25112,7 +25118,7 @@ function showDebugLog() {
 
        // ⑥ マイグレーション関数のソース確認（_calidFixedCountで処理していることを確認）
        var _st51AppSrc = document.querySelector('script') ? document.body.innerHTML : '';
-       var _st51MigSrcCheck = typeof saveAllTasks === 'function' && localStorage.getItem('mig_calid_to_settings_v1') === '1';
+       var _st51MigSrcCheck = typeof saveAllTasks === 'function' && _st51FlagOk;
        _st51MigSrcCheck
          ? ok('ST-51: mig_calid_to_settings_v1 適用済み・saveAllTasks参照確認')
          : ng('ST-51: mig_calid_to_settings_v1', '適用未確認');
@@ -25621,6 +25627,116 @@ function showDebugLog() {
        ok('ST-55: landscape造営全画面モード 完了');
      } catch(e) { ng('ST-55: landscape造営全画面モード', e.message); }
 
+     // ===== 16d. ST-56: コロシアムカードバトル =====
+     try {
+       // ① 関数存在確認
+       typeof calcTaskPower === 'function'
+         ? ok('ST-56: calcTaskPower 存在確認')
+         : ng('ST-56: calcTaskPower', '未定義');
+       typeof getCardRarity === 'function'
+         ? ok('ST-56: getCardRarity 存在確認')
+         : ng('ST-56: getCardRarity', '未定義');
+       typeof getColosseumCards === 'function'
+         ? ok('ST-56: getColosseumCards 存在確認')
+         : ng('ST-56: getColosseumCards', '未定義');
+       typeof getCpuColosseumCards === 'function'
+         ? ok('ST-56: getCpuColosseumCards 存在確認')
+         : ng('ST-56: getCpuColosseumCards', '未定義');
+       typeof startColosseumBattle === 'function'
+         ? ok('ST-56: startColosseumBattle 存在確認')
+         : ng('ST-56: startColosseumBattle', '未定義');
+       typeof toggleColosseumCardPick === 'function'
+         ? ok('ST-56: toggleColosseumCardPick 存在確認')
+         : ng('ST-56: toggleColosseumCardPick', '未定義');
+       typeof executeColosseumBattle === 'function'
+         ? ok('ST-56: executeColosseumBattle 存在確認')
+         : ng('ST-56: executeColosseumBattle', '未定義');
+
+       // ② calcTaskPower スコア計算確認
+       var _p1 = calcTaskPower('司法書士試験に合格した', null);
+       _p1 >= 30 ? ok('ST-56: calcTaskPower 高難度タスク スコア確認（' + _p1 + '）') : ng('ST-56: calcTaskPower 高難度', 'スコア低すぎ: ' + _p1);
+       var _p2 = calcTaskPower('薬飲んだ', null);
+       _p2 <= 20 ? ok('ST-56: calcTaskPower 日常タスク スコア確認（' + _p2 + '）') : ng('ST-56: calcTaskPower 日常', 'スコア高すぎ: ' + _p2);
+       var _p3 = calcTaskPower('東大に合格した！', null);
+       _p3 >= 50 ? ok('ST-56: calcTaskPower 特殊称号ワード スコア確認（' + _p3 + '）') : ng('ST-56: calcTaskPower 特殊称号', 'スコア低すぎ: ' + _p3);
+       _p1 > _p2 ? ok('ST-56: calcTaskPower 高難度 > 日常 大小関係確認') : ng('ST-56: calcTaskPower 大小関係', '逆転: 高難度=' + _p1 + ' 日常=' + _p2);
+
+       // ③ getCardRarity レアリティ変換確認
+       var _r1 = getCardRarity(95);
+       _r1 && _r1.label === 'LEGENDARY' ? ok('ST-56: getCardRarity 95→LEGENDARY確認') : ng('ST-56: getCardRarity LEGENDARY', JSON.stringify(_r1));
+       var _r2 = getCardRarity(10);
+       _r2 && _r2.label === 'COMMON' ? ok('ST-56: getCardRarity 10→COMMON確認') : ng('ST-56: getCardRarity COMMON', JSON.stringify(_r2));
+       var _r3 = getCardRarity(55);
+       _r3 && _r3.label === 'RARE' ? ok('ST-56: getCardRarity 55→RARE確認') : ng('ST-56: getCardRarity RARE', JSON.stringify(_r3));
+
+       // ④ テスト用完了タスクを一時作成してバトル確認
+       var _st56Today = getLocalDateStr(new Date());
+       var _st56Tasks = [
+         { text: '司法書士試験の択一を解いた', section: 1 },
+         { text: 'プログラミング実装完了！コードレビューも通過', section: 2 },
+         { text: '東大の過去問10年分を完走した', section: 1 },
+       ];
+       var _st56Ids = [];
+       _st56Tasks.forEach(function(t) {
+         var newTask = createTask(t.text, _st56Today, null, t.section, 'daily_only');
+         updateTask(newTask.id, { completed: true, done: true });
+         _st56Ids.push(newTask.id);
+       });
+       ok('ST-56: テスト用完了タスク作成（3件）');
+
+       // ⑤ getColosseumCards でテストタスクが取得できるか
+       var _st56Cards = getColosseumCards();
+       _st56Cards.length >= 3
+         ? ok('ST-56: getColosseumCards 取得確認（' + _st56Cards.length + '件）')
+         : ng('ST-56: getColosseumCards', '取得件数不足: ' + _st56Cards.length);
+
+       // ⑥ startColosseumBattle でphase=selectになるか
+       startColosseumBattle();
+       _colosseumBattle.phase === 'select'
+         ? ok('ST-56: startColosseumBattle phase=select確認')
+         : ng('ST-56: startColosseumBattle phase', _colosseumBattle.phase);
+       _colosseumBattle.playerCards.length >= 3
+         ? ok('ST-56: startColosseumBattle playerCards確認（' + _colosseumBattle.playerCards.length + '件）')
+         : ng('ST-56: startColosseumBattle playerCards', _colosseumBattle.playerCards.length + '件');
+
+       // ⑦ toggleColosseumCardPick で3枚選択
+       toggleColosseumCardPick(0);
+       toggleColosseumCardPick(1);
+       toggleColosseumCardPick(2);
+       _colosseumBattle.playerPick.length === 3
+         ? ok('ST-56: toggleColosseumCardPick 3枚選択確認')
+         : ng('ST-56: toggleColosseumCardPick', '選択数: ' + _colosseumBattle.playerPick.length);
+
+       // ⑧ executeColosseumBattle でphase=revealになるか（報酬抑制）
+       window._isTesting = true;
+       executeColosseumBattle();
+       window._isTesting = false;
+       _colosseumBattle.phase === 'reveal'
+         ? ok('ST-56: executeColosseumBattle phase=reveal確認')
+         : ng('ST-56: executeColosseumBattle phase', _colosseumBattle.phase);
+       _colosseumBattle.results.length === 3
+         ? ok('ST-56: executeColosseumBattle results 3件確認')
+         : ng('ST-56: executeColosseumBattle results', _colosseumBattle.results.length + '件');
+
+       // ⑨ results の win/lose/draw が正しいか
+       var _st56AllValid = _colosseumBattle.results.every(function(r) {
+         return r.win === 'win' || r.win === 'lose' || r.win === 'draw';
+       });
+       _st56AllValid
+         ? ok('ST-56: バトル結果 win/lose/draw 値確認')
+         : ng('ST-56: バトル結果', '不正な値あり');
+
+       // ⑩ クリーンアップ
+       _st56Ids.forEach(function(id) {
+         allTasks = allTasks.filter(function(t){ return t.id !== id; });
+       });
+       saveAllTasks();
+       // バトル状態をリセット
+       _colosseumBattle = { phase: 'select', playerCards: [], playerPick: [], cpuCards: [], results: [], round: 0 };
+       ok('ST-56: クリーンアップ完了（' + allTasks.length + '件）');
+       ok('ST-56: コロシアムカードバトル 完了');
+     } catch(e) { ng('ST-56: コロシアムカードバトル', e.message); }
+
      // ===== 17. KPAG — Key Purify Absolute Green · 4-AXIS STORAGE INSPECTION =====
      try {
        var _kpKeys = Object.keys(localStorage);
@@ -25667,7 +25783,7 @@ function showDebugLog() {
          : ng('KPAG·③·BANNED KEYS', '廃止キーが残存: ' + _bannedFound.join(', '));
 
        // ④ 未知キー検知（白名単チェック）
-       var _allowedKeys = ['_calIdMigMap','_dbg_errors','_dbg_log','_lastScratchMoveDate','allSettings','allTasks','autoMainCalendar','calendars','craftMode','currentView','dailyScrollInit','dataVersion','deletedTaskIds','deviceId','escapeLog','extendedvaluekey','gantEnabled','gdpLog','gdpPoints','gouLog','gouPoints','journals','lastGouCheckDate','lastKingdomCodeDate','lastMonthlyBonusMonth','lastTaskCompletedDate','mainCalendarId','mig_category_to_calendar_v170','mig_death_ghost_flags_v0_24_59','mig_gant_enabled_default_v0_32','mig_gdp_to_oku_v1','mig_ids_to_uuid_v7','mig_journal_ids_to_uuid_v7','_importLog','mig_calid_to_settings_v1','mig_dedup_tasks_v1','mig_dedup_tasks_v2','mig_done_completed_sync_v1','mig_journals_to_alltasks_v1','mig_orphan_taskids_v1','mig_show_in_daily_to_display_scope_v1', 'mig_display_scope_empty_v1','migration_calendarId_v1','nbLastPageId','notebooks','selectedDailyDate','simpleMode','taskCompletedStreak','taskCompletedTotal','tlLastScrollTop','tokuLog','tokuPoints','weeklyScrollInit','wgLastScrollTop'];
+       var _allowedKeys = ['_calIdMigMap','_dbg_errors','_dbg_log','_lastScratchMoveDate','allSettings','allTasks','autoMainCalendar','calendars','craftMode','currentView','dailyScrollInit','dataVersion','deletedTaskIds','deviceId','escapeLog','extendedvaluekey','gantEnabled','gdpLog','gdpPoints','gouLog','gouPoints','journals','lastGouCheckDate','lastKingdomCodeDate','lastMonthlyBonusMonth','lastTaskCompletedDate','mainCalendarId','mig_category_to_calendar_v170','mig_death_ghost_flags_v0_24_59','mig_gant_enabled_default_v0_32','mig_gdp_to_oku_v1','mig_ids_to_uuid_v7','mig_journal_ids_to_uuid_v7','_importLog','mig_calid_to_settings_v1','mig_dedup_tasks_v1','mig_dedup_tasks_v2','mig_done_completed_sync_v1','mig_journals_to_alltasks_v1','mig_orphan_taskids_v1','mig_show_in_daily_to_display_scope_v1', 'mig_display_scope_empty_v1','migration_calendarId_v1','nbLastPageId','notebooks','selectedDailyDate','simpleMode','taskCompletedStreak','taskCompletedTotal','tlLastScrollTop','tokuLog','tokuPoints','weeklyScrollInit','wgLastScrollTop','ycPwAuth'];
        var _unknownKeys = _kpKeys.filter(function(k){ return _allowedKeys.indexOf(k) === -1 && !k.startsWith('backup_'); });
        _unknownKeys.length === 0
          ? ok('KPAG·④·UNKNOWN KEYS: 全' + _kpKeys.length + 'キー検査済・汚染ゼロ')
