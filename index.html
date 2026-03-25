@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.172';
+    const APP_VERSION = 'v0.39.173';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -2315,6 +2315,7 @@
     .nb-shelf::-webkit-scrollbar-track { background: transparent; }
     .nb-shelf::-webkit-scrollbar-thumb { background: #c5c0b8; border-radius: 2px; }
     .nb-shelf-tab {
+      flex-shrink: 0;
       flex-shrink: 0;
       padding: 8px 16px 11px;
       border-radius: 8px 8px 0 0;
@@ -13646,14 +13647,14 @@ function reviveBlueprint(id) {
       var spread = document.getElementById('nbSpread');
       var pages = nbPages();
       var isSingle = nbSpreadMode !== 'spread';
-      if (pages.length === 0 || !nbCurrentId) {
-        // ページがあれば1枚目を自動選択
-        if (pages.length > 0) {
-          nbCurrentId = pages[0].id;
-        } else {
-          spread.innerHTML = '<div class="nb-empty-state"><span class="nb-empty-state-icon">📒</span><p>まだページがありません<br>メモ、アイデア、対策ノート、なんでも</p><button class="nb-empty-state-btn" onclick="nbNewPage()">＋ 最初のページを作る</button></div>';
-          return;
-        }
+      if (pages.length === 0) {
+        spread.innerHTML = '<div class="nb-empty-state"><span class="nb-empty-state-icon">📒</span><p>まだページがありません<br>メモ、アイデア、対策ノート、なんでも</p><button class="nb-empty-state-btn" onclick="nbNewPage()">＋ 最初のページを作る</button></div>';
+        return;
+      }
+      // ページ未選択（初回表示）→ページ選択を促す
+      if (!nbCurrentId) {
+        spread.innerHTML = '<div class="nb-empty-state"><span class="nb-empty-state-icon">📒</span><p style="font-size:0.95em;line-height:2;">上のタブからページを選んでください</p></div>';
+        return;
       }
       var page = nbPage(nbCurrentId);
       if (!page) {
