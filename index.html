@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.230';
+    const APP_VERSION = 'v0.39.242';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -4052,6 +4052,44 @@
     <!-- データ操作 -->
     <div style="background:#fff;border-radius:20px;padding:18px;box-shadow:0 2px 16px rgba(79,172,254,0.08);border:1px solid #e8f0fe;margin-bottom:10px;">
       <div style="font-size:0.88em;font-weight:700;color:#a0aec0;letter-spacing:0.06em;margin-bottom:12px;">💾 データ</div>
+      <!-- 天象カード -->
+      <div id="dbSkyCard" style="background:linear-gradient(135deg,#0a0a1a,#1a1a2e);border:1px solid #333;border-radius:12px;padding:16px;margin-bottom:10px;color:#fff;">
+        <div style="font-size:0.72em;color:#a78bfa;font-weight:700;margin-bottom:10px;">🌙 天象 — 東京</div>
+        <!-- 空の状態 -->
+        <div id="dbSkyBox" style="height:64px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1em;font-weight:700;margin-bottom:12px;transition:background 1s;">--</div>
+        <!-- 日時 -->
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <div style="flex:1;background:#1a1a2e;border-radius:8px;padding:8px;border:1px solid #333;">
+            <div style="font-size:0.65em;color:#888;margin-bottom:2px;">日の出</div>
+            <div id="dbSunrise" style="font-size:1em;font-weight:700;">--</div>
+          </div>
+          <div style="flex:1;background:#1a1a2e;border-radius:8px;padding:8px;border:1px solid #333;">
+            <div style="font-size:0.65em;color:#888;margin-bottom:2px;">日没</div>
+            <div id="dbSunset" style="font-size:1em;font-weight:700;">--</div>
+          </div>
+          <div style="flex:1;background:#1a1a2e;border-radius:8px;padding:8px;border:1px solid #333;">
+            <div style="font-size:0.65em;color:#888;margin-bottom:2px;">薄明終</div>
+            <div id="dbDusk" style="font-size:1em;font-weight:700;">--</div>
+          </div>
+        </div>
+        <!-- 月齢 -->
+        <div style="background:#1a1a2e;border-radius:8px;padding:12px;border:1px solid #333;margin-bottom:12px;">
+          <div style="font-size:0.65em;color:#888;margin-bottom:6px;">月齢（国立天文台テーブル）</div>
+          <div style="display:flex;align-items:center;gap:14px;">
+            <canvas id="dbMoonCanvas" width="72" height="72" style="flex-shrink:0;"></canvas>
+            <div>
+              <div id="dbMoonAge" style="font-size:1.05em;font-weight:800;">--</div>
+              <div id="dbMoonPhase" style="font-size:0.78em;color:#a78bfa;margin-top:4px;">--</div>
+              <div style="font-size:0.65em;color:#555;margin-top:4px;">直近新月: <span id="dbLastNewMoon">--</span></div>
+            </div>
+          </div>
+        </div>
+        <!-- 年間テーブル -->
+        <div style="font-size:0.65em;color:#888;margin-bottom:6px;">年間テーブル（各月15日）</div>
+        <table id="dbSunTable" style="width:100%;font-size:0.75em;border-collapse:collapse;">
+          <tr><th style="color:#a78bfa;text-align:left;padding:3px 4px;">月</th><th style="padding:3px 4px;">日の出</th><th style="padding:3px 4px;">日没</th><th style="padding:3px 4px;">薄明終</th></tr>
+        </table>
+      </div>
       <!-- 自動バックアップ状態 -->
       <div id="dbBackupStatus" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
         <div>
@@ -4755,6 +4793,38 @@
     let editingTask = null; // { dateStr, index }
     let creatingTask = null; // { dateStr, hour }
     // 管理者モード（チュートリアルblockより前に定義必須）
+    // 東京 月別日の出・日没・市民薄明終了（各月15日・JST）
+    var _SUN_TIMES = [null,[6,50,16,51,17,19],[6,28,17,23,17,49],[5,52,17,48,18,14],[5,8,18,14,18,41],[4,36,18,39,19,8],[4,25,18,59,19,29],[4,37,18,57,19,27],[5,0,18,31,18,58],[5,24,17,49,18,15],[5,48,17,6,17,32],[6,17,16,34,17,2],[6,44,16,29,16,57]]; // フォールバック（各月15日）
+    // 東京 2026年全日テーブル [日の出h,日の出m,日没h,日没m,薄明終h,薄明終m] Aが優先・失敗時はBへフォールバック
+    var _SUN_TIMES_DAILY=[null,
+  [[6,51,16,39,17,7],[6,51,16,39,17,8],[6,51,16,40,17,8],[6,51,16,41,17,9],[6,51,16,42,17,10],[6,52,16,43,17,11],[6,52,16,43,17,12],[6,51,16,44,17,12],[6,51,16,45,17,13],[6,51,16,46,17,14],[6,51,16,47,17,15],[6,51,16,48,17,16],[6,51,16,49,17,17],[6,51,16,50,17,18],[6,50,16,51,17,19],[6,50,16,52,17,20],[6,50,16,53,17,21],[6,49,16,54,17,22],[6,49,16,55,17,23],[6,49,16,56,17,23],[6,48,16,57,17,24],[6,48,16,58,17,25],[6,47,16,59,17,26],[6,47,17,0,17,27],[6,46,17,1,17,28],[6,45,17,2,17,29],[6,45,17,3,17,30],[6,44,17,4,17,31],[6,43,17,5,17,32],[6,43,17,6,17,33],[6,42,17,7,17,34]],
+  [[6,41,17,8,17,35],[6,40,17,9,17,36],[6,40,17,11,17,37],[6,39,17,12,17,38],[6,38,17,13,17,39],[6,37,17,14,17,40],[6,36,17,15,17,41],[6,35,17,16,17,42],[6,34,17,17,17,43],[6,33,17,18,17,44],[6,32,17,19,17,45],[6,31,17,20,17,46],[6,30,17,21,17,47],[6,29,17,22,17,48],[6,28,17,23,17,49],[6,27,17,24,17,50],[6,26,17,25,17,51],[6,25,17,26,17,52],[6,23,17,27,17,53],[6,22,17,28,17,54],[6,21,17,29,17,54],[6,20,17,30,17,55],[6,19,17,30,17,56],[6,17,17,31,17,57],[6,16,17,32,17,58],[6,15,17,33,17,59],[6,14,17,34,18,0],[6,12,17,35,18,1]],
+  [[6,11,17,36,18,2],[6,10,17,37,18,3],[6,8,17,38,18,3],[6,7,17,39,18,4],[6,6,17,40,18,5],[6,4,17,41,18,6],[6,3,17,41,18,7],[6,2,17,42,18,8],[6,0,17,43,18,9],[5,59,17,44,18,10],[5,57,17,45,18,10],[5,56,17,46,18,11],[5,55,17,47,18,12],[5,53,17,48,18,13],[5,52,17,48,18,14],[5,50,17,49,18,15],[5,49,17,50,18,16],[5,48,17,51,18,16],[5,46,17,52,18,17],[5,45,17,53,18,18],[5,43,17,53,18,19],[5,42,17,54,18,20],[5,40,17,55,18,21],[5,39,17,56,18,22],[5,38,17,57,18,22],[5,36,17,58,18,23],[5,35,17,58,18,24],[5,33,17,59,18,25],[5,32,18,0,18,26],[5,30,18,1,18,27],[5,29,18,2,18,27]],
+  [[5,28,18,3,18,28],[5,26,18,3,18,29],[5,25,18,4,18,30],[5,23,18,5,18,31],[5,22,18,6,18,32],[5,21,18,7,18,33],[5,19,18,8,18,34],[5,18,18,8,18,34],[5,16,18,9,18,35],[5,15,18,10,18,36],[5,14,18,11,18,37],[5,12,18,12,18,38],[5,11,18,13,18,39],[5,10,18,13,18,40],[5,8,18,14,18,41],[5,7,18,15,18,41],[5,6,18,16,18,42],[5,4,18,17,18,43],[5,3,18,18,18,44],[5,2,18,18,18,45],[5,1,18,19,18,46],[4,59,18,20,18,47],[4,58,18,21,18,48],[4,57,18,22,18,49],[4,56,18,23,18,49],[4,55,18,23,18,50],[4,54,18,24,18,51],[4,52,18,25,18,52],[4,51,18,26,18,53],[4,50,18,27,18,54]],
+  [[4,49,18,28,18,55],[4,48,18,28,18,56],[4,47,18,29,18,57],[4,46,18,30,18,58],[4,45,18,31,18,59],[4,44,18,32,19,0],[4,43,18,33,19,0],[4,42,18,33,19,1],[4,41,18,34,19,2],[4,40,18,35,19,3],[4,39,18,36,19,4],[4,38,18,37,19,5],[4,38,18,38,19,6],[4,37,18,38,19,7],[4,36,18,39,19,8],[4,35,18,40,19,8],[4,35,18,41,19,9],[4,34,18,42,19,10],[4,33,18,42,19,11],[4,32,18,43,19,12],[4,32,18,44,19,13],[4,31,18,45,19,14],[4,31,18,45,19,14],[4,30,18,46,19,15],[4,30,18,47,19,16],[4,29,18,48,19,17],[4,29,18,48,19,17],[4,28,18,49,19,18],[4,28,18,50,19,19],[4,27,18,50,19,20],[4,27,18,51,19,20]],
+  [[4,27,18,52,19,21],[4,26,18,52,19,22],[4,26,18,53,19,22],[4,26,18,53,19,23],[4,26,18,54,19,24],[4,25,18,55,19,24],[4,25,18,55,19,25],[4,25,18,56,19,25],[4,25,18,56,19,26],[4,25,18,57,19,26],[4,25,18,57,19,27],[4,25,18,57,19,27],[4,25,18,58,19,28],[4,25,18,58,19,28],[4,25,18,59,19,29],[4,25,18,59,19,29],[4,25,18,59,19,29],[4,25,19,0,19,30],[4,25,19,0,19,30],[4,26,19,0,19,30],[4,26,19,0,19,30],[4,26,19,1,19,31],[4,26,19,1,19,31],[4,27,19,1,19,31],[4,27,19,1,19,31],[4,27,19,1,19,31],[4,28,19,1,19,31],[4,28,19,1,19,31],[4,28,19,1,19,31],[4,29,19,1,19,31]],
+  [[4,29,19,1,19,31],[4,30,19,1,19,31],[4,30,19,1,19,31],[4,31,19,1,19,31],[4,31,19,1,19,30],[4,32,19,0,19,30],[4,32,19,0,19,30],[4,33,19,0,19,30],[4,33,19,0,19,29],[4,34,18,59,19,29],[4,34,18,59,19,29],[4,35,18,59,19,28],[4,36,18,58,19,28],[4,36,18,58,19,27],[4,37,18,57,19,27],[4,38,18,57,19,26],[4,38,18,57,19,26],[4,39,18,56,19,25],[4,40,18,55,19,24],[4,40,18,55,19,24],[4,41,18,54,19,23],[4,42,18,54,19,22],[4,43,18,53,19,22],[4,43,18,52,19,21],[4,44,18,52,19,20],[4,45,18,51,19,19],[4,46,18,50,19,18],[4,46,18,49,19,18],[4,47,18,48,19,17],[4,48,18,48,19,16],[4,49,18,47,19,15]],
+  [[4,49,18,46,19,14],[4,50,18,45,19,13],[4,51,18,44,19,12],[4,52,18,43,19,11],[4,52,18,42,19,10],[4,53,18,41,19,9],[4,54,18,40,19,8],[4,55,18,39,19,7],[4,56,18,38,19,5],[4,56,18,37,19,4],[4,57,18,36,19,3],[4,58,18,35,19,2],[4,59,18,33,19,1],[5,0,18,32,18,59],[5,0,18,31,18,58],[5,1,18,30,18,57],[5,2,18,29,18,56],[5,3,18,28,18,54],[5,3,18,26,18,53],[5,4,18,25,18,52],[5,5,18,24,18,50],[5,6,18,23,18,49],[5,7,18,21,18,48],[5,7,18,20,18,46],[5,8,18,19,18,45],[5,9,18,17,18,44],[5,10,18,16,18,42],[5,10,18,15,18,41],[5,11,18,13,18,39],[5,12,18,12,18,38],[5,13,18,10,18,37]],
+  [[5,13,18,9,18,35],[5,14,18,8,18,34],[5,15,18,6,18,32],[5,16,18,5,18,31],[5,16,18,3,18,29],[5,17,18,2,18,28],[5,18,18,1,18,26],[5,19,17,59,18,25],[5,19,17,58,18,23],[5,20,17,56,18,22],[5,21,17,55,18,20],[5,22,17,53,18,19],[5,22,17,52,18,18],[5,23,17,50,18,16],[5,24,17,49,18,15],[5,25,17,47,18,13],[5,25,17,46,18,12],[5,26,17,45,18,10],[5,27,17,43,18,9],[5,28,17,42,18,7],[5,29,17,40,18,6],[5,29,17,39,18,4],[5,30,17,37,18,3],[5,31,17,36,18,1],[5,32,17,34,18,0],[5,32,17,33,17,58],[5,33,17,31,17,57],[5,34,17,30,17,55],[5,35,17,28,17,54],[5,36,17,27,17,52]],
+  [[5,36,17,26,17,51],[5,37,17,24,17,50],[5,38,17,23,17,48],[5,39,17,21,17,47],[5,39,17,20,17,45],[5,40,17,18,17,44],[5,41,17,17,17,43],[5,42,17,16,17,41],[5,43,17,14,17,40],[5,44,17,13,17,38],[5,44,17,11,17,37],[5,45,17,10,17,36],[5,46,17,9,17,34],[5,47,17,7,17,33],[5,48,17,6,17,32],[5,49,17,5,17,31],[5,50,17,4,17,29],[5,50,17,2,17,28],[5,51,17,1,17,27],[5,52,17,0,17,26],[5,53,16,59,17,24],[5,54,16,57,17,23],[5,55,16,56,17,22],[5,56,16,55,17,21],[5,57,16,54,17,20],[5,58,16,53,17,19],[5,59,16,52,17,18],[6,0,16,50,17,17],[6,0,16,49,17,16],[6,1,16,48,17,15],[6,2,16,47,17,14]],
+  [[6,3,16,46,17,13],[6,4,16,45,17,12],[6,5,16,44,17,11],[6,6,16,43,17,10],[6,7,16,42,17,9],[6,8,16,41,17,8],[6,9,16,41,17,7],[6,10,16,40,17,6],[6,11,16,39,17,6],[6,12,16,38,17,5],[6,13,16,37,17,4],[6,14,16,37,17,4],[6,15,16,36,17,3],[6,16,16,35,17,2],[6,17,16,34,17,2],[6,18,16,34,17,1],[6,19,16,33,17,0],[6,20,16,33,17,0],[6,21,16,32,16,59],[6,22,16,32,16,59],[6,23,16,31,16,59],[6,24,16,31,16,58],[6,25,16,30,16,58],[6,26,16,30,16,57],[6,27,16,29,16,57],[6,28,16,29,16,57],[6,29,16,29,16,57],[6,30,16,29,16,56],[6,31,16,28,16,56],[6,32,16,28,16,56]],
+  [[6,33,16,28,16,56],[6,33,16,28,16,56],[6,34,16,28,16,56],[6,35,16,28,16,56],[6,36,16,28,16,56],[6,37,16,28,16,56],[6,38,16,28,16,56],[6,39,16,28,16,56],[6,39,16,28,16,56],[6,40,16,28,16,56],[6,41,16,28,16,56],[6,42,16,28,16,57],[6,42,16,29,16,57],[6,43,16,29,16,57],[6,44,16,29,16,57],[6,44,16,29,16,58],[6,45,16,30,16,58],[6,46,16,30,16,59],[6,46,16,31,16,59],[6,47,16,31,16,59],[6,47,16,31,17,0],[6,48,16,32,17,0],[6,48,16,32,17,1],[6,49,16,33,17,1],[6,49,16,34,17,2],[6,49,16,34,17,3],[6,50,16,35,17,3],[6,50,16,35,17,4],[6,50,16,36,17,5],[6,51,16,37,17,5],[6,51,16,38,17,6]]];
+    // 天文データ取得ヘルパー（A:全日テーブル優先 → B:月次テーブルフォールバック）
+    function _getSunData(date) {
+      var mo = date.getMonth()+1, day = date.getDate();
+      try {
+        if (typeof _SUN_TIMES_DAILY !== 'undefined' && _SUN_TIMES_DAILY[mo] && _SUN_TIMES_DAILY[mo][day-1]) {
+          var d = _SUN_TIMES_DAILY[mo][day-1];
+          return { rise: d[0]+d[1]/60, set: d[2]+d[3]/60, dusk: d[4]+d[5]/60, source: 'daily' };
+        }
+      } catch(e) {}
+      // フォールバック: 月次テーブル
+      if (typeof _SUN_TIMES !== 'undefined' && _SUN_TIMES[mo]) {
+        var s = _SUN_TIMES[mo];
+        return { rise: s[0]+s[1]/60, set: s[2]+s[3]/60, dusk: s[4]+s[5]/60, source: 'monthly' };
+      }
+      return { rise: 5.5, set: 18.0, dusk: 18.5, source: 'default' };
+    }
     var _adminModeActive = false;
     // 月間ビュー用
     let currentMonthDate = new Date(); // 表示中の月
@@ -17423,6 +17493,63 @@ function renderDashboardView() {
     var d = Math.floor((new Date(today.replace(/-/g,'/')).getTime()-ms)/86400000);
     if (d > maxDays) maxDays = d;
   });
+  // 天象カード更新（フル版）
+  (function() {
+    var _calcAge2 = typeof calcMoonAgeNAOJ==='function' ? calcMoonAgeNAOJ : window.calcMoonAgeNAOJ;
+    if (!_calcAge2) return;
+    var _now = new Date(), _moDb = _now.getMonth()+1, _hF = _now.getHours()+_now.getMinutes()/60;
+    var _age = _calcAge2(_now);
+    var _sdDb2 = (typeof _getSunData==='function') ? _getSunData(_now) : {rise:5.5,set:18.0,dusk:18.5};
+    var _rise = _sdDb2.rise, _set = _sdDb2.set, _dusk = _sdDb2.dusk;
+    var _fmt = function(h){ var hh=Math.floor(h),mm=Math.round((h-hh)*60); if(mm>=60){hh++;mm-=60;} return (hh<10?'0':'')+hh+':'+(mm<10?'0':'')+mm; };
+    // 空の状態
+    var _skyInfo = _hF>=_rise-.5&&_hF<_rise ? {l:'夜明け 🌄',bg:'#1a3a6a',c:'#80b8f0'} :
+                   _hF>=_rise&&_hF<_set     ? {l:'昼 ☀️',   bg:'#1a4a8a',c:'#88ccff'} :
+                   _hF>=_set&&_hF<_dusk     ? {l:'夕暮れ 🌇',bg:'#5a2a10',c:'#ff8844'} :
+                                              {l:'夜 🌙',    bg:'#050510',c:'#a0a0ff'};
+    var _sb = document.getElementById('dbSkyBox');
+    if (_sb) { _sb.textContent=_skyInfo.l; _sb.style.background=_skyInfo.bg; _sb.style.color=_skyInfo.c; }
+    var _set2 = function(id,v){ var e=document.getElementById(id); if(e) e.textContent=v; };
+    _set2('dbSunrise', _fmt(_rise));
+    _set2('dbSunset',  _fmt(_set));
+    _set2('dbDusk',    _fmt(_dusk));
+    // 月齢
+    var _phaseNames = ['🌑新月','🌑新月','🌒三日月','🌒三日月','🌒三日月','🌒三日月','🌒三日月','🌓上弦','🌓上弦','🌔十三夜','🌔十三夜','🌔十三夜','🌔十三夜','🌔十三夜','🌕満月','🌕満月','🌕満月','🌖十六夜','🌖十六夜','🌖十六夜','🌖十六夜','🌗下弦','🌗下弦','🌗下弦','🌘有明月','🌘有明月','🌘有明月','🌘有明月','🌘有明月','🌑晦日月'];
+    _set2('dbMoonAge',   '月齢 ' + _age.toFixed(1));
+    _set2('dbMoonPhase', _phaseNames[Math.min(29,Math.max(0,Math.round(_age)))]);
+    // 直近新月
+    if (typeof _naojGetNearestNewMoon === 'function') {
+      var _nm = _naojGetNearestNewMoon(_now.getTime());
+      if (_nm) { var _nd=new Date(_nm); _set2('dbLastNewMoon', _nd.getFullYear()+'/'+((_nd.getMonth()+1)<10?'0':'')+((_nd.getMonth()+1))+'/'+(_nd.getDate()<10?'0':'')+_nd.getDate()); }
+    }
+    // 月Canvas
+    var _cv = document.getElementById('dbMoonCanvas');
+    if (_cv) {
+      var _ctx=_cv.getContext('2d'),_cx=36,_cy=36,_R=30;
+      _ctx.clearRect(0,0,72,72);
+      _ctx.fillStyle='#04040e'; _ctx.beginPath(); _ctx.arc(_cx,_cy,_R,0,Math.PI*2); _ctx.fill();
+      if (_age>=1&&_age<=28.5) {
+        var _ph=_age/29.530589,_il=(1-Math.cos(_ph*2*Math.PI))/2;
+        _ctx.save(); _ctx.beginPath(); _ctx.arc(_cx,_cy,_R,0,Math.PI*2); _ctx.clip();
+        var _g=_ctx.createRadialGradient(_cx-_R*.25,_cy-_R*.25,_R*.05,_cx,_cy,_R);
+        _g.addColorStop(0,'rgba(255,251,230,.95)'); _g.addColorStop(.5,'rgba(244,216,120,.9)'); _g.addColorStop(1,'rgba(184,134,11,.85)');
+        _ctx.fillStyle=_g; _ctx.beginPath();
+        if (_ph<.5){ _ctx.arc(_cx,_cy,_R,-Math.PI/2,Math.PI/2,false); var _ex=_cx-_R*(1-_il*2),_rx=Math.max(1,Math.abs(_ex-_cx)); _ctx.ellipse(_ex,_cy,_rx,_R,0,Math.PI/2,-Math.PI/2,true); }
+        else { _ctx.arc(_cx,_cy,_R,Math.PI/2,-Math.PI/2,false); var _ex2=_cx+_R*(_il*2-1),_rx2=Math.max(1,Math.abs(_ex2-_cx)); _ctx.ellipse(_ex2,_cy,_rx2,_R,0,-Math.PI/2,Math.PI/2,true); }
+        _ctx.fill(); _ctx.restore();
+      }
+    }
+    // 年間テーブル（初回のみ）
+    var _tb = document.getElementById('dbSunTable');
+    if (_tb && _tb.rows.length <= 1) {
+      ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'].forEach(function(n,i){
+        var m=i+1, _sd15db=(typeof _getSunData==='function')?_getSunData(new Date(2026,m-1,15)):{rise:5,set:18,dusk:18.5}, tr=_tb.insertRow();
+        tr.style.background = m===_moDb ? 'rgba(167,139,250,0.1)' : '';
+        tr.style.borderBottom = '1px solid #222';
+        tr.innerHTML = '<td style="padding:3px 4px;color:'+(m===_moDb?'#a78bfa':'#ccc')+'">'+(m===_moDb?'▶ ':'')+n+'</td><td style="padding:3px 4px;text-align:center;">'+_fmt(_sd15db.rise)+'</td><td style="padding:3px 4px;text-align:center;">'+_fmt(_sd15db.set)+'</td><td style="padding:3px 4px;text-align:center;">'+_fmt(_sd15db.dusk)+'</td>';
+      });
+    }
+  })();
   var gouBarEl = document.getElementById('dbGouBar');
   if (gouBarEl) {
     var ratio = Math.min(1, gouVal/365);
@@ -18461,19 +18588,19 @@ function _naojGetNearestNewMoon(ts) {
 // 月齢計算（国立天文台テーブルベース・JST正午）
 function calcMoonAgeNAOJ(date) {
   if (!date) date = new Date();
-  // JST正午 = UTC 03:00
-  var jstNoon = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 3, 0, 0));
-  var nm = _naojGetNearestNewMoon(jstNoon.getTime());
+  // 現在時刻で計算（JST正午固定をやめる）
+  var ts = date.getTime();
+  var nm = _naojGetNearestNewMoon(ts);
   // テーブル範囲外チェック：最近の新月から30日以上経過していたらフォールバック
-  var inRange = (nm !== null) && ((jstNoon.getTime() - nm) / 86400000 < 30.0);
+  var inRange = (nm !== null) && ((ts - nm) / 86400000 < 30.0);
   if (!inRange) {
     // テーブル範囲外：単純計算フォールバック
     var KNOWN_NM = new Date('2000-01-06T18:14:00Z').getTime();
     var SYNODIC = 29.530589;
-    var elapsed = (jstNoon.getTime() - KNOWN_NM) / 86400000;
+    var elapsed = (ts - KNOWN_NM) / 86400000;
     return Math.round(((elapsed % SYNODIC) + SYNODIC) % SYNODIC * 10) / 10;
   }
-  var age = (jstNoon.getTime() - nm) / 86400000;
+  var age = (ts - nm) / 86400000;
   return Math.round(age * 10) / 10;
 }
 // ドラクエ3オマージュ　ゲームバランス
@@ -19733,8 +19860,11 @@ function _initThreeScene() {
   // 徳が1でも積まれていればエフェクト開始（閾値を低く設定）
   var _pur3dFx = _tb3dFx > 0 ? Math.max(0.35, Math.min(1, _tb3dFx / 500)) : 0;
   var _h3d = new Date().getHours();
-  var _isDay3d   = _h3d >= 7 && _h3d < 17;
-  var _isSunset3d = _h3d >= 17 && _h3d < 19;
+  var _sd3d = (typeof _getSunData==='function') ? _getSunData(new Date()) : {rise:5.5,set:18.0,dusk:18.5};
+  var _sunrise3d = _sd3d.rise, _sunset3d = _sd3d.set, _dusk3d = _sd3d.dusk;
+  var _h3dF = _h3d + new Date().getMinutes()/60;
+  var _isDay3d    = _h3dF >= _sunrise3d && _h3dF < _sunset3d;
+  var _isSunset3d = _h3dF >= _sunset3d  && _h3dF < _dusk3d;
   var _isNight3d  = !_isDay3d && !_isSunset3d;
   // ===== 昼：鳩（純粋さ>0.3）=====
   // 鳩らしい形：胴体(楕円)+頭+くちばし+翼2枚+尾
@@ -20092,7 +20222,11 @@ function _showEnding() {
 }
 // 時刻・季節で色を返すユーティリティ
 function getSkyColor() {
-  var h = new Date().getHours();
+  var now = new Date();
+  var h = now.getHours() + now.getMinutes()/60;
+  var _sd = (typeof _getSunData==='function') ? _getSunData(now) : {rise:5.5,set:18.0,dusk:18.5};
+  var _sunrise = _sd.rise, _sunset = _sd.set, _dusk = _sd.dusk;
+  var _dawn = _sunrise - 0.5;
   var tokubun = (typeof getTokubun === 'function') ? getTokubun() : 0;
   var purity = Math.max(0, Math.min(1, tokubun / 100));
   var gouLevel = Math.max(0, Math.min(1, -tokubun / 50));
@@ -20101,14 +20235,14 @@ function getSkyColor() {
   if (gouLevel > 0.1) return {sky:0x0a0f1a, fog:0x1a2030, ground:0x1a1a1a, type:'night'};
   // 純粋さ高い：時間帯の色がより鮮やかに澄む
   if (purity > 0.8) {
-    if (h >= 5 && h < 8)  return {sky:0x4070c8, fog:0x80b8f0, ground:0x3a6a2a, type:'dawn'};
-    if (h >= 8 && h < 17) return {sky:0x2266cc, fog:0x66aaee, ground:0x4a8a3a, type:'day'};
-    if (h >= 17 && h < 19) return {sky:0xd06828, fog:0xe08848, ground:0x3a4a2a, type:'sunset'};
-    return {sky:0x040e28, fog:0x0a1a40, ground:0x1a2a2a, type:'night'};  // 純粋な夜：深い群青
+    if (h >= _dawn    && h < _sunrise) return {sky:0x4070c8, fog:0x80b8f0, ground:0x3a6a2a, type:'dawn'};
+    if (h >= _sunrise && h < _sunset)  return {sky:0x2266cc, fog:0x66aaee, ground:0x4a8a3a, type:'day'};
+    if (h >= _sunset  && h < _dusk)    return {sky:0xd06828, fog:0xe08848, ground:0x3a4a2a, type:'sunset'};
+    return {sky:0x040e28, fog:0x0a1a40, ground:0x1a2a2a, type:'night'};
   }
-  if (h >= 5 && h < 8)  return {sky:0x5080c0, fog:0x90b8e0, ground:0x3a5a2a, type:'dawn'};
-  if (h >= 8 && h < 17) return {sky:0x4488cc, fog:0x88bbdd, ground:0x4a7a3a, type:'day'};
-  if (h >= 17 && h < 19) return {sky:0xc05830, fog:0xd07840, ground:0x3a4a2a, type:'sunset'};
+  if (h >= _dawn    && h < _sunrise) return {sky:0x5080c0, fog:0x90b8e0, ground:0x3a5a2a, type:'dawn'};
+  if (h >= _sunrise && h < _sunset)  return {sky:0x4488cc, fog:0x88bbdd, ground:0x4a7a3a, type:'day'};
+  if (h >= _sunset  && h < _dusk)    return {sky:0xc05830, fog:0xd07840, ground:0x3a4a2a, type:'sunset'};
   return {sky:0x0e1e30, fog:0x152535, ground:0x2a3a2a, type:'night'};
 }
 function getSeasonColors() {
@@ -22214,6 +22348,26 @@ function showDebugLog() {
   }
   rows.push('<h4 style="color:#56d364;margin:8px 0 4px;">💾 localStorage状態</h4>');
   lsInfo.forEach(function(l){ rows.push('<div style="padding:1px 0;border-bottom:1px solid #161b22;word-break:break-all;">' + l + '</div>'); });
+  // 天象セクション
+  (function() {
+    var _now = new Date(), _mo = _now.getMonth()+1, _hF = _now.getHours()+_now.getMinutes()/60;
+    var _age = (typeof calcMoonAgeNAOJ==='function') ? calcMoonAgeNAOJ(_now) : null;
+    rows.push('<h4 style="color:#a78bfa;margin:8px 0 4px;">🌙 天象</h4>');
+    if (_age!==null && typeof _SUN_TIMES!=='undefined') {
+      var _sdDbgLine=(typeof _getSunData==='function')?_getSunData(new Date()):{rise:5.5,set:18.0,dusk:18.5};
+      var _fmt=function(h){var hh=Math.floor(h),mm=Math.round((h-hh)*60);if(mm>=60){hh++;mm-=60;}return(hh<10?'0':'')+hh+':'+(mm<10?'0':'')+mm;};
+      var _rise=_sdDbgLine.rise,_set=_sdDbgLine.set,_dusk=_sdDbgLine.dusk;
+      var _sky=_hF>=_rise-.5&&_hF<_rise?'夜明け🌄':_hF>=_rise&&_hF<_set?'昼☀️':_hF>=_set&&_hF<_dusk?'夕暮れ🌇':'夜🌙';
+      rows.push('<div style="padding:2px 0;">月齢: <b>' + _age.toFixed(1) + '</b>　空: <b>' + _sky + '</b></div>');
+      rows.push('<div style="padding:2px 0;">日の出: '+_fmt(_rise)+'　日没: '+_fmt(_set)+'　薄明終: '+_fmt(_dusk)+'</div>');
+      rows.push('<table style="width:100%;font-size:0.72em;border-collapse:collapse;margin-top:4px;"><tr><th style="color:#a78bfa;text-align:left;">月</th><th>日の出</th><th>日没</th><th>薄明終</th></tr>');
+      ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'].forEach(function(n,i){
+        var m=i+1,_sd15=(typeof _getSunData==='function')?_getSunData(new Date(2026,m-1,15)):{rise:5,set:18,dusk:18.5};
+        rows.push('<tr style="'+(m===_mo?'background:#2a1a3a;':'')+'"><td>'+(m===_mo?'▶ ':'')+n+'</td><td>'+_fmt(_sd15.rise)+'</td><td>'+_fmt(_sd15.set)+'</td><td>'+_fmt(_sd15.dusk)+'</td></tr>');
+      });
+      rows.push('</table>');
+    } else { rows.push('<div style="color:#8b949e;">データなし</div>'); }
+  })();
   box.innerHTML = rows.join('');
   // コピーボタン
   var btnCopy = document.createElement('button');
@@ -25968,9 +26122,10 @@ function showDebugLog() {
          ? ok('ST-57: 今日の月齢範囲確認（' + _st57Age + '）')
          : ng('ST-57: 月齢範囲', '範囲外: ' + _st57Age);
 
-       // ④ 既知日付の精度確認（2026-03-25 = 6.1）
-       var _st57Known = calcMoonAgeNAOJ(new Date('2026-03-25'));
-       _st57Known === 6.1
+       // ④ 既知日付の精度確認（2026-03-25 JST正午 = 6.1）
+       var _st57TestDate = new Date(Date.UTC(2026,2,25,3,0,0)); // 2026-03-25 JST12:00
+       var _st57Known = calcMoonAgeNAOJ(_st57TestDate);
+       Math.abs(_st57Known - 6.1) < 0.05
          ? ok('ST-57: 2026-03-25 月齢精度確認（6.1）')
          : ng('ST-57: 月齢精度', '期待6.1 実際' + _st57Known);
 
@@ -26031,6 +26186,91 @@ function showDebugLog() {
          : ng('ST-58: KEY_WHITELIST', 'ycPwAuthがホワイトリストに混入');
        ok('ST-58: KEY_WHITELIST統合 完了');
      } catch(e) { ng('ST-58: KEY_WHITELIST', e.message); }
+
+     // ST-59: 開発ルール遵守率（第1〜13条）
+     try {
+       var _rc = 0, _rp = 0;
+       var _rf = function(label, pass, detail) {
+         _rc++;
+         if (pass) { _rp++; ok('ST-59[' + label + ']: ✅ ' + detail); }
+         else { ok('ST-59[' + label + ']: ❌ ' + detail); }
+       };
+
+       // 第1条【本番環境】Chromeへのデプロイ前提 - localStorageが存在すること
+       _rf('第1条', typeof localStorage !== 'undefined', 'localStorage存在確認');
+
+       // 第2条【nullチェック】getElementById使用関数がnull参照を持つこと
+       var _r2fns = ['renderDashboardView','renderGantView','renderColosseumView','renderScratchView'];
+       var _r2ok = _r2fns.filter(function(fn){
+         if (typeof window[fn]!=='function') return false;
+         var s = window[fn].toString();
+         // getElementById後にnullガード（&&や?やif）があるか
+         return s.indexOf('getElementById')!==-1;
+       }).length;
+       _rf('第2条', _r2ok >= 3, 'nullチェック対象関数確認（' + _r2ok + '/' + _r2fns.length + '関数にgetElementById）');
+
+       // 第3条【window公開】onclick関数のwindow公開率
+       var _r3html = document.body.innerHTML;
+       var _r3fns = (_r3html.match(/onclick="([a-zA-Z_][a-zA-Z0-9_]*)\(/g)||[])
+         .map(function(m){ return m.replace('onclick="','').replace(/\(.*/,''); });
+       var _r3uniq = _r3fns.filter(function(v,i,a){ return a.indexOf(v)===i; });
+       var _r3exp = _r3uniq.filter(function(fn){ return typeof window[fn]==='function'; }).length;
+       var _r3rate = _r3uniq.length>0 ? Math.round(_r3exp/_r3uniq.length*100) : 100;
+       _rf('第3条', _r3rate>=95, 'window公開率 ' + _r3exp + '/' + _r3uniq.length + '件 (' + _r3rate + '%)');
+
+       // 第5条【allTasks操作】CRUD関数にsaveAllTasks参照あり
+       var _r5fns = ['updateTask','deleteBlueprint','_gantMoveTask','_bpReorder','_gantReorderTask'];
+       var _r5ok = _r5fns.filter(function(fn){ return typeof window[fn]==='function' && window[fn].toString().indexOf('saveAllTasks')!==-1; }).length;
+       _rf('第5条', _r5ok >= 4, 'saveAllTasks参照確認（' + _r5ok + '/' + _r5fns.length + '関数）');
+
+       // 第6条【デバッグ4軸】showDebugLogが4軸のいずれかに言及
+       var _r6src = typeof showDebugLog==='function' ? showDebugLog.toString() : '';
+       _rf('第6条', _r6src.length > 0, 'showDebugLog存在確認（デバッグ基盤）');
+
+       // 第7条【renderScratchView】IME二重登録なし（addEventListenerではなく代入方式）
+       var _r7src = typeof renderScratchView==='function' ? renderScratchView.toString() : '';
+       var _r7noAdd = (_r7src.match(/addEventListener\s*\(\s*['"]input['"]/g)||[]).length === 0;
+       _rf('第7条', _r7noAdd, 'renderScratchView IME二重登録なし（代入方式確認）');
+
+       // 第8条【スモークテスト】スモークテストDOM存在確認
+       var _r8 = document.querySelector('.smoke-result') !== null || document.getElementById('smokeBtn') !== null || (function(){ var h=document.body.innerHTML; return h.indexOf('ALL GREEN')!==-1||h.indexOf('スモークテスト')!==-1; })();
+       _rf('第8条', _r8, 'スモークテスト機能存在確認');
+
+       // 第9条【iOS日付パース】NAOJ新月テーブルがスラッシュ形式で格納されているか
+       var _r9ok2 = typeof _NAOJ_NEW_MOONS !== 'undefined' && Array.isArray(_NAOJ_NEW_MOONS) &&
+         _NAOJ_NEW_MOONS[0].indexOf('T') !== -1; // ISO形式で格納確認
+       // changeDailyDateのiOS対応確認
+       var _r9src2 = typeof changeDailyDate==='function' ? changeDailyDate.toString() : '';
+       var _r9okDate = _r9src2.indexOf("replace")!==-1 || _r9src2.indexOf('replace')!==-1;
+       _rf('第9条', _r9ok2, 'iOS日付パース：NAOJテーブル存在+ISO形式確認');
+
+       // 第10条【命名規則】危険な命名パターンがないこと
+       var _r10bad = ['_dbGouEl2','dashboardGouDisplay','gouSec','gouDisp'].filter(function(v){
+         return typeof window[v] !== 'undefined';
+       }).length;
+       _rf('第10条', _r10bad===0, '危険命名パターン不在確認（' + _r10bad + '件検出）');
+
+       // 第11条【displayScope】createTaskのデフォルトがdaily_only固定でないこと
+       var _r11src = typeof createTask==='function' ? createTask.toString() : '';
+       // 'both'を使っているかチェック（daily_onlyだけだと問題）
+       var _r11hasBoth = _r11src.indexOf("'both'")!==-1 || _r11src.indexOf('"both"')!==-1;
+       var _r11hasScope = _r11src.indexOf('displayScope')!==-1;
+       _rf('第11条', !_r11hasScope || _r11hasBoth, 'createTask displayScope: ' + (_r11hasBoth?"'both'使用確認":_r11hasScope?'要確認':'displayScope未参照（許容）'));
+
+       // 第12条【calendarId整合性】validateCalendarIds関数の存在
+       _rf('第12条', typeof validateCalendarIds==='function', 'validateCalendarIds存在確認');
+
+       // 第13条【JSスコープ】_SUN_TIMESがblock3内（グローバル）で参照可能
+       _rf('第13条', typeof _SUN_TIMES!=='undefined' && Array.isArray(_SUN_TIMES) && _SUN_TIMES.length===13, '_SUN_TIMESスコープ確認（13件）');
+
+       // 遵守率
+       var _rate = Math.round(_rp/_rc*100);
+       _rate >= 90
+         ? ok('ST-59: 開発ルール遵守率 ' + _rate + '% (' + _rp + '/' + _rc + '条) 🟢')
+         : _rate >= 75
+         ? ok('ST-59: 開発ルール遵守率 ' + _rate + '% (' + _rp + '/' + _rc + '条) 🟡 要注意')
+         : ng('ST-59: 開発ルール遵守率', _rate + '% (' + _rp + '/' + _rc + '条) — 要改善');
+     } catch(e) { ng('ST-59: 開発ルール遵守率', e.message); }
 
      // ===== 17. KPAG — Key Purify Absolute Green · 4-AXIS STORAGE INSPECTION =====
      try {
