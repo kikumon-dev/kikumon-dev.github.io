@@ -22460,7 +22460,7 @@ function showDebugLog() {
      function ng(name, reason)    { results.push('❌ ' + name + (reason ? ': ' + reason : '')); fail++; }
      window._isTesting = true; // ST実行中は全addGDP/addGou/addToku/showToastを抑制
 
-     // ===== 1. 主要関数の存在確認 =====
+     // ===== UT-1: 主要関数存在確認 =====
      var coreFuncs = [
        // コア
        'switchView','renderMonthlyView','renderWeeklyView','renderAllSections',
@@ -22570,10 +22570,10 @@ function showDebugLog() {
      });
      var _missingFuncs = coreFuncs.filter(function(f){ return typeof window[f] !== 'function'; });
      _missingFuncs.length === 0
-       ? ok('関数存在: 全' + coreFuncs.length + '件確認')
-       : _missingFuncs.forEach(function(f){ ng('関数: ' + f, '未定義'); });
+       ? ok('UT-1: 関数存在: 全' + coreFuncs.length + '件確認')
+       : _missingFuncs.forEach(function(f){ ng('UT-1: 関数: ' + f, '未定義'); });
 
-     // ===== 2. 機能実在確認（DOM存在） =====
+     // ===== UT-2: 機能実在確認 =====
      var featureChecks = [
        ['SDF',           'sdfModal'],
        ['クイズ',         'quizModal'],
@@ -22587,10 +22587,10 @@ function showDebugLog() {
      ];
      featureChecks.forEach(function(fc) {
        var el = document.getElementById(fc[1]);
-       el ? ok('機能: ' + fc[0]) : ng('機能: ' + fc[0], '#' + fc[1] + ' なし');
+       el ? ok('UT-2: 機能: ' + fc[0]) : ng('UT-2: 機能: ' + fc[0], '#' + fc[1] + ' なし');
      });
 
-     // ===== 3. 依存関数チェック =====
+     // ===== UT-3: 依存関数チェック =====
      var depChecks = [
        ['AI計画モーダル', 'openAiPlanModal',  ['copyAiPlanPrompt','updateAiPlanPreview']],
        ['AI計画プレビュー','updateAiPlanPreview',['_buildAiPlanPrompt']],
@@ -22616,41 +22616,41 @@ function showDebugLog() {
        var src = (window[dc[1]]||function(){}).toString();
        var missing = dc[2].filter(function(dep){ return src.indexOf(dep) === -1; });
        missing.length === 0
-         ? ok('依存: ' + dc[0] + ' (' + dc[2].length + '個OK)')
-         : ng('依存: ' + dc[0], '不足: ' + missing.join(','));
+         ? ok('UT-3: 依存: ' + dc[0] + ' (' + dc[2].length + '個OK)')
+         : ng('UT-3: 依存: ' + dc[0], '不足: ' + missing.join(','));
      });
 
-     // ===== 4. allSettings 構造チェック =====
+     // ===== UT-4: allSettings構造チェック =====
      try {
        var as = window.allSettings || {};
-       as.ui      ? ok('allSettings.ui') : ng('allSettings', 'uiなし');
-       as.profile ? ok('allSettings.profile') : ng('allSettings', 'profileなし');
-       as.flags   ? ok('allSettings.flags') : ng('allSettings', 'flagsなし');
-       as.meta    ? ok('allSettings.meta') : ng('allSettings', 'metaなし');
-     } catch(e) { ng('allSettings', e.message); }
+       as.ui      ? ok('UT-4: allSettings.ui') : ng('UT-4: allSettings', 'uiなし');
+       as.profile ? ok('UT-4: allSettings.profile') : ng('UT-4: allSettings', 'profileなし');
+       as.flags   ? ok('UT-4: allSettings.flags') : ng('UT-4: allSettings', 'flagsなし');
+       as.meta    ? ok('UT-4: allSettings.meta') : ng('UT-4: allSettings', 'metaなし');
+     } catch(e) { ng('UT-4: allSettings', e.message); }
 
-     // ===== 5. allTasks 存在・配列・整合性 =====
+     // ===== UT-5: allTasks整合性 =====
      try {
        var at = window.allTasks || [];
-       ok('allTasks: ' + at.length + '件');
+       ok('UT-5: allTasks: ' + at.length + '件');
        var kinds = {};
        at.forEach(function(t){ kinds[t.kind] = (kinds[t.kind]||0)+1; });
-       ok('kindチェック: ' + JSON.stringify(kinds));
+       ok('UT-5: kindチェック: ' + JSON.stringify(kinds));
        var ids = at.map(function(t){ return t.id; });
-       new Set(ids).size === ids.length ? ok('ID重複なし') : ng('ID重複', (ids.length - new Set(ids).size) + '件');
-       Array.isArray(at) ? ok('allTasks: 配列型維持確認') : ng('allTasks', '配列でない');
+       new Set(ids).size === ids.length ? ok('UT-5: ID重複なし') : ng('UT-5: ID重複', (ids.length - new Set(ids).size) + '件');
+       Array.isArray(at) ? ok('UT-5: allTasks: 配列型維持確認') : ng('UT-5: allTasks', '配列でない');
        // completedフィールド
        var tasks = at.filter(function(t){ return t.kind==='task'; });
        var lacking = tasks.filter(function(t){ return !('completed' in t); }).length;
        lacking === 0
-         ? ok('allTasks: completed フィールド存在 (' + tasks.length + '件)')
-         : ok('allTasks: task ' + tasks.length + '件中 ' + lacking + '件がcompleted未設定（旧データ互換）');
+         ? ok('UT-5: allTasks: completed フィールド存在 (' + tasks.length + '件)')
+         : ok('UT-5: allTasks: task ' + tasks.length + '件中 ' + lacking + '件がcompleted未設定（旧データ互換）');
        // done/completed同期ズレ確認
        var synced = tasks.filter(function(t){ return 'done' in t && 'completed' in t; });
        var desynced = synced.filter(function(t){ return !!t.done !== !!t.completed; }).length;
        desynced === 0
-         ? ok('done/completed同期: ズレなし（' + synced.length + '件確認）')
-         : ng('done/completed同期', desynced + '件ズレあり（mig_done_completed_sync_v1未適用？）');
+         ? ok('UT-5: done/completed同期: ズレなし（' + synced.length + '件確認）')
+         : ng('UT-5: done/completed同期', desynced + '件ズレあり（mig_done_completed_sync_v1未適用？）');
        // thought→journal参照整合性（テスト前にGuardian相当の処理を実行）
        (function(){
          var _jIds = new Set(allTasks.filter(function(t){ return t.kind==='journal'; }).map(function(t){ return t.id; }));
@@ -22663,10 +22663,10 @@ function showDebugLog() {
        })();
        var journalIds = new Set(allTasks.filter(function(t){ return t.kind==='journal'; }).map(function(t){ return t.id; }));
        var orphans = allTasks.filter(function(t){ return t.kind==='thought' && !journalIds.has(t.parentId); });
-       orphans.length === 0 ? ok('thought→journal 参照整合性') : ng('thought参照', orphans.length + '件孤立');
-     } catch(e) { ng('allTasks整合性', e.message); }
+       orphans.length === 0 ? ok('UT-5: thought→journal 参照整合性') : ng('UT-5: thought参照', orphans.length + '件孤立');
+     } catch(e) { ng('UT-5: allTasks整合性', e.message); }
 
-     // ===== 6. DOM要素の存在確認 =====
+     // ===== UT-6: DOM要素確認 =====
      var domIds = [
        'monthlyView','weeklyView','timelineView','scratchView','journalView',
        'settingsView','gantView','notebookView',
@@ -22676,69 +22676,69 @@ function showDebugLog() {
        'gantBlueprintArea','gantChartArea','heavenBlueprintList',
      ];
      domIds.forEach(function(id) {
-       document.getElementById(id) ? ok('DOM: #' + id) : ng('DOM', '#' + id + ' なし');
+       document.getElementById(id) ? ok('UT-6: DOM: #' + id) : ng('UT-6: DOM', '#' + id + ' なし');
      });
 
-     // ===== 7. saveAllTasks / localStorage 往復テスト =====
+     // ===== UT-7: localStorage往復テスト =====
      try {
        saveAllTasks();
        var _lsCount = JSON.parse(localStorage.getItem('allTasks') || '[]').length;
        allTasks.length === _lsCount
-         ? ok('saveAllTasks/localStorage往復（' + allTasks.length + '件一致）')
-         : ng('saveAllTasks/localStorage往復', 'メモリ' + allTasks.length + '件 ≠ localStorage' + _lsCount + '件');
-     } catch(e) { ng('saveAllTasks往復', e.message); }
+         ? ok('UT-7: saveAllTasks/localStorage往復（' + allTasks.length + '件一致）')
+         : ng('UT-7: saveAllTasks/localStorage往復', 'メモリ' + allTasks.length + '件 ≠ localStorage' + _lsCount + '件');
+     } catch(e) { ng('UT-7: saveAllTasks往復', e.message); }
 
-     // ===== 8. UUID v7 品質テスト =====
+     // ===== UT-8: UUID v7品質テスト =====
      try {
        var uuids = [];
        for (var i=0; i<100; i++) uuids.push(generateTaskId());
        var re7 = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-       uuids.every(function(u){ return re7.test(u); }) ? ok('UUID v7 フォーマット(100件)') : ng('UUID v7', 'フォーマット不正');
-       uuids.every(function(u){ return (parseInt(u[14],16)===7); }) ? ok('UUID v7 バージョンビット') : ng('UUID v7', 'バージョンビット不正');
-       uuids.every(function(u){ return /^[89ab]/.test(u[19]); }) ? ok('UUID v7 バリアントビット') : ng('UUID v7', 'バリアントビット不正');
+       uuids.every(function(u){ return re7.test(u); }) ? ok('UT-8: UUID v7 フォーマット(100件)') : ng('UT-8: UUID v7', 'フォーマット不正');
+       uuids.every(function(u){ return (parseInt(u[14],16)===7); }) ? ok('UT-8: UUID v7 バージョンビット') : ng('UT-8: UUID v7', 'バージョンビット不正');
+       uuids.every(function(u){ return /^[89ab]/.test(u[19]); }) ? ok('UT-8: UUID v7 バリアントビット') : ng('UT-8: UUID v7', 'バリアントビット不正');
        var sorted = uuids.slice().sort();
-       JSON.stringify(uuids)===JSON.stringify(sorted) ? ok('UUID v7 時系列単調増加(100件)') : ng('UUID v7', '時系列が単調増加でない');
+       JSON.stringify(uuids)===JSON.stringify(sorted) ? ok('UT-8: UUID v7 時系列単調増加(100件)') : ng('UT-8: UUID v7', '時系列が単調増加でない');
        var ms = parseInt(uuids[0].replace(/-/g,'').substring(0,12), 16);
-       Math.abs(ms - Date.now()) < 3000 ? ok('UUID v7 タイムスタンプ正常(誤差2ms)') : ng('UUID v7', 'タイムスタンプ異常');
-       new Set(uuids).size === 100 ? ok('UUID v7 一意性(100件)') : ng('UUID v7', '重複あり');
+       Math.abs(ms - Date.now()) < 3000 ? ok('UT-8: UUID v7 タイムスタンプ正常(誤差2ms)') : ng('UT-8: UUID v7', 'タイムスタンプ異常');
+       new Set(uuids).size === 100 ? ok('UT-8: UUID v7 一意性(100件)') : ng('UT-8: UUID v7', '重複あり');
        var uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
        allTasks.every(function(t){ return uuidRe.test(t.id); })
-         ? ok('allTasks全IDがUUID形式(' + allTasks.length + '件)')
-         : ng('allTasks', 'UUID形式でないIDが存在');
-     } catch(e) { ng('UUID v7', e.message); }
+         ? ok('UT-8: allTasks全IDがUUID形式(' + allTasks.length + '件)')
+         : ng('UT-8: allTasks', 'UUID形式でないIDが存在');
+     } catch(e) { ng('UT-8: UUID v7', e.message); }
 
-     // ===== 9. renderScratchView・promoteScratchToGant =====
+     // ===== IT-9: renderScratchView・promoteScratch =====
      try {
-       typeof renderScratchView === 'function' ? ok('renderScratchView: 存在確認') : ng('renderScratchView', '未定義');
+       typeof renderScratchView === 'function' ? ok('IT-9: renderScratchView: 存在確認') : ng('IT-9: renderScratchView', '未定義');
        var rsvSrc = (window.renderScratchView||function(){}).toString();
        rsvSrc.indexOf('addEventListener') === -1 || rsvSrc.indexOf("addEventListener('click'") !== -1 && rsvSrc.indexOf("addEventListener('input'") === -1 && rsvSrc.indexOf("addEventListener('composition'") === -1
-         ? ok('renderScratchView: IME二重登録なし（click用addEventListenerは許容）')
-         : ng('renderScratchView', 'input/compositionのaddEventListenerが残存（IME二重登録リスク）');
-       typeof promoteScratchToGant === 'function' ? ok('promoteScratchToGant: 存在確認') : ng('promoteScratchToGant', '未定義');
+         ? ok('IT-9: renderScratchView: IME二重登録なし（click用addEventListenerは許容）')
+         : ng('IT-9: renderScratchView', 'input/compositionのaddEventListenerが残存（IME二重登録リスク）');
+       typeof promoteScratchToGant === 'function' ? ok('IT-9: promoteScratchToGant: 存在確認') : ng('IT-9: promoteScratchToGant', '未定義');
        var psgSrc = (window.promoteScratchToGant||function(){}).toString();
-       psgSrc.indexOf('saveAllTasks') !== -1   ? ok('promoteScratchToGant: saveAllTasks参照あり') : ng('promoteScratchToGant', 'saveAllTasks参照なし');
-       psgSrc.indexOf('generateTaskId') !== -1 ? ok('promoteScratchToGant: generateTaskId参照あり') : ng('promoteScratchToGant', 'generateTaskId参照なし');
-       psgSrc.indexOf('showToast') !== -1       ? ok('promoteScratchToGant: showToast参照あり') : ng('promoteScratchToGant', 'showToast参照なし');
-       psgSrc.indexOf('done: false') !== -1     ? ok('promoteScratchToGant: done:false初期化確認') : ng('promoteScratchToGant', 'done:falseがない');
-     } catch(e) { ng('renderScratchView', e.message); }
+       psgSrc.indexOf('saveAllTasks') !== -1   ? ok('IT-9: promoteScratchToGant: saveAllTasks参照あり') : ng('IT-9: promoteScratchToGant', 'saveAllTasks参照なし');
+       psgSrc.indexOf('generateTaskId') !== -1 ? ok('IT-9: promoteScratchToGant: generateTaskId参照あり') : ng('IT-9: promoteScratchToGant', 'generateTaskId参照なし');
+       psgSrc.indexOf('showToast') !== -1       ? ok('IT-9: promoteScratchToGant: showToast参照あり') : ng('IT-9: promoteScratchToGant', 'showToast参照なし');
+       psgSrc.indexOf('done: false') !== -1     ? ok('IT-9: promoteScratchToGant: done:false初期化確認') : ng('IT-9: promoteScratchToGant', 'done:falseがない');
+     } catch(e) { ng('IT-9: renderScratchView', e.message); }
 
-     // ===== 10. grandVision・heaven系 =====
+     // ===== IT-10: grandVision・heaven系 =====
      try {
-       document.getElementById('grandVisionBanner') ? ok('grandVisionBanner: DOM存在') : ng('grandVisionBanner', 'DOM未存在');
-       document.getElementById('grandVisionEmpty')  ? ok('grandVisionEmpty: DOM存在') : ng('grandVisionEmpty', 'DOM未存在');
+       document.getElementById('grandVisionBanner') ? ok('IT-10: grandVisionBanner: DOM存在') : ng('IT-10: grandVisionBanner', 'DOM未存在');
+       document.getElementById('grandVisionEmpty')  ? ok('IT-10: grandVisionEmpty: DOM存在') : ng('IT-10: grandVisionEmpty', 'DOM未存在');
        var gvBanner = document.getElementById('grandVisionBanner');
        var gantView = document.getElementById('gantView');
        (gvBanner && gantView && gantView.contains(gvBanner))
-         ? ok('grandVisionBanner: gantView内に配置')
-         : ng('grandVisionBanner', 'gantView外に配置');
-       typeof renderGrandVisionBar === 'function' ? ok('renderGrandVisionBar: 存在') : ng('renderGrandVisionBar', '未定義');
+         ? ok('IT-10: grandVisionBanner: gantView内に配置')
+         : ng('IT-10: grandVisionBanner', 'gantView外に配置');
+       typeof renderGrandVisionBar === 'function' ? ok('IT-10: renderGrandVisionBar: 存在') : ng('IT-10: renderGrandVisionBar', '未定義');
        var ohSrc = (window.openHeavenFromBanner||function(){}).toString();
-       ohSrc.indexOf('heaven') !== -1 ? ok('openHeavenFromBanner: heaven処理含む') : ng('openHeavenFromBanner', 'heaven処理なし');
+       ohSrc.indexOf('heaven') !== -1 ? ok('IT-10: openHeavenFromBanner: heaven処理含む') : ng('IT-10: openHeavenFromBanner', 'heaven処理なし');
        var gcSrc = (window.renderGantChart||function(){}).toString();
-       gcSrc.indexOf('inHeaven') !== -1 ? ok('renderGantChart: inHeaven除外フィルタ確認') : ng('renderGantChart', 'inHeaven処理なし');
+       gcSrc.indexOf('inHeaven') !== -1 ? ok('IT-10: renderGantChart: inHeaven除外フィルタ確認') : ng('IT-10: renderGantChart', 'inHeaven処理なし');
        // getBlueprints !inHeavenフィルタ
        var gbSrc = (window.getBlueprints||function(){}).toString();
-       gbSrc.indexOf('inHeaven') !== -1 ? ok('getBlueprints: !inHeavenフィルタ確認') : ng('getBlueprints', 'inHeavenフィルタなし');
+       gbSrc.indexOf('inHeaven') !== -1 ? ok('IT-10: getBlueprints: !inHeavenフィルタ確認') : ng('IT-10: getBlueprints', 'inHeavenフィルタなし');
        // heaven挙動テスト
        var _testBpId = 'smoke-bp-' + Date.now();
        var _prevLen = allTasks.length;
@@ -22746,53 +22746,53 @@ function showDebugLog() {
        var _bpsAfter = getBlueprints();
        var _inList = _bpsAfter.filter(function(b){ return b.id === _testBpId; }).length > 0;
        allTasks = allTasks.filter(function(t){ return t.id !== _testBpId; });
-       !_inList ? ok('getBlueprints: inHeaven=trueを除外') : ng('getBlueprints', 'inHeaven=trueが除外されていない');
-       allTasks.length === _prevLen ? ok('heaven挙動テスト: クリーンアップ完了') : ng('heaven挙動テスト', '件数不一致');
-     } catch(e) { ng('grandVision/heaven', e.message); }
+       !_inList ? ok('IT-10: getBlueprints: inHeaven=trueを除外') : ng('IT-10: getBlueprints', 'inHeaven=trueが除外されていない');
+       allTasks.length === _prevLen ? ok('IT-10: heaven挙動テスト: クリーンアップ完了') : ng('IT-10: heaven挙動テスト', '件数不一致');
+     } catch(e) { ng('IT-10: grandVision/heaven', e.message); }
 
-     // ===== 11. getThoughts/addThought/deleteThought 挙動テスト =====
+     // ===== IT-11: Thoughts挙動テスト =====
      try {
        var _prev = allTasks.length;
        var _jid = 'smoke-j-' + Date.now();
        allTasks.push({ id: _jid, kind: 'journal', title: 'test', date: '2026-01-01' });
        addThought(_jid, 'テスト思考');
        var _a = getThoughts(_jid);
-       _a.length > 0 ? ok('addThought/getThoughts: 挙動OK') : ng('addThought', '追加後0件');
+       _a.length > 0 ? ok('IT-11: addThought/getThoughts: 挙動OK') : ng('IT-11: addThought', '追加後0件');
        _a.forEach(function(th){ deleteThought(th.id); });
        var _a2 = getThoughts(_jid);
        allTasks = allTasks.filter(function(t){ return t.id !== _jid; });
        (_a2.length === 0 && allTasks.length === _prev)
-         ? ok('deleteThought: 挙動OK・クリーンアップ完了')
-         : ng('deleteThought', '削除後' + _a2.length + '件残存');
-     } catch(e) { ng('getThoughts/addThought/deleteThought', e.message); }
+         ? ok('IT-11: deleteThought: 挙動OK・クリーンアップ完了')
+         : ng('IT-11: deleteThought', '削除後' + _a2.length + '件残存');
+     } catch(e) { ng('IT-11: getThoughts/addThought/deleteThought', e.message); }
 
-     // ===== 12. switchView 挙動テスト =====
+     // ===== IT-12: switchView挙動テスト =====
      try {
        var _origView = allSettings.ui && allSettings.ui.lastView;
        switchView('monthly');
        var _monthlyEl = document.getElementById('monthlyView');
        var _ok = _monthlyEl && _monthlyEl.style.display !== 'none';
        switchView('daily');
-       _ok ? ok('switchView挙動: monthly切替→表示確認→復帰OK') : ng('switchView挙動', 'monthlyView非表示');
-     } catch(e) { ng('switchView挙動', e.message); }
+       _ok ? ok('IT-12: switchView挙動: monthly切替→表示確認→復帰OK') : ng('IT-12: switchView挙動', 'monthlyView非表示');
+     } catch(e) { ng('IT-12: switchView挙動', e.message); }
 
-     // ===== 13. SDF開閉テスト =====
+     // ===== IT-13: SDF開閉テスト =====
      try {
        var _sdfM = document.getElementById('sdfModal');
-       if (!_sdfM) { ng('SDF開閉', 'sdfModal DOM なし'); }
+       if (!_sdfM) { ng('IT-13: SDF開閉', 'sdfModal DOM なし'); }
        else {
          openSingleDeepFocus();
          var _open = _sdfM.style.display === 'flex';
          closeSingleDeepFocus();
          var _closed = _sdfM.style.display === 'none';
-         (_open && _closed) ? ok('SDF開閉: open→flex close→none 確認') : ng('SDF開閉', 'open:' + _open + ' closed:' + _closed);
+         (_open && _closed) ? ok('IT-13: SDF開閉: open→flex close→none 確認') : ng('IT-13: SDF開閉', 'open:' + _open + ' closed:' + _closed);
        }
-     } catch(e) { ng('SDF開閉', e.message); }
+     } catch(e) { ng('IT-13: SDF開閉', e.message); }
 
-     // ===== 14. SDF履歴編集 挙動テスト =====
+     // ===== IT-14: SDF履歴編集テスト =====
      try {
        if (typeof _sdfHistorySave !== 'function') {
-         ng('SDF履歴編集', '_sdfHistorySave未定義');
+         ng('IT-14: SDF履歴編集', '_sdfHistorySave未定義');
        } else {
          var _testId = 'smoke-test-sdf-' + Date.now();
          var _prevLen2 = allTasks.length;
@@ -22802,32 +22802,32 @@ function showDebugLog() {
          _rec.text = '【深考】テスト\\n編集後のテキスト';
          var _updated = allTasks.filter(function(t){ return t.id === _testId; })[0];
          _updated.text === '【深考】テスト\\n編集後のテキスト'
-           ? ok('SDF履歴編集: text更新確認OK')
-           : ng('SDF履歴編集', 'text更新が反映されていない');
+           ? ok('IT-14: SDF履歴編集: text更新確認OK')
+           : ng('IT-14: SDF履歴編集', 'text更新が反映されていない');
          var _emptyBlocked = (_updated.text.trim() !== '');
-         _emptyBlocked ? ok('SDF履歴編集: 空文字ガード正常') : ng('SDF履歴編集', '空文字がすり抜けた');
-         allTasks.length === _prevLen2 + 1 ? ok('SDF履歴編集: 件数維持(' + allTasks.length + '件)') : ng('SDF履歴編集', '件数変化');
+         _emptyBlocked ? ok('IT-14: SDF履歴編集: 空文字ガード正常') : ng('IT-14: SDF履歴編集', '空文字がすり抜けた');
+         allTasks.length === _prevLen2 + 1 ? ok('IT-14: SDF履歴編集: 件数維持(' + allTasks.length + '件)') : ng('IT-14: SDF履歴編集', '件数変化');
          allTasks = allTasks.filter(function(t){ return t.id !== _testId; });
          allTasks.length === _prevLen2
-           ? ok('SDF履歴編集: テストレコード削除・件数復元OK')
-           : ng('SDF履歴編集', '削除後件数不一致');
+           ? ok('IT-14: SDF履歴編集: テストレコード削除・件数復元OK')
+           : ng('IT-14: SDF履歴編集', '削除後件数不一致');
        }
-     } catch(e) { ng('SDF履歴編集', e.message); }
+     } catch(e) { ng('IT-14: SDF履歴編集', e.message); }
 
-     // ===== 15. done/completed 双方向同期 挙動テスト =====
+     // ===== IT-15: done/completed同期テスト =====
      try {
        // ソース確認
        var _gtcSrc = (window._gantToggleCompleted||function(){}).toString();
        (_gtcSrc.indexOf('t.done = !t.done') !== -1 && _gtcSrc.indexOf('t.completed = t.done') !== -1)
-         ? ok('_gantToggleCompleted: done/completed双方向同期コード確認')
-         : ng('_gantToggleCompleted', 'done/completed同期コードが見つからない');
+         ? ok('IT-15: _gantToggleCompleted: done/completed双方向同期コード確認')
+         : ng('IT-15: _gantToggleCompleted', 'done/completed同期コードが見つからない');
        var _ttbSrc = (window.toggleTaskById||function(){}).toString();
        _ttbSrc.indexOf('task.done = task.completed') !== -1
-         ? ok('toggleTaskById: done同期コード確認')
-         : ng('toggleTaskById', 'done同期コードが見つからない');
+         ? ok('IT-15: toggleTaskById: done同期コード確認')
+         : ng('IT-15: toggleTaskById', 'done同期コードが見つからない');
        (_ttbSrc.indexOf('getGantsAll') !== -1 || _ttbSrc.indexOf('recalcAll') !== -1)
-         ? ok('toggleTaskById: 造営連動コード確認（recalcAll/getGantsAll）')
-         : ng('toggleTaskById', '造営連動コードが見つからない');
+         ? ok('IT-15: toggleTaskById: 造営連動コード確認（recalcAll/getGantsAll）')
+         : ng('IT-15: toggleTaskById', '造営連動コードが見つからない');
        // 挙動テスト（メモリのみ）
        var _syncId = 'smoke-sync-' + Date.now();
        var _prevLen3 = allTasks.length;
@@ -22835,33 +22835,33 @@ function showDebugLog() {
        var _st = allTasks.filter(function(t){ return t.id === _syncId; })[0];
        _st.done = !_st.done; _st.completed = _st.done;
        (_st.done === true && _st.completed === true)
-         ? ok('done/completed同期: 造営トグル→done:true completed:true')
-         : ng('done/completed同期', '造営トグル後 done:' + _st.done + ' completed:' + _st.completed);
+         ? ok('IT-15: done/completed同期: 造営トグル→done:true completed:true')
+         : ng('IT-15: done/completed同期', '造営トグル後 done:' + _st.done + ' completed:' + _st.completed);
        _st.completed = !_st.completed; _st.done = _st.completed;
        (_st.done === false && _st.completed === false)
-         ? ok('done/completed同期: 日次トグル→done:false completed:false')
-         : ng('done/completed同期', '日次トグル後 done:' + _st.done + ' completed:' + _st.completed);
+         ? ok('IT-15: done/completed同期: 日次トグル→done:false completed:false')
+         : ng('IT-15: done/completed同期', '日次トグル後 done:' + _st.done + ' completed:' + _st.completed);
        // 旧データ互換
        var _r1={done:true},_r2={completed:true},_r3={done:false,completed:undefined};
-       (_r1.completed||_r1.done)===true ? ok('旧データ互換: done:true → true') : ng('旧データ互換','done:trueがfalseになった');
-       (_r2.completed||_r2.done)===true ? ok('旧データ互換: completed:true → true') : ng('旧データ互換','completed:trueがfalseになった');
-       !!(_r3.completed||_r3.done)===false ? ok('旧データ互換: 両方false/undefined → false') : ng('旧データ互換','両方falsy/undefinedがtrueになった');
+       (_r1.completed||_r1.done)===true ? ok('IT-15: 旧データ互換: done:true → true') : ng('IT-15: 旧データ互換','done:trueがfalseになった');
+       (_r2.completed||_r2.done)===true ? ok('IT-15: 旧データ互換: completed:true → true') : ng('IT-15: 旧データ互換','completed:trueがfalseになった');
+       !!(_r3.completed||_r3.done)===false ? ok('IT-15: 旧データ互換: 両方false/undefined → false') : ng('IT-15: 旧データ互換','両方falsy/undefinedがtrueになった');
        allTasks = allTasks.filter(function(t){ return t.id !== _syncId; });
        allTasks.length === _prevLen3
-         ? ok('done/completed同期テスト: クリーンアップ完了')
-         : ng('done/completed同期テスト', 'クリーンアップ後件数不一致');
-     } catch(e) { ng('done/completed同期テスト', e.message); }
+         ? ok('IT-15: done/completed同期テスト: クリーンアップ完了')
+         : ng('IT-15: done/completed同期テスト', 'クリーンアップ後件数不一致');
+     } catch(e) { ng('IT-15: done/completed同期テスト', e.message); }
 
-     // ===== 16. 造営（ガント）網羅テスト =====
+     // ===== IT-16: 造営（ガント）網羅テスト =====
      try {
        // 実装確認（ソース検査）
        var _gdtSrc = (window.getDailyTasks||function(){}).toString();
-       _gdtSrc.indexOf('heaven') !== -1 ? ok('getDailyTasks: heavenフィルタ確認') : ng('getDailyTasks', 'heavenフィルタなし');
+       _gdtSrc.indexOf('heaven') !== -1 ? ok('IT-16: getDailyTasks: heavenフィルタ確認') : ng('IT-16: getDailyTasks', 'heavenフィルタなし');
        var _gwtSrc = (window.getWeeklyTasks||function(){}).toString();
-       _gwtSrc.indexOf('heaven') !== -1 ? ok('getWeeklyTasks: heavenフィルタ確認') : ng('getWeeklyTasks', 'heavenフィルタなし');
+       _gwtSrc.indexOf('heaven') !== -1 ? ok('IT-16: getWeeklyTasks: heavenフィルタ確認') : ng('IT-16: getWeeklyTasks', 'heavenフィルタなし');
        var _otcSrc = (window.onTaskCompleted||function(){}).toString();
        (_otcSrc.indexOf('getGantsAll') !== -1 && _otcSrc.indexOf('recalcBlueprintFromGants') !== -1)
-         ? ok('onTaskCompleted: 造営連動コード確認') : ng('onTaskCompleted', '造営連動コードなし');
+         ? ok('IT-16: onTaskCompleted: 造営連動コード確認') : ng('IT-16: onTaskCompleted', '造営連動コードなし');
        // _bpReorderはblock3定義・window公開済み
        if (typeof window._bpReorder !== 'function') {
          // Script errorでwindow公開が失敗した場合は直接参照
@@ -22869,29 +22869,29 @@ function showDebugLog() {
        }
        var _bpSrc = (window._bpReorder||function(){}).toString();
        (_bpSrc.indexOf('saveAllTasks') !== -1 && _bpSrc.indexOf('renderGantBlueprints') !== -1)
-         ? ok('_bpReorder: saveAllTasks・renderGantBlueprints確認') : ng('_bpReorder', '必要コードなし');
+         ? ok('IT-16: _bpReorder: saveAllTasks・renderGantBlueprints確認') : ng('IT-16: _bpReorder', '必要コードなし');
        var _raSrc = (window.recalcAll||function(){}).toString();
        (_raSrc.indexOf('recalcGanttDateFromTasks') !== -1 && _raSrc.indexOf('recalcBlueprintFromGants') !== -1)
-         ? ok('recalcAll: 連鎖再計算確認') : ng('recalcAll', '連鎖再計算コードなし');
+         ? ok('IT-16: recalcAll: 連鎖再計算確認') : ng('IT-16: recalcAll', '連鎖再計算コードなし');
        var _rvSrc = (window.renderGantView||function(){}).toString();
        (_rvSrc.indexOf('ganttExpand_') !== -1 && _rvSrc.indexOf('setTimeout') !== -1)
-         ? ok('renderGantView: 展開状態保存・復元確認') : ng('renderGantView', '展開状態保存・復元なし');
+         ? ok('IT-16: renderGantView: 展開状態保存・復元確認') : ng('IT-16: renderGantView', '展開状態保存・復元なし');
        var _gmSrc = (window._gantMoveTask||function(){}).toString();
        (_gmSrc.indexOf('saveAllTasks') !== -1 && _gmSrc.indexOf('renderGantView') !== -1)
-         ? ok('_gantMoveTask: saveAllTasks・renderGantView確認') : ng('_gantMoveTask', '必要コードなし');
+         ? ok('IT-16: _gantMoveTask: saveAllTasks・renderGantView確認') : ng('IT-16: _gantMoveTask', '必要コードなし');
        // 挙動テスト（メモリのみ）
        var _prevLen4 = allTasks.length;
        // getBlueprints: inHeaven=trueを除外するか
        var _bp1 = 'smoke-bp1-' + Date.now();
        allTasks.push({ id: _bp1, kind: 'blueprint', inHeaven: true, order: 9999, title: 'test' });
        !getBlueprints().filter(function(b){ return b.id===_bp1; }).length
-         ? ok('getBlueprints: inHeaven=true除外確認') : ng('getBlueprints', 'inHeaven=trueが除外されていない');
+         ? ok('IT-16: getBlueprints: inHeaven=true除外確認') : ng('IT-16: getBlueprints', 'inHeaven=trueが除外されていない');
        allTasks = allTasks.filter(function(t){ return t.id !== _bp1; });
        // getHeavenBlueprints: inHeaven=trueのみ返すか
        var _bp2 = 'smoke-bp2-' + Date.now();
        allTasks.push({ id: _bp2, kind: 'blueprint', inHeaven: true, heavenAt: new Date().toISOString(), title: 'h' });
        getHeavenBlueprints().filter(function(b){ return b.id===_bp2; }).length > 0
-         ? ok('getHeavenBlueprints: inHeaven=trueのみ返す確認') : ng('getHeavenBlueprints', 'inHeaven=trueが返ってこない');
+         ? ok('IT-16: getHeavenBlueprints: inHeaven=trueのみ返す確認') : ng('IT-16: getHeavenBlueprints', 'inHeaven=trueが返ってこない');
        allTasks = allTasks.filter(function(t){ return t.id !== _bp2; });
        // getDailyTasks: displayScope=heavenを除外するか
        var _tk1 = 'smoke-tk1-' + Date.now();
@@ -22900,13 +22900,13 @@ function showDebugLog() {
        var _dt = typeof getDailyTasks === 'function' ? getDailyTasks(_today) : [];
        _dt = Array.isArray(_dt) ? _dt : [];
        !_dt.filter(function(t){ return t.id===_tk1; }).length
-         ? ok('getDailyTasks: displayScope=heaven除外確認') : ng('getDailyTasks', 'heavenタスクが日次に出ている');
+         ? ok('IT-16: getDailyTasks: displayScope=heaven除外確認') : ng('IT-16: getDailyTasks', 'heavenタスクが日次に出ている');
        allTasks = allTasks.filter(function(t){ return t.id !== _tk1; });
        // buildSlide/renderはshowGantTourクロージャ内ローカル関数（window未公開）→ showGantTour.toString()で検査
        var _gantTourSrc = (window.showGantTour||function(){}).toString();
        _gantTourSrc.indexOf('translateY') !== -1
-         ? ok('buildSlide/render: translateYアニメーション確認（showGantTourソース内）')
-         : ng('buildSlide/render', 'translateYアニメーションが消えている（劣化）');
+         ? ok('IT-16: buildSlide/render: translateYアニメーション確認（showGantTourソース内）')
+         : ng('IT-16: buildSlide/render', 'translateYアニメーションが消えている（劣化）');
 
        // recalcGanttDateFromTasks: タスクのdateがganttに反映されるか
        var _g1 = 'smoke-g1-' + Date.now();
@@ -22916,15 +22916,15 @@ function showDebugLog() {
        var _gantt = allTasks.filter(function(t){ return t.id===_g1; })[0];
        recalcGanttDateFromTasks(_gantt);
        _gantt.startDate === '2026-06-15'
-         ? ok('recalcGanttDateFromTasks: タスクdateがganttに反映')
-         : ng('recalcGanttDateFromTasks', 'startDate反映されず: ' + _gantt.startDate);
+         ? ok('IT-16: recalcGanttDateFromTasks: タスクdateがganttに反映')
+         : ng('IT-16: recalcGanttDateFromTasks', 'startDate反映されず: ' + _gantt.startDate);
        allTasks = allTasks.filter(function(t){ return t.id!==_g1 && t.id!==_tk2; });
        allTasks.length === _prevLen4
-         ? ok('造営挙動テスト: クリーンアップ完了(' + allTasks.length + '件)')
-         : ng('造営挙動テスト', 'クリーンアップ後件数不一致 ' + allTasks.length + '件 期待' + _prevLen4 + '件');
-     } catch(e) { ng('造営テスト', e.message); }
+         ? ok('IT-16: 造営挙動テスト: クリーンアップ完了(' + allTasks.length + '件)')
+         : ng('IT-16: 造営挙動テスト', 'クリーンアップ後件数不一致 ' + allTasks.length + '件 期待' + _prevLen4 + '件');
+     } catch(e) { ng('IT-16: 造営テスト', e.message); }
 
-     // ===== 16b. deleteBlueprint挙動テスト =====
+     // ===== IT-16b: deleteBlueprint挙動テスト =====
      try {
        var _prevLen5 = allTasks.length;
        // テスト用blueprint・gantt・taskを作成
@@ -22935,28 +22935,28 @@ function showDebugLog() {
        allTasks.push({ id: _dgId,  kind: 'gantt', blueprintId: _dbpId, taskIds: [_dtId], title: '工程' });
        allTasks.push({ id: _dtId,  kind: 'task', text: 'タスク', date: '2026-01-01', completed: false, done: false, section: 1 });
        allTasks.length === _prevLen5 + 3
-         ? ok('deleteBlueprint: テストデータ作成(3件)')
-         : ng('deleteBlueprint', 'テストデータ作成失敗');
+         ? ok('IT-16b: deleteBlueprint: テストデータ作成(3件)')
+         : ng('IT-16b: deleteBlueprint', 'テストデータ作成失敗');
        // _gantEditingBlueprintIdをセット → deleteBlueprint内で参照されるはず
        var _prevEditId = window._gantEditingBlueprintId;
        window._gantEditingBlueprintId = _dbpId;
        // bp/idが正しく取れるかを確認（実際の削除はshowChoiceModal依存のため、関数内変数解決だけ検証）
        var _dbpSrc = (window.deleteBlueprint||function(){}).toString();
        _dbpSrc.indexOf('_gantEditingBlueprintId') !== -1
-         ? ok('deleteBlueprint: _gantEditingBlueprintIdからid取得コード確認')
-         : ng('deleteBlueprint', '_gantEditingBlueprintIdの参照なし（クロージャバグ再発リスク）');
+         ? ok('IT-16b: deleteBlueprint: _gantEditingBlueprintIdからid取得コード確認')
+         : ng('IT-16b: deleteBlueprint', '_gantEditingBlueprintIdの参照なし（クロージャバグ再発リスク）');
        // bp取得確認
        var _testBp = allTasks.find(function(t){ return t.id === _dbpId; });
        _testBp && _testBp.kind === 'blueprint'
-         ? ok('deleteBlueprint: blueprintレコード取得確認')
-         : ng('deleteBlueprint', 'blueprintレコード取得失敗');
+         ? ok('IT-16b: deleteBlueprint: blueprintレコード取得確認')
+         : ng('IT-16b: deleteBlueprint', 'blueprintレコード取得失敗');
        // 手動削除でクリーンアップ
        window._gantEditingBlueprintId = _prevEditId;
        allTasks = allTasks.filter(function(t){ return t.id !== _dbpId && t.id !== _dgId && t.id !== _dtId; });
        allTasks.length === _prevLen5
-         ? ok('deleteBlueprint挙動テスト: クリーンアップ完了(' + allTasks.length + '件)')
-         : ng('deleteBlueprint挙動テスト', 'クリーンアップ後件数不一致 ' + allTasks.length + '件 期待' + _prevLen5 + '件');
-     } catch(e) { ng('deleteBlueprint挙動テスト', e.message); }
+         ? ok('IT-16b: deleteBlueprint挙動テスト: クリーンアップ完了(' + allTasks.length + '件)')
+         : ng('IT-16b: deleteBlueprint挙動テスト', 'クリーンアップ後件数不一致 ' + allTasks.length + '件 期待' + _prevLen5 + '件');
+     } catch(e) { ng('IT-16b: deleteBlueprint挙動テスト', e.message); }
 
      // ===== ST システムテスト（CRUD・主要フロー動作保証） =====
 
@@ -26356,7 +26356,7 @@ function showDebugLog() {
        // ─────────────────────────────────────────────
        var _a4Html = document.body.innerHTML;
        var _a4Matches = _a4Html.match(/on(?:click|change|input)="([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g)||[];
-       var _a4Reserved = {if:1,for:1,while:1,do:1,switch:1,return:1,new:1,delete:1,typeof:1,void:1,this:1,true:1,false:1,null:1};
+       var _a4Reserved = {if:1,for:1,while:1,do:1,switch:1,return:1,new:1,delete:1,typeof:1,void:1,this:1,true:1,false:1,null:1,_onbPrev:1,_onbNext:1}; // _onb系はshowGantTour内で動的定義→除外
        var _a4Seen = {}, _a4Fns = [];
        _a4Matches.forEach(function(m){
          var fn = m.replace(/on(?:click|change|input)="/,'').replace(/\s*\(.*/,'');
@@ -26897,68 +26897,86 @@ var resultDiv = document.createElement('div');
     // 🟢個数 = 合格率で決まる / 🔴個数 = 失敗率で決まる
     // ★ = 合格率 × 5.0（最低1.0）
     // ============================================================
-    var _pct = _total > 0 ? Math.round(pass / _total * 100) : 0;
-    var _failPct = _total > 0 ? Math.round(fail / _total * 100) : 0;
+    // ============================================================
+    // 判定ロジック v2 — 端数丸めを廃止・実数ベースで計算
+    // ============================================================
+    // 合否の真偽は fail===0 のみで判断。パーセント丸めは使わない。
+    // 🟢個数: pass/total を5段階に割り当て（実数比較）
+    // 🔴個数: fail/total を5段階に割り当て（実数比較）
+    // ★: 実数比率 × 5.0、最低1.0
 
-    // 合格率→🟢個数（100%=5個、99%=4個、...）
-    function _calcGreenDots(pct) {
-      if (pct === 100) return '🟢🟢🟢🟢🟢';
-      if (pct >= 90)   return '🟢🟢🟢🟢⚫';
-      if (pct >= 75)   return '🟢🟢🟢⚫⚫';
-      if (pct >= 50)   return '🟢🟢⚫⚫⚫';
-      if (pct >= 1)    return '🟢⚫⚫⚫⚫';
+    var _ratio     = _total > 0 ? (pass / _total) : 0;   // 0.0〜1.0
+    var _failRatio = _total > 0 ? (fail / _total) : 0;   // 0.0〜1.0
+
+    // 🟢5段階（実数比率ベース）
+    function _calcGreenDots(r) {
+      if (r >= 1.0)    return '🟢🟢🟢🟢🟢';  // 100%のみ
+      if (r >= 0.90)   return '🟢🟢🟢🟢⚫';
+      if (r >= 0.75)   return '🟢🟢🟢⚫⚫';
+      if (r >= 0.50)   return '🟢🟢⚫⚫⚫';
+      if (r >  0.0)    return '🟢⚫⚫⚫⚫';
       return               '⚫⚫⚫⚫⚫';
     }
-    // 失敗率→🔴個数（失敗0%=⚫5個、100%=🔴5個）
-    function _calcRedDots(fpct) {
-      if (fpct === 0)  return '⚫⚫⚫⚫⚫';
-      if (fpct <= 1)   return '🔴⚫⚫⚫⚫';
-      if (fpct <= 10)  return '🔴🔴⚫⚫⚫';
-      if (fpct <= 25)  return '🔴🔴🔴⚫⚫';
-      if (fpct <= 49)  return '🔴🔴🔴🔴⚫';
+    // 🔴5段階（実数比率ベース・失敗0=⚫5個）
+    function _calcRedDots(fr) {
+      if (fr <= 0.0)   return '⚫⚫⚫⚫⚫';  // 失敗0のみ
+      if (fr <= 0.01)  return '🔴⚫⚫⚫⚫';
+      if (fr <= 0.10)  return '🔴🔴⚫⚫⚫';
+      if (fr <= 0.25)  return '🔴🔴🔴⚫⚫';
+      if (fr <= 0.50)  return '🔴🔴🔴🔴⚫';
       return               '🔴🔴🔴🔴🔴';
     }
-    // ★スコア: 合格率ベース、最低1.0（やってるんだから）
-    function _calcStar(pct) {
-      return Math.max(1.0, Math.round((pct / 100 * 5.0) * 10) / 10);
+    // ★スコア（最低1.0・切り捨て: 718/720 → ★4.9、720/720のみ★5.0）
+    function _calcStar(r) {
+      return Math.max(1.0, Math.floor(r * 5.0 * 10) / 10);
     }
-    // 🔴★スコア: 失敗率ベース、0件失敗=★1.0（最低保証）
-    function _calcFailStar(fpct) {
-      return Math.max(1.0, Math.round((fpct / 100 * 5.0) * 10) / 10);
-    }
-    function _grade(pct) {
-      if (pct === 100) return 'PERFECT  — 王国は完璧だ';
-      if (pct >= 90)   return 'GREAT    — ほぼ盤石';
-      if (pct >= 75)   return 'GOOD     — 軽傷あり';
-      if (pct >= 50)   return 'CAUTION  — 要注意';
-      if (pct >= 1)    return 'DANGER   — 王国が揺らいでいる';
-      return               'COLLAPSE — 王国崩壊';
+    // グレード（fail===0 のみPERFECT）
+    function _grade(f, t) {
+      if (f === 0)                          return 'PERFECT  — 王国は完璧だ';
+      var fr = t > 0 ? f/t : 1;
+      if (fr <= 0.10)                       return 'GREAT    — ほぼ盤石';
+      if (fr <= 0.25)                       return 'GOOD     — 軽傷あり';
+      if (fr <= 0.50)                       return 'CAUTION  — 要注意';
+      if (fr < 1.0)                         return 'DANGER   — 王国が揺らいでいる';
+      return                                       'COLLAPSE — 王国崩壊';
     }
 
-    // 全評価値を計算
-    var _greenDots   = _calcGreenDots(_pct);      // 合格率→🟢
-    var _redDots     = _calcRedDots(_failPct);    // 失敗率→🔴（常に計算）
-    var _grade_str   = _grade(_pct);
-    var _starVal     = _calcStar(_pct);           // ★ 合格率ベース
-    var _failStarVal = _calcFailStar(_failPct);   // ★ 失敗率ベース
+    // 評価値を計算
+    var _greenDots    = _calcGreenDots(_ratio);
+    var _redDots      = _calcRedDots(_failRatio);
+    var _grade_str    = _grade(fail, _total);
+    var _starVal      = _calcStar(_ratio);
+    var _failStarVal  = _calcStar(1.0 - _ratio);   // 失敗率の★
     var _starDisp     = '★' + _starVal.toFixed(1);
     var _failStarDisp = '★' + _failStarVal.toFixed(1);
 
-    var summary, summaryStyle;
+    // 描画: 3行構造
+    // 行1: 🟢評価（合格ビュー）
+    // 行2: 🔴評価（失敗ビュー）
+    // 行3: カウント + グレード
+    var _line1, _line2, _line3;
     if (allGreen) {
-      // 全合格: 🟢🟢🟢🟢🟢 ★5.0
-      summary = _greenDots + ' ' + _starDisp + '  ALL GREEN — ' + pass + '/' + _total + '  ' + _grade_str;
-      summaryStyle = 'font-weight:700;font-size:1.05em;color:#3fb950;margin-bottom:6px;letter-spacing:0.03em;';
+      _line1 = _greenDots + ' ' + _starDisp + '  ALL GREEN';
+      _line2 = '';  // 失敗なし → 🔴行は非表示
+      _line3 = pass + '/' + _total + '  ' + _grade_str;
     } else {
-      // 失敗あり: 合格率🟢 ★合格 ＋ 失敗数
-      summary = _greenDots + ' ' + _starDisp + '  ' + fail + '件失敗 (' + pass + '/' + _total + ')  ' + _grade_str;
-      summaryStyle = 'font-weight:700;font-size:1.05em;color:#ff6b6b;margin-bottom:6px;letter-spacing:0.03em;';
+      _line1 = _greenDots + ' ' + _starDisp;
+      _line2 = _redDots   + ' ' + _failStarDisp + '  ' + fail + '件失敗';
+      _line3 = pass + '/' + _total + '  ' + _grade_str;
     }
-    // 失敗時: 失敗率🔴 ★失敗 を補足行で表示
-    var _alertLine = allGreen ? '' :
-      '<div style="color:#ff6b6b;font-size:0.9em;margin-bottom:4px;">' +
-      _redDots + ' ' + _failStarDisp + '  失敗率 ' + _failPct + '%</div>';
-    resultDiv.innerHTML = '<div style="' + summaryStyle + '">' + summary + '</div>' + _alertLine
+    // summary（行1）とalertLine（行2）に分配
+    var summary = _line1;
+    var summaryStyle = allGreen
+      ? 'font-weight:700;font-size:1.05em;color:#3fb950;margin-bottom:2px;letter-spacing:0.03em;'
+      : 'font-weight:700;font-size:1.05em;color:#3fb950;margin-bottom:2px;letter-spacing:0.03em;';
+    var _alertLine = _line2
+      ? '<div style="font-weight:700;font-size:1.05em;color:#ff6b6b;margin-bottom:2px;">' + _line2 + '</div>'
+      : '';
+    var _countLine = '<div style="font-size:0.9em;color:var(--text-secondary,#888);margin-bottom:6px;">' + _line3 + '</div>';
+    resultDiv.innerHTML =
+      '<div style="' + summaryStyle + '">' + summary + '</div>'
+      + _alertLine
+      + _countLine
       + results.map(function(r){ return '<div>' + r + '</div>'; }).join('');
     // 既存の結果を入れ替え
     var old = box.querySelector('.smoke-result');
