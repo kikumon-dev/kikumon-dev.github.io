@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.220';
+    const APP_VERSION = 'v0.39.221';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -12855,6 +12855,24 @@ function reviveBlueprint(id) {
         log.push({ type:'migration', amount: cur * 99, reason: 'GDP億単位マイグレーション', date: new Date().toISOString() });
         if (log.length > 1000) log = log.slice(-1000);
         localStorage.setItem('tokuLog', JSON.stringify(log));
+      }
+      localStorage.setItem(_migKey, '1');
+    })();
+    // ===== 遡及徳加算マイグレーション（既存完了タスク分を一括付与）=====
+    (function() {
+      var _migKey = 'mig_toku_retroactive_v1';
+      if (localStorage.getItem(_migKey)) return;
+      var completedCount = allTasks.filter(function(t) {
+        return t.kind === 'task' && (t.completed === true || t.done === true);
+      }).length;
+      if (completedCount > 0) {
+        var cur = parseInt(localStorage.getItem('tokuPoints') || '0');
+        localStorage.setItem('tokuPoints', String(cur + completedCount));
+        var log = JSON.parse(localStorage.getItem('tokuLog') || '[]');
+        log.push({ type: 'toku', amount: completedCount, reason: '遡及加算（既存完了タスク ' + completedCount + '件）', date: new Date().toISOString() });
+        if (log.length > 1000) log = log.slice(-1000);
+        localStorage.setItem('tokuLog', JSON.stringify(log));
+        window._dbgLog && window._dbgLog('mig_toku_retroactive_v1: 徳+' + completedCount + '件加算');
       }
       localStorage.setItem(_migKey, '1');
     })();
