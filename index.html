@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.221';
+    const APP_VERSION = 'v0.39.229';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -6301,7 +6301,8 @@ function myDeckApply(idx) {
         saveAllTasks();
         // migration完了（ログ削除済み）;
       }
-      localStorage.setItem('mig_show_in_daily_to_display_scope_v1', 'mig_display_scope_empty_v1', '1');
+      localStorage.setItem('mig_show_in_daily_to_display_scope_v1', '1');
+      localStorage.setItem('mig_display_scope_empty_v1', '1');
     }
     function loadAllTasks() {
       loadCalendars();
@@ -13199,7 +13200,7 @@ function reviveBlueprint(id) {
     window._dbgLog('【昇格完了】UUID ENGINE v7 --- 識別子体系、最新世代 / 時は刻まれました');
     window._dbgLog('migrateToUUIDv7 done');
     // mig_*フラグの値を'1'に正規化（'true'が残っている場合）
-    ['mig_ids_to_uuid_v7','mig_show_in_daily_to_display_scope_v1', 'mig_display_scope_empty_v1','mig_category_to_calendar_v170','mig_death_ghost_flags_v0_24_59'].forEach(k => {
+    ['mig_ids_to_uuid_v7','mig_show_in_daily_to_display_scope_v1', 'mig_display_scope_empty_v1', 'mig_toku_retroactive_v1','mig_category_to_calendar_v170','mig_death_ghost_flags_v0_24_59'].forEach(k => {
       if (localStorage.getItem(k)) localStorage.setItem(k, '1');
     });
     // deviceIdがv4またはd-prefix形式ならv7に更新
@@ -13212,11 +13213,16 @@ function reviveBlueprint(id) {
     // 旧キー即時削除（cleanupOldKeysがスキップされた環境向け）
     ['extendedvaluekey', 'selectedDailyDate', 'setItem'].forEach(k => localStorage.removeItem(k));
     // 外部書き込み検知（拡張機能等によるLocalStorage汚染チェック）
-    const KNOWN_KEYS = new Set([
+    // ===== KEY_WHITELIST: localStorageキーホワイトリスト（SSOT）=====
+    // KNOWN_KEYSと_allowedKeysを統合。ここだけ更新すれば監視・KPAGテスト両方に反映される。
+    const KEY_WHITELIST = new Set([
       // コアデータ
       'allTasks', 'allSettings', 'deletedTaskIds',
       // 徳・業・ログ
       'tokuPoints', 'gouPoints', 'tokuLog', 'escapeLog',
+      // GDP経済システム
+      'gdpPoints', 'gdpLog', 'gouLog', 'lastGouCheckDate', 'lastTaskCompletedDate',
+      'lastKingdomCodeDate', 'lastMonthlyBonusMonth',
       // UI状態
       'currentView', 'wgLastScrollTop', 'tlLastScrollTop', 'selectedDailyDate',
       'simpleMode', 'dataVersion',
@@ -13227,24 +13233,23 @@ function reviveBlueprint(id) {
       // カレンダー
       'calendars', 'mainCalendarId', 'autoMainCalendar', '_calIdMigMap',
       // 雑記帳
-      '_lastScratchMoveDate',
+      '_lastScratchMoveDate', '_importLog',
       // マイグレーション済みキー
       'mig_ids_to_uuid_v7', 'mig_show_in_daily_to_display_scope_v1', 'mig_display_scope_empty_v1',
       'mig_category_to_calendar_v170', 'mig_death_ghost_flags_v0_24_59',
       'mig_gant_enabled_default_v0_32', 'mig_journals_to_alltasks_v1',
-      'mig_gdp_to_oku_v1', 'mig_orphan_taskids_v1', 'mig_done_completed_sync_v1', 'mig_dedup_tasks_v1', 'mig_dedup_tasks_v2', 'mig_calid_to_settings_v1',
-      '_importLog',
-      // GDP経済システム
-      'gdpPoints', 'gdpLog', 'gouLog', 'lastGouCheckDate', 'lastTaskCompletedDate',
-      'lastKingdomCodeDate', 'lastMonthlyBonusMonth',
+      'mig_gdp_to_oku_v1', 'mig_orphan_taskids_v1', 'mig_done_completed_sync_v1',
+      'mig_dedup_tasks_v1', 'mig_dedup_tasks_v2', 'mig_calid_to_settings_v1',
+      'mig_toku_retroactive_v1', 'mig_journal_ids_to_uuid_v7',
       // 旧バージョン互換（旧ユーザーのデバイスに残存する場合あり・削除不可）
       'journals', 'notebooks', 'nbLastPageId',
       'craftMode', 'gantEnabled',
       'taskCompletedTotal', 'taskCompletedStreak',
       'migration_calendarId_v1', 'extendedvaluekey',
-      'mig_journal_ids_to_uuid_v7',
       'dailyScrollInit', 'weeklyScrollInit',
     ]);
+    window.KEY_WHITELIST = KEY_WHITELIST;
+    const KNOWN_KEYS = KEY_WHITELIST; // 後方互換エイリアス
     // 起動時スキャン
     (function() {
       const unknown = [];
@@ -17541,17 +17546,17 @@ function renderColosseumView() {
       html += '<div style="font-size:0.68em;color:#888;margin-bottom:6px;">第' + (i+1) + '戦</div>';
       html += '<div style="display:flex;align-items:center;gap:8px;">';
       // プレイヤーカード
-      html += '<div style="flex:1;background:' + pr.bg + ';border-radius:8px;padding:8px;border:1.5px solid ' + pr.border + ';">';
+      html += '<div style="flex:1;min-width:0;background:' + pr.bg + ';border-radius:8px;padding:8px;border:1.5px solid ' + pr.border + ';">';
       html += '<div style="font-size:0.72em;font-weight:700;color:' + pr.color + ';">' + pr.star + '</div>';
-      html += '<div style="font-size:0.78em;color:#333;font-weight:700;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _esc(r.player.task.text) + '</div>';
+      html += '<div style="font-size:0.78em;color:#333;font-weight:700;margin-top:2px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">' + _esc(r.player.task.text) + '</div>';
       html += '<div style="font-size:0.85em;font-weight:900;color:' + pr.color + ';margin-top:4px;">POW ' + r.player.score + '</div>';
       html += '</div>';
       // VS
-      html += '<div style="flex-shrink:0;font-size:0.82em;font-weight:900;color:' + wColor + ';text-align:center;"><div>' + wLabel + '</div><div style="font-size:0.8em;color:#555;margin-top:2px;">VS</div></div>';
+      html += '<div style="flex-shrink:0;width:44px;font-size:0.82em;font-weight:900;color:' + wColor + ';text-align:center;"><div>' + wLabel + '</div><div style="font-size:0.8em;color:#555;margin-top:2px;">VS</div></div>';
       // CPUカード
-      html += '<div style="flex:1;background:' + cr.bg + ';border-radius:8px;padding:8px;border:1.5px solid ' + cr.border + ';">';
+      html += '<div style="flex:1;min-width:0;background:' + cr.bg + ';border-radius:8px;padding:8px;border:1.5px solid ' + cr.border + ';">';
       html += '<div style="font-size:0.72em;font-weight:700;color:' + cr.color + ';">' + cr.star + '</div>';
-      html += '<div style="font-size:0.78em;color:#333;font-weight:700;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _esc(r.cpu.task.text) + '</div>';
+      html += '<div style="font-size:0.78em;color:#333;font-weight:700;margin-top:2px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">' + _esc(r.cpu.task.text) + '</div>';
       html += '<div style="font-size:0.85em;font-weight:900;color:' + cr.color + ';margin-top:4px;">POW ' + r.cpu.score + '</div>';
       html += '</div>';
       html += '</div></div>';
@@ -26028,6 +26033,30 @@ function showDebugLog() {
        ok('ST-57: 月齢計算・craftMoon描画 完了');
      } catch(e) { ng('ST-57: 月齢craftMoon', e.message); }
 
+     // ST-58: KEY_WHITELIST統合テスト
+     try {
+       // KEY_WHITELISTが存在する
+       typeof window.KEY_WHITELIST !== 'undefined' && window.KEY_WHITELIST instanceof Set
+         ? ok('ST-58: KEY_WHITELIST 存在確認（Set型）')
+         : ng('ST-58: KEY_WHITELIST', '未定義またはSet型でない');
+       // 旧KNOWN_KEYSのキーを全て含む
+       var _st58RequiredKeys = ['allTasks','allSettings','tokuPoints','gouPoints','tokuLog','deviceId','calendars','gdpPoints','gdpLog','gouLog','mig_toku_retroactive_v1'];
+       var _st58Missing = _st58RequiredKeys.filter(function(k){ return !window.KEY_WHITELIST || !window.KEY_WHITELIST.has(k); });
+       _st58Missing.length === 0
+         ? ok('ST-58: KEY_WHITELIST 必須キー全包含確認（' + _st58RequiredKeys.length + '件）')
+         : ng('ST-58: KEY_WHITELIST 必須キー欠落', _st58Missing.join(', '));
+       // 件数チェック（56件以上）
+       var _st58Count = window.KEY_WHITELIST ? window.KEY_WHITELIST.size : 0;
+       _st58Count >= 55
+         ? ok('ST-58: KEY_WHITELIST 件数確認（' + _st58Count + '件）')
+         : ng('ST-58: KEY_WHITELIST 件数不足', '期待>=55 実際=' + _st58Count);
+       // ycPwAuthはBANNEDキー（廃止・自動削除済み）のためホワイトリスト不要
+       !window.KEY_WHITELIST.has('ycPwAuth')
+         ? ok('ST-58: KEY_WHITELIST ycPwAuth非包含確認（BANNED済み）')
+         : ng('ST-58: KEY_WHITELIST', 'ycPwAuthがホワイトリストに混入');
+       ok('ST-58: KEY_WHITELIST統合 完了');
+     } catch(e) { ng('ST-58: KEY_WHITELIST', e.message); }
+
      // ===== 17. KPAG — Key Purify Absolute Green · 4-AXIS STORAGE INSPECTION =====
      try {
        var _kpKeys = Object.keys(localStorage);
@@ -26067,15 +26096,15 @@ function showDebugLog() {
          'weeklyTimeBar',       // allSettings.ui.weeklyTimeBarに統合
          'tlScrollMode',        // allSettings.ui.tlScrollModeに統合
          'wgScrollMode',        // allSettings.ui.wgScrollModeに統合
+         'ycPwAuth',            // パスワード認証廃止・自動削除済み
        ];
        var _bannedFound = _bannedKeys.filter(function(k){ return _kpKeys.indexOf(k) !== -1; });
        _bannedFound.length === 0
          ? ok('KPAG·③·BANNED KEYS: 廃止キー残存なし (' + _bannedKeys.length + '件チェック)')
          : ng('KPAG·③·BANNED KEYS', '廃止キーが残存: ' + _bannedFound.join(', '));
 
-       // ④ 未知キー検知（白名単チェック）
-       var _allowedKeys = ['_calIdMigMap','_dbg_errors','_dbg_log','_lastScratchMoveDate','allSettings','allTasks','autoMainCalendar','calendars','craftMode','currentView','dailyScrollInit','dataVersion','deletedTaskIds','deviceId','escapeLog','extendedvaluekey','gantEnabled','gdpLog','gdpPoints','gouLog','gouPoints','journals','lastGouCheckDate','lastKingdomCodeDate','lastMonthlyBonusMonth','lastTaskCompletedDate','mainCalendarId','mig_category_to_calendar_v170','mig_death_ghost_flags_v0_24_59','mig_gant_enabled_default_v0_32','mig_gdp_to_oku_v1','mig_ids_to_uuid_v7','mig_journal_ids_to_uuid_v7','_importLog','mig_calid_to_settings_v1','mig_dedup_tasks_v1','mig_dedup_tasks_v2','mig_done_completed_sync_v1','mig_journals_to_alltasks_v1','mig_orphan_taskids_v1','mig_show_in_daily_to_display_scope_v1', 'mig_display_scope_empty_v1','migration_calendarId_v1','nbLastPageId','notebooks','selectedDailyDate','simpleMode','taskCompletedStreak','taskCompletedTotal','tlLastScrollTop','tokuLog','tokuPoints','weeklyScrollInit','wgLastScrollTop','ycPwAuth'];
-       var _unknownKeys = _kpKeys.filter(function(k){ return _allowedKeys.indexOf(k) === -1 && !k.startsWith('backup_'); });
+       // ④ 未知キー検知（KEY_WHITELISTで一元管理）
+       var _unknownKeys = _kpKeys.filter(function(k){ return !window.KEY_WHITELIST.has(k) && !k.startsWith('backup_'); });
        _unknownKeys.length === 0
          ? ok('KPAG·④·UNKNOWN KEYS: 全' + _kpKeys.length + 'キー検査済・汚染ゼロ')
          : ng('KPAG·④·UNKNOWN KEYS', '未知キー' + _unknownKeys.length + '件: ' + _unknownKeys.join(', '));
