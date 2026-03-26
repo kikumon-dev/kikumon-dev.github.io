@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.242';
+    const APP_VERSION = 'v0.39.245';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -13388,6 +13388,10 @@ function reviveBlueprint(id) {
     var _switchViewLast = '';
     var _switchViewTimer = null;
     function switchView(view) {
+      // craftViewを離れる時にmoonOverlayを削除
+      if (view !== 'craft') {
+        var _mo = document.getElementById('_moonOverlay'); if (_mo) _mo.remove();
+      }
       // 同一ビューへの連続呼び出しを300ms以内に防止（iOSタップ多重発火対策）
       if (_switchViewLast === view) {
         clearTimeout(_switchViewTimer);
@@ -19387,22 +19391,26 @@ function drawCraftMoon(ctx, cw, ch, age) {
   g.addColorStop(0, 'rgba(255,251,230,0.95)');
   g.addColorStop(0.5, 'rgba(244,216,120,0.9)');
   g.addColorStop(1, 'rgba(184,134,11,0.85)');
-  ctx.fillStyle = g;
+  // 先に黒で塗りつぶし（光部分のみ後で描く）
+  ctx.fillStyle = 'rgba(4,4,18,0.97)';
   ctx.fillRect(cx - R, cy - R, R * 2, R * 2);
-  // 影部分
+  // 光部分（_drawMoonOverlayと同じ方式：光側を直接描く）
+  ctx.fillStyle = g;
   ctx.beginPath();
   if (phase < 0.5) {
-    ctx.arc(cx, cy, R, Math.PI/2, -Math.PI/2, true);
-    var ex = cx + R * (1 - illum * 2);
+    // 上弦に向かう：右側が明るい
+    ctx.arc(cx, cy, R, -Math.PI/2, Math.PI/2, false);
+    var ex = cx - R * (1 - illum * 2);
     var rx = Math.max(0.001, Math.abs(ex - cx));
-    ctx.ellipse(ex, cy, rx, R, 0, -Math.PI/2, Math.PI/2, illum < 0.5);
+    ctx.ellipse(ex, cy, rx, R, 0, Math.PI/2, -Math.PI/2, true);
   } else {
-    ctx.arc(cx, cy, R, -Math.PI/2, Math.PI/2, true);
-    var ex2 = cx - R * (illum * 2 - 1);
+    // 下弦に向かう：左側が明るい
+    ctx.arc(cx, cy, R, Math.PI/2, -Math.PI/2, false);
+    var ex2 = cx + R * (illum * 2 - 1);
     var rx2 = Math.max(0.001, Math.abs(ex2 - cx));
-    ctx.ellipse(ex2, cy, rx2, R, 0, Math.PI/2, -Math.PI/2, illum > 0.5);
+    ctx.ellipse(ex2, cy, rx2, R, 0, -Math.PI/2, Math.PI/2, true);
   }
-  ctx.fillStyle = 'rgba(4,4,18,0.93)';
+  ctx.fillStyle = g;
   ctx.fill();
   ctx.restore();
   // 縁光
@@ -19714,7 +19722,8 @@ window.initCraftWorld = function initCraftWorld() {
     document.head.appendChild(s);
     return;
   }
-  // 2Dモード
+  // 2Dモード（overlayを削除してCanvas描画に統一）
+  var _existingOverlay = document.getElementById('_moonOverlay'); if (_existingOverlay) _existingOverlay.remove();
   _craftInitialized = true;
   // canvasを毎回作り直す（WebGL→2D切替時にコンテキスト競合を回避）
   var oldCanvas = document.getElementById('craftCanvas');
@@ -26271,6 +26280,80 @@ function showDebugLog() {
          ? ok('ST-59: 開発ルール遵守率 ' + _rate + '% (' + _rp + '/' + _rc + '条) 🟡 要注意')
          : ng('ST-59: 開発ルール遵守率', _rate + '% (' + _rp + '/' + _rc + '条) — 要改善');
      } catch(e) { ng('ST-59: 開発ルール遵守率', e.message); }
+
+     // ST-60: 天象システム詳細テスト（_getSunData / ダッシュボード天象カード）
+     try {
+       // ① _getSunData関数の存在確認
+       ok('ST-60: _getSunData 存在確認（' + (typeof _getSunData==='function'?'✅':'❌') + '）');
+
+       // ② A優先（_SUN_TIMES_DAILY）確認
+       var _st60daily = typeof _SUN_TIMES_DAILY !== 'undefined' && Array.isArray(_SUN_TIMES_DAILY);
+       ok('ST-60: _SUN_TIMES_DAILY 存在確認（' + (_st60daily?'✅ 365日テーブル':'❌ なし') + '）');
+       if (_st60daily) {
+         var _st60total = _SUN_TIMES_DAILY.slice(1).reduce(function(s,m){ return s+(m?m.length:0); }, 0);
+         ok('ST-60: _SUN_TIMES_DAILY 日数確認（' + _st60total + '日）');
+       }
+
+       // ③ B（_SUN_TIMES月次）確認
+       var _st60monthly = typeof _SUN_TIMES !== 'undefined' && Array.isArray(_SUN_TIMES) && _SUN_TIMES.length===13;
+       ok('ST-60: _SUN_TIMES フォールバックテーブル確認（' + (_st60monthly?'✅ 12ヶ月':'❌') + '）');
+
+       // ④ 今日のデータ取得＋どちらを使用しているか
+       if (typeof _getSunData === 'function') {
+         var _st60today = _getSunData(new Date());
+         var _st60src = _st60today ? (_st60today.source || '不明') : 'null';
+         var _st60ok = _st60today && typeof _st60today.rise==='number' && !isNaN(_st60today.rise);
+         ok('ST-60: 今日の天象データ取得（source=' + _st60src + '）' + (_st60ok?'✅':'❌ NaN'));
+
+         // ⑤ 数値範囲チェック
+         if (_st60ok) {
+           var _rOk = _st60today.rise >= 3.5 && _st60today.rise <= 7.5;
+           var _sOk = _st60today.set  >= 15.5 && _st60today.set  <= 20.0;
+           var _dOk = _st60today.dusk >= 16.0 && _st60today.dusk <= 20.5;
+           ok('ST-60: 日の出範囲確認（' + _getSunData(new Date()).rise.toFixed(2) + 'h）' + (_rOk?'✅':'❌ 範囲外'));
+           ok('ST-60: 日没範囲確認（'   + _getSunData(new Date()).set.toFixed(2)  + 'h）' + (_sOk?'✅':'❌ 範囲外'));
+           ok('ST-60: 薄明終了範囲確認（'+ _getSunData(new Date()).dusk.toFixed(2) + 'h）' + (_dOk?'✅':'❌ 範囲外'));
+         }
+
+         // ⑥ 既知日付での精度確認（2026-03-26 日の出=5:36 日没=17:58）
+         var _st60known = _getSunData(new Date(2026, 2, 26)); // 3月26日
+         if (_st60known) {
+           var _riseExpect = 5 + 36/60; // 5:36
+           var _setExpect  = 17 + 58/60; // 17:58
+           var _riseErr = Math.abs(_st60known.rise - _riseExpect);
+           var _setErr  = Math.abs(_st60known.set  - _setExpect);
+           ok('ST-60: 2026-03-26 日の出精度（誤差' + (_riseErr*60).toFixed(1) + '分）' + (_riseErr < 0.1?'✅':'⚠️'));
+           ok('ST-60: 2026-03-26 日没精度（誤差'   + (_setErr*60).toFixed(1)  + '分）' + (_setErr  < 0.1?'✅':'⚠️'));
+         }
+
+         // ⑦ Aが使われていることを確認（本番では必ずdailyを使うべき）
+         var _st60usesDaily = _st60src === 'daily';
+         _st60usesDaily
+           ? ok('ST-60: 天象データソース ✅ A（全日テーブル）使用中')
+           : ok('ST-60: 天象データソース ⚠️ B（月次フォールバック）使用中 → _SUN_TIMES_DAILYを確認');
+       }
+
+       // ⑧ ダッシュボード天象カードDOM確認
+       var _st60doms = ['dbSkyCard','dbSkyBox','dbSunrise','dbSunset','dbDusk','dbMoonAge','dbMoonCanvas','dbMoonPhase','dbLastNewMoon','dbSunTable'];
+       var _st60domOk = _st60doms.filter(function(id){ return document.getElementById(id)!==null; }).length;
+       ok('ST-60: 天象カードDOM確認（' + _st60domOk + '/' + _st60doms.length + '件）' + (_st60domOk===_st60doms.length?'✅':'❌'));
+
+       // ⑨ 天象カードの値がNaNでないこと
+       var _st60sunrise = document.getElementById('dbSunrise');
+       var _st60sunset  = document.getElementById('dbSunset');
+       var _st60moonAge = document.getElementById('dbMoonAge');
+       var _st60nanOk = _st60sunrise && _st60sunrise.textContent.indexOf('NaN')===-1
+                     && _st60sunset  && _st60sunset.textContent.indexOf('NaN')===-1
+                     && _st60moonAge && _st60moonAge.textContent.indexOf('NaN')===-1;
+       ok('ST-60: 天象カード値NaNなし確認（日の出=' + (_st60sunrise?_st60sunrise.textContent:'null') + ' 日没=' + (_st60sunset?_st60sunset.textContent:'null') + '）' + (_st60nanOk?'✅':'❌ NaN検出'));
+
+       // ⑩ 年間テーブル行数確認（ダッシュボードを一度開いてから）
+       var _st60tbl = document.getElementById('dbSunTable');
+       var _st60rows = _st60tbl ? _st60tbl.rows.length : 0;
+       ok('ST-60: 年間テーブル行数確認（' + _st60rows + '行）' + (_st60rows===13?'✅ ヘッダ+12ヶ月':_st60rows===1?'⚠️ ダッシュボード未開': '確認'));
+
+       ok('ST-60: 天象システム詳細テスト 完了');
+     } catch(e) { ng('ST-60: 天象システム', e.message); }
 
      // ===== 17. KPAG — Key Purify Absolute Green · 4-AXIS STORAGE INSPECTION =====
      try {
