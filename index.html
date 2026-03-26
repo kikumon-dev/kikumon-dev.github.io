@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.229';
+    const APP_VERSION = 'v0.39.230';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -19674,7 +19674,7 @@ function _initThreeScene() {
   canvas.height=p?p.clientHeight:(window.innerHeight-50);
   var W=canvas.width, H=canvas.height;
   var renderer;
-  try { renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,preserveDrawingBuffer:true}); }
+  try { renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true}); }
   catch(e){ _craftInitialized=false; allSettings.ui.craftRenderMode = '2d'; saveAllSettings(); if(typeof window.initCraftWorld==='function')window.initCraftWorld(); return; }
   renderer.setSize(W,H); renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
   var _skyCol = getSkyColor();
@@ -19847,32 +19847,7 @@ function _initThreeScene() {
   }
   // ===== 夜：お月様（純粋さ>0.3）=====
   var _moon = null;
-  if (false) { // 月はCSS overlayで表示するため3D球は無効化
-    // 月専用シーン＋固定カメラ（ライティング完全独立）
-    var _moonG = new THREE.Group();
-    // 本体：depthTest:false+renderOrder:999で必ず前面に描画
-    var _mBodyM = new THREE.Mesh(new THREE.SphereGeometry(4.5,32,24),
-      new THREE.MeshBasicMaterial({color:0xfffde8, depthTest:false}));
-    _mBodyM.renderOrder = 999;
-    _moonG.add(_mBodyM);
-    // クレーター
-    [[-1.4,1.5,4.3,0.55],[1.2,1.0,4.3,0.38],[0.4,-0.8,4.3,0.28]].forEach(function(c){
-      var cr=new THREE.Mesh(new THREE.SphereGeometry(c[3],8,6),
-        new THREE.MeshBasicMaterial({color:0xe8ddb8,depthTest:false}));
-      cr.position.set(c[0],c[1],c[2]); cr.renderOrder=1000; _moonG.add(cr);
-    });
-    // ハロー：AdditiveBlending（加算合成→絶対に黒くならない）
-    [[6.0,0xffe566,0.30],[9.0,0xffc820,0.14],[13.5,0xffaa00,0.06]].forEach(function(h,i){
-      var hm=new THREE.Mesh(new THREE.SphereGeometry(h[0],16,12),
-        new THREE.MeshBasicMaterial({color:h[1],transparent:true,opacity:h[2],
-          side:THREE.BackSide,depthWrite:false,depthTest:false,
-          blending:THREE.AdditiveBlending}));
-      hm.renderOrder=998-i; _moonG.add(hm);
-    });
-    _moonG.position.set(-38, 20, -28);
-    scene.add(_moonG);
-    _moon = _moonG;
-  }
+  // 月はimgオーバーレイで表示（_drawMoonOverlay）
   // ===== 夜：流れ星（純粋さ>0.7）=====
   var _shootingStars = [];
   if (_pur3dFx > 0 && _isNight3d) {
