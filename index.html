@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.219';
+    const APP_VERSION = 'v0.39.220';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -19608,7 +19608,6 @@ window.initCraftWorld = function initCraftWorld() {
   canvas.addEventListener('touchmove',  function(e){e.preventDefault();onMove(e.touches[0].clientX);},{passive:false});
   // 月齢キャッシュ（起動時1回計算）
   _craftMoonAge = calcMoonAgeNAOJ(new Date());
-  setTimeout(function(){ if(typeof window._drawMoonOverlay==='function') window._drawMoonOverlay(_craftMoonAge); }, 100);
   // アニメーションループ
   function loop(){
     try {
