@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.295';
+    const APP_VERSION = 'v0.39.296';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -19485,22 +19485,29 @@ function drawCraftMoon(ctx, cw, ch, age) {
   ctx.fillStyle = g;
   ctx.beginPath();
   if (illum >= 0.99) {
-    // 満月：全面
     ctx.arc(cx, cy, R, 0, Math.PI * 2);
-  } else if (isWaxing) {
-    // 上弦に向かう：右側が明るい
-    ctx.arc(cx, cy, R, -Math.PI/2, Math.PI/2, false);
-    var ex = cx - R * (1 - illum * 2);
-    var rx = Math.max(0.001, Math.abs(ex - cx));
-    ctx.ellipse(ex, cy, rx, R, 0, Math.PI/2, -Math.PI/2, true);
-  } else {
-    // 下弦に向かう：左側が明るい
-    ctx.arc(cx, cy, R, Math.PI/2, -Math.PI/2, false);
-    var ex2 = cx + R * (illum * 2 - 1);
-    var rx2 = Math.max(0.001, Math.abs(ex2 - cx));
-    ctx.ellipse(ex2, cy, rx2, R, 0, -Math.PI/2, Math.PI/2, true);
+  } else if (illum > 0.01) {
+    var _ewRaw = R * (2 * illum - 1);
+    var _ew = Math.abs(_ewRaw) * 1.2;
+    if (_ew > R) _ew = R;
+    var _convex = _ewRaw >= 0;
+    if (typeof ctx.ellipse === 'function') {
+      if (isWaxing) {
+        ctx.arc(cx, cy, R, -Math.PI/2, Math.PI/2, false);
+        if (_ew < 1) { ctx.lineTo(cx, cy - R); }
+        else if (_convex) { ctx.ellipse(cx - _ew, cy, _ew, R, 0, Math.PI/2, -Math.PI/2, false); }
+        else { ctx.ellipse(cx + _ew, cy, _ew, R, 0, Math.PI/2, -Math.PI/2, true); }
+      } else {
+        ctx.arc(cx, cy, R, Math.PI/2, -Math.PI/2, false);
+        if (_ew < 1) { ctx.lineTo(cx, cy + R); }
+        else if (_convex) { ctx.ellipse(cx + _ew, cy, _ew, R, 0, -Math.PI/2, Math.PI/2, false); }
+        else { ctx.ellipse(cx - _ew, cy, _ew, R, 0, -Math.PI/2, Math.PI/2, true); }
+      }
+    } else {
+      if (isWaxing) { ctx.arc(cx, cy, R, -Math.PI/2, Math.PI/2, false); ctx.lineTo(cx, cy - R); }
+      else { ctx.arc(cx, cy, R, Math.PI/2, -Math.PI/2, false); ctx.lineTo(cx, cy + R); }
+    }
   }
-  ctx.fillStyle = g;
   ctx.fill();
   ctx.restore();
   // 縁光
