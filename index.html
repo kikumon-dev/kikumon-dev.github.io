@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.287';
+    const APP_VERSION = 'v0.39.289';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -13505,7 +13505,10 @@ function reviveBlueprint(id) {
         if (dbView) dbView.style.display = 'block';
         var navDb = document.getElementById('navDashboard');
         if (navDb) navDb.classList.add('active');
-        if (typeof renderDashboardView === 'function') renderDashboardView();
+        if (typeof renderDashboardView === 'function') {
+          // 初回ロード時にCanvasがレイアウト確定前に描画されるのを防ぐため1フレーム遅延
+          requestAnimationFrame(function(){ renderDashboardView(); });
+        }
       } else if (view === 'settings') {
         if (gantView) gantView.style.display = 'none';
         settingsView.style.display = 'block';
@@ -17581,7 +17584,9 @@ function renderDashboardView() {
           //   il=0.5→楕円rx=0(直線) il=0.6→左に少しはみ出す il=1→左にR分はみ出す(満月)
           // 楕円中心 = _cx - _R*(2*il-1), rx = _R*(2*il-1)
           // il=0.5: center=_cx, rx=0  il=1: center=_cx-_R, rx=_R
-          var _ew = _R * (2 * _il - 1); // 0〜R (上弦=0, 満月=R)
+          // _ew: il=0.5→0, il=0.6→R*0.4, il=1→R*2(満月は別処理)
+          // 係数2倍にしてふくらみを強調
+          var _ew = _R * Math.min(1, (2 * _il - 1) * 2);
           if (typeof _ctx.ellipse === 'function') {
             if (_isWax) {
               // 右半円（光の右端）+ 左にはみ出す楕円
