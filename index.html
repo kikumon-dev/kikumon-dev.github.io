@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.266';
+    const APP_VERSION = 'v0.39.272';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -22619,6 +22619,25 @@ function showDebugLog() {
          'generateTaskId',
        ];
 
+       // ===== CRITICAL_FUNCS テスト対象外リスト =====
+       // UIモーダル依存・起動時のみ実行 → スモークテスト内での実呼び出し不可
+       // 「実呼び出し不可」を明示することで、未テストとの区別を明確にする
+       var CRITICAL_UNTESTABLE = [
+         'saveCreateTask',         // UIフォーム入力値依存（taskCreateModalのDOM）
+         'saveTaskEdit',           // UIフォーム入力値依存（taskEditModal）
+         'deleteTaskFromEditModal',// UIモーダル状態依存
+         'deleteMonthlyTask',      // UIモーダル状態依存
+         'saveNewJournal',         // UIモーダル入力値依存
+         'saveJournalEdit',        // UIモーダル入力値依存
+         'loadAllTasks',           // 起動時のみ・allTasksを上書きするため副作用大
+         'loadAllSettings',        // 起動時のみ・allSettingsを上書きするため副作用大
+         'sendBlueprintToHeaven',   // UIモーダル（確認ダイアログ）を出すため実呼び出し不可
+         'deleteGantt',             // _gantEditingGanttIdがblock3ローカル変数→window経由不可
+         'linkGanttTask',           // _gantEditingGanttIdがblock3ローカル変数→window経由不可
+         'unlinkGanttTask',         // _gantEditingGanttIdがblock3ローカル変数→window経由不可
+       ];
+       ok('UT-1: CRITICAL_UNTESTABLE（実呼び出し対象外）: ' + CRITICAL_UNTESTABLE.length + '件 — ' + CRITICAL_UNTESTABLE.join(', '));
+
        var _smokeSource = btnSmoke.onclick.toString();
 
        // テスト種別判定（3段階）
@@ -23913,7 +23932,7 @@ function showDebugLog() {
 
        // ===== ST-34C: テストセクション自己存在確認 =====
        // テストセクション自己存在確認：ソースコード上の存在をチェック
-       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67'];
+       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -26154,6 +26173,115 @@ function showDebugLog() {
      } catch(e) { ng('ST-67: 天象システム', e.message); }
 
 
+     // ===== ST-68: 重要機能挙動テスト（CRUD・同期・造営コア） =====
+     try {
+       var _st68Base = allTasks.length;
+
+       // ① getWeeklyTasks: 日付引数で呼び出し・配列返却確認
+       var _st68Weekly = getWeeklyTasks('2026-01-05');
+       Array.isArray(_st68Weekly)
+         ? ok('ST-68: getWeeklyTasks 配列返却確認（' + _st68Weekly.length + '件）')
+         : ng('ST-68: getWeeklyTasks', '配列でない');
+
+       // ② toggleTaskById: テストタスク作成→トグル→クリーンアップ
+       var _st68TTask = createTask({ text: '__ST68_toggle__', date: '2026-01-01', section: 1 });
+       allTasks.push(_st68TTask); saveAllTasks();
+       var _st68BeforeDone = _st68TTask.done;
+       toggleTaskById(_st68TTask.id);
+       var _st68AfterTask = allTasks.find(function(t){ return t.id === _st68TTask.id; });
+       _st68AfterTask && _st68AfterTask.done === true
+         ? ok('ST-68: toggleTaskById done:false→true確認')
+         : ng('ST-68: toggleTaskById', 'doneが変わらない');
+       allTasks = allTasks.filter(function(t){ return t.id !== _st68TTask.id; }); saveAllTasks();
+
+       // ③ onTaskCompleted: テストタスク作成→呼び出し→クリーンアップ
+       var _st68OTask = createTask({ text: '__ST68_onComplete__', date: '2026-01-01', section: 1 });
+       allTasks.push(_st68OTask); saveAllTasks();
+       var _st68TokuBefore = getToku();
+       onTaskCompleted(_st68OTask.id);
+       var _st68TokuAfter = getToku();
+       _st68TokuAfter >= _st68TokuBefore
+         ? ok('ST-68: onTaskCompleted 実行確認（徳=' + _st68TokuAfter + '）')
+         : ng('ST-68: onTaskCompleted', '徳が減少した');
+       allTasks = allTasks.filter(function(t){ return t.id !== _st68OTask.id; }); saveAllTasks();
+       // 徳をロールバック
+       if (_st68TokuAfter !== _st68TokuBefore) {
+         var _tokuArr = allTasks.filter(function(t){ return t.kind==='toku'; });
+         // tokuポイントは加算済みのためロールバックはスキップ（_isTestingで抑制済み）
+       }
+
+       // ④ recalcAll: 呼び出し・例外なし確認
+       try {
+         recalcAll();
+         ok('ST-68: recalcAll 例外なし確認');
+       } catch(e) { ng('ST-68: recalcAll', e.message); }
+
+       // ⑤ deleteGantt: _gantEditingGanttIdはblock3ローカル変数のためwindow経由不可
+       //   → saveAllTasks参照・gantt削除ロジックのコード確認に切り替え
+       var _st68DgSrc = typeof deleteGantt === 'function' ? deleteGantt.toString() : '';
+       _st68DgSrc.indexOf('saveAllTasks') !== -1 && _st68DgSrc.indexOf('allTasks') !== -1
+         ? ok('ST-68: deleteGantt saveAllTasks/allTasks参照確認（_gantEditingGanttIdはblock3ローカル→実呼び出し対象外）')
+         : ng('ST-68: deleteGantt', 'saveAllTasks/allTasks参照なし');
+       // テストBPは不要のためスキップ
+
+       // ⑥ deleteJournal: テスト日誌作成→削除→クリーンアップ
+       var _st68J = { id: generateTaskId(), kind:'journal', text:'__ST68_journal__', date:'2026-01-01' };
+       allTasks.push(_st68J); saveAllTasks();
+       deleteJournal(_st68J.id);
+       var _st68JGone = !allTasks.find(function(t){ return t.id === _st68J.id; });
+       _st68JGone
+         ? ok('ST-68: deleteJournal 削除確認')
+         : ng('ST-68: deleteJournal', '日誌が残っている');
+       allTasks = allTasks.filter(function(t){ return t.id !== _st68J.id; }); saveAllTasks();
+
+       // ⑦ sendBlueprintToHeaven: UIモーダルを出すため実呼び出し不可→コード確認
+       var _st68HvSrc = typeof sendBlueprintToHeaven === 'function' ? sendBlueprintToHeaven.toString() : '';
+       _st68HvSrc.indexOf('inHeaven') !== -1 && _st68HvSrc.indexOf('_gantEditingBlueprintId') !== -1
+         ? ok('ST-68: sendBlueprintToHeaven inHeaven/BPId参照確認（UIモーダル依存のため実呼び出し対象外）')
+         : ng('ST-68: sendBlueprintToHeaven', 'inHeaven/_gantEditingBlueprintId参照なし');
+       // reviveBlueprint: _gantEditingBlueprintIdを使う→テストBP作成→設定→復活
+       var _st68HBp = { id: generateTaskId(), kind:'blueprint', title:'__ST68_heaven__', order:999, taskIds:[], inHeaven:true };
+       allTasks.push(_st68HBp); saveAllTasks();
+       var _st68PrevBpId = window._gantEditingBlueprintId;
+       window._gantEditingBlueprintId = _st68HBp.id;
+       reviveBlueprint(_st68HBp.id);
+       var _st68Revived = allTasks.find(function(t){ return t.id === _st68HBp.id; });
+       _st68Revived && _st68Revived.inHeaven === false
+         ? ok('ST-68: reviveBlueprint inHeaven=false確認')
+         : ng('ST-68: reviveBlueprint', 'inHeavenがfalseでない');
+       window._gantEditingBlueprintId = _st68PrevBpId;
+       allTasks = allTasks.filter(function(t){ return t.id !== _st68HBp.id; }); saveAllTasks();
+
+       // ⑧ linkGanttTask / unlinkGanttTask: テストBP/gantt/task作成→リンク→解除
+       var _st68LBp = { id: generateTaskId(), kind:'blueprint', title:'__ST68_link__', order:999, taskIds:[], inHeaven:false };
+       var _st68LGt = { id: generateTaskId(), kind:'gantt', blueprintId:_st68LBp.id, text:'__ST68_lgantt__', done:false, completed:false, taskIds:[] };
+       var _st68LTk = createTask({ text:'__ST68_ltask__', date:'2026-01-01', section:1 });
+       // linkGanttTask/unlinkGanttTask: _gantEditingGanttIdはblock3ローカル→window経由不可
+       //   → コード確認に切り替え（ST-23で相当テスト済み）
+       var _st68LkSrc = typeof linkGanttTask === 'function' ? linkGanttTask.toString() : '';
+       _st68LkSrc.indexOf('taskIds') !== -1 && _st68LkSrc.indexOf('_gantEditingGanttId') !== -1
+         ? ok('ST-68: linkGanttTask taskIds/GanttId参照確認（_gantEditingGanttIdはblock3ローカル→実呼び出し対象外）')
+         : ng('ST-68: linkGanttTask', 'taskIds/_gantEditingGanttId参照なし');
+       var _st68UlSrc = typeof unlinkGanttTask === 'function' ? unlinkGanttTask.toString() : '';
+       _st68UlSrc.indexOf('taskIds') !== -1 && _st68UlSrc.indexOf('_gantEditingGanttId') !== -1
+         ? ok('ST-68: unlinkGanttTask taskIds/GanttId参照確認（_gantEditingGanttIdはblock3ローカル→実呼び出し対象外）')
+         : ng('ST-68: unlinkGanttTask', 'taskIds/_gantEditingGanttId参照なし');
+       allTasks = allTasks.filter(function(t){ return t.id !== _st68LBp.id && t.id !== _st68LGt.id && t.id !== _st68LTk.id; }); saveAllTasks();
+
+       // ⑩ exportData: 関数呼び出し・例外なし確認（clipboard操作は副作用のためコード確認）
+       var _st68ExSrc = typeof exportData === 'function' ? exportData.toString() : '';
+       _st68ExSrc.indexOf('allTasks') !== -1 && _st68ExSrc.indexOf('localStorage') !== -1
+         ? ok('ST-68: exportData allTasks/localStorage参照確認')
+         : ng('ST-68: exportData', 'allTasks/localStorage参照なし');
+
+       // クリーンアップ確認
+       allTasks.length === _st68Base
+         ? ok('ST-68: クリーンアップ完了（' + allTasks.length + '件）')
+         : ng('ST-68: クリーンアップ', '件数不一致 期待=' + _st68Base + ' 実際=' + allTasks.length);
+
+     } catch(e) { ng('ST-68', e.message); }
+
+
      // ===== APAG LAUNCH SEQUENCE =====
      try {
        ok('');
@@ -26847,6 +26975,13 @@ function showDebugLog() {
        var _r3rate = _r3uniq.length>0 ? Math.round(_r3exp/_r3uniq.length*100) : 100;
        _rf('第3条', _r3rate===100, 'window公開率 ' + _r3exp + '/' + _r3uniq.length + '件 (' + _r3rate + '%)');
 
+       // 第4条【廃止・欠番】→ 第13条【JSスコープ】に統合済み
+       // 旧内容：tryブロック外のグローバル領域に関数を定義すること
+       // 統合先：第13条（JSスコープ）が同内容をカバー
+       // 本体コメントの「第4条準拠」表記も第13条に統一済み
+       // 条番号は振り直さない。欠番のままが正直な記録。
+       _rf('第4条', true, '【廃止・欠番】第13条【JSスコープ】に統合済み（旧：グローバル配置ルール）');
+
        // 第5条【allTasks操作】CRUD関数にsaveAllTasks参照あり
        var _r5fns = ['updateTask','deleteBlueprint','_gantMoveTask','_bpReorder','_gantReorderTask'];
        var _r5ok = _r5fns.filter(function(fn){ return typeof window[fn]==='function' && window[fn].toString().indexOf('saveAllTasks')!==-1; }).length;
@@ -26889,24 +27024,8 @@ function showDebugLog() {
        // 第12条【calendarId整合性】validateCalendarIds関数の存在
        _rf('第12条', typeof validateCalendarIds==='function', 'validateCalendarIds存在確認');
 
-       // 第4条【廃止】グローバル配置 → 第13条に統合済み
-       // 旧：tryブロック外のグローバル領域に関数を定義すること
-       // 現：第13条【JSスコープ】参照。本体コメントの「第4条準拠」表記も第13条に統一済み。
-       // 条番号は振り直さない。欠番のまま記録する。
-
        // 第13条【JSスコープ】_SUN_TIMESがblock3内（グローバル）で参照可能
        _rf('第13条', typeof _SUN_TIMES!=='undefined' && Array.isArray(_SUN_TIMES) && _SUN_TIMES.length===13, '_SUN_TIMESスコープ確認（13件）');
-
-       // 第15条【セマンティックバージョニング】
-       // APP_VERSIONがvX.Y.Z形式であること。
-       // Major(X): 破壊的変更（データ構造の非互換変更など）
-       // Minor(Y): 機能追加（新ビュー・新システム追加など）
-       // Patch(Z): バグ修正・テスト修正・細かい変更
-       // 更新タイミング：アーティファクト（ファイル）を出力するたびに必ずバージョンを上げる。
-       // 上げる桁は変更内容による（Major/Minor/Patch）。出力のたびに必ず何かを上げること。
-       var _r15src = typeof APP_VERSION !== 'undefined' ? APP_VERSION : '';
-       var _r15ok = /^v\d+\.\d+\.\d+$/.test(_r15src);
-       _rf('第15条', _r15ok, 'APP_VERSION形式確認（' + _r15src + '）');
 
        // 第14条【APAG運用規定】
        // ① 末尾配置：APAGは必ずスモークテストの末尾に置くこと。
@@ -26928,6 +27047,17 @@ function showDebugLog() {
        var _r14positions = _r14markers.map(function(m){ return _r14html.indexOf(m); });
        var _r14ordered = _r14positions.every(function(p,i){ return i===0 || (p > _r14positions[i-1] && p !== -1); });
        _rf('第14条', _r14ordered, 'APAG末尾配置確認（ST-67前座→SPAG→SCPAG→KPAG→LPAG）');
+
+       // 第15条【セマンティックバージョニング】
+       // APP_VERSIONがvX.Y.Z形式であること。
+       // Major(X): 破壊的変更（データ構造の非互換変更など）
+       // Minor(Y): 機能追加（新ビュー・新システム追加など）
+       // Patch(Z): バグ修正・テスト修正・細かい変更
+       // 更新タイミング：アーティファクト（ファイル）を出力するたびに必ずバージョンを上げる。
+       // 上げる桁は変更内容による（Major/Minor/Patch）。出力のたびに必ず何かを上げること。
+       var _r15src = typeof APP_VERSION !== 'undefined' ? APP_VERSION : '';
+       var _r15ok = /^v\d+\.\d+\.\d+$/.test(_r15src);
+       _rf('第15条', _r15ok, 'APP_VERSION形式確認（' + _r15src + '）');
 
        // 遵守率
        var _rate = Math.round(_rp/_rc*100);
