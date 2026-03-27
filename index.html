@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.282';
+    const APP_VERSION = 'v0.39.287';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -17574,11 +17574,33 @@ function renderDashboardView() {
           _ctx.arc(_cx,_cy,_R,0,Math.PI*2);
         } else if (_il > 0.01) {
           // iOS Safari ctx.ellipse()非対応フォールバック
+          // il=0.5→半円(termX=0), il>0.5→右にふっくら(termX>0), il<0.5→まだ細い(termX<0)
+          // 月の描画（北半球・右側が太陽光）
+          // il=0:新月 il=0.5:半月 il=1:満月
+          // 上弦〜満月(isWax): 右半円 + 左側に楕円がはみ出す
+          //   il=0.5→楕円rx=0(直線) il=0.6→左に少しはみ出す il=1→左にR分はみ出す(満月)
+          // 楕円中心 = _cx - _R*(2*il-1), rx = _R*(2*il-1)
+          // il=0.5: center=_cx, rx=0  il=1: center=_cx-_R, rx=_R
+          var _ew = _R * (2 * _il - 1); // 0〜R (上弦=0, 満月=R)
           if (typeof _ctx.ellipse === 'function') {
-            if (_isWax){ _ctx.arc(_cx,_cy,_R,-Math.PI/2,Math.PI/2,false); var _ex=_cx-_R*(1-_il*2),_rx=Math.max(1,Math.abs(_ex-_cx)); _ctx.ellipse(_ex,_cy,_rx,_R,0,Math.PI/2,-Math.PI/2,true); }
-            else { _ctx.arc(_cx,_cy,_R,Math.PI/2,-Math.PI/2,false); var _ex2=_cx+_R*(_il*2-1),_rx2=Math.max(1,Math.abs(_ex2-_cx)); _ctx.ellipse(_ex2,_cy,_rx2,_R,0,-Math.PI/2,Math.PI/2,true); }
+            if (_isWax) {
+              // 右半円（光の右端）+ 左にはみ出す楕円
+              _ctx.arc(_cx,_cy,_R,-Math.PI/2,Math.PI/2,false);
+              if (_ew < 1) {
+                _ctx.lineTo(_cx,_cy-_R); // 半月：直線で閉じる
+              } else {
+                _ctx.ellipse(_cx-_ew,_cy,_ew,_R,0,Math.PI/2,-Math.PI/2,false);
+              }
+            } else {
+              // 左半円（光の左端）+ 右にはみ出す楕円
+              _ctx.arc(_cx,_cy,_R,Math.PI/2,-Math.PI/2,false);
+              if (_ew < 1) {
+                _ctx.lineTo(_cx,_cy+_R);
+              } else {
+                _ctx.ellipse(_cx+_ew,_cy,_ew,_R,0,-Math.PI/2,Math.PI/2,false);
+              }
+            }
           } else {
-            // ellipse未対応：半円で代替表示
             if (_isWax){ _ctx.arc(_cx,_cy,_R,-Math.PI/2,Math.PI/2,false); _ctx.lineTo(_cx,_cy-_R); }
             else { _ctx.arc(_cx,_cy,_R,Math.PI/2,-Math.PI/2,false); _ctx.lineTo(_cx,_cy+_R); }
           }
