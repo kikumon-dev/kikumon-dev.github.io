@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.290';
+    const APP_VERSION = 'v0.39.294';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -17574,35 +17574,38 @@ function renderDashboardView() {
         _ctx.fillStyle='rgba(4,4,14,0.97)'; _ctx.fillRect(_cx-_R,_cy-_R,_R*2,_R*2);
         _ctx.fillStyle=_mg; _ctx.beginPath();
         if (_il >= 0.99) {
+          // 満月：真円
           _ctx.arc(_cx,_cy,_R,0,Math.PI*2);
         } else if (_il > 0.01) {
-          // iOS Safari ctx.ellipse()非対応フォールバック
-          // il=0.5→半円(termX=0), il>0.5→右にふっくら(termX>0), il<0.5→まだ細い(termX<0)
-          // 月の描画（北半球・右側が太陽光）
-          // il=0:新月 il=0.5:半月 il=1:満月
-          // 上弦〜満月(isWax): 右半円 + 左側に楕円がはみ出す
-          //   il=0.5→楕円rx=0(直線) il=0.6→左に少しはみ出す il=1→左にR分はみ出す(満月)
-          // 楕円中心 = _cx - _R*(2*il-1), rx = _R*(2*il-1)
-          // il=0.5: center=_cx, rx=0  il=1: center=_cx-_R, rx=_R
-          // _ew: il=0.5→0, il=0.6→R*0.4, il=1→R*2(満月は別処理)
-          // 係数2倍にしてふくらみを強調
-          var _ew = _R * Math.min(1, (2 * _il - 1) * 1.5);
+          // 月の描画：右側が光源（北半球）
+          // il=0.5→半月, il>0.5→左にふっくら, il<0.5→右側細い三日月
+          // _ew: il=0.5→0, il=1→R（線形）にさらに1.5倍補正（ただし0〜R内）
+          // il<0.5の場合は楕円が内側に入り込んで三日月を形成
+          var _ewRaw = _R * (2 * _il - 1); // -R〜+R
+          var _ew = Math.abs(_ewRaw) * 1.2; // 係数1.2
+          if (_ew > _R) _ew = _R;
+          var _convex = _ewRaw >= 0; // true=ふっくら側, false=三日月凹み側
+
           if (typeof _ctx.ellipse === 'function') {
             if (_isWax) {
-              // 右半円（光の右端）+ 左にはみ出す楕円
-              _ctx.arc(_cx,_cy,_R,-Math.PI/2,Math.PI/2,false);
+              _ctx.arc(_cx,_cy,_R,-Math.PI/2,Math.PI/2,false); // 右半円
               if (_ew < 1) {
-                _ctx.lineTo(_cx,_cy-_R); // 半月：直線で閉じる
-              } else {
+                _ctx.lineTo(_cx,_cy-_R); // ちょうど半月
+              } else if (_convex) {
+                // il>0.5: 左にはみ出す（反時計回り）
                 _ctx.ellipse(_cx-_ew,_cy,_ew,_R,0,Math.PI/2,-Math.PI/2,false);
+              } else {
+                // il<0.5: 右側が凹む三日月（時計回り）
+                _ctx.ellipse(_cx+_ew,_cy,_ew,_R,0,Math.PI/2,-Math.PI/2,true);
               }
             } else {
-              // 左半円（光の左端）+ 右にはみ出す楕円
-              _ctx.arc(_cx,_cy,_R,Math.PI/2,-Math.PI/2,false);
+              _ctx.arc(_cx,_cy,_R,Math.PI/2,-Math.PI/2,false); // 左半円
               if (_ew < 1) {
                 _ctx.lineTo(_cx,_cy+_R);
-              } else {
+              } else if (_convex) {
                 _ctx.ellipse(_cx+_ew,_cy,_ew,_R,0,-Math.PI/2,Math.PI/2,false);
+              } else {
+                _ctx.ellipse(_cx-_ew,_cy,_ew,_R,0,-Math.PI/2,Math.PI/2,true);
               }
             }
           } else {
