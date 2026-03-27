@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.278';
+    const APP_VERSION = 'v0.39.279';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -4072,17 +4072,14 @@
             <div id="dbDusk" style="font-size:1em;font-weight:700;">--</div>
           </div>
         </div>
-        <!-- 月齢 -->
-        <div style="background:#1a1a2e;border-radius:8px;padding:12px;border:1px solid #333;margin-bottom:12px;">
-          <div style="font-size:0.65em;color:#888;margin-bottom:6px;">月齢（国立天文台テーブル）</div>
-          <div style="display:flex;align-items:center;gap:14px;">
-            <canvas id="dbMoonCanvas" width="72" height="72" style="flex-shrink:0;"></canvas>
-            <div>
-              <div id="dbMoonAge" style="font-size:1.05em;font-weight:800;">--</div>
-              <div id="dbMoonPhase" style="font-size:0.78em;color:#a78bfa;margin-top:4px;">--</div>
-              <div style="font-size:0.65em;color:#555;margin-top:4px;">直近新月: <span id="dbLastNewMoon">--</span></div>
-            </div>
-          </div>
+        <!-- 月齢カード（格上げ版） -->
+        <div style="background:linear-gradient(180deg,#0d0d1f 0%,#1a1a35 100%);border:1px solid #2a2a4a;border-radius:12px;padding:16px 12px;margin-bottom:12px;text-align:center;position:relative;overflow:hidden;">
+          <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(167,139,250,0.06),transparent 70%);pointer-events:none;"></div>
+          <div style="font-size:0.62em;color:#7766aa;letter-spacing:0.12em;margin-bottom:8px;text-transform:uppercase;">🌙 月齢 — 国立天文台</div>
+          <canvas id="dbMoonCanvas" width="160" height="160" style="display:block;margin:0 auto 10px;border-radius:50%;"></canvas>
+          <div id="dbMoonAge" style="font-size:2.6em;font-weight:900;color:#ffd700;letter-spacing:0.04em;line-height:1;margin-bottom:4px;">--</div>
+          <div id="dbMoonPhase" style="font-size:1.0em;color:#c4b5fd;font-weight:700;margin-bottom:6px;letter-spacing:0.06em;">--</div>
+          <div style="font-size:0.65em;color:#4a4a6a;">直近新月: <span id="dbLastNewMoon">--</span></div>
         </div>
         <!-- 年間テーブル -->
         <div style="font-size:0.65em;color:#888;margin-bottom:6px;">年間テーブル（各月15日）</div>
@@ -17533,8 +17530,19 @@ function renderDashboardView() {
     // 月Canvas
     var _cv = document.getElementById('dbMoonCanvas');
     if (_cv) {
-      var _ctx=_cv.getContext('2d'),_cx=36,_cy=36,_R=30;
-      _ctx.clearRect(0,0,72,72);
+      _cv.width=160; _cv.height=160;
+      var _ctx=_cv.getContext('2d'),_cx=80,_cy=80,_R=66;
+      _ctx.clearRect(0,0,160,160);
+      // 背景：深夜の空
+      var _bgG=_ctx.createRadialGradient(80,80,0,80,80,80);
+      _bgG.addColorStop(0,'#0d0d1f'); _bgG.addColorStop(1,'#06060f');
+      _ctx.fillStyle=_bgG; _ctx.fillRect(0,0,160,160);
+      // 星
+      [[20,18,0.9],[140,25,0.7],[45,60,0.6],[130,55,1.0],[15,90,0.8],[150,80,0.6],[35,140,0.7],[145,130,0.9],[75,15,0.8],[110,145,0.7]].forEach(function(s){
+        _ctx.beginPath(); _ctx.arc(s[0],s[1],s[2],0,Math.PI*2);
+        _ctx.fillStyle='rgba(255,248,220,0.7)'; _ctx.fill();
+      });
+      // 月の暗面ベース
       _ctx.fillStyle='#04040e'; _ctx.beginPath(); _ctx.arc(_cx,_cy,_R,0,Math.PI*2); _ctx.fill();
       // Meeus式輝面比計算 + try-catchでCanvas保護（iOS Safari対応）
       try {
@@ -17572,6 +17580,13 @@ function renderDashboardView() {
         }
         _ctx.fill(); _ctx.restore();
       } catch(e) { /* Canvas描画エラー：テキスト表示には影響しない */ }
+      // 月暈（ハロ）
+      var _halo=_ctx.createRadialGradient(_cx,_cy,_R,_cx,_cy,_R+20);
+      _halo.addColorStop(0,'rgba(200,170,80,0.12)'); _halo.addColorStop(1,'rgba(200,170,80,0)');
+      _ctx.beginPath(); _ctx.arc(_cx,_cy,_R+20,0,Math.PI*2); _ctx.fillStyle=_halo; _ctx.fill();
+      // 縁光
+      _ctx.beginPath(); _ctx.arc(_cx,_cy,_R,0,Math.PI*2);
+      _ctx.strokeStyle='rgba(255,210,60,0.22)'; _ctx.lineWidth=1.5; _ctx.stroke();
     }
     // 年間テーブル（初回のみ）
     var _tb = document.getElementById('dbSunTable');
