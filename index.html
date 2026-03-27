@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.265';
+    const APP_VERSION = 'v0.39.266';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -22620,37 +22620,47 @@ function showDebugLog() {
        ];
 
        var _smokeSource = btnSmoke.onclick.toString();
-       function _isTested(f) {
-         var pat1 = 'typeof window.' + f;
-         var pat2 = 'typeof ' + f + ' ';
-         var pat3 = 'window.' + f + '(';
-         var pat4 = f + '(';
-         return _smokeSource.indexOf(pat1) !== -1 ||
-                _smokeSource.indexOf(pat2) !== -1 ||
-                _smokeSource.indexOf(pat3) !== -1 ||
-                (f.length > 5 && _smokeSource.indexOf(pat4) !== -1);
+
+       // テスト種別判定（3段階）
+       // 🟢 実呼び出し: 関数を実際に実行してテスト（最も信頼性が高い）
+       // 🔵 typeof確認: 存在確認のみ（関数は実行していない）
+       // ⚪ 未テスト  : スモークテスト内に痕跡なし
+       // ※「コード確認」（ソース文字列にfn名が出現）は「実呼び出し」に含めない
+       function _testLevel(f) {
+         // 実呼び出し: fn( または window.fn( のパターン（関数名の直前が非識別子文字）
+         var reCall = new RegExp('(?<![a-zA-Z0-9_])' + f.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '\\s*\\(');
+         if (reCall.test(_smokeSource)) return 2; // 実呼び出し
+         // typeof確認
+         if (_smokeSource.indexOf('typeof window.' + f) !== -1 ||
+             _smokeSource.indexOf('typeof ' + f + ' ') !== -1 ||
+             _smokeSource.indexOf('typeof ' + f + '!') !== -1) return 1; // typeof確認
+         return 0; // 未テスト
        }
 
        // 重要機能リスト吐き出し
        ok('UT-1: 重要機能リスト(CRITICAL_FUNCS): ' + CRITICAL_FUNCS.length + '件 — ' + CRITICAL_FUNCS.join(', '));
 
-       // 重要機能カバレッジ
-       var _critTested   = CRITICAL_FUNCS.filter(_isTested);
-       var _critUntested = CRITICAL_FUNCS.filter(function(f){ return !_isTested(f); });
-       var _critRate     = Math.round(_critTested.length / CRITICAL_FUNCS.length * 100);
-       ok('UT-1: 重要機能カバレッジ: ' + _critTested.length + '/' + CRITICAL_FUNCS.length + '件 (' + _critRate + '%)');
+       // 重要機能カバレッジ（3段階）
+       var _critCalled   = CRITICAL_FUNCS.filter(function(f){ return _testLevel(f) === 2; });
+       var _critTypeof   = CRITICAL_FUNCS.filter(function(f){ return _testLevel(f) === 1; });
+       var _critUntested = CRITICAL_FUNCS.filter(function(f){ return _testLevel(f) === 0; });
+       var _critRate     = Math.round(_critCalled.length / CRITICAL_FUNCS.length * 100);
+       ok('UT-1: 重要機能カバレッジ（実呼び出し）: ' + _critCalled.length + '/' + CRITICAL_FUNCS.length + '件 (' + _critRate + '%) 🟢');
+       if (_critTypeof.length > 0) {
+         ok('UT-1: 重要機能（typeof確認のみ）: ' + _critTypeof.length + '件 — ' + _critTypeof.join(', ') + ' 🔵');
+       }
        if (_critUntested.length > 0) {
-         ok('UT-1: 重要機能・未テスト: ' + _critUntested.length + '件 — ' + _critUntested.join(', '));
+         ok('UT-1: 重要機能・未テスト: ' + _critUntested.length + '件 — ' + _critUntested.join(', ') + ' ⚪');
        } else {
-         ok('UT-1: 重要機能・未テスト: 0件 — 全件カバー済み ✅');
+         ok('UT-1: 重要機能・未テスト: 0件 ✅');
        }
 
-       // 全体カバレッジ
-       var _allTested   = coreFuncs.filter(_isTested);
-       var _allUntested = coreFuncs.filter(function(f){ return !_isTested(f); });
-       var _allRate     = Math.round(_allTested.length / coreFuncs.length * 100);
-       ok('UT-1: 全体カバレッジ: ' + _allTested.length + '/' + coreFuncs.length + '件 (' + _allRate + '%)');
-       ok('UT-1: 全体・未テスト: ' + _allUntested.length + '件 — ' + _allUntested.join(', '));
+       // 全体カバレッジ（実呼び出しのみ）
+       var _allCalled   = coreFuncs.filter(function(f){ return _testLevel(f) === 2; });
+       var _allUntested = coreFuncs.filter(function(f){ return _testLevel(f) === 0; });
+       var _allRate     = Math.round(_allCalled.length / coreFuncs.length * 100);
+       ok('UT-1: 全体カバレッジ（実呼び出し）: ' + _allCalled.length + '/' + coreFuncs.length + '件 (' + _allRate + '%) 🟢');
+       ok('UT-1: 全体・未テスト: ' + _allUntested.length + '件 — ' + _allUntested.join(', ') + ' ⚪');
      })();
 
      // ===== UT-2: 機能実在確認 =====
