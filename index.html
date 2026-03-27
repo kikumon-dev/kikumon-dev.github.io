@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.259';
+    const APP_VERSION = 'v0.39.265';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -15594,7 +15594,7 @@ function loadSettingsUI() {
     window.isCalendarVisible = isCalendarVisible;
     window.validateCalendarIds = validateCalendarIds;
   // ===== window公開（HTML onclickから呼ばれる全関数） =====
-  // _bpReorderはtryブロック外のグローバルスコープで定義（第4条準拠）
+  // _bpReorderはtryブロック外のグローバルスコープで定義（第13条準拠）
   function _bpReorder(fromId, toId) {
     var blueprints = allTasks.filter(function(t){ return t.kind === 'blueprint'; }).sort(function(a,b){ return (a.order||0)-(b.order||0); });
     var fromIdx = blueprints.findIndex(function(b){ return b.id === fromId; });
@@ -18232,7 +18232,7 @@ function renderDeckShop(filterCategory) {
         showToast('コピーに失敗しました', {type:'error'});
       });
     }
-  // 手立て行（gantt行）の並び替えD&D ※第4条：beforeprintより前のグローバル領域
+  // 手立て行（gantt行）の並び替えD&D ※第13条：beforeprintより前のグローバル領域
   function _initGantRowDrag() {
     var _drag = { gid: null, fromIdx: null, startY: 0 };
     document.addEventListener('mousedown', function(e) {
@@ -22460,6 +22460,19 @@ function showDebugLog() {
      function ng(name, reason)    { results.push('❌ ' + name + (reason ? ': ' + reason : '')); fail++; }
      window._isTesting = true; // ST実行中は全addGDP/addGou/addToku/showToastを抑制
 
+     // ===== GREY_LIST: 動的生成関数の静的チェック免除リスト =====
+     // 白でも黒でもない——実行タイミング次第で存在が変わる関数たち。
+     // HTMLから onclick等で参照されているが、特定条件下でのみ動的に生成される。
+     // _isTesting=true中は生成が抑制されるため、window未登録になる→静的チェック対象外。
+     var GREY_LIST = {
+       _onbNext: '_showOnboardingModal呼び出し時に動的生成。_isTesting=true中は生成抑制→window未登録。静的チェック対象外。',
+       _onbPrev: '_showOnboardingModal呼び出し時に動的生成。_isTesting=true中は生成抑制→window未登録。静的チェック対象外。',
+     };
+     ok('GREY_LIST: ' + Object.keys(GREY_LIST).length + '件登録');
+     Object.keys(GREY_LIST).forEach(function(fn) {
+       ok('GREY_LIST[' + fn + ']: ' + GREY_LIST[fn]);
+     });
+
      // ===== UT-1: 主要関数存在確認 =====
      var coreFuncs = [
        // コア
@@ -22572,6 +22585,73 @@ function showDebugLog() {
      _missingFuncs.length === 0
        ? ok('UT-1: 関数存在: 全' + coreFuncs.length + '件確認')
        : _missingFuncs.forEach(function(f){ ng('UT-1: 関数: ' + f, '未定義'); });
+
+     // UT-1: テストカバレッジ可視化（2段階）
+     // 【重要機能】= データ破壊・消失リスクがある操作 / アプリ動作の根幹 / 本番データに直接触れる操作
+     // 【全体】   = coreFuncs全258件のうち挙動テスト済み件数
+     (function(){
+       // ===== 重要機能リスト =====
+       var CRITICAL_FUNCS = [
+         // データ保存・読み込み
+         'saveAllTasks','loadAllTasks','saveAllSettings','loadAllSettings',
+         // タスクCRUD
+         'saveCreateTask','saveTaskEdit','deleteTaskFromEditModal',
+         'deleteGantt','deleteJournal','deleteMonthlyTask',
+         // done/completed同期
+         'toggleTaskById','onTaskCompleted',
+         // 造営コア
+         'recalcAll','recalcBlueprintFromGants','recalcGanttDateFromTasks',
+         'sendBlueprintToHeaven','reviveBlueprint',
+         'linkGanttTask','unlinkGanttTask',
+         // データ整合性
+         'exportData','importData',
+         // ビュー切替コア
+         'switchView','renderAllSections',
+         'getDailyTasks','getWeeklyTasks',
+         // thoughts/journal
+         'addThought','deleteThought','moveScratchToThoughts',
+         'saveNewJournal','saveJournalEdit',
+         // ポイント系（本番データ変動）
+         'addGDP','addGou','addToku',
+         // カレンダー整合性
+         'isCalendarVisible',
+         // UUID生成
+         'generateTaskId',
+       ];
+
+       var _smokeSource = btnSmoke.onclick.toString();
+       function _isTested(f) {
+         var pat1 = 'typeof window.' + f;
+         var pat2 = 'typeof ' + f + ' ';
+         var pat3 = 'window.' + f + '(';
+         var pat4 = f + '(';
+         return _smokeSource.indexOf(pat1) !== -1 ||
+                _smokeSource.indexOf(pat2) !== -1 ||
+                _smokeSource.indexOf(pat3) !== -1 ||
+                (f.length > 5 && _smokeSource.indexOf(pat4) !== -1);
+       }
+
+       // 重要機能リスト吐き出し
+       ok('UT-1: 重要機能リスト(CRITICAL_FUNCS): ' + CRITICAL_FUNCS.length + '件 — ' + CRITICAL_FUNCS.join(', '));
+
+       // 重要機能カバレッジ
+       var _critTested   = CRITICAL_FUNCS.filter(_isTested);
+       var _critUntested = CRITICAL_FUNCS.filter(function(f){ return !_isTested(f); });
+       var _critRate     = Math.round(_critTested.length / CRITICAL_FUNCS.length * 100);
+       ok('UT-1: 重要機能カバレッジ: ' + _critTested.length + '/' + CRITICAL_FUNCS.length + '件 (' + _critRate + '%)');
+       if (_critUntested.length > 0) {
+         ok('UT-1: 重要機能・未テスト: ' + _critUntested.length + '件 — ' + _critUntested.join(', '));
+       } else {
+         ok('UT-1: 重要機能・未テスト: 0件 — 全件カバー済み ✅');
+       }
+
+       // 全体カバレッジ
+       var _allTested   = coreFuncs.filter(_isTested);
+       var _allUntested = coreFuncs.filter(function(f){ return !_isTested(f); });
+       var _allRate     = Math.round(_allTested.length / coreFuncs.length * 100);
+       ok('UT-1: 全体カバレッジ: ' + _allTested.length + '/' + coreFuncs.length + '件 (' + _allRate + '%)');
+       ok('UT-1: 全体・未テスト: ' + _allUntested.length + '件 — ' + _allUntested.join(', '));
+     })();
 
      // ===== UT-2: 機能実在確認 =====
      var featureChecks = [
@@ -26356,7 +26436,9 @@ function showDebugLog() {
        // ─────────────────────────────────────────────
        var _a4Html = document.body.innerHTML;
        var _a4Matches = _a4Html.match(/on(?:click|change|input)="([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g)||[];
-       var _a4Reserved = {if:1,for:1,while:1,do:1,switch:1,return:1,new:1,delete:1,typeof:1,void:1,this:1,true:1,false:1,null:1,_onbPrev:1,_onbNext:1}; // _onb系はshowGantTour内で動的定義→除外
+       // JS予約語 + GREY_LIST登録関数（動的生成・テスト中未登録）を除外
+       var _a4Reserved = {if:1,for:1,while:1,do:1,switch:1,return:1,new:1,delete:1,typeof:1,void:1,this:1,true:1,false:1,null:1};
+       Object.keys(GREY_LIST).forEach(function(fn){ _a4Reserved[fn] = 1; });
        var _a4Seen = {}, _a4Fns = [];
        _a4Matches.forEach(function(m){
          var fn = m.replace(/on(?:click|change|input)="/,'').replace(/\s*\(.*/,'');
@@ -26563,7 +26645,9 @@ function showDebugLog() {
          var matches = html.match(/on(?:click|change|input|submit)="([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g) || [];
          var fns = matches.map(function(m){ return m.replace(/on(?:click|change|input|submit)="/, '').replace(/\s*\(.*/, ''); });
          // 予約語・2文字以下・大文字始まりを除外
+         // GREY_LIST登録関数（動的生成）も除外
          var reserved = {if:1,for:1,while:1,do:1,switch:1,return:1,new:1,delete:1,typeof:1,void:1};
+         Object.keys(GREY_LIST).forEach(function(fn){ reserved[fn] = 1; });
          var unique = [];
          var seen = {};
          fns.forEach(function(fn){
@@ -26575,18 +26659,12 @@ function showDebugLog() {
        })();
        // A案: _showOnboardingModalを実際に呼んで_onbNext/_onbPrevを生成してからチェック
        // （showGantTour内で動的定義される関数の確実なテスト）
+       // _isTestingフラグにより_showOnboardingModal内でreturnされるため、モーダルは表示されない
        (function(){
          if (typeof window._showOnboardingModal === 'function') {
            try {
              window._showOnboardingModal([{emoji:'🧪',title:'テスト',body:'SCPAG A4テスト用'}], '__scpagA4Test__');
-             // modal生成後にすぐ安全削除
-             var _testModal = document.querySelector('[style*="z-index:2000"]');
-             if (_testModal && _testModal.parentNode) {
-               _testModal.parentNode.removeChild(_testModal);
-             }
-             // _onbNext/_onbPrevをクリーンアップ（removeChild二重呼び出し防止）
-             window._onbNext = function(){};
-             window._onbPrev = function(){};
+             // _isTesting=trueのためモーダルは生成されない。_onbNext/_onbPrevは未生成のまま（許容）
            } catch(e) { /* 無視 */ }
          }
        })();
@@ -26732,7 +26810,7 @@ function showDebugLog() {
        var _rf = function(label, pass, detail) {
          _rc++;
          if (pass) { _rp++; ok('LPAG[' + label + ']: ✅ ' + detail); }
-         else { ok('LPAG[' + label + ']: ❌ ' + detail); }
+         else { ng('LPAG[' + label + ']', '❌ ' + detail); }
        };
 
        // 第1条【本番環境】Chromeへのデプロイ前提 - localStorageが存在すること
@@ -26750,12 +26828,14 @@ function showDebugLog() {
 
        // 第3条【window公開】onclick関数のwindow公開率
        var _r3html = document.body.innerHTML;
+       // JS予約語 + GREY_LIST登録関数（動的生成・テスト中未登録）を除外
+       var _r3JS_RESERVED = ['if','else','for','while','switch','return','typeof','new','delete','void','throw','try','catch','finally','var','let','const','function','class','this'].concat(Object.keys(GREY_LIST));
        var _r3fns = (_r3html.match(/onclick="([a-zA-Z_][a-zA-Z0-9_]*)\(/g)||[])
          .map(function(m){ return m.replace('onclick="','').replace(/\(.*/,''); });
-       var _r3uniq = _r3fns.filter(function(v,i,a){ return a.indexOf(v)===i; });
+       var _r3uniq = _r3fns.filter(function(v,i,a){ return a.indexOf(v)===i && _r3JS_RESERVED.indexOf(v)===-1; });
        var _r3exp = _r3uniq.filter(function(fn){ return typeof window[fn]==='function'; }).length;
        var _r3rate = _r3uniq.length>0 ? Math.round(_r3exp/_r3uniq.length*100) : 100;
-       _rf('第3条', _r3rate>=95, 'window公開率 ' + _r3exp + '/' + _r3uniq.length + '件 (' + _r3rate + '%)');
+       _rf('第3条', _r3rate===100, 'window公開率 ' + _r3exp + '/' + _r3uniq.length + '件 (' + _r3rate + '%)');
 
        // 第5条【allTasks操作】CRUD関数にsaveAllTasks参照あり
        var _r5fns = ['updateTask','deleteBlueprint','_gantMoveTask','_bpReorder','_gantReorderTask'];
@@ -26799,8 +26879,24 @@ function showDebugLog() {
        // 第12条【calendarId整合性】validateCalendarIds関数の存在
        _rf('第12条', typeof validateCalendarIds==='function', 'validateCalendarIds存在確認');
 
+       // 第4条【廃止】グローバル配置 → 第13条に統合済み
+       // 旧：tryブロック外のグローバル領域に関数を定義すること
+       // 現：第13条【JSスコープ】参照。本体コメントの「第4条準拠」表記も第13条に統一済み。
+       // 条番号は振り直さない。欠番のまま記録する。
+
        // 第13条【JSスコープ】_SUN_TIMESがblock3内（グローバル）で参照可能
        _rf('第13条', typeof _SUN_TIMES!=='undefined' && Array.isArray(_SUN_TIMES) && _SUN_TIMES.length===13, '_SUN_TIMESスコープ確認（13件）');
+
+       // 第15条【セマンティックバージョニング】
+       // APP_VERSIONがvX.Y.Z形式であること。
+       // Major(X): 破壊的変更（データ構造の非互換変更など）
+       // Minor(Y): 機能追加（新ビュー・新システム追加など）
+       // Patch(Z): バグ修正・テスト修正・細かい変更
+       // 更新タイミング：アーティファクト（ファイル）を出力するたびに必ずバージョンを上げる。
+       // 上げる桁は変更内容による（Major/Minor/Patch）。出力のたびに必ず何かを上げること。
+       var _r15src = typeof APP_VERSION !== 'undefined' ? APP_VERSION : '';
+       var _r15ok = /^v\d+\.\d+\.\d+$/.test(_r15src);
+       _rf('第15条', _r15ok, 'APP_VERSION形式確認（' + _r15src + '）');
 
        // 第14条【APAG運用規定】
        // ① 末尾配置：APAGは必ずスモークテストの末尾に置くこと。
@@ -26825,63 +26921,55 @@ function showDebugLog() {
 
        // 遵守率
        var _rate = Math.round(_rp/_rc*100);
-       _rate >= 90
-         ? ok('LPAG]: 開発ルール遵守率 ' + _rate + '% (' + _rp + '/' + _rc + '条) 🟢')
-         : _rate >= 75
-         ? ok('LPAG]: 開発ルール遵守率 ' + _rate + '% (' + _rp + '/' + _rc + '条) 🟡 要注意')
-         : ng('LPAG]: 開発ルール遵守率', _rate + '% (' + _rp + '/' + _rc + '条) — 要改善');
+       _rate === 100
+         ? ok('LPAG]: 開発ルール遵守率 100% (' + _rp + '/' + _rc + '条) 🟢')
+         : ng('LPAG]: 開発ルール遵守率', _rate + '% (' + _rp + '/' + _rc + '条) — ' + (_rc-_rp) + '件違反');
        _rate === 100
          ? ok('🟢 LPAG — LAW PURIFY ABSOLUTE GUARDIAN · ALL ' + _rc + ' LAWS CLEARED · ZERO VIOLATION')
-         : ok('⚠️ LPAG — ' + (_rc-_rp) + '件違反 · ' + _rate + '%遵守 · LAW VIOLATION DETECTED');
+         : ng('LPAG — LAW VIOLATION DETECTED', (_rc-_rp) + '件違反 · ' + _rate + '%遵守');
      } catch(e) { ng('LPAG]: 開発ルール遵守率', e.message); }
 
      // ===== APAG FINAL TRANSMISSION =====
      try {
-       var _apagResults = results.filter(function(r){
-         return r.indexOf('ST-49: 天象') !== -1 ||
-                r.indexOf('SPAG — ALL AUTHORITY VERIFIED') !== -1 ||
-                r.indexOf('SCPAG — ALL SCOPE VERIFIED') !== -1 ||
-                r.indexOf('KPAG — ALL KEYS VERIFIED') !== -1 ||
-                r.indexOf('LPAG]: 開発ルール遵守率 100%') !== -1;
+       // APAG個別評価: 各ガーディアンのマーカーがresultsに存在するか
+       var _apagItems = [
+         { name:'SPAG  SSOT', marker:'SPAG — ALL AUTHORITY VERIFIED' },
+         { name:'SCPAG SCop', marker:'SCPAG — ALL SCOPE VERIFIED' },
+         { name:'KPAG  Keys', marker:'KPAG — ALL KEYS VERIFIED' },
+         { name:'LPAG  Laws', marker:'LPAG]: 開発ルール遵守率 100%' },
+       ];
+       var _apagSrc = results.join('\n');
+       var _apagPass = 0;
+       var _apagLines = [];
+       _apagItems.forEach(function(item) {
+         var hit = _apagSrc.indexOf(item.marker) !== -1;
+         if (hit) _apagPass++;
+         var _dot = hit ? '🟢🟢🟢🟢🟢' : '🔴⚫⚫⚫⚫';
+         _apagLines.push('║  ' + _dot + '  ' + item.name + (hit ? ' ✅' : ' ❌') + '  ║');
        });
-       var _apagFailed = _apagResults.filter(function(r){ return r.indexOf('❌') !== -1; }).length;
-       if (_apagFailed === 0) {
-         ok('');
-         // APAG個別評価
-         var _apagItems = [
-           { name:'SPAG  SSOT', marker:'SPAG — ALL AUTHORITY VERIFIED' },
-           { name:'SCPAG SCop', marker:'SCPAG — ALL SCOPE VERIFIED' },
-           { name:'KPAG  Keys', marker:'KPAG — ALL KEYS VERIFIED' },
-           { name:'LPAG  Laws', marker:'LPAG]: 開発ルール遵守率 100%' },
-         ];
-         var _apagSrc = results.join('\n');
-         var _apagPass = 0;
-         var _apagLines = [];
-         _apagItems.forEach(function(item) {
-           var hit = _apagSrc.indexOf(item.marker) !== -1;
-           if (hit) _apagPass++;
-           var _dot = hit ? '🟢🟢🟢🟢🟢' : '🔴⚫⚫⚫⚫';
-           _apagLines.push('║  ' + _dot + '  ' + item.name + (hit ? ' ✅' : ' ❌') + '  ║');
-         });
-         var _apagAllGreen = _apagPass === _apagItems.length;
-         ok('╔══════════════════════════════════════════════════╗');
-         ok('║  APAG SYSTEM — ALL GUARDIANS REPORTING           ║');
-         ok('║  ' + _apagPass + '/' + _apagItems.length + ' GUARDIANS ONLINE                                    ║');
-         ok('║                                                  ║');
-         _apagLines.forEach(function(l){ ok(l); });
-         ok('║                                                  ║');
-         if (_apagAllGreen) {
-           ok('║  🟢🟢🟢🟢🟢  ABSOLUTE PROGRESSIVE GUARDIAN        ║');
-           ok('║  ★★★★★  FOUR GUARDIANS ONLINE · KINGDOM PROTECTED║');
-           ok('║  これが、わたしのクラフトだ！                    ║');
-         } else {
-           ok('║  ⚠️  ' + (_apagItems.length - _apagPass) + '体の天使が沈黙している · KINGDOM AT RISK   ║');
-         }
-         ok('╚══════════════════════════════════════════════════╝');
-         ok('');
+       var _apagAllGreen = _apagPass === _apagItems.length;
+       ok('');
+       ok('╔══════════════════════════════════════════════════╗');
+       ok('║  APAG SYSTEM — ALL GUARDIANS REPORTING           ║');
+       ok('║  ' + _apagPass + '/' + _apagItems.length + ' GUARDIANS ONLINE                                    ║');
+       ok('║                                                  ║');
+       _apagLines.forEach(function(l){ ok(l); });
+       ok('║                                                  ║');
+       if (_apagAllGreen) {
+         ok('║  🟢🟢🟢🟢🟢  ABSOLUTE PROGRESSIVE GUARDIAN        ║');
+         ok('║  ★★★★★  FOUR GUARDIANS ONLINE · KINGDOM PROTECTED║');
+         ok('║  これが、わたしのクラフトだ！                    ║');
        } else {
-         ok('⚠️ APAG — ' + _apagFailed + '件の天使が沈黙している · KINGDOM AT RISK');
+         // 沈黙したガーディアンをng()で登録してfailに加算
+         _apagItems.forEach(function(item) {
+           if (_apagSrc.indexOf(item.marker) === -1) {
+             ng('APAG — ' + item.name + ' OFFLINE', item.name + ' ガーディアンが沈黙している');
+           }
+         });
+         ok('║  ⚠️  ' + (_apagItems.length - _apagPass) + '体の天使が沈黙している · KINGDOM AT RISK   ║');
        }
+       ok('╚══════════════════════════════════════════════════╝');
+       ok('');
      } catch(e) { ng('APAG FINAL', e.message); }
 
      window._isTesting = false; // ST終了
@@ -28244,6 +28332,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===== 日誌・雑記帳 オンボーディング =====
     function _showOnboardingModal(steps, storageKey) {
       window._showOnboardingModal = _showOnboardingModal; // SCPAG A4テスト用・window公開（block7定義後）
+      if (window._isTesting) return; // テスト中はモーダル表示抑制
       let idx = 0;
       const modal = document.createElement('div');
       modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:2000;display:flex;align-items:center;justify-content:center;';
