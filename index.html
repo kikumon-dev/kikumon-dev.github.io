@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.296';
+    const APP_VERSION = 'v0.39.297';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -21826,20 +21826,27 @@ function _ycGoSlide(n) {
 <script>
 function _drawMoonOverlay(age) {
   var h = new Date().getHours();
-  var show = (h >= 19 || h < 7 || (h >= 17 && h < 19));
+  // 日中（8〜16時）は非表示、それ以外は表示
+  var show = !(h >= 8 && h < 17);
   var existing = document.getElementById('_moonOverlay');
   if (existing) existing.remove();
   if (!show) return;
   if (typeof age !== 'number' || isNaN(age) || age < 1.0 || age > 28.5) return;
   var cv = document.getElementById('craftView');
   if (!cv) return;
-  // Canvasで描いてdataURLに変換→imgで表示
   var oc = document.createElement('canvas');
   oc.width = 128; oc.height = 128;
   var ctx = oc.getContext('2d');
   var cx=64, cy=64, R=52;
-  var phase = age/29.530589;
-  var illum = (1-Math.cos(phase*2*Math.PI))/2;
+  // Meeus式輝面比計算（drawCraftMoonと同一ロジック）
+  var D = (age / 29.530589) * 360;
+  var Dr = D * Math.PI / 180;
+  var M  = (age * 12.19075) * Math.PI / 180;
+  var Mm = (age * 13.06440) * Math.PI / 180;
+  var dD = -6.289*Math.sin(Mm)+2.100*Math.sin(M)-1.274*Math.sin(2*Dr-Mm)-0.658*Math.sin(2*Dr)-0.214*Math.sin(2*Mm)-0.110*Math.sin(Dr);
+  var Dc = D + dD;
+  var illum = Math.max(0, Math.min(1, (1 - Math.cos(Dc * Math.PI / 180)) / 2));
+  var isWaxing = (Dc % 360 + 360) % 360 < 180;
   ctx.save();
   ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.clip();
   ctx.fillStyle='rgba(4,4,18,0.97)'; ctx.fillRect(0,0,128,128);
@@ -21849,20 +21856,32 @@ function _drawMoonOverlay(age) {
   g.addColorStop(1,'rgba(184,134,11,0.85)');
   ctx.fillStyle=g;
   ctx.beginPath();
-  if (phase < 0.5) {
-    ctx.arc(cx,cy,R,-Math.PI/2,Math.PI/2,false);
-    var ex=cx-R*(1-illum*2);
-    var rx=Math.max(1,Math.abs(ex-cx));
-    ctx.ellipse(ex,cy,rx,R,0,Math.PI/2,-Math.PI/2,true);
-  } else {
-    ctx.arc(cx,cy,R,Math.PI/2,-Math.PI/2,false);
-    var ex2=cx+R*(illum*2-1);
-    var rx2=Math.max(1,Math.abs(ex2-cx));
-    ctx.ellipse(ex2,cy,rx2,R,0,-Math.PI/2,Math.PI/2,true);
+  if (illum >= 0.99) {
+    ctx.arc(cx,cy,R,0,Math.PI*2);
+  } else if (illum > 0.01) {
+    var _ewRaw = R * (2 * illum - 1);
+    var _ew = Math.abs(_ewRaw) * 1.2;
+    if (_ew > R) _ew = R;
+    var _convex = _ewRaw >= 0;
+    if (typeof ctx.ellipse === 'function') {
+      if (isWaxing) {
+        ctx.arc(cx,cy,R,-Math.PI/2,Math.PI/2,false);
+        if (_ew < 1) { ctx.lineTo(cx,cy-R); }
+        else if (_convex) { ctx.ellipse(cx-_ew,cy,_ew,R,0,Math.PI/2,-Math.PI/2,false); }
+        else { ctx.ellipse(cx+_ew,cy,_ew,R,0,Math.PI/2,-Math.PI/2,true); }
+      } else {
+        ctx.arc(cx,cy,R,Math.PI/2,-Math.PI/2,false);
+        if (_ew < 1) { ctx.lineTo(cx,cy+R); }
+        else if (_convex) { ctx.ellipse(cx+_ew,cy,_ew,R,0,-Math.PI/2,Math.PI/2,false); }
+        else { ctx.ellipse(cx-_ew,cy,_ew,R,0,-Math.PI/2,Math.PI/2,true); }
+      }
+    } else {
+      if (isWaxing) { ctx.arc(cx,cy,R,-Math.PI/2,Math.PI/2,false); ctx.lineTo(cx,cy-R); }
+      else { ctx.arc(cx,cy,R,Math.PI/2,-Math.PI/2,false); ctx.lineTo(cx,cy+R); }
+    }
   }
   ctx.fill();
   ctx.restore();
-  // imgで表示
   var img = document.createElement('img');
   img.id = '_moonOverlay';
   img.src = oc.toDataURL();
