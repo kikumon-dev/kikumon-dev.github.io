@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.294';
+    const APP_VERSION = 'v0.39.295';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -26426,12 +26426,18 @@ function showDebugLog() {
          ? ok('SPAG[·A1·SETTINGS INTEGRITY] allSettings.profile必須フィールド全確認')
          : ng('ST-39[SPAG·A1·SETTINGS INTEGRITY] allSettings.profile欠如', _st39ProfMissing.join(','));
 
-       // flags必須フィールド
-       var _st39FlagKeys = ['tutorialSeen','adminMode','purpose','purposeConfirmed','stopCondition'];
+       // flags必須フィールド（初期定義全10件）
+       var _st39FlagKeys = ['tutorialSeen','gantTourSeen','journalTourSeen','scratchTourSeen','adminMode','inspectionMode','purpose','purposeConfirmed','stopCondition','stopConditionSaved'];
        var _st39FlagMissing = _st39FlagKeys.filter(function(k){ return !(k in allSettings.flags); });
+       // flags許容フィールド（動的追加される既知フラグも含む）
+       var _st39FlagAllowed = _st39FlagKeys.concat(['searchOnboardSeen','nbGouTokuPageAdded']);
+       var _st39FlagUnknown = Object.keys(allSettings.flags).filter(function(k){ return _st39FlagAllowed.indexOf(k) === -1; });
        _st39FlagMissing.length === 0
          ? ok('SPAG[·A1·SETTINGS INTEGRITY] allSettings.flags必須フィールド全確認')
          : ng('ST-39[SPAG·A1·SETTINGS INTEGRITY] allSettings.flags欠如', _st39FlagMissing.join(','));
+       _st39FlagUnknown.length === 0
+         ? ok('SPAG[·A1·SETTINGS INTEGRITY] allSettings.flags未知フィールドなし')
+         : ng('SPAG[·A1·SETTINGS INTEGRITY] allSettings.flags未知フィールド混入', _st39FlagUnknown.join(','));
 
        // visibleTabsの存在確認
        var _st39VtKeys = ['yearly','notebook','craft','shop','colosseum'];
