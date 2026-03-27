@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.279';
+    const APP_VERSION = 'v0.39.281';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -4075,11 +4075,12 @@
         <!-- 月齢カード（格上げ版） -->
         <div style="background:linear-gradient(180deg,#0d0d1f 0%,#1a1a35 100%);border:1px solid #2a2a4a;border-radius:12px;padding:16px 12px;margin-bottom:12px;text-align:center;position:relative;overflow:hidden;">
           <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(167,139,250,0.06),transparent 70%);pointer-events:none;"></div>
-          <div style="font-size:0.62em;color:#7766aa;letter-spacing:0.12em;margin-bottom:8px;text-transform:uppercase;">🌙 月齢 — 国立天文台</div>
+          <div style="font-size:0.78em;color:#c4b5fd;letter-spacing:0.1em;margin-bottom:8px;font-weight:700;">🌙 今夜の月</div>
           <canvas id="dbMoonCanvas" width="160" height="160" style="display:block;margin:0 auto 10px;border-radius:50%;"></canvas>
           <div id="dbMoonAge" style="font-size:2.6em;font-weight:900;color:#ffd700;letter-spacing:0.04em;line-height:1;margin-bottom:4px;">--</div>
           <div id="dbMoonPhase" style="font-size:1.0em;color:#c4b5fd;font-weight:700;margin-bottom:6px;letter-spacing:0.06em;">--</div>
-          <div style="font-size:0.65em;color:#4a4a6a;">直近新月: <span id="dbLastNewMoon">--</span></div>
+          <div style="font-size:0.65em;color:#6655aa;margin-top:4px;">直近新月: <span id="dbLastNewMoon">--</span></div>
+          <div style="font-size:0.65em;color:#6655aa;margin-top:2px;">データ出典: 国立天文台</div>
         </div>
         <!-- 年間テーブル -->
         <div style="font-size:0.65em;color:#888;margin-bottom:6px;">年間テーブル（各月15日）</div>
