@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.272';
+    const APP_VERSION = 'v0.39.278';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -17536,16 +17536,42 @@ function renderDashboardView() {
       var _ctx=_cv.getContext('2d'),_cx=36,_cy=36,_R=30;
       _ctx.clearRect(0,0,72,72);
       _ctx.fillStyle='#04040e'; _ctx.beginPath(); _ctx.arc(_cx,_cy,_R,0,Math.PI*2); _ctx.fill();
-      if (_age>=1&&_age<=28.5) {
-        var _ph=_age/29.530589,_il=(1-Math.cos(_ph*2*Math.PI))/2;
-        _ctx.save(); _ctx.beginPath(); _ctx.arc(_cx,_cy,_R,0,Math.PI*2); _ctx.clip();
-        var _g=_ctx.createRadialGradient(_cx-_R*.25,_cy-_R*.25,_R*.05,_cx,_cy,_R);
-        _g.addColorStop(0,'rgba(255,251,230,.95)'); _g.addColorStop(.5,'rgba(244,216,120,.9)'); _g.addColorStop(1,'rgba(184,134,11,.85)');
-        _ctx.fillStyle=_g; _ctx.beginPath();
-        if (_ph<.5){ _ctx.arc(_cx,_cy,_R,-Math.PI/2,Math.PI/2,false); var _ex=_cx-_R*(1-_il*2),_rx=Math.max(1,Math.abs(_ex-_cx)); _ctx.ellipse(_ex,_cy,_rx,_R,0,Math.PI/2,-Math.PI/2,true); }
-        else { _ctx.arc(_cx,_cy,_R,Math.PI/2,-Math.PI/2,false); var _ex2=_cx+_R*(_il*2-1),_rx2=Math.max(1,Math.abs(_ex2-_cx)); _ctx.ellipse(_ex2,_cy,_rx2,_R,0,-Math.PI/2,Math.PI/2,true); }
+      // Meeus式輝面比計算 + try-catchでCanvas保護（iOS Safari対応）
+      try {
+        var _calcMeeusIllum = function(age) {
+          var D = (age / 29.530589) * 360;
+          var Dr = D * Math.PI / 180;
+          var M  = (age * 12.19075) * Math.PI / 180;
+          var Mm = (age * 13.06440) * Math.PI / 180;
+          var dD = -6.289*Math.sin(Mm)+2.100*Math.sin(M)-1.274*Math.sin(2*Dr-Mm)-0.658*Math.sin(2*Dr)-0.214*Math.sin(2*Mm)-0.110*Math.sin(Dr);
+          var Dc = D + dD;
+          var il = Math.max(0, Math.min(1, (1 - Math.cos(Dc * Math.PI / 180)) / 2));
+          var isWax = (Dc % 360 + 360) % 360 < 180;
+          return { il: il, isWax: isWax };
+        };
+        var _md = _calcMeeusIllum(_age);
+        var _il = _md.il, _isWax = _md.isWax;
+        _ctx.save();
+        _ctx.beginPath(); _ctx.arc(_cx,_cy,_R,0,Math.PI*2); _ctx.clip();
+        var _mg=_ctx.createRadialGradient(_cx-_R*.25,_cy-_R*.25,_R*.05,_cx,_cy,_R);
+        _mg.addColorStop(0,'rgba(255,251,230,.95)'); _mg.addColorStop(.5,'rgba(244,216,120,.9)'); _mg.addColorStop(1,'rgba(184,134,11,.85)');
+        _ctx.fillStyle='rgba(4,4,14,0.97)'; _ctx.fillRect(_cx-_R,_cy-_R,_R*2,_R*2);
+        _ctx.fillStyle=_mg; _ctx.beginPath();
+        if (_il >= 0.99) {
+          _ctx.arc(_cx,_cy,_R,0,Math.PI*2);
+        } else if (_il > 0.01) {
+          // iOS Safari ctx.ellipse()非対応フォールバック
+          if (typeof _ctx.ellipse === 'function') {
+            if (_isWax){ _ctx.arc(_cx,_cy,_R,-Math.PI/2,Math.PI/2,false); var _ex=_cx-_R*(1-_il*2),_rx=Math.max(1,Math.abs(_ex-_cx)); _ctx.ellipse(_ex,_cy,_rx,_R,0,Math.PI/2,-Math.PI/2,true); }
+            else { _ctx.arc(_cx,_cy,_R,Math.PI/2,-Math.PI/2,false); var _ex2=_cx+_R*(_il*2-1),_rx2=Math.max(1,Math.abs(_ex2-_cx)); _ctx.ellipse(_ex2,_cy,_rx2,_R,0,-Math.PI/2,Math.PI/2,true); }
+          } else {
+            // ellipse未対応：半円で代替表示
+            if (_isWax){ _ctx.arc(_cx,_cy,_R,-Math.PI/2,Math.PI/2,false); _ctx.lineTo(_cx,_cy-_R); }
+            else { _ctx.arc(_cx,_cy,_R,Math.PI/2,-Math.PI/2,false); _ctx.lineTo(_cx,_cy+_R); }
+          }
+        }
         _ctx.fill(); _ctx.restore();
-      }
+      } catch(e) { /* Canvas描画エラー：テキスト表示には影響しない */ }
     }
     // 年間テーブル（初回のみ）
     var _tb = document.getElementById('dbSunTable');
@@ -19372,15 +19398,22 @@ function drawFlag(ctx, px, py, t) {
   ctx.quadraticCurveTo(px+14+Math.sin(t*2.5)*4, py-22, px+1, py-14);
   ctx.fillStyle='#e53935'; ctx.fill();
 }
-// 月の描画（月齢に応じた満ち欠け）
+// 月の描画（月齢に応じた満ち欠け）- Meeus式輝面比
 function drawCraftMoon(ctx, cw, ch, age) {
   if (typeof age !== 'number' || isNaN(age)) return;
   if (age < 1.0 || age > 28.5) return; // 新月前後は描画しない
   var cx = cw * 0.78;
   var cy = ch * 0.14;
   var R  = Math.max(4, cw * 0.038);
-  var phase = age / 29.530589;
-  var illum = (1 - Math.cos(phase * 2 * Math.PI)) / 2;
+  // Meeus式輝面比計算（月の楕円軌道補正）
+  var D = (age / 29.530589) * 360;
+  var Dr = D * Math.PI / 180;
+  var M  = (age * 12.19075) * Math.PI / 180;
+  var Mm = (age * 13.06440) * Math.PI / 180;
+  var dD = -6.289*Math.sin(Mm)+2.100*Math.sin(M)-1.274*Math.sin(2*Dr-Mm)-0.658*Math.sin(2*Dr)-0.214*Math.sin(2*Mm)-0.110*Math.sin(Dr);
+  var Dc = D + dD;
+  var illum = Math.max(0, Math.min(1, (1 - Math.cos(Dc * Math.PI / 180)) / 2));
+  var isWaxing = (Dc % 360 + 360) % 360 < 180;
   ctx.save();
   // 月面ベース
   ctx.beginPath();
@@ -19395,13 +19428,16 @@ function drawCraftMoon(ctx, cw, ch, age) {
   g.addColorStop(0, 'rgba(255,251,230,0.95)');
   g.addColorStop(0.5, 'rgba(244,216,120,0.9)');
   g.addColorStop(1, 'rgba(184,134,11,0.85)');
-  // 先に黒で塗りつぶし（光部分のみ後で描く）
+  // 先に黒で塗りつぶし
   ctx.fillStyle = 'rgba(4,4,18,0.97)';
   ctx.fillRect(cx - R, cy - R, R * 2, R * 2);
-  // 光部分（_drawMoonOverlayと同じ方式：光側を直接描く）
+  // 光部分
   ctx.fillStyle = g;
   ctx.beginPath();
-  if (phase < 0.5) {
+  if (illum >= 0.99) {
+    // 満月：全面
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+  } else if (isWaxing) {
     // 上弦に向かう：右側が明るい
     ctx.arc(cx, cy, R, -Math.PI/2, Math.PI/2, false);
     var ex = cx - R * (1 - illum * 2);
@@ -23932,7 +23968,7 @@ function showDebugLog() {
 
        // ===== ST-34C: テストセクション自己存在確認 =====
        // テストセクション自己存在確認：ソースコード上の存在をチェック
-       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68'];
+       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -26280,6 +26316,16 @@ function showDebugLog() {
          : ng('ST-68: クリーンアップ', '件数不一致 期待=' + _st68Base + ' 実際=' + allTasks.length);
 
      } catch(e) { ng('ST-68', e.message); }
+
+
+     // ===== ST-69: 月Canvas描画方式確認（A=ellipse精密/B=フォールバック半円） =====
+     try {
+       var _cv69 = document.createElement('canvas');
+       var _cx69 = _cv69.getContext('2d');
+       var _ellOk69 = typeof _cx69.ellipse === 'function';
+       ok('ST-69: 月Canvas描画方式 ' + (_ellOk69 ? '✅ A（ellipse対応・Meeus精密描画）' : '⚠️ B（ellipse非対応・半円フォールバック）'));
+       ok('ST-69: 月Canvas描画方式確認 完了');
+     } catch(e) { ng('ST-69', e.message); }
 
 
      // ===== APAG LAUNCH SEQUENCE =====
