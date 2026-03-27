@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.281';
+    const APP_VERSION = 'v0.39.282';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -4080,7 +4080,11 @@
           <div id="dbMoonAge" style="font-size:2.6em;font-weight:900;color:#ffd700;letter-spacing:0.04em;line-height:1;margin-bottom:4px;">--</div>
           <div id="dbMoonPhase" style="font-size:1.0em;color:#c4b5fd;font-weight:700;margin-bottom:6px;letter-spacing:0.06em;">--</div>
           <div style="font-size:0.65em;color:#6655aa;margin-top:4px;">直近新月: <span id="dbLastNewMoon">--</span></div>
-          <div style="font-size:0.65em;color:#6655aa;margin-top:2px;">データ出典: 国立天文台</div>
+          <div style="font-size:0.62em;color:#6655aa;margin-top:6px;line-height:1.7;">
+            <div>📡 アプリの月齢はリアルタイム計算</div>
+            <div>📋 国立天文台の公式値は正午月齢</div>
+            <div style="margin-top:2px;">データ出典: 国立天文台朔望表</div>
+          </div>
         </div>
         <!-- 年間テーブル -->
         <div style="font-size:0.65em;color:#888;margin-bottom:6px;">年間テーブル（各月15日）</div>
