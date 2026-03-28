@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.301';
+    const APP_VERSION = 'v0.39.306';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -4100,6 +4100,14 @@
         </div>
         <button onclick="openRestoreModal()" style="padding:7px 14px;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;border-radius:10px;color:#fff;font-size:0.78em;font-weight:700;cursor:pointer;">🔄 復元</button>
       </div>
+      <!-- Gist同期ステータス -->
+      <div style="background:#f5f0ff;border:1px solid #ddd6fe;border-radius:12px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:0.88em;font-weight:700;color:#6e40c9;">☁️ クラウド同期</div>
+          <div id="dbGistSyncStatus" style="font-size:0.82em;margin-top:2px;"><span style="color:#bbb;">☁️ 未設定</span></div>
+        </div>
+        <button onclick="switchView('settings')" style="padding:7px 14px;background:linear-gradient(135deg,#a78bfa,#6e40c9);border:none;border-radius:10px;color:#fff;font-size:0.78em;font-weight:700;cursor:pointer;">⚙️ 設定</button>
+      </div>
       <div style="display:flex;gap:8px;">
         <button onclick="exportData()" style="flex:1;padding:13px;border:2px solid #4facfe;border-radius:14px;background:#f0f8ff;color:#2563eb;font-size:1.0em;font-weight:800;cursor:pointer;letter-spacing:0.02em;">📤 エクスポート</button>
         <button onclick="document.getElementById('dbImportInput').click()" style="flex:1;padding:13px;border:2px solid #4facfe;border-radius:14px;background:#f0f8ff;color:#2563eb;font-size:1.0em;font-weight:800;cursor:pointer;letter-spacing:0.02em;">📥 インポート</button>
@@ -4499,6 +4507,99 @@
               style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:1.5px solid #ef5350;border-radius:10px;background:#fff5f5;color:#c62828;font-size:0.88em;font-weight:600;cursor:pointer;width:100%;">
               🗑️ 全データ初期化
             </button>
+          </div>
+        </div>
+        <!-- GitHub Gist クラウド同期 -->
+        <div class="settings-section">
+          <h3 style="margin:0 0 15px 0;color:#262626;font-size:1.05em;font-weight:600;border-bottom:1px solid #efefef;padding-bottom:12px;">☁️ クラウド保存</h3>
+          <div style="font-size:0.82em;color:#666;margin-bottom:10px;line-height:1.6;">スマホが変わってもデータが消えない！無料で使えるクラウドにデータを保存できます。</div>
+          <!-- 未設定時オンボーディングバナー -->
+          <div id="gistOnboardBanner" style="display:none;background:linear-gradient(135deg,#f5f0ff,#ede9fe);border:1px solid #c4b5fd;border-radius:12px;padding:14px;margin-bottom:10px;">
+            <div style="font-size:0.92em;font-weight:700;color:#6e40c9;margin-bottom:8px;">🌟 設定は3ステップだけ！</div>
+            <div style="font-size:0.82em;color:#555;line-height:1.8;">
+              <div>① 無料アカウントを作る（1分）</div>
+              <div>② 鍵を発行する（1分）</div>
+              <div>③ ここに貼り付ける（10秒）</div>
+            </div>
+            <button onclick="window._gistShowSteps=true;window._gistRenderSteps();"
+              style="margin-top:10px;width:100%;padding:11px;background:linear-gradient(135deg,#a78bfa,#6e40c9);border:none;border-radius:10px;color:#fff;font-size:0.88em;font-weight:700;cursor:pointer;">
+              はじめる →
+            </button>
+          </div>
+          <!-- ステップ案内 -->
+          <div id="gistStepsArea" style="display:none;background:#faf9ff;border:1px solid #e9d5ff;border-radius:12px;padding:14px;margin-bottom:10px;">
+            <div id="gistStep1" style="display:none;">
+              <div style="font-size:0.92em;font-weight:700;color:#6e40c9;margin-bottom:8px;">📱 ステップ1 — 無料アカウントを作る</div>
+              <div style="font-size:0.82em;color:#555;line-height:1.8;margin-bottom:10px;">
+                GitHubという無料サービスを使います。<br>
+                すでにアカウントがある人はステップ2へ。
+              </div>
+              <a href="https://github.com/signup" target="_blank"
+                style="display:block;text-align:center;padding:11px;background:#24292e;border-radius:10px;color:#fff;font-size:0.88em;font-weight:700;text-decoration:none;margin-bottom:8px;">
+                🔗 アカウントを作る（無料）
+              </a>
+              <button onclick="window._gistGoStep(2)"
+                style="width:100%;padding:10px;background:#f5f0ff;border:1.5px solid #a78bfa;border-radius:10px;color:#6e40c9;font-size:0.88em;font-weight:700;cursor:pointer;">
+                作った → 次へ
+              </button>
+            </div>
+            <div id="gistStep2" style="display:none;">
+              <div style="font-size:0.92em;font-weight:700;color:#6e40c9;margin-bottom:8px;">🔑 ステップ2 — 鍵を発行する</div>
+              <div style="font-size:0.82em;color:#555;line-height:1.8;margin-bottom:10px;">
+                「鍵（Token）」を作ることで、このアプリだけがあなたのデータを保存できるようになります。<br><br>
+                ① 下のリンクを開く<br>
+                ② 「Generate new token (classic)」をタップ<br>
+                ③ メモ欄に「やることクラフト」と入力<br>
+                ④ 「gist」にチェックを入れる<br>
+                ⑤ 一番下の「Generate token」をタップ<br>
+                ⑥ 表示された「ghp_〜」をコピー
+              </div>
+              <a href="https://github.com/settings/tokens/new" target="_blank"
+                style="display:block;text-align:center;padding:11px;background:#24292e;border-radius:10px;color:#fff;font-size:0.88em;font-weight:700;text-decoration:none;margin-bottom:8px;">
+                🔗 鍵を作る
+              </a>
+              <button onclick="window._gistGoStep(3)"
+                style="width:100%;padding:10px;background:#f5f0ff;border:1.5px solid #a78bfa;border-radius:10px;color:#6e40c9;font-size:0.88em;font-weight:700;cursor:pointer;">
+                コピーした → 次へ
+              </button>
+            </div>
+            <div id="gistStep3" style="display:none;">
+              <div style="font-size:0.92em;font-weight:700;color:#6e40c9;margin-bottom:8px;">✅ ステップ3 — 貼り付けて完了！</div>
+              <div style="font-size:0.82em;color:#555;line-height:1.8;margin-bottom:10px;">
+                コピーした鍵（ghp_〜）を下に貼り付けて「保存」してください。
+              </div>
+              <button onclick="window._gistGoStep(0)"
+                style="width:100%;padding:10px;background:#f5f0ff;border:1.5px solid #a78bfa;border-radius:10px;color:#6e40c9;font-size:0.88em;font-weight:700;cursor:pointer;">
+                ← 入力欄へ
+              </button>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div id="gistSyncBadge" style="font-size:0.85em;font-weight:700;padding:8px 12px;background:#f8f8f8;border-radius:8px;text-align:center;">❌ 未設定</div>
+            <input type="password" id="gistTokenInput" placeholder="ghp_xxxxxxxxxx（GitHub Token）"
+              style="padding:10px 12px;border:1.5px solid #ddd;border-radius:10px;font-size:0.88em;width:100%;box-sizing:border-box;"
+              oninput="window._gistTokenChanged=true;">
+            <div style="display:flex;gap:8px;">
+              <button onclick="saveGistToken()"
+                style="flex:1;padding:11px;border:1.5px solid #6e40c9;border-radius:10px;background:#f5f0ff;color:#6e40c9;font-size:0.88em;font-weight:600;cursor:pointer;">
+                🔑 Token保存
+              </button>
+              <button onclick="clearGistToken()"
+                style="flex:1;padding:11px;border:1.5px solid #ccc;border-radius:10px;background:#f9f9f9;color:#888;font-size:0.88em;font-weight:600;cursor:pointer;">
+                🗑️ 解除
+              </button>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button onclick="gistUpload()"
+                style="flex:1;padding:11px;border:1.5px solid #4facfe;border-radius:10px;background:#f0f9ff;color:#1976d2;font-size:0.88em;font-weight:600;cursor:pointer;">
+                ⬆️ Gistへ保存
+              </button>
+              <button onclick="gistDownload()"
+                style="flex:1;padding:11px;border:1.5px solid #66bb6a;border-radius:10px;background:#f1f8e9;color:#2e7d32;font-size:0.88em;font-weight:600;cursor:pointer;">
+                ⬇️ Gistから復元
+              </button>
+            </div>
+            <div id="gistStatus" style="font-size:0.82em;color:#888;text-align:center;min-height:18px;"></div>
           </div>
         </div>
         <!-- 管理者モード（隠し） -->
@@ -12423,6 +12524,194 @@ function reviveBlueprint(id) {
     }
     // ===== エクスポート/インポート機能 =====
     // エクスポート：JSONファイルをダウンロード
+    // ===== GitHub Gist クラウド同期 =====
+    var GIST_TOKEN_KEY = 'gistToken';
+    var GIST_ID_KEY = 'gistId';
+
+    function _gistSetStatus(msg, color) {
+      var el = document.getElementById('gistStatus');
+      if (el) { el.textContent = msg; el.style.color = color || '#888'; }
+    }
+
+    function saveGistToken() {
+      var input = document.getElementById('gistTokenInput');
+      if (!input) return;
+      var token = input.value.trim();
+      if (!token) { _gistSetStatus('Tokenを入力してください', '#e53935'); return; }
+      localStorage.setItem(GIST_TOKEN_KEY, token);
+      _gistSetStatus('✅ Token保存しました', '#2e7d32');
+    }
+
+    function clearGistToken() {
+      localStorage.removeItem(GIST_TOKEN_KEY);
+      localStorage.removeItem(GIST_ID_KEY);
+      var input = document.getElementById('gistTokenInput');
+      if (input) input.value = '';
+      _gistSetStatus('🗑️ 解除しました', '#888');
+    }
+
+    function _gistGetToken() {
+      return localStorage.getItem(GIST_TOKEN_KEY) || '';
+    }
+
+    function _gistBuildPayload() {
+      return JSON.stringify({
+        allTasks: allTasks,
+        allSettings: allSettings,
+        exportedAt: new Date().toISOString(),
+        version: APP_VERSION
+      }, null, 2);
+    }
+
+    window._gistShowSteps = false;
+    window._gistGoStep = function(n) {
+      var s1 = document.getElementById('gistStep1');
+      var s2 = document.getElementById('gistStep2');
+      var s3 = document.getElementById('gistStep3');
+      var area = document.getElementById('gistStepsArea');
+      if (!area) return;
+      if (n === 0) {
+        area.style.display = 'none';
+        window._gistShowSteps = false;
+        return;
+      }
+      area.style.display = 'block';
+      if (s1) s1.style.display = n===1 ? 'block' : 'none';
+      if (s2) s2.style.display = n===2 ? 'block' : 'none';
+      if (s3) s3.style.display = n===3 ? 'block' : 'none';
+    };
+    window._gistRenderSteps = function() {
+      window._gistGoStep(1);
+    };
+
+    function _gistUpdateSyncBadge() {
+      var token = _gistGetToken();
+      var gistId = localStorage.getItem(GIST_ID_KEY);
+      var lastSync = localStorage.getItem('gistLastSync');
+      // オンボーディングバナー表示制御
+      var banner = document.getElementById('gistOnboardBanner');
+      if (banner) banner.style.display = !token ? 'block' : 'none';
+      // 設定画面のステータスバッジ更新
+      var badge = document.getElementById('gistSyncBadge');
+      if (!badge) return;
+      if (!token) {
+        badge.innerHTML = '❌ 未設定';
+        badge.style.color = '#999';
+      } else if (!gistId || !lastSync) {
+        badge.innerHTML = '⚠️ Token設定済み・未同期';
+        badge.style.color = '#f59e0b';
+      } else {
+        var d = new Date(lastSync);
+        var label = (d.getFullYear()) + '/' + (d.getMonth()+1) + '/' + d.getDate()
+          + ' ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0');
+        badge.innerHTML = '✅ 同期済み — ' + label;
+        badge.style.color = '#16a34a';
+      }
+      // ダッシュボードの同期カード更新
+      var dbBadge = document.getElementById('dbGistSyncStatus');
+      if (!dbBadge) return;
+      if (!token) {
+        dbBadge.innerHTML = '<span style="color:#bbb;">☁️ 未設定</span>';
+      } else if (!gistId || !lastSync) {
+        dbBadge.innerHTML = '<span style="color:#f59e0b;">⚠️ 未同期</span>';
+      } else {
+        var d2 = new Date(lastSync);
+        var label2 = (d2.getMonth()+1) + '/' + d2.getDate()
+          + ' ' + d2.getHours() + ':' + String(d2.getMinutes()).padStart(2,'0');
+        dbBadge.innerHTML = '<span style="color:#16a34a;">✅ ' + label2 + '</span>';
+      }
+    }
+    window._gistUpdateSyncBadge = _gistUpdateSyncBadge;
+
+    function gistUpload() {
+      var token = _gistGetToken();
+      if (!token) { _gistSetStatus('⚠️ 先にTokenを設定してください', '#e53935'); return; }
+      _gistSetStatus('⬆️ 保存中...', '#1976d2');
+      var payload = _gistBuildPayload();
+      var gistId = localStorage.getItem(GIST_ID_KEY);
+      var url = gistId
+        ? 'https://api.github.com/gists/' + gistId
+        : 'https://api.github.com/gists';
+      var method = gistId ? 'PATCH' : 'POST';
+      var body = {
+        description: 'やることクラフト バックアップ ' + APP_VERSION,
+        public: false,
+        files: { 'yarukotocraft_backup.json': { content: payload } }
+      };
+      fetch(url, {
+        method: method,
+        headers: {
+          'Authorization': 'token ' + token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      }).then(function(res) {
+        if (res.status === 401) { throw new Error('TOKEN_EXPIRED'); }
+        if (!res.ok) { throw new Error('HTTP ' + res.status); }
+        return res.json();
+      }).then(function(data) {
+        localStorage.setItem(GIST_ID_KEY, data.id);
+        localStorage.setItem('gistLastSync', new Date().toISOString());
+        _gistSetStatus('✅ Gistへ保存しました（' + new Date().toLocaleTimeString() + '）', '#2e7d32');
+        if (typeof _gistUpdateSyncBadge === 'function') _gistUpdateSyncBadge();
+      }).catch(function(e) {
+        if (e.message === 'TOKEN_EXPIRED') {
+          _gistSetStatus('⚠️ Tokenの期限切れ。設定画面で再発行してください', '#e53935');
+          showToast('☁️ Token期限切れ — 再設定が必要です');
+        } else {
+          _gistSetStatus('❌ 保存失敗: ' + e.message, '#e53935');
+        }
+      });
+    }
+
+    function gistDownload() {
+      var token = _gistGetToken();
+      if (!token) { _gistSetStatus('⚠️ 先にTokenを設定してください', '#e53935'); return; }
+      var gistId = localStorage.getItem(GIST_ID_KEY);
+      if (!gistId) { _gistSetStatus('⚠️ まず「Gistへ保存」を実行してください', '#e53935'); return; }
+      _gistSetStatus('⬇️ 復元中...', '#1976d2');
+      fetch('https://api.github.com/gists/' + gistId, {
+        headers: { 'Authorization': 'token ' + token }
+      }).then(function(res) {
+        if (res.status === 401) { throw new Error('TOKEN_EXPIRED'); }
+        if (!res.ok) { throw new Error('HTTP ' + res.status); }
+        return res.json();
+      }).then(function(data) {
+        var content = data.files['yarukotocraft_backup.json'].content;
+        var parsed = JSON.parse(content);
+        if (!parsed.allTasks || !parsed.allSettings) { throw new Error('データ形式が不正です'); }
+        allTasks = parsed.allTasks;
+        allSettings = parsed.allSettings;
+        saveAllTasks();
+        saveAllSettings();
+        renderAllSections();
+        localStorage.setItem('gistLastSync', new Date().toISOString());
+        _gistSetStatus('✅ 復元しました（' + (parsed.exportedAt ? parsed.exportedAt.slice(0,10) : '?') + '）', '#2e7d32');
+        if (typeof _gistUpdateSyncBadge === 'function') _gistUpdateSyncBadge();
+        showToast('☁️ Gistからデータを復元しました');
+      }).catch(function(e) {
+        if (e.message === 'TOKEN_EXPIRED') {
+          _gistSetStatus('⚠️ Tokenの期限切れ。設定画面で再発行してください', '#e53935');
+          showToast('☁️ Token期限切れ — 再設定が必要です');
+        } else {
+          _gistSetStatus('❌ 復元失敗: ' + e.message, '#e53935');
+        }
+      });
+    }
+
+    function _gistLoadTokenToInput() {
+      var token = _gistGetToken();
+      var input = document.getElementById('gistTokenInput');
+      if (input && token) input.value = token;
+    }
+
+    window.saveGistToken = saveGistToken;
+    window.clearGistToken = clearGistToken;
+    window.gistUpload = gistUpload;
+    window.gistDownload = gistDownload;
+    window._gistLoadTokenToInput = _gistLoadTokenToInput;
+    // ===== GitHub Gist クラウド同期 ここまで =====
+
     function exportData() {
       const deletedIds = JSON.parse(localStorage.getItem('deletedTaskIds') || '[]');
       const exportObj = {
@@ -13319,6 +13608,8 @@ function reviveBlueprint(id) {
       'taskCompletedTotal', 'taskCompletedStreak',
       'migration_calendarId_v1', 'extendedvaluekey',
       'dailyScrollInit', 'weeklyScrollInit',
+      // GitHub Gist クラウド同期
+      'gistToken', 'gistId', 'gistLastSync',
     ]);
     window.KEY_WHITELIST = KEY_WHITELIST;
     const KNOWN_KEYS = KEY_WHITELIST; // 後方互換エイリアス
@@ -15026,6 +15317,9 @@ function loadSettingsUI() {
       // 業の現在値をダッシュボードのdbGouに反映（設定から業セクション移行済み）
       var settingsOpenGouRefresh = document.getElementById('dbGou');
       if (settingsOpenGouRefresh && typeof getGouNew === 'function') settingsOpenGouRefresh.textContent = getGouNew();
+      // Gist Token をinputに反映
+      if (typeof _gistLoadTokenToInput === 'function') _gistLoadTokenToInput();
+      if (typeof _gistUpdateSyncBadge === 'function') _gistUpdateSyncBadge();
     }
     // アバター画像変更
     function handleAvatarChange(event) {
@@ -17481,6 +17775,8 @@ function renderDashboardView() {
       _bsLabel.style.color = '#f59e0b';
     }
   })();
+  // Gist同期ステータス更新
+  if (typeof _gistUpdateSyncBadge === 'function') _gistUpdateSyncBadge();
 
   // ===== 提携統計 =====
   var _arvReceived = 0, _arvCompleted = 0, _blmTotal = 0;
@@ -24048,7 +24344,7 @@ function showDebugLog() {
 
        // ===== ST-34C: テストセクション自己存在確認 =====
        // テストセクション自己存在確認：ソースコード上の存在をチェック
-       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70'];
+       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -26454,6 +26750,46 @@ function showDebugLog() {
      } catch(e) { ng('ST-70', e.message); }
 
 
+     // ===== ST-71: GitHub Gist連携確認 =====
+     try {
+       // ① 4関数の存在確認
+       typeof gistUpload === 'function'
+         ? ok('ST-71: gistUpload 存在確認')
+         : ng('ST-71: gistUpload', '未定義');
+       typeof gistDownload === 'function'
+         ? ok('ST-71: gistDownload 存在確認')
+         : ng('ST-71: gistDownload', '未定義');
+       typeof saveGistToken === 'function'
+         ? ok('ST-71: saveGistToken 存在確認')
+         : ng('ST-71: saveGistToken', '未定義');
+       typeof clearGistToken === 'function'
+         ? ok('ST-71: clearGistToken 存在確認')
+         : ng('ST-71: clearGistToken', '未定義');
+       // ② KEY_WHITELISTにgistToken・gistIdが含まれるか
+       (typeof KEY_WHITELIST !== 'undefined' && KEY_WHITELIST.has('gistToken'))
+         ? ok('ST-71: KEY_WHITELIST gistToken 包含確認')
+         : ng('ST-71: KEY_WHITELIST', 'gistToken未登録');
+       (typeof KEY_WHITELIST !== 'undefined' && KEY_WHITELIST.has('gistId'))
+         ? ok('ST-71: KEY_WHITELIST gistId 包含確認')
+         : ng('ST-71: KEY_WHITELIST', 'gistId未登録');
+       // ③ 設定画面のDOM確認
+       document.getElementById('gistTokenInput')
+         ? ok('ST-71: gistTokenInput DOM確認')
+         : ng('ST-71: gistTokenInput', 'DOM未存在');
+       document.getElementById('gistStatus')
+         ? ok('ST-71: gistStatus DOM確認')
+         : ng('ST-71: gistStatus', 'DOM未存在');
+       // ④ window公開確認
+       typeof window.gistUpload === 'function'
+         ? ok('ST-71: window.gistUpload 公開確認')
+         : ng('ST-71: window.gistUpload', '未公開');
+       typeof window.gistDownload === 'function'
+         ? ok('ST-71: window.gistDownload 公開確認')
+         : ng('ST-71: window.gistDownload', '未公開');
+       ok('ST-71: GitHub Gist連携確認 完了');
+     } catch(e) { ng('ST-71', e.message); }
+
+
      // ===== APAG LAUNCH SEQUENCE =====
      try {
        ok('');
@@ -26908,6 +27244,7 @@ function showDebugLog() {
          'showToast','showChoiceModal','showDebugLog',
          'toggleTaskById','onTaskCompleted',
          'KEY_WHITELIST','OFFICIAL_DECKS','KINGDOM_TITLES',
+         'gistUpload','gistDownload','saveGistToken','clearGistToken',
        ];
        var _a9Ok=[], _a9Ng=[];
        _a9Critical.forEach(function(name){
