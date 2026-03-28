@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.297';
+    const APP_VERSION = 'v0.39.301';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -13507,7 +13507,11 @@ function reviveBlueprint(id) {
         if (navDb) navDb.classList.add('active');
         if (typeof renderDashboardView === 'function') {
           // 初回ロード時にCanvasがレイアウト確定前に描画されるのを防ぐため1フレーム遅延
-          requestAnimationFrame(function(){ renderDashboardView(); });
+          requestAnimationFrame(function(){
+            renderDashboardView();
+            // スマホ初回ロード時の遅延描画（300ms後に再実行）
+            setTimeout(function(){ renderDashboardView(); }, 300);
+          });
         }
       } else if (view === 'settings') {
         if (gantView) gantView.style.display = 'none';
@@ -17582,7 +17586,7 @@ function renderDashboardView() {
           // _ew: il=0.5→0, il=1→R（線形）にさらに1.5倍補正（ただし0〜R内）
           // il<0.5の場合は楕円が内側に入り込んで三日月を形成
           var _ewRaw = _R * (2 * _il - 1); // -R〜+R
-          var _ew = Math.abs(_ewRaw) * 1.2; // 係数1.2
+          var _ew = Math.abs(_ewRaw) * 1.0; // 係数1.0（補正なし・数学的に正確）
           if (_ew > _R) _ew = _R;
           var _convex = _ewRaw >= 0; // true=ふっくら側, false=三日月凹み側
 
@@ -17593,19 +17597,19 @@ function renderDashboardView() {
                 _ctx.lineTo(_cx,_cy-_R); // ちょうど半月
               } else if (_convex) {
                 // il>0.5: 左にはみ出す（反時計回り）
-                _ctx.ellipse(_cx-_ew,_cy,_ew,_R,0,Math.PI/2,-Math.PI/2,false);
+                _ctx.ellipse(_cx,_cy,_ew,_R,0,Math.PI/2,-Math.PI/2,false);
               } else {
                 // il<0.5: 右側が凹む三日月（時計回り）
-                _ctx.ellipse(_cx+_ew,_cy,_ew,_R,0,Math.PI/2,-Math.PI/2,true);
+                _ctx.ellipse(_cx,_cy,_ew,_R,0,Math.PI/2,-Math.PI/2,true);
               }
             } else {
               _ctx.arc(_cx,_cy,_R,Math.PI/2,-Math.PI/2,false); // 左半円
               if (_ew < 1) {
                 _ctx.lineTo(_cx,_cy+_R);
               } else if (_convex) {
-                _ctx.ellipse(_cx+_ew,_cy,_ew,_R,0,-Math.PI/2,Math.PI/2,false);
+                _ctx.ellipse(_cx,_cy,_ew,_R,0,-Math.PI/2,Math.PI/2,false);
               } else {
-                _ctx.ellipse(_cx-_ew,_cy,_ew,_R,0,-Math.PI/2,Math.PI/2,true);
+                _ctx.ellipse(_cx,_cy,_ew,_R,0,-Math.PI/2,Math.PI/2,true);
               }
             }
           } else {
@@ -19488,20 +19492,20 @@ function drawCraftMoon(ctx, cw, ch, age) {
     ctx.arc(cx, cy, R, 0, Math.PI * 2);
   } else if (illum > 0.01) {
     var _ewRaw = R * (2 * illum - 1);
-    var _ew = Math.abs(_ewRaw) * 1.2;
+    var _ew = Math.abs(_ewRaw) * 1.0;
     if (_ew > R) _ew = R;
     var _convex = _ewRaw >= 0;
     if (typeof ctx.ellipse === 'function') {
       if (isWaxing) {
         ctx.arc(cx, cy, R, -Math.PI/2, Math.PI/2, false);
         if (_ew < 1) { ctx.lineTo(cx, cy - R); }
-        else if (_convex) { ctx.ellipse(cx - _ew, cy, _ew, R, 0, Math.PI/2, -Math.PI/2, false); }
-        else { ctx.ellipse(cx + _ew, cy, _ew, R, 0, Math.PI/2, -Math.PI/2, true); }
+        else if (_convex) { ctx.ellipse(cx, cy, _ew, R, 0, Math.PI/2, -Math.PI/2, false); }
+        else { ctx.ellipse(cx, cy, _ew, R, 0, Math.PI/2, -Math.PI/2, true); }
       } else {
         ctx.arc(cx, cy, R, Math.PI/2, -Math.PI/2, false);
         if (_ew < 1) { ctx.lineTo(cx, cy + R); }
-        else if (_convex) { ctx.ellipse(cx + _ew, cy, _ew, R, 0, -Math.PI/2, Math.PI/2, false); }
-        else { ctx.ellipse(cx - _ew, cy, _ew, R, 0, -Math.PI/2, Math.PI/2, true); }
+        else if (_convex) { ctx.ellipse(cx, cy, _ew, R, 0, -Math.PI/2, Math.PI/2, false); }
+        else { ctx.ellipse(cx, cy, _ew, R, 0, -Math.PI/2, Math.PI/2, true); }
       }
     } else {
       if (isWaxing) { ctx.arc(cx, cy, R, -Math.PI/2, Math.PI/2, false); ctx.lineTo(cx, cy - R); }
@@ -21860,20 +21864,20 @@ function _drawMoonOverlay(age) {
     ctx.arc(cx,cy,R,0,Math.PI*2);
   } else if (illum > 0.01) {
     var _ewRaw = R * (2 * illum - 1);
-    var _ew = Math.abs(_ewRaw) * 1.2;
+    var _ew = Math.abs(_ewRaw) * 1.0;
     if (_ew > R) _ew = R;
     var _convex = _ewRaw >= 0;
     if (typeof ctx.ellipse === 'function') {
       if (isWaxing) {
         ctx.arc(cx,cy,R,-Math.PI/2,Math.PI/2,false);
         if (_ew < 1) { ctx.lineTo(cx,cy-R); }
-        else if (_convex) { ctx.ellipse(cx-_ew,cy,_ew,R,0,Math.PI/2,-Math.PI/2,false); }
-        else { ctx.ellipse(cx+_ew,cy,_ew,R,0,Math.PI/2,-Math.PI/2,true); }
+        else if (_convex) { ctx.ellipse(cx,cy,_ew,R,0,Math.PI/2,-Math.PI/2,false); }
+        else { ctx.ellipse(cx,cy,_ew,R,0,Math.PI/2,-Math.PI/2,true); }
       } else {
         ctx.arc(cx,cy,R,Math.PI/2,-Math.PI/2,false);
         if (_ew < 1) { ctx.lineTo(cx,cy+R); }
-        else if (_convex) { ctx.ellipse(cx+_ew,cy,_ew,R,0,-Math.PI/2,Math.PI/2,false); }
-        else { ctx.ellipse(cx-_ew,cy,_ew,R,0,-Math.PI/2,Math.PI/2,true); }
+        else if (_convex) { ctx.ellipse(cx,cy,_ew,R,0,-Math.PI/2,Math.PI/2,false); }
+        else { ctx.ellipse(cx,cy,_ew,R,0,-Math.PI/2,Math.PI/2,true); }
       }
     } else {
       if (isWaxing) { ctx.arc(cx,cy,R,-Math.PI/2,Math.PI/2,false); ctx.lineTo(cx,cy-R); }
@@ -24044,7 +24048,7 @@ function showDebugLog() {
 
        // ===== ST-34C: テストセクション自己存在確認 =====
        // テストセクション自己存在確認：ソースコード上の存在をチェック
-       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69'];
+       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -26402,6 +26406,52 @@ function showDebugLog() {
        ok('ST-69: 月Canvas描画方式 ' + (_ellOk69 ? '✅ A（ellipse対応・Meeus精密描画）' : '⚠️ B（ellipse非対応・半円フォールバック）'));
        ok('ST-69: 月Canvas描画方式確認 完了');
      } catch(e) { ng('ST-69', e.message); }
+
+
+     // ===== ST-70: 月描画3関数の一貫性確認 =====
+     try {
+       // ① 3関数が全て存在するか
+       typeof drawCraftMoon === 'function'
+         ? ok('ST-70: drawCraftMoon 存在確認')
+         : ng('ST-70: drawCraftMoon', '未定義');
+       typeof window._drawMoonOverlay === 'function'
+         ? ok('ST-70: _drawMoonOverlay 存在確認')
+         : ng('ST-70: _drawMoonOverlay', '未定義');
+
+       // ② drawCraftMoonのソースにMeeus式が含まれるか
+       var _st70craftSrc = typeof drawCraftMoon === 'function' ? drawCraftMoon.toString() : '';
+       _st70craftSrc.indexOf('29.530589') > -1
+         ? ok('ST-70: drawCraftMoon Meeus式使用確認')
+         : ng('ST-70: drawCraftMoon', 'Meeus式なし');
+       _st70craftSrc.indexOf('1.0') > -1
+         ? ok('ST-70: drawCraftMoon 係数1.0確認（補正なし）')
+         : ng('ST-70: drawCraftMoon', '係数1.0なし');
+
+       // ③ _drawMoonOverlayのソースにMeeus式が含まれるか
+       var _st70overlSrc = typeof window._drawMoonOverlay === 'function' ? window._drawMoonOverlay.toString() : '';
+       _st70overlSrc.indexOf('29.530589') > -1
+         ? ok('ST-70: _drawMoonOverlay Meeus式使用確認')
+         : ng('ST-70: _drawMoonOverlay', 'Meeus式なし');
+       _st70overlSrc.indexOf('1.0') > -1
+         ? ok('ST-70: _drawMoonOverlay 係数1.0確認（補正なし）')
+         : ng('ST-70: _drawMoonOverlay', '係数1.0なし');
+
+       // ④ dbMoonCanvasの描画コードにMeeus式が含まれるか（renderDashboardView内）
+       var _st70dbSrc = typeof renderDashboardView === 'function' ? renderDashboardView.toString() : '';
+       _st70dbSrc.indexOf('29.530589') > -1
+         ? ok('ST-70: dbMoonCanvas Meeus式使用確認')
+         : ng('ST-70: dbMoonCanvas', 'Meeus式なし');
+       _st70dbSrc.indexOf('1.0') > -1
+         ? ok('ST-70: dbMoonCanvas 係数1.0確認（補正なし）')
+         : ng('ST-70: dbMoonCanvas', '係数1.0なし');
+
+       // ⑤ 時刻条件：日中(8〜17時)非表示ロジック確認
+       _st70overlSrc.indexOf('h >= 8') > -1 && _st70overlSrc.indexOf('h < 17') > -1
+         ? ok('ST-70: _drawMoonOverlay 時刻条件（8〜17時非表示）確認')
+         : ng('ST-70: _drawMoonOverlay', '時刻条件が旧式');
+
+       ok('ST-70: 月描画3関数一貫性確認 完了');
+     } catch(e) { ng('ST-70', e.message); }
 
 
      // ===== APAG LAUNCH SEQUENCE =====
