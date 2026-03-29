@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.306';
+    const APP_VERSION = 'v0.39.315';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -4477,6 +4477,13 @@
         </div>
         <!-- カレンダー一覧 -->
         <p style="margin: 0 0 12px 0; font-size: 0.83em; color: #8e8e8e;">表示するカレンダーを選択。OFFにすると全ビューで非表示になります。</p>
+        <!-- 記号表示トグル -->
+        <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer;">
+          <input type="checkbox" id="showCalendarSymbolCheck"
+            onchange="allSettings.ui.showCalendarSymbol=this.checked;saveAllSettings();renderAllSections();"
+            style="width:16px;height:16px;accent-color:#3949ab;cursor:pointer;">
+          <span style="font-size:0.85em;color:#555;font-weight:600;">◎ カレンダー記号を表示する</span>
+        </label>
         <div id="calendarSettingsList"></div>
         <button onclick="addCalendarSetting()"
           style="width:100%;margin-top:10px;padding:10px;border:1.5px dashed #c5cae9;border-radius:8px;background:transparent;color:#3949ab;font-size:0.85em;font-weight:600;cursor:pointer;">
@@ -5067,6 +5074,7 @@
         initialView:      'daily',
         dailyViewMode:    'scratch',
         simpleMode:       'off',
+        showCalendarSymbol: true,
         monthlyMode:      'fixed',
         weeklyDays:       '7',
         weeklyRowH:       80,
@@ -5510,12 +5518,12 @@
     }
     // ===== v0.28 初回セットアップ用カレンダーテンプレート =====
     const CALENDAR_TEMPLATES = [
-      { name: '仕事',         color: '#80cbc4', shareable: true  },
-      { name: '学校',         color: '#90caf9', shareable: true  },
-      { name: 'プライベート', color: '#a5d6a7', shareable: true  },
-      { name: '家族',         color: '#f48fb1', shareable: true  },
-      { name: '趣味',         color: '#ffcc80', shareable: true  },
-      { name: 'メモ',         color: '#b0bec5', shareable: false },
+      { name: '仕事',         color: '#80cbc4', shareable: true,  symbol: '◎' },
+      { name: '学校',         color: '#90caf9', shareable: true,  symbol: '○' },
+      { name: 'プライベート', color: '#a5d6a7', shareable: true,  symbol: '♡' },
+      { name: '家族',         color: '#f48fb1', shareable: true,  symbol: '♥' },
+      { name: '趣味',         color: '#ffcc80', shareable: true,  symbol: '☆' },
+      { name: 'メモ',         color: '#b0bec5', shareable: false, symbol: '★' },
     ];    function createCalendarFromTemplate(tmpl) {
       return {
         id: (typeof generateTaskId === 'function') ? generateTaskId() : crypto.randomUUID(),
@@ -7047,12 +7055,25 @@ function myDeckApply(idx) {
           });
           const line1 = document.createElement('div');
           line1.className = 'wg-task-line1';
+          var _sym1 = (typeof getCalendarSymbol==='function') ? getCalendarSymbol(task.calendarId) : '';
+          // 記号を先頭に（時間より前）
+          if (_sym1) {
+            const symSpan = document.createElement('span');
+            symSpan.textContent = _sym1;
+            symSpan.style.cssText = 'font-size:0.9em;flex-shrink:0;margin-right:2px;';
+            line1.appendChild(symSpan);
+          }
           const timeSpan = document.createElement('span');
           timeSpan.className = 'wg-task-time';
           timeSpan.textContent = task.time + (task.endTime ? '–' + task.endTime : '');
           const titleSpan = document.createElement('span');
           titleSpan.className = 'wg-task-title';
-          titleSpan.textContent = task.text;
+          // ブロックが小さい場合はテキスト省略
+          if (blockH < 28) {
+            titleSpan.textContent = '';
+          } else {
+            titleSpan.textContent = task.text;
+          }
           // 他のメンバーのタスクはオーナー名を小さく表示
           if (task.owner && task.owner !== myName && blockH >= 36) {
             const ownerBadge = document.createElement('div');
@@ -7591,7 +7612,8 @@ function myDeckApply(idx) {
           // タスクテキスト部分
           const taskText = document.createElement('span');
           taskText.className = 'monthly-task-text';
-          taskText.textContent = task.time ? `${task.time} ${task.text}` : task.text;
+          var _sym3 = (typeof getCalendarSymbol==='function') ? getCalendarSymbol(task.calendarId) : '';
+          taskText.textContent = (_sym3 ? _sym3+' ' : '') + (task.time ? `${task.time} ${task.text}` : task.text);
           taskText.style.flex = '1';
           taskText.style.overflow = 'hidden';
           taskText.style.textOverflow = 'ellipsis';
@@ -8355,7 +8377,8 @@ function myDeckApply(idx) {
         var titleSpan = document.createElement('span');
         titleSpan.style.cssText = 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' +
           (task.completed ? 'text-decoration:line-through;opacity:0.6;' : '');
-        titleSpan.textContent = task.text;
+        var _sym2 = (typeof getCalendarSymbol==='function') ? getCalendarSymbol(task.calendarId) : '';
+        titleSpan.textContent = (_sym2 ? _sym2+' ' : '') + task.text;
         // 鉛筆ボタン（編集）
         var editBtn = document.createElement('span');
         editBtn.textContent = '✏️';
@@ -12285,7 +12308,8 @@ function reviveBlueprint(id) {
         const textSpan = document.createElement('span');
         textSpan.className = 'task-text';
         // 時間があれば表示
-        const displayText = task.time ? `${task.time} ${task.text}` : task.text;
+        var _sym4 = (typeof getCalendarSymbol==='function') ? getCalendarSymbol(task.calendarId) : '';
+        const displayText = (_sym4 ? _sym4+' ' : '') + (task.time ? `${task.time} ${task.text}` : task.text);
         textSpan.textContent = displayText;
         textSpan.onclick = () => {
           if (timerState === 'selecting') {
@@ -12524,6 +12548,23 @@ function reviveBlueprint(id) {
     }
     // ===== エクスポート/インポート機能 =====
     // エクスポート：JSONファイルをダウンロード
+    // ===== カレンダー記号 =====
+    var CALENDAR_SYMBOLS = [
+      '◎',
+      '○','◯','〇','☆','◇','△','▷','◁','□','▫','♡','✧','✦',
+      '●','★','◆','▲','▶','◀','■','▪','♥','✔','✕',
+      '※','＊','〒','♪','✓','✗','〆'
+    ];
+    window.CALENDAR_SYMBOLS = CALENDAR_SYMBOLS;
+
+    function getCalendarSymbol(calendarId) {
+      if (!allSettings.ui.showCalendarSymbol) return '';
+      var cal = (calendars || []).find(function(c){ return c.id === calendarId; });
+      return (cal && cal.symbol) ? cal.symbol : '';
+    }
+    window.getCalendarSymbol = getCalendarSymbol;
+    // ===== カレンダー記号 ここまで =====
+
     // ===== GitHub Gist クラウド同期 =====
     var GIST_TOKEN_KEY = 'gistToken';
     var GIST_ID_KEY = 'gistId';
@@ -13163,6 +13204,18 @@ function reviveBlueprint(id) {
     migrateToAllTasks();
     window._dbgLog('【統合完了】MIGRATION CHECK --- 旧構造の残滓なし / ...クリア');
     window._dbgLog('migrateToAllTasks done');
+    // カレンダー記号デフォルト補完（既存ユーザー対応）
+    (function() {
+      var _symDefaults = {'仕事':'◎','学校':'○','プライベート':'♡','家族':'♥','趣味':'☆','メモ':'★'};
+      var _changed = false;
+      (calendars || []).forEach(function(cal) {
+        if (!cal.symbol && _symDefaults[cal.name]) {
+          cal.symbol = _symDefaults[cal.name];
+          _changed = true;
+        }
+      });
+      if (_changed) saveCalendars();
+    })();
     initStampDefs();
     window._dbgLog('【印章確認】STAMP SYSTEM ONLINE --- 印章ユニット、全基確認 / 異常なし');
     window._dbgLog('initStampDefs done');
@@ -15320,6 +15373,9 @@ function loadSettingsUI() {
       // Gist Token をinputに反映
       if (typeof _gistLoadTokenToInput === 'function') _gistLoadTokenToInput();
       if (typeof _gistUpdateSyncBadge === 'function') _gistUpdateSyncBadge();
+      // 記号表示チェック
+      var symCheck = document.getElementById('showCalendarSymbolCheck');
+      if (symCheck) symCheck.checked = allSettings.ui.showCalendarSymbol !== false;
     }
     // アバター画像変更
     function handleAvatarChange(event) {
@@ -15493,6 +15549,95 @@ function loadSettingsUI() {
         shareLabel.appendChild(document.createTextNode('共有可'));
         row.appendChild(handle);
         row.appendChild(colorInput);
+        // 記号ピッカーボタン
+        const symBtn = document.createElement('button');
+        symBtn.textContent = cal.symbol || '−';
+        symBtn.title = '記号を選択';
+        symBtn.style.cssText = 'width:30px;height:30px;border:1.5px solid #ddd;border-radius:6px;background:#f9f9f9;font-size:1em;cursor:pointer;flex-shrink:0;padding:0;text-align:center;';
+        symBtn.addEventListener('click', (function(_idx, _btn) {
+          return function(e) {
+            e.stopPropagation();
+            // 既存ピッカー削除
+            var existing = document.getElementById('_symPicker');
+            if (existing) { existing.remove(); if (existing._srcBtn === _btn) return; }
+            var picker = document.createElement('div');
+            picker.id = '_symPicker';
+            picker._srcBtn = _btn;
+            picker.style.cssText = 'position:fixed;z-index:9999;background:#fff;border:1.5px solid #ddd;border-radius:14px;padding:10px;max-width:260px;box-shadow:0 4px 20px rgba(0,0,0,0.18);';
+            // 「なし」ボタン
+            var noneBtn = document.createElement('button');
+            noneBtn.textContent = '− なし';
+            noneBtn.style.cssText = 'width:100%;padding:6px 8px;border:1px solid #eee;border-radius:8px;background:#f5f5f5;font-size:0.82em;cursor:pointer;color:#888;margin-bottom:8px;text-align:left;';
+            noneBtn.onclick = function(){ updateCalendarField(_idx,'symbol',''); _btn.textContent='−'; picker.remove(); loadCalendarSettingsUI(); };
+            picker.appendChild(noneBtn);
+            // 白系
+            var labelW = document.createElement('div');
+            labelW.textContent = '白・空白系';
+            labelW.style.cssText = 'font-size:0.72em;color:#aaa;margin-bottom:4px;';
+            picker.appendChild(labelW);
+            var rowW = document.createElement('div');
+            rowW.style.cssText = 'display:flex;flex-wrap:wrap;gap:3px;margin-bottom:8px;';
+            var whiteSyms = ['◎','○','◯','〇','☆','◇','△','▷','◁','□','▫','♡','✧','✦'];
+            whiteSyms.forEach(function(sym) {
+              var sb = document.createElement('button');
+              sb.textContent = sym;
+              sb.style.cssText = 'width:30px;height:30px;border:1px solid #eee;border-radius:6px;background:#fafafa;font-size:1.1em;cursor:pointer;';
+              sb.onmouseover = function(){ this.style.background='#e8f4fd'; };
+              sb.onmouseout  = function(){ this.style.background='#fafafa'; };
+              sb.onclick = function(){ updateCalendarField(_idx,'symbol',sym); _btn.textContent=sym; picker.remove(); loadCalendarSettingsUI(); };
+              rowW.appendChild(sb);
+            });
+            picker.appendChild(rowW);
+            // 黒系
+            var labelB = document.createElement('div');
+            labelB.textContent = '黒・塗り系';
+            labelB.style.cssText = 'font-size:0.72em;color:#aaa;margin-bottom:4px;';
+            picker.appendChild(labelB);
+            var rowB = document.createElement('div');
+            rowB.style.cssText = 'display:flex;flex-wrap:wrap;gap:3px;margin-bottom:8px;';
+            var blackSyms = ['●','★','◆','▲','▶','◀','■','▪','♥','✔','✕'];
+            blackSyms.forEach(function(sym) {
+              var sb = document.createElement('button');
+              sb.textContent = sym;
+              sb.style.cssText = 'width:30px;height:30px;border:1px solid #eee;border-radius:6px;background:#fafafa;font-size:1.1em;cursor:pointer;';
+              sb.onmouseover = function(){ this.style.background='#e8f4fd'; };
+              sb.onmouseout  = function(){ this.style.background='#fafafa'; };
+              sb.onclick = function(){ updateCalendarField(_idx,'symbol',sym); _btn.textContent=sym; picker.remove(); loadCalendarSettingsUI(); };
+              rowB.appendChild(sb);
+            });
+            picker.appendChild(rowB);
+            // 記号系
+            var labelS = document.createElement('div');
+            labelS.textContent = 'その他';
+            labelS.style.cssText = 'font-size:0.72em;color:#aaa;margin-bottom:4px;';
+            picker.appendChild(labelS);
+            var rowS = document.createElement('div');
+            rowS.style.cssText = 'display:flex;flex-wrap:wrap;gap:3px;';
+            var otherSyms = ['※','＊','〒','♪','✓','✗','〆'];
+            otherSyms.forEach(function(sym) {
+              var sb = document.createElement('button');
+              sb.textContent = sym;
+              sb.style.cssText = 'width:30px;height:30px;border:1px solid #eee;border-radius:6px;background:#fafafa;font-size:1.1em;cursor:pointer;';
+              sb.onmouseover = function(){ this.style.background='#e8f4fd'; };
+              sb.onmouseout  = function(){ this.style.background='#fafafa'; };
+              sb.onclick = function(){ updateCalendarField(_idx,'symbol',sym); _btn.textContent=sym; picker.remove(); loadCalendarSettingsUI(); };
+              rowS.appendChild(sb);
+            });
+            picker.appendChild(rowS);
+            // 位置調整
+            var rect = _btn.getBoundingClientRect();
+            document.body.appendChild(picker);
+            var ph = picker.offsetHeight || 300;
+            var top = rect.bottom + 4;
+            if (top + ph > window.innerHeight - 20) top = Math.max(20, rect.top - ph - 4);
+            picker.style.top  = top + 'px';
+            picker.style.left = Math.min(rect.left, window.innerWidth - 270) + 'px';
+            setTimeout(function(){
+              document.addEventListener('click', function _close(){ picker.remove(); document.removeEventListener('click',_close); }, { once: true });
+            }, 10);
+          };
+        })(idx, symBtn));
+        row.appendChild(symBtn);
         row.appendChild(nameInput);
         row.appendChild(visLabel);
         row.appendChild(shareLabel);
@@ -15534,7 +15679,8 @@ function loadSettingsUI() {
         name: 'カレンダー' + (calendars.length + 1),
         color: colors[calendars.length % colors.length],
         visible: true,
-        shareable: true
+        shareable: true,
+        symbol: ''
       });
       saveCalendars();
       loadCalendarSettingsUI();
@@ -24344,7 +24490,7 @@ function showDebugLog() {
 
        // ===== ST-34C: テストセクション自己存在確認 =====
        // テストセクション自己存在確認：ソースコード上の存在をチェック
-       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71'];
+       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -26790,6 +26936,71 @@ function showDebugLog() {
      } catch(e) { ng('ST-71', e.message); }
 
 
+     // ===== ST-72: カレンダー記号機能確認 =====
+     try {
+       // ① CALENDAR_SYMBOLS定数の存在・件数確認
+       typeof CALENDAR_SYMBOLS !== 'undefined' && Array.isArray(CALENDAR_SYMBOLS)
+         ? ok('ST-72: CALENDAR_SYMBOLS 存在確認（' + CALENDAR_SYMBOLS.length + '件）')
+         : ng('ST-72: CALENDAR_SYMBOLS', '未定義またはArray以外');
+
+       // ② ◎が先頭にあること
+       CALENDAR_SYMBOLS[0] === '◎'
+         ? ok('ST-72: CALENDAR_SYMBOLS[0]=◎ 先頭確認')
+         : ng('ST-72: CALENDAR_SYMBOLS先頭', '◎でない: ' + CALENDAR_SYMBOLS[0]);
+
+       // ③ getCalendarSymbol関数の存在確認
+       typeof getCalendarSymbol === 'function'
+         ? ok('ST-72: getCalendarSymbol 存在確認')
+         : ng('ST-72: getCalendarSymbol', '未定義');
+
+       // ④ showCalendarSymbol設定の存在確認
+       typeof allSettings.ui.showCalendarSymbol !== 'undefined'
+         ? ok('ST-72: allSettings.ui.showCalendarSymbol 存在確認（' + allSettings.ui.showCalendarSymbol + '）')
+         : ng('ST-72: showCalendarSymbol', '未定義');
+
+       // ⑤ showCalendarSymbol=trueのときgetCalendarSymbolが記号を返すこと
+       var _testCal = (calendars || []).find(function(c){ return c.symbol && c.symbol !== ''; });
+       if (_testCal) {
+         var _origShow = allSettings.ui.showCalendarSymbol;
+         allSettings.ui.showCalendarSymbol = true;
+         var _sym = getCalendarSymbol(_testCal.id);
+         allSettings.ui.showCalendarSymbol = _origShow;
+         _sym === _testCal.symbol
+           ? ok('ST-72: showCalendarSymbol=true → 記号返却確認（' + _sym + '）')
+           : ng('ST-72: showCalendarSymbol=true', '記号が一致しない');
+
+         // ⑥ showCalendarSymbol=falseのときgetCalendarSymbolが空を返すこと
+         allSettings.ui.showCalendarSymbol = false;
+         var _symOff = getCalendarSymbol(_testCal.id);
+         allSettings.ui.showCalendarSymbol = _origShow;
+         _symOff === ''
+           ? ok('ST-72: showCalendarSymbol=false → 空文字返却確認')
+           : ng('ST-72: showCalendarSymbol=false', '空でない: ' + _symOff);
+       } else {
+         ok('ST-72: カレンダー記号設定なし（スキップ）');
+       }
+
+       // ⑦ デフォルトカレンダーの記号確認（仕事=◎など）
+       var _defaults = {'仕事':'◎','学校':'○','プライベート':'♡','家族':'♥','趣味':'☆','メモ':'★'};
+       var _defOk = 0, _defNg = [];
+       Object.keys(_defaults).forEach(function(name) {
+         var cal = (calendars || []).find(function(c){ return c.name === name; });
+         if (cal && cal.symbol === _defaults[name]) _defOk++;
+         else if (cal) _defNg.push(name + '=' + (cal.symbol || 'なし'));
+       });
+       _defNg.length === 0
+         ? ok('ST-72: デフォルト記号確認（' + _defOk + '件一致）')
+         : ok('ST-72: デフォルト記号（一部変更済み: ' + _defNg.join(',') + '）');
+
+       // ⑧ #showCalendarSymbolCheck DOMの存在確認
+       document.getElementById('showCalendarSymbolCheck')
+         ? ok('ST-72: showCalendarSymbolCheck DOM確認')
+         : ng('ST-72: showCalendarSymbolCheck', 'DOM未存在');
+
+       ok('ST-72: カレンダー記号機能確認 完了');
+     } catch(e) { ng('ST-72', e.message); }
+
+
      // ===== APAG LAUNCH SEQUENCE =====
      try {
        ok('');
@@ -26822,7 +27033,7 @@ function showDebugLog() {
          : ng('ST-39[SPAG·A1·SETTINGS INTEGRITY] allSettings型違反', _st39TopKeys.filter(function(k){ return typeof allSettings[k] !== 'object'; }).join(','));
 
        // ui必須フィールド
-       var _st39UiKeys = ['initialView','dailyViewMode','simpleMode','monthlyMode','weeklyDays',
+       var _st39UiKeys = ['initialView','dailyViewMode','simpleMode','showCalendarSymbol','monthlyMode','weeklyDays',
          'weeklyRowH','weeklyTimeBar','tlScrollMode','tlLastScrollTop','tlTimeBar',
          'wgScrollMode','weeklyStartH','weeklyEndH','useColors','craftModeEnabled',
          'craftRenderMode','gantEnabled','visibleTabs'];
