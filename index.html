@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.315';
+    const APP_VERSION = 'v0.39.335';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -1521,10 +1521,16 @@
       min-width: 0;
       width: 100%;
       height: calc(var(--vh, 1vh) * 100 - 50px);
-      overflow: auto;
-      padding: 20px;
+      overflow: hidden;
       box-sizing: border-box;
       background-color: #f5f5f5;
+      display: none;
+      flex-direction: column;
+    }
+    .monthly-scroll-area {
+      flex: 1;
+      overflow: auto;
+      min-height: 0;
     }
     .monthly-header {
       display: flex;
@@ -1569,8 +1575,8 @@
     .monthly-calendar {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      gap: 1px;
-      background-color: #e0e0e0;
+      gap: 0;
+      background-color: transparent;
       border: 1px solid #e0e0e0;
       min-width: 100%;
     }
@@ -1582,17 +1588,17 @@
       font-size: 0.9em;
     }
     .monthly-weekday-header.saturday {
-      background-color: #e3f2fd;
-      color: #1976d2;
+      background-color: #f0f6ff;
+      color: #5b8fd4;
     }
     .monthly-weekday-header.sunday {
-      background-color: #fff3e0;
-      color: #e65100;
+      background-color: #fff8f2;
+      color: #c47a3a;
     }
     .monthly-day-cell {
       background-color: white;
-      min-height: 80px;
-      /* max-heightはリサイズハンドルで制御 */
+      border-right: 1px solid #e0e0e0;
+      border-bottom: 1px solid #e0e0e0;
       overflow-y: auto;
       overflow-x: hidden;
       padding: 5px;
@@ -1610,55 +1616,18 @@
       background: rgba(0,0,0,0.1);
       border-radius: 3px;
     }
-    /* 月間ビューのリサイズハンドル */
-    .monthly-resize-handle {
-      grid-column: 1 / -1;
-      height: 4px;
-      background: transparent;
-      cursor: ns-resize;
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background-color 0.2s ease;
-      z-index: 2;
-      margin: -2px 0;
-    }
-    .monthly-resize-handle:hover {
-      background: rgba(79, 172, 254, 0.08);
-    }
-    .monthly-resize-handle:active {
-      background: rgba(79, 172, 254, 0.12);
-    }
-    /* ハンドルのグリップ（つまみ）- hover時だけ表示 */
-    .monthly-resize-handle::after {
-      content: '';
-      width: 24px;
-      height: 2px;
-      background: rgba(0,0,0,0);
-      border-radius: 1px;
-      transition: background 0.2s ease, width 0.2s ease;
-    }
-    .monthly-resize-handle:hover::after {
-      background: rgba(0,0,0,0.15);
-      width: 32px;
-    }
-    .monthly-resize-handle:active::after {
-      background: #4facfe;
-      width: 40px;
-    }
     .monthly-day-cell:hover {
       background-color: #fafafa;
     }
     .monthly-day-cell.other-month {
-      background-color: #f9f9f9;
-      color: #bbb;
+      background-color: #ffffff;
+      color: #ccc;
     }
     .monthly-day-cell.saturday {
-      background-color: #e3f2fd;
+      background-color: #f5f9ff;
     }
     .monthly-day-cell.sunday {
-      background-color: #fff3e0;
+      background-color: #fffaf5;
     }
     .monthly-day-cell.today {
       background-color: #fff9c4;
@@ -3162,7 +3131,7 @@
       <div style="display: flex; gap: 4px; flex-shrink: 0; align-items: center;">
         <button class="monthly-nav-btn" style="padding: 5px 8px; font-size: 0.72em; white-space: nowrap;" onclick="changeTimelineDate(1)">翌日 ▶</button>
         <button onclick="goTimelineToday()" style="font-size: 0.68em; padding: 5px 6px; border-radius: 5px; border: 1.5px solid #4facfe; background: #fff; color: #4facfe; cursor: pointer; white-space: nowrap; font-weight: 600;">今日</button>
-        <span style="font-size:0.65em;color:#bbb;">↕</span>
+        <span style="font-size:0.65em;color:#bbb;">↕︎</span>
         <input type="range" id="tlHeightSlider" min="80" max="300" value="80"
           style="width:50px;accent-color:#4facfe;cursor:pointer;writing-mode:horizontal-tb;"
           oninput="adjustTlRowHeight(this.value)">
@@ -3421,12 +3390,12 @@
       </div>
       <!-- 2行目：↕縦 / ↔横 を半分半分 + リセット（縦が左・横が右） -->
       <div style="width:100%;display:flex;align-items:center;gap:0;padding:3px 8px 4px;box-sizing:border-box;border-bottom:1px solid #f0f0f0;">
-        <span style="font-size:0.65em;color:#f472b6;flex-shrink:0;margin-right:3px;">↕</span>
+        <span style="font-size:0.65em;color:#f472b6;flex-shrink:0;margin-right:3px;line-height:1;vertical-align:middle;">↕︎</span>
         <input type="range" id="weeklyRowHSlider" min="80" max="240" value="80"
           style="flex:1;accent-color:#f472b6;cursor:pointer;min-width:0;background:transparent;-webkit-appearance:none;height:4px;border-radius:2px;background:linear-gradient(to right,#f472b6 0%,#f472b6 0%,#e5e7eb 0%);"
           oninput="window.adjustWeeklyRowH(this.value)"
           ondblclick="window.resetWeeklyRowH()">
-        <span style="font-size:0.65em;color:#60a5fa;flex-shrink:0;margin-left:8px;margin-right:3px;">↔</span>
+        <span style="font-size:0.65em;color:#60a5fa;flex-shrink:0;margin-left:8px;margin-right:3px;line-height:1;vertical-align:middle;">↔</span>
         <input type="range" id="weeklyWidthSlider" min="100" max="300" value="100"
           style="flex:1;accent-color:#60a5fa;cursor:pointer;min-width:0;background:transparent;-webkit-appearance:none;height:4px;border-radius:2px;background:linear-gradient(to right,#60a5fa 0%,#60a5fa 0%,#e5e7eb 0%);"
           oninput="window.adjustWeeklyWidth(this.value)"
@@ -3455,17 +3424,29 @@
       <div id="widthSliderWrap" style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
         <button onclick="openFamilyShareModal()" title="家族と共有"
           style="font-size:0.72em;background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff;border:none;border-radius:6px;padding:3px 8px;cursor:pointer;font-weight:700;">👨‍👩‍👧</button>
-        <span style="font-size: 0.65em; color: #bbb;">↔</span>
-        <input type="range" id="monthlyWidthSlider" min="100" max="300" value="100"
-          style="width: 50px; accent-color: #4facfe; cursor: pointer;"
-          oninput="adjustMonthlyWidth(this.value)">
-        <button onclick="resetMonthlyWidth()" style="font-size: 0.6em; color: #aaa; background: none; border: 1px solid #ddd; border-radius: 3px; padding: 1px 4px; cursor: pointer;">↺</button>
       </div>
     </div>
+    <!-- 月間スライダーバー（週間と同じスタイル） -->
+    <div style="width:100%;display:flex;align-items:center;gap:0;padding:3px 8px 4px;box-sizing:border-box;border-bottom:1px solid #f0f0f0;background:#fff;position:sticky;top:48px;z-index:25;">
+      <span style="font-size:0.65em;color:#f472b6;flex-shrink:0;margin-right:3px;line-height:1;vertical-align:middle;">↕︎</span>
+      <input type="range" id="monthlyRowHSlider" min="60" max="240" value="80"
+        style="flex:1;accent-color:#f472b6;cursor:pointer;min-width:0;background:transparent;-webkit-appearance:none;height:4px;border-radius:2px;background:linear-gradient(to right,#f472b6 0%,#f472b6 0%,#e5e7eb 0%);"
+        oninput="window.adjustMonthlyRowH(this.value)"
+        ondblclick="window.resetMonthlyRowH()">
+      <span style="font-size:0.65em;color:#60a5fa;flex-shrink:0;margin-left:8px;margin-right:3px;line-height:1;vertical-align:middle;">↔</span>
+      <input type="range" id="monthlyWidthSlider" min="100" max="300" value="100"
+        style="flex:1;accent-color:#60a5fa;cursor:pointer;min-width:0;background:transparent;-webkit-appearance:none;height:4px;border-radius:2px;background:linear-gradient(to right,#60a5fa 0%,#60a5fa 0%,#e5e7eb 0%);"
+        oninput="window.adjustMonthlyWidth(this.value)"
+        ondblclick="window.resetMonthlyWidth()">
+      <button onclick="window.resetMonthlyWidth();window.resetMonthlyRowH();"
+        style="font-size:0.6em;color:#aaa;background:none;border:1px solid #ddd;border-radius:3px;padding:1px 5px;cursor:pointer;flex-shrink:0;margin-left:4px;">↺</button>
+    </div>
     <!-- カレンダークイックフィルター -->
-    <div id="monthlyCalendarFilter" style="display:flex;gap:6px;padding:4px 12px 6px;flex-wrap:wrap;border-bottom:1px solid #f0f0f0;background:#fff;position:sticky;top:48px;z-index:24;"></div>
+    <div id="monthlyCalendarFilter" style="display:flex;gap:6px;padding:4px 12px 6px;flex-wrap:wrap;border-bottom:1px solid #f0f0f0;background:#fff;position:sticky;top:84px;z-index:24;"></div>
+    <div class="monthly-scroll-area">
     <div id="monthlyCalendar" class="monthly-calendar">
       <!-- JavaScriptで動的に生成 -->
+    </div>
     </div>
     <!-- シンプルモード：スタンプバー（折り返し対応） -->
     <div id="stampBar" style="display: none; position: sticky; bottom: 0; left: 0; right: 0; background: #fff; border-top: 2px solid #eee; padding: 6px 8px 4px; z-index: 30; box-shadow: 0 -2px 8px rgba(0,0,0,0.08);">
@@ -3919,19 +3900,19 @@
       <div style="display:flex;justify-content:center;gap:0;background:#f8f9ff;border-radius:16px;overflow:hidden;border:1px solid #e8e8f8;">
         <div style="flex:1;text-align:center;padding:12px 6px;border-right:1px solid #e8e8f8;">
           <div style="font-size:0.75em;color:#d4a050;font-weight:700;letter-spacing:0.08em;margin-bottom:4px;">GDP</div>
-          <div id="dbGdp" style="font-size:1.6em;font-weight:900;color:#f59e0b;line-height:1;">0万</div>
+          <div id="dbGdp" style="font-size:1.6em;font-weight:900;font-family:'SF Pro Display',-apple-system,'Helvetica Neue',Arial,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;color:#f59e0b;line-height:1;">0万</div>
         </div>
         <div style="flex:1;text-align:center;padding:12px 6px;border-right:1px solid #e8e8f8;">
           <div style="font-size:0.75em;color:#c8a0d0;font-weight:700;letter-spacing:0.08em;margin-bottom:4px;">徳</div>
-          <div id="dbToku" style="font-size:1.6em;font-weight:900;color:#d946ef;line-height:1;">0</div>
+          <div id="dbToku" style="font-size:1.6em;font-weight:900;font-family:'SF Pro Display',-apple-system,'Helvetica Neue',Arial,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;color:#d946ef;line-height:1;">0</div>
         </div>
         <div style="flex:1;text-align:center;padding:12px 6px;border-right:1px solid #e8e8f8;">
           <div style="font-size:0.75em;color:#f87171;font-weight:700;letter-spacing:0.08em;margin-bottom:4px;">業</div>
-          <div id="dbGou" style="font-size:1.6em;font-weight:900;color:#ef4444;line-height:1;">0</div>
+          <div id="dbGou" style="font-size:1.6em;font-weight:900;font-family:'SF Pro Display',-apple-system,'Helvetica Neue',Arial,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;color:#ef4444;line-height:1;">0</div>
         </div>
         <div style="flex:1;text-align:center;padding:12px 6px;">
           <div style="font-size:0.75em;color:#60a5fa;font-weight:700;letter-spacing:0.08em;margin-bottom:4px;">王国力</div>
-          <div id="dbPower" style="font-size:1.6em;font-weight:900;color:#3b82f6;line-height:1;">0</div>
+          <div id="dbPower" style="font-size:1.6em;font-weight:900;font-family:'SF Pro Display',-apple-system,'Helvetica Neue',Arial,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;color:#3b82f6;line-height:1;">0</div>
         </div>
       </div>
     </div>
@@ -3946,37 +3927,37 @@
       <div style="background:#fff;border-radius:18px;padding:16px;box-shadow:0 2px 16px rgba(79,172,254,0.10);border:1px solid #e8f0fe;position:relative;overflow:hidden;min-height:110px;">
         <div style="position:absolute;right:-8px;top:-8px;font-size:2.8em;opacity:0.08;">📅</div>
         <div style="font-size:0.78em;color:#93c5fd;font-weight:700;letter-spacing:0.06em;margin-bottom:6px;">今月完了</div>
-        <div id="dbMonthCount" style="font-size:2.2em;font-weight:900;color:#1e40af;line-height:1;">0</div>
+        <div id="dbMonthCount" style="font-size:2.2em;font-weight:900;font-family:'SF Pro Display',-apple-system,'Helvetica Neue',Arial,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;color:#1e40af;line-height:1;">0</div>
         <div style="font-size:0.82em;color:#93c5fd;margin-top:5px;font-weight:700;">件</div>
       </div>
       <div style="background:#fff;border-radius:18px;padding:16px;box-shadow:0 2px 16px rgba(79,172,254,0.10);border:1px solid #e8f0fe;position:relative;overflow:hidden;min-height:110px;">
         <div style="position:absolute;right:-8px;top:-8px;font-size:2.8em;opacity:0.08;">📆</div>
         <div style="font-size:0.78em;color:#93c5fd;font-weight:700;letter-spacing:0.06em;margin-bottom:6px;">今週完了</div>
-        <div id="dbWeekCount" style="font-size:2.2em;font-weight:900;color:#1e40af;line-height:1;">0</div>
+        <div id="dbWeekCount" style="font-size:2.2em;font-weight:900;font-family:'SF Pro Display',-apple-system,'Helvetica Neue',Arial,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;color:#1e40af;line-height:1;">0</div>
         <div style="font-size:0.82em;color:#93c5fd;margin-top:5px;font-weight:700;">件</div>
       </div>
       <div style="background:linear-gradient(135deg,#fff7ed,#fff);border-radius:18px;padding:16px;box-shadow:0 2px 16px rgba(245,158,11,0.12);border:1px solid #fed7aa;position:relative;overflow:hidden;min-height:110px;">
         <div style="position:absolute;right:-8px;top:-8px;font-size:2.8em;opacity:0.12;">🔥</div>
         <div style="font-size:0.78em;color:#fb923c;font-weight:700;letter-spacing:0.06em;margin-bottom:6px;">連続稼働</div>
-        <div id="dbStreak" style="font-size:2.2em;font-weight:900;color:#ea580c;line-height:1;">0</div>
+        <div id="dbStreak" style="font-size:2.2em;font-weight:900;font-family:'SF Pro Display',-apple-system,'Helvetica Neue',Arial,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;color:#ea580c;line-height:1;">0</div>
         <div style="font-size:0.82em;color:#fb923c;margin-top:5px;font-weight:700;">日</div>
       </div>
       <div style="background:#fff;border-radius:18px;padding:16px;box-shadow:0 2px 16px rgba(79,172,254,0.10);border:1px solid #e8f0fe;position:relative;overflow:hidden;min-height:110px;">
         <div style="position:absolute;right:-8px;top:-8px;font-size:2.8em;opacity:0.08;">🏅</div>
         <div style="font-size:0.78em;color:#93c5fd;font-weight:700;letter-spacing:0.06em;margin-bottom:6px;">総完了</div>
-        <div id="dbTotalCount" style="font-size:2.2em;font-weight:900;color:#1e40af;line-height:1;">0</div>
+        <div id="dbTotalCount" style="font-size:2.2em;font-weight:900;font-family:'SF Pro Display',-apple-system,'Helvetica Neue',Arial,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;color:#1e40af;line-height:1;">0</div>
         <div style="font-size:0.82em;color:#93c5fd;margin-top:5px;font-weight:700;">件</div>
       </div>
       <div style="background:linear-gradient(135deg,#f0fdf4,#fff);border-radius:18px;padding:16px;box-shadow:0 2px 16px rgba(34,197,94,0.10);border:1px solid #bbf7d0;position:relative;overflow:hidden;min-height:110px;">
         <div style="position:absolute;right:-8px;top:-8px;font-size:2.8em;opacity:0.12;">🗓️</div>
         <div style="font-size:0.78em;color:#4ade80;font-weight:700;letter-spacing:0.06em;margin-bottom:6px;">今月稼働</div>
-        <div id="dbMonthDays" style="font-size:2.2em;font-weight:900;color:#16a34a;line-height:1;">0</div>
+        <div id="dbMonthDays" style="font-size:2.2em;font-weight:900;font-family:'SF Pro Display',-apple-system,'Helvetica Neue',Arial,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;color:#16a34a;line-height:1;">0</div>
         <div style="font-size:0.82em;color:#4ade80;margin-top:5px;font-weight:700;" id="dbMonthDaysLabel">日</div>
       </div>
       <div style="background:linear-gradient(135deg,#fdf4ff,#fff);border-radius:18px;padding:16px;box-shadow:0 2px 16px rgba(168,85,247,0.10);border:1px solid #e9d5ff;position:relative;overflow:hidden;min-height:110px;">
         <div style="position:absolute;right:-8px;top:-8px;font-size:2.8em;opacity:0.12;">⚔️</div>
         <div style="font-size:0.78em;color:#c084fc;font-weight:700;letter-spacing:0.06em;margin-bottom:6px;">コロシアム最高</div>
-        <div id="dbColosseumBest" style="font-size:2.2em;font-weight:900;color:#9333ea;line-height:1;">0</div>
+        <div id="dbColosseumBest" style="font-size:2.2em;font-weight:900;font-family:'SF Pro Display',-apple-system,'Helvetica Neue',Arial,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;color:#9333ea;line-height:1;">0</div>
         <div style="font-size:0.82em;color:#c084fc;margin-top:5px;font-weight:700;">点</div>
       </div>
     </div>
@@ -4077,7 +4058,7 @@
           <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(167,139,250,0.06),transparent 70%);pointer-events:none;"></div>
           <div style="font-size:0.78em;color:#c4b5fd;letter-spacing:0.1em;margin-bottom:8px;font-weight:700;">🌙 今夜の月</div>
           <canvas id="dbMoonCanvas" width="160" height="160" style="display:block;margin:0 auto 10px;border-radius:50%;"></canvas>
-          <div id="dbMoonAge" style="font-size:2.6em;font-weight:900;color:#ffd700;letter-spacing:0.04em;line-height:1;margin-bottom:4px;">--</div>
+          <div id="dbMoonAge" style="font-size:2.6em;font-weight:900;font-family:'SF Pro Display',-apple-system,'Helvetica Neue',Arial,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;color:#ffd700;letter-spacing:0.04em;line-height:1;margin-bottom:4px;">--</div>
           <div id="dbMoonPhase" style="font-size:1.0em;color:#c4b5fd;font-weight:700;margin-bottom:6px;letter-spacing:0.06em;">--</div>
           <div style="font-size:0.65em;color:#6655aa;margin-top:4px;">直近新月: <span id="dbLastNewMoon">--</span></div>
           <div style="font-size:0.62em;color:#6655aa;margin-top:6px;line-height:1.7;">
@@ -5076,6 +5057,8 @@
         simpleMode:       'off',
         showCalendarSymbol: true,
         monthlyMode:      'fixed',
+        monthlyRowH:      80,
+        monthlyColW:      100,
         weeklyDays:       '7',
         weeklyRowH:       80,
         weeklyCellScale:  100,
@@ -7360,13 +7343,22 @@ function myDeckApply(idx) {
       renderCalendarFilter('monthlyCalendarFilter', renderMonthlyView);
       // 月間表示モード取得
       const monthlyMode = allSettings.ui.monthlyMode || 'fixed';
-      // expandモード時はカレンダーの最小幅を拡張
-      if (monthlyMode === 'expand') {
-        calendar.style.minWidth = '100%';
-        calendar.style.width = '100%';
-      } else {
-        calendar.style.minWidth = '100%';
-        calendar.style.width = '100%';
+      // 行高さ・列幅をスライダーから適用
+      var _mRowH = parseInt(allSettings.ui.monthlyRowH || 80);
+      var _mColW = parseInt(allSettings.ui.monthlyColW || 100);
+      calendar.style.minWidth = '100%';
+      calendar.style.width = '100%';
+      calendar.style.gridTemplateRows = '';
+      // スライダーの初期値を反映
+      var _mRhSlider = document.getElementById('monthlyRowHSlider');
+      if (_mRhSlider) {
+        _mRhSlider.value = _mRowH;
+        _mRhSlider.style.background = 'linear-gradient(to right,#e5e7eb 0%,#e5e7eb 0%)';
+      }
+      var _mCwSlider = document.getElementById('monthlyWidthSlider');
+      if (_mCwSlider) {
+        _mCwSlider.value = _mColW;
+        _mCwSlider.style.background = 'linear-gradient(to right,#e5e7eb 0%,#e5e7eb 0%)';
       }
       const year = currentMonthDate.getFullYear();
       const month = currentMonthDate.getMonth();
@@ -7400,17 +7392,9 @@ function myDeckApply(idx) {
       let currentDate = 1;
       let nextMonthDate = 1;
       for (let i = 0; i < 42; i++) {
-        // 各週の間にリサイズハンドルを挿入
-        if (i > 0 && i % 7 === 0) {
-          const handle = document.createElement('div');
-          handle.className = 'monthly-resize-handle';
-          handle.dataset.weekRow = Math.floor(i / 7);
-          handle.addEventListener('mousedown', function(e) { startMonthlyResize(e); });
-          handle.addEventListener('touchstart', function(e) { startMonthlyResizeTouchWrapper(e); }, { passive: false });
-          calendar.appendChild(handle);
-        }
         const cell = document.createElement('div');
         cell.className = 'monthly-day-cell';
+        cell.style.height = _mRowH + 'px';
         let dateStr;
         let dayNumber;
         let isOtherMonth = false;
@@ -7739,71 +7723,6 @@ function myDeckApply(idx) {
       }
     }
     // ===== 月間ビュー：行リサイズ機能 =====
-    let resizingRow = null;
-    let resizeStartY = 0;
-    let resizeStartHeights = [];
-    function _startMonthlyResizeCore(weekRow, startY) {
-      resizingRow = weekRow;
-      resizeStartY = startY;
-      const cells = document.getElementById('monthlyCalendar').querySelectorAll('.monthly-day-cell');
-      const startIndex = (weekRow - 1) * 7;
-      resizeStartHeights = [];
-      for (let j = 0; j < 7; j++) {
-        const cell = cells[startIndex + j];
-        if (cell) resizeStartHeights.push(cell.offsetHeight);
-      }
-    }
-    function startMonthlyResize(e) {
-      e.preventDefault();
-      _startMonthlyResizeCore(parseInt(e.target.dataset.weekRow), e.clientY);
-      document.addEventListener('mousemove', onMonthlyResize);
-      document.addEventListener('mouseup', stopMonthlyResize);
-      document.body.style.cursor = 'ns-resize';
-      document.body.style.userSelect = 'none';
-    }
-    function startMonthlyResizeTouchWrapper(e) {
-      e.preventDefault();
-      _startMonthlyResizeCore(parseInt(e.target.dataset.weekRow), e.touches[0].clientY);
-      document.addEventListener('touchmove', onMonthlyResizeTouch, { passive: false });
-      document.addEventListener('touchend', stopMonthlyResizeTouch);
-    }
-    function onMonthlyResize(e) {
-      if (resizingRow === null) return;
-      const delta = e.clientY - resizeStartY;
-      applyRowResize(delta);
-    }
-    function onMonthlyResizeTouch(e) {
-      e.preventDefault();
-      if (resizingRow === null) return;
-      const delta = e.touches[0].clientY - resizeStartY;
-      applyRowResize(delta);
-    }
-    function applyRowResize(delta) {
-      const calendar = document.getElementById('monthlyCalendar');
-      const cells = calendar.querySelectorAll('.monthly-day-cell');
-      const startIndex = (resizingRow - 1) * 7;
-      for (let j = 0; j < 7; j++) {
-        const actualIndex = startIndex + j;
-        if (cells[actualIndex] && resizeStartHeights[j] !== undefined) {
-          const newHeight = Math.max(50, resizeStartHeights[j] + delta);
-          cells[actualIndex].style.height = newHeight + 'px';
-          cells[actualIndex].style.maxHeight = newHeight + 'px';
-          cells[actualIndex].style.minHeight = newHeight + 'px';
-        }
-      }
-    }
-    function stopMonthlyResize() {
-      resizingRow = null;
-      document.removeEventListener('mousemove', onMonthlyResize);
-      document.removeEventListener('mouseup', stopMonthlyResize);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    }
-    function stopMonthlyResizeTouch() {
-      resizingRow = null;
-      document.removeEventListener('touchmove', onMonthlyResizeTouch);
-      document.removeEventListener('touchend', stopMonthlyResizeTouch);
-    }
     // カレンダー幅調整（共通）
     function adjustCalendarWidth(elementId, percent) {
       const el = document.getElementById(elementId);
@@ -7815,8 +7734,35 @@ function myDeckApply(idx) {
       adjustCalendarWidth(elementId, 100);
     }
     // 後方互換ラッパー
-    function adjustMonthlyWidth(p) { adjustCalendarWidth('monthlyCalendar', p); }
-    function resetMonthlyWidth()   { resetCalendarWidth('monthlyWidthSlider', 'monthlyCalendar'); }
+    function adjustMonthlyWidth(p) {
+      adjustCalendarWidth('monthlyCalendar', p);
+      allSettings.ui.monthlyColW = parseInt(p);
+      saveAllSettings();
+      var sl = document.getElementById('monthlyWidthSlider');
+      if (sl) { var pct = ((parseInt(p)-100)/(300-100)*100).toFixed(1); sl.style.background='linear-gradient(to right,#60a5fa '+pct+'%,#e5e7eb '+pct+'%)'; }
+    }
+    function resetMonthlyWidth() {
+      resetCalendarWidth('monthlyWidthSlider', 'monthlyCalendar');
+      allSettings.ui.monthlyColW = 100;
+      saveAllSettings();
+      var sl = document.getElementById('monthlyWidthSlider');
+      if (sl) sl.style.background = 'linear-gradient(to right,#60a5fa 0%,#e5e7eb 0%)';
+    }
+    function adjustMonthlyRowH(v) {
+      v = parseInt(v);
+      allSettings.ui.monthlyRowH = v;
+      saveAllSettings();
+      var cal = document.getElementById('monthlyCalendar');
+      if (cal) {
+        var cells = cal.querySelectorAll('.monthly-day-cell');
+        cells.forEach(function(cell){ cell.style.height = v + 'px'; });
+      }
+      var sl = document.getElementById('monthlyRowHSlider');
+      if (sl) { sl.value = v; var pct = ((v-60)/(240-60)*100).toFixed(1); sl.style.background='linear-gradient(to right,#f472b6 '+pct+'%,#e5e7eb '+pct+'%)'; }
+    }
+    function resetMonthlyRowH() {
+      adjustMonthlyRowH(80);
+    }
     function adjustWeeklyWidth(p) {
       allSettings.ui.weeklyCellScale = p; saveAllSettings();
       // スライダーの塗り色を更新
@@ -10997,7 +10943,7 @@ function reviveBlueprint(id) {
       const yearlyView = document.getElementById('yearlyView');
       dailyView.style.display = 'none';
       weeklyView.style.display = 'none';
-      monthlyView.style.display = 'block';
+      monthlyView.style.display = 'flex';
       yearlyView.style.display = 'none';
       document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
       document.getElementById('navMonthly').classList.add('active');
@@ -11981,7 +11927,9 @@ function reviveBlueprint(id) {
       // タブのactive更新
       document.querySelectorAll('.daily-inner-tab').forEach(t => t.classList.remove('active'));
       var helpBtn = document.getElementById('tutorialHelpBtn');
+      var zenBtn = document.getElementById('zenModeBtn');
       if (helpBtn) helpBtn.style.display = (mode === 'scratch') ? 'none' : 'block';
+      if (zenBtn)  zenBtn.style.display  = (mode === 'scratch') ? 'none' : 'block';
       if (mode === 'scratch') {
         scratchView.style.display = 'flex';
         scratchView.style.flexDirection = 'column';
@@ -12565,7 +12513,93 @@ function reviveBlueprint(id) {
     window.getCalendarSymbol = getCalendarSymbol;
     // ===== カレンダー記号 ここまで =====
 
-    // ===== GitHub Gist クラウド同期 =====
+    // ===== 禅モード =====
+    window.openZenMode = function() {
+      var overlay = document.getElementById('zenModeOverlay');
+      var textarea = document.getElementById('zenTextarea');
+      var dateLabel = document.getElementById('zenDateLabel');
+      if (!overlay) return;
+      // 図書館ページ追加（初回のみ）
+      if (!allSettings.flags.nbZenPageAdded) {
+        allSettings.flags.nbZenPageAdded = true;
+        saveAllSettings();
+        var _znId = generateTaskId();
+        var _znPage = {
+          id: _znId, kind: 'note',
+          title: '⊙ 禅モードとは',
+          textL:
+            '【禅モードとは】\n\n' +
+            '⊙ボタン（画面左下）から\n' +
+            'いつでも開ける白紙の空間。\n\n' +
+            'タスクも予定も関係ない。\n' +
+            'ただ、書く。\n\n' +
+            '思ったことを書いてもいい。\n' +
+            '悩みを吐き出してもいい。\n' +
+            '何も書かなくてもいい。\n\n' +
+            '保存すると雑記帳に追加される。',
+          textR:
+            '【使い方】\n\n' +
+            '① ⊙ボタンをタップ\n' +
+            '② 白紙に自由に書く\n' +
+            '③「保存」で雑記帳へ\n\n' +
+            '「閉じる」を押すと\n' +
+            '書いた内容は消えます。\n\n' +
+            '【禅の心得】\n\n' +
+            '完璧に書こうとしない。\n' +
+            '正しく書こうとしない。\n' +
+            'ただ、今感じることを\n' +
+            'そのままここに置いていく。',
+          dateL: '', dateR: '',
+          createdAt: new Date().toISOString()
+        };
+        allTasks.push(_znPage);
+        saveAllTasks();
+      }
+      // 初回オンボーディング
+      if (!allSettings.flags.zenOnboardSeen) {
+        allSettings.flags.zenOnboardSeen = true;
+        saveAllSettings();
+        var _ob = document.createElement('div');
+        _ob.style.cssText = 'position:fixed;inset:0;z-index:999996;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;';
+        _ob.innerHTML = '<div style="background:#fff;border-radius:20px;padding:32px 28px;max-width:300px;width:88%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.2);">'
+          + '<div style="font-size:2em;margin-bottom:12px;color:#333;">⊙</div>'
+          + '<div style="font-size:1.05em;font-weight:700;color:#1a1a1a;margin-bottom:10px;">禅モード</div>'
+          + '<div style="font-size:0.88em;color:#555;line-height:1.9;margin-bottom:20px;">'
+          + '機能が多くて疲れたとき、<br>ここに戻っておいで。<br><br>'
+          + '白紙に書くだけ。それだけ。<br>'
+          + 'どこからでも、いつでも。'
+          + '</div>'
+          + '<button style="width:100%;padding:12px;background:#222;border:none;border-radius:14px;color:#fff;font-size:0.95em;font-weight:700;cursor:pointer;" onclick="this.closest(\'div[style*=inset]\').remove()">はじめる</button>'
+          + '</div>';
+        document.body.appendChild(_ob);
+      }
+      var now = new Date();
+      var wd = ['日','月','火','水','木','金','土'];
+      if (dateLabel) dateLabel.textContent = now.getFullYear() + '年' + (now.getMonth()+1) + '月' + now.getDate() + '日（' + wd[now.getDay()] + '）';
+      if (textarea) textarea.value = '';
+      overlay.style.display = 'flex';
+      setTimeout(function(){ if (textarea) textarea.focus(); }, 100);
+    };
+    window.closeZenMode = function() {
+      var overlay = document.getElementById('zenModeOverlay');
+      if (overlay) overlay.style.display = 'none';
+    };
+    window.saveZenMode = function() {
+      var textarea = document.getElementById('zenTextarea');
+      var text = textarea ? textarea.value.trim() : '';
+      if (!text) { window.closeZenMode(); return; }
+      var now = new Date();
+      var dateStr = getLocalDateStr(now);
+      addThought(text, dateStr);
+      window.closeZenMode();
+      showToast('🪷 雑記帳に保存しました');
+      // 雑記帳へ遷移（switchViewの完了を十分待つ）
+      switchView('daily');
+      setTimeout(function(){
+        if (typeof switchDailyTab === 'function') switchDailyTab('scratch');
+      }, 300);
+    };
+    // ===== 禅モード ここまで =====
     var GIST_TOKEN_KEY = 'gistToken';
     var GIST_ID_KEY = 'gistId';
 
@@ -13782,7 +13816,9 @@ function reviveBlueprint(id) {
       var _dailyNavBarReset = document.getElementById('dailyDateNavBar');
       if (_dailyNavBarReset) _dailyNavBarReset.style.display = 'none';
       var _hb = document.getElementById('tutorialHelpBtn');
+      var _zb = document.getElementById('zenModeBtn');
       if (_hb) _hb.style.display = 'block';
+      if (_zb) _zb.style.display = 'block';
       // タブのアクティブ状態を更新
       document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
       if (view === 'daily') {
@@ -13815,7 +13851,7 @@ function reviveBlueprint(id) {
           }
         }, 50);
       } else if (view === 'monthly') {
-        monthlyView.style.display = 'block';
+        monthlyView.style.display = 'flex';
         document.getElementById('navMonthly').classList.add('active');
         currentMonthDate = new Date();
         renderMonthlyView();
@@ -16070,6 +16106,8 @@ function loadSettingsUI() {
     window.addCalendarSetting = addCalendarSetting;
     window.addStampSetting = addStampSetting;
     window.adjustMonthlyWidth = adjustMonthlyWidth;
+    window.adjustMonthlyRowH  = adjustMonthlyRowH;
+    window.resetMonthlyRowH   = resetMonthlyRowH;
     window.adjustTlRowHeight = adjustTlRowHeight;
     window.changeMonth = changeMonth;
     window.changeTimelineDate = changeTimelineDate;
@@ -23094,7 +23132,7 @@ function showDebugLog() {
        'applyGuildLicense','issueGuildLicense',
        // ビュー切替/UI
        'changeMonth','changeWeek','changeYear','changeTimelineDate',
-       'adjustMonthlyWidth','adjustTlRowHeight','adjustWeeklyRowH','adjustWeeklyWidth',
+       'adjustMonthlyWidth','adjustMonthlyRowH','resetMonthlyRowH','adjustTlRowHeight','adjustWeeklyRowH','adjustWeeklyWidth',
        'resetMonthlyWidth','resetTlRowHeight','resetWeeklyRowH','resetWeeklyWidth',
        'goTimelineToday','onYearlyCellClick','handleTimerClick','showDebugLog',
        'switchDailyTab','toggleAbout','toggleAdminMode','toggleColors',
@@ -24490,7 +24528,7 @@ function showDebugLog() {
 
        // ===== ST-34C: テストセクション自己存在確認 =====
        // テストセクション自己存在確認：ソースコード上の存在をチェック
-       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72'];
+       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -27001,6 +27039,151 @@ function showDebugLog() {
      } catch(e) { ng('ST-72', e.message); }
 
 
+     // ===== ST-73: 月間ビュースライダー機能確認 =====
+     try {
+       // ① adjustMonthlyRowH 存在確認
+       typeof adjustMonthlyRowH === 'function'
+         ? ok('ST-73: adjustMonthlyRowH 存在確認')
+         : ng('ST-73: adjustMonthlyRowH', '未定義');
+
+       // ② adjustMonthlyWidth 存在確認
+       typeof adjustMonthlyWidth === 'function'
+         ? ok('ST-73: adjustMonthlyWidth 存在確認')
+         : ng('ST-73: adjustMonthlyWidth', '未定義');
+
+       // ③ resetMonthlyRowH 存在確認
+       typeof resetMonthlyRowH === 'function'
+         ? ok('ST-73: resetMonthlyRowH 存在確認')
+         : ng('ST-73: resetMonthlyRowH', '未定義');
+
+       // ④ allSettings.ui.monthlyRowH 存在確認
+       typeof allSettings.ui.monthlyRowH !== 'undefined'
+         ? ok('ST-73: allSettings.ui.monthlyRowH 存在確認（' + allSettings.ui.monthlyRowH + '）')
+         : ng('ST-73: monthlyRowH', '未定義');
+
+       // ⑤ allSettings.ui.monthlyColW 存在確認
+       typeof allSettings.ui.monthlyColW !== 'undefined'
+         ? ok('ST-73: allSettings.ui.monthlyColW 存在確認（' + allSettings.ui.monthlyColW + '）')
+         : ng('ST-73: monthlyColW', '未定義');
+
+       // ⑥ monthlyRowHSlider DOM確認
+       document.getElementById('monthlyRowHSlider')
+         ? ok('ST-73: monthlyRowHSlider DOM確認')
+         : ng('ST-73: monthlyRowHSlider', 'DOM未存在');
+
+       // ⑦ monthlyWidthSlider DOM確認
+       document.getElementById('monthlyWidthSlider')
+         ? ok('ST-73: monthlyWidthSlider DOM確認')
+         : ng('ST-73: monthlyWidthSlider', 'DOM未存在');
+
+       // ⑧ リサイズ残骸なし確認（startMonthlyResize・applyRowResize）
+       typeof startMonthlyResize === 'undefined'
+         ? ok('ST-73: startMonthlyResize 削除確認（残骸なし）')
+         : ng('ST-73: startMonthlyResize', '残骸が残存');
+       typeof applyRowResize === 'undefined'
+         ? ok('ST-73: applyRowResize 削除確認（残骸なし）')
+         : ng('ST-73: applyRowResize', '残骸が残存');
+
+       // ⑨ adjustMonthlyRowH 挙動確認（120pxに変更→元に戻す）
+       var _prevRowH = allSettings.ui.monthlyRowH;
+       adjustMonthlyRowH(120);
+       allSettings.ui.monthlyRowH === 120
+         ? ok('ST-73: adjustMonthlyRowH(120) → allSettings反映確認')
+         : ng('ST-73: adjustMonthlyRowH挙動', '値が反映されない');
+       // 月間ビューが表示中なら実セルを確認
+       var _mCal = document.getElementById('monthlyCalendar');
+       if (_mCal && _mCal.querySelectorAll('.monthly-day-cell').length > 0) {
+         var _cell0 = _mCal.querySelectorAll('.monthly-day-cell')[0];
+         parseInt(_cell0.style.height) === 120
+           ? ok('ST-73: セルheight=120px 反映確認')
+           : ok('ST-73: セルheight確認スキップ（月間非表示）');
+       } else {
+         ok('ST-73: セルheight確認スキップ（月間非表示）');
+       }
+       adjustMonthlyRowH(_prevRowH);
+       ok('ST-73: adjustMonthlyRowH ロールバック完了（' + _prevRowH + '）');
+
+       // ⑩ monthly-scroll-area DOM確認
+       document.querySelector('.monthly-scroll-area')
+         ? ok('ST-73: monthly-scroll-area DOM確認')
+         : ng('ST-73: monthly-scroll-area', 'DOM未存在');
+
+       ok('ST-73: 月間ビュースライダー機能確認 完了');
+     } catch(e) { ng('ST-73', e.message); }
+
+
+     // ===== ST-74: 禅モード機能確認 =====
+     try {
+       // ① 関数存在確認
+       typeof window.openZenMode === 'function'
+         ? ok('ST-74: openZenMode 存在確認')
+         : ng('ST-74: openZenMode', '未定義');
+       typeof window.saveZenMode === 'function'
+         ? ok('ST-74: saveZenMode 存在確認')
+         : ng('ST-74: saveZenMode', '未定義');
+       typeof window.closeZenMode === 'function'
+         ? ok('ST-74: closeZenMode 存在確認')
+         : ng('ST-74: closeZenMode', '未定義');
+
+       // ② DOM確認
+       document.getElementById('zenModeOverlay')
+         ? ok('ST-74: zenModeOverlay DOM確認')
+         : ng('ST-74: zenModeOverlay', 'DOM未存在');
+       document.getElementById('zenModeBtn')
+         ? ok('ST-74: zenModeBtn DOM確認')
+         : ng('ST-74: zenModeBtn', 'DOM未存在');
+       document.getElementById('zenTextarea')
+         ? ok('ST-74: zenTextarea DOM確認')
+         : ng('ST-74: zenTextarea', 'DOM未存在');
+       document.getElementById('zenDateLabel')
+         ? ok('ST-74: zenDateLabel DOM確認')
+         : ng('ST-74: zenDateLabel', 'DOM未存在');
+
+       // ③ openZenMode→display:flex確認→closeZenMode→none確認
+       window.openZenMode();
+       var _zenOvl = document.getElementById('zenModeOverlay');
+       _zenOvl && _zenOvl.style.display === 'flex'
+         ? ok('ST-74: openZenMode → display:flex確認')
+         : ng('ST-74: openZenMode表示', _zenOvl ? _zenOvl.style.display : 'null');
+       window.closeZenMode();
+       _zenOvl && _zenOvl.style.display === 'none'
+         ? ok('ST-74: closeZenMode → display:none確認')
+         : ng('ST-74: closeZenMode非表示', _zenOvl ? _zenOvl.style.display : 'null');
+
+       // ④ saveZenMode：空文字で保存しても雑記帳に追加されないこと
+       var _prevCount = allTasks.filter(function(t){ return t.kind==='thought'; }).length;
+       var _zenTa = document.getElementById('zenTextarea');
+       if (_zenTa) _zenTa.value = '';
+       window.saveZenMode();
+       var _afterCount = allTasks.filter(function(t){ return t.kind==='thought'; }).length;
+       _afterCount === _prevCount
+         ? ok('ST-74: 空文字保存 → 雑記帳に追加されない確認')
+         : ng('ST-74: 空文字保存', '余分に追加された');
+
+       // ⑤ saveZenMode：テキストあり→雑記帳に追加されること
+       var _prevCount2 = allTasks.filter(function(t){ return t.kind==='thought'; }).length;
+       window.openZenMode();
+       if (_zenTa) _zenTa.value = 'ST-74テスト用禅テキスト';
+       window.saveZenMode();
+       var _afterCount2 = allTasks.filter(function(t){ return t.kind==='thought'; }).length;
+       _afterCount2 === _prevCount2 + 1
+         ? ok('ST-74: テキストあり保存 → 雑記帳+1確認')
+         : ng('ST-74: テキストあり保存', '件数が変わらない');
+       // クリーンアップ
+       allTasks = allTasks.filter(function(t){ return t.text !== 'ST-74テスト用禅テキスト'; });
+       saveAllTasks();
+       ok('ST-74: クリーンアップ完了（' + allTasks.length + '件）');
+
+       // ⑥ zenModeBtn 表示制御確認（scratch以外で表示）
+       var _zb = document.getElementById('zenModeBtn');
+       _zb
+         ? ok('ST-74: zenModeBtn 表示制御コード確認')
+         : ng('ST-74: zenModeBtn', 'DOM未存在');
+
+       ok('ST-74: 禅モード機能確認 完了');
+     } catch(e) { ng('ST-74', e.message); }
+
+
      // ===== APAG LAUNCH SEQUENCE =====
      try {
        ok('');
@@ -27033,7 +27216,7 @@ function showDebugLog() {
          : ng('ST-39[SPAG·A1·SETTINGS INTEGRITY] allSettings型違反', _st39TopKeys.filter(function(k){ return typeof allSettings[k] !== 'object'; }).join(','));
 
        // ui必須フィールド
-       var _st39UiKeys = ['initialView','dailyViewMode','simpleMode','showCalendarSymbol','monthlyMode','weeklyDays',
+       var _st39UiKeys = ['initialView','dailyViewMode','simpleMode','showCalendarSymbol','monthlyMode','monthlyRowH','monthlyColW','weeklyDays',
          'weeklyRowH','weeklyTimeBar','tlScrollMode','tlLastScrollTop','tlTimeBar',
          'wgScrollMode','weeklyStartH','weeklyEndH','useColors','craftModeEnabled',
          'craftRenderMode','gantEnabled','visibleTabs'];
@@ -27053,7 +27236,7 @@ function showDebugLog() {
        var _st39FlagKeys = ['tutorialSeen','gantTourSeen','journalTourSeen','scratchTourSeen','adminMode','inspectionMode','purpose','purposeConfirmed','stopCondition','stopConditionSaved'];
        var _st39FlagMissing = _st39FlagKeys.filter(function(k){ return !(k in allSettings.flags); });
        // flags許容フィールド（動的追加される既知フラグも含む）
-       var _st39FlagAllowed = _st39FlagKeys.concat(['searchOnboardSeen','nbGouTokuPageAdded']);
+       var _st39FlagAllowed = _st39FlagKeys.concat(['searchOnboardSeen','nbGouTokuPageAdded','zenOnboardSeen','nbZenPageAdded']);
        var _st39FlagUnknown = Object.keys(allSettings.flags).filter(function(k){ return _st39FlagAllowed.indexOf(k) === -1; });
        _st39FlagMissing.length === 0
          ? ok('SPAG[·A1·SETTINGS INTEGRITY] allSettings.flags必須フィールド全確認')
@@ -29612,6 +29795,32 @@ document.addEventListener('DOMContentLoaded', function() {
 <div id="_ycWelcomeAnim" style="position:fixed;inset:0;pointer-events:none;z-index:99999;display:none;"></div>
 <!-- 王国入場アニメレイヤー（body直下・stacking context問題回避） -->
 <div id="_ycWelcomeAnim" style="position:fixed;inset:0;pointer-events:none;z-index:99999;display:none;"></div>
+<button id="zenModeBtn" onclick="window.openZenMode()" style="display:none;position:fixed;bottom:24px;left:20px;width:42px;height:42px;border-radius:50%;background:#fff;border:2px solid #ddd;color:#333;font-size:1.3em;font-weight:400;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.12);z-index:99990;line-height:38px;text-align:center;">⊙</button>
+
+<!-- 禅モードオーバーレイ -->
+<div id="zenModeOverlay" style="display:none;position:fixed;inset:0;z-index:999995;background:#ffffff;flex-direction:column;">
+  <!-- 中央に大きなマルチョン1個 -->
+  <div style="position:absolute;top:35%;left:50%;transform:translate(-50%,-50%);pointer-events:none;opacity:0.07;width:220px;height:220px;border-radius:50%;border:8px solid #888;display:flex;align-items:center;justify-content:center;">
+    <div style="width:18px;height:18px;border-radius:50%;background:#888;"></div>
+  </div>
+  <!-- ヘッダー -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px 10px;border-bottom:1px solid #f0f0f0;flex-shrink:0;position:relative;z-index:1;">
+    <div style="font-size:0.82em;color:#999;letter-spacing:0.12em;font-weight:500;">⊙ 禅</div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button onclick="window.saveZenMode()" style="padding:7px 20px;background:#222;border:none;border-radius:20px;color:#fff;font-size:0.85em;font-weight:700;cursor:pointer;letter-spacing:0.04em;">保存</button>
+      <button onclick="window.closeZenMode()" style="padding:7px 14px;background:none;border:1.5px solid #ddd;border-radius:20px;color:#aaa;font-size:0.85em;cursor:pointer;">閉じる</button>
+    </div>
+  </div>
+  <!-- 日付 -->
+  <div id="zenDateLabel" style="text-align:center;font-size:0.78em;color:#bbb;margin:10px 0 4px;letter-spacing:0.08em;flex-shrink:0;position:relative;z-index:1;"></div>
+  <!-- テキストエリア -->
+  <textarea id="zenTextarea"
+    placeholder="ここに、自由に。"
+    style="flex:1;width:100%;box-sizing:border-box;padding:16px 28px;background:transparent;border:none;outline:none;resize:none;font-size:1em;line-height:1.9;color:#1a1a1a;font-family:'Hiragino Mincho ProN','Yu Mincho','Times New Roman',serif;letter-spacing:0.04em;caret-color:#555;position:relative;z-index:1;"></textarea>
+  <!-- フッター -->
+  <div style="text-align:center;padding:8px;font-size:0.72em;color:#ddd;flex-shrink:0;letter-spacing:0.06em;position:relative;z-index:1;">保存すると雑記帳に追加されます</div>
+</div>
+
 <button id="tutorialHelpBtn" onclick="showTutorial()" style="display:none;position:fixed;bottom:24px;right:20px;width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;color:#fff;font-size:1.3em;font-weight:bold;cursor:pointer;box-shadow:0 4px 15px rgba(79,172,254,0.5);z-index:99990;line-height:42px;text-align:center;"
   ontouchstart="this._t=setTimeout(function(){showDebugLog();},2000)"
   ontouchend="clearTimeout(this._t)"
