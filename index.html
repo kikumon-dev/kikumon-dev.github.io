@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.338';
+    const APP_VERSION = 'v0.39.336';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -12584,6 +12584,37 @@ function reviveBlueprint(id) {
       var overlay = document.getElementById('zenModeOverlay');
       if (overlay) overlay.style.display = 'none';
     };
+
+    // ===== 禅ログ =====
+    window.openZenLog = function() {
+      var modal = document.getElementById('zenLogModal');
+      if (!modal) return;
+      var list = document.getElementById('zenLogList');
+      if (list) {
+        var items = allTasks
+          .filter(function(t){ return t.kind === 'zen'; })
+          .sort(function(a,b){ return new Date(b.createdAt) - new Date(a.createdAt); });
+        if (items.length === 0) {
+          list.innerHTML = '<div style="text-align:center;color:#bbb;padding:40px 0;font-size:0.88em;">まだ記録がありません</div>';
+        } else {
+          list.innerHTML = items.map(function(item){
+            var d = new Date(item.createdAt);
+            var label = (d.getMonth()+1) + '/' + d.getDate() + ' ' +
+              ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2);
+            return '<div style="padding:14px 2px;border-bottom:1px solid #f3f3f3;">' +
+              '<div style="font-size:0.72em;color:#ccc;margin-bottom:5px;letter-spacing:0.05em;">' + label + '</div>' +
+              '<div style="font-size:0.93em;color:#333;line-height:1.75;white-space:pre-wrap;">' +
+              escapeHtml(item.text) + '</div></div>';
+          }).join('');
+        }
+      }
+      modal.style.display = 'flex';
+    };
+    window.closeZenLog = function() {
+      var modal = document.getElementById('zenLogModal');
+      if (modal) modal.style.display = 'none';
+    };
+    // ===== 禅ログ ここまで =====
     window.saveZenMode = function() {
       var textarea = document.getElementById('zenTextarea');
       var text = textarea ? textarea.value.trim() : '';
@@ -12597,41 +12628,8 @@ function reviveBlueprint(id) {
       });
       saveAllTasks();
       window.closeZenMode();
-      showToast('🪷 禅に保存しました');
+      showToast('⊙ 禅に記しました');
     };
-
-    // ===== 禅ログ =====
-    window.openZenLog = function() {
-      var modal = document.getElementById('zenLogModal');
-      if (!modal) return;
-      window.renderZenLog();
-      modal.style.display = 'flex';
-    };
-    window.closeZenLog = function() {
-      var modal = document.getElementById('zenLogModal');
-      if (modal) modal.style.display = 'none';
-    };
-    window.renderZenLog = function() {
-      var list = document.getElementById('zenLogList');
-      if (!list) return;
-      var items = allTasks
-        .filter(function(t){ return t.kind === 'zen'; })
-        .sort(function(a,b){ return new Date(b.createdAt) - new Date(a.createdAt); });
-      if (items.length === 0) {
-        list.innerHTML = '<div style="text-align:center;color:#bbb;padding:32px;font-size:0.9em;">まだ記録がありません</div>';
-        return;
-      }
-      list.innerHTML = items.map(function(item){
-        var d = new Date(item.createdAt);
-        var label = (d.getMonth()+1) + '/' + d.getDate() + ' ' +
-          ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2);
-        return '<div style="padding:12px 4px;border-bottom:1px solid #f5f5f5;">' +
-          '<div style="font-size:0.72em;color:#bbb;margin-bottom:4px;">' + label + '</div>' +
-          '<div style="font-size:0.95em;color:#333;line-height:1.7;white-space:pre-wrap;">' +
-          escapeHtml(item.text) + '</div></div>';
-      }).join('');
-    };
-    // ===== 禅ログ ここまで =====
     // ===== 禅モード ここまで =====
     var GIST_TOKEN_KEY = 'gistToken';
     var GIST_ID_KEY = 'gistId';
@@ -29839,6 +29837,7 @@ document.addEventListener('DOMContentLoaded', function() {
   <!-- ヘッダー -->
   <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px 10px;border-bottom:1px solid #f0f0f0;flex-shrink:0;position:relative;z-index:1;">
     <div style="font-size:0.82em;color:#999;letter-spacing:0.12em;font-weight:500;">⊙ 禅モード</div>
+      <button onclick="window.openZenLog()" style="padding:4px 14px;background:none;border:1px solid #e8e8e8;border-radius:14px;color:#bbb;font-size:0.75em;cursor:pointer;margin-left:8px;">ログ</button>
     <div style="display:flex;gap:8px;align-items:center;">
       <button onclick="window.saveZenMode()" style="padding:7px 20px;background:#222;border:none;border-radius:20px;color:#fff;font-size:0.85em;font-weight:700;cursor:pointer;letter-spacing:0.04em;">保存</button>
       <button onclick="window.closeZenMode()" style="padding:7px 14px;background:none;border:1.5px solid #ddd;border-radius:20px;color:#aaa;font-size:0.85em;cursor:pointer;">閉じる</button>
