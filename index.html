@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.335';
+    const APP_VERSION = 'v0.39.336';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -11929,7 +11929,7 @@ function reviveBlueprint(id) {
       var helpBtn = document.getElementById('tutorialHelpBtn');
       var zenBtn = document.getElementById('zenModeBtn');
       if (helpBtn) helpBtn.style.display = (mode === 'scratch') ? 'none' : 'block';
-      if (zenBtn)  zenBtn.style.display  = (mode === 'scratch') ? 'none' : 'block';
+      if (zenBtn)  zenBtn.style.display  = (mode === 'scratch') ? 'block' : 'none';
       if (mode === 'scratch') {
         scratchView.style.display = 'flex';
         scratchView.style.flexDirection = 'column';
@@ -29805,7 +29805,7 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
   <!-- ヘッダー -->
   <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px 10px;border-bottom:1px solid #f0f0f0;flex-shrink:0;position:relative;z-index:1;">
-    <div style="font-size:0.82em;color:#999;letter-spacing:0.12em;font-weight:500;">⊙ 禅</div>
+    <div style="font-size:0.82em;color:#999;letter-spacing:0.12em;font-weight:500;">⊙ 禅モード</div>
     <div style="display:flex;gap:8px;align-items:center;">
       <button onclick="window.saveZenMode()" style="padding:7px 20px;background:#222;border:none;border-radius:20px;color:#fff;font-size:0.85em;font-weight:700;cursor:pointer;letter-spacing:0.04em;">保存</button>
       <button onclick="window.closeZenMode()" style="padding:7px 14px;background:none;border:1.5px solid #ddd;border-radius:20px;color:#aaa;font-size:0.85em;cursor:pointer;">閉じる</button>
