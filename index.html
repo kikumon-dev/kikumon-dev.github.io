@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.351';
+    const APP_VERSION = 'v0.39.355';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -13616,16 +13616,28 @@ function reviveBlueprint(id) {
         }
 
         var _calList = allSettings.calendar.list || [];
-        // ── calendar.list内の非UUID IDを除去 ──
+        // ── calendar.list内の非UUID IDを救済・除去 ──
         var _uuidRe2 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        var _beforeLen = _calList.length;
-        _calList = _calList.filter(function(c){ return c && c.id && _uuidRe2.test(c.id); });
-        if (_calList.length !== _beforeLen) {
+        var _migMap = allSettings.calendar.calIdMigMap || {};
+        // ① 非UUIDと正規UUIDに分離（forEach中にpushしない）
+        var _invalidCals = _calList.filter(function(c){ return c && c.id && !_uuidRe2.test(c.id); });
+        var _validCals   = _calList.filter(function(c){ return c && c.id &&  _uuidRe2.test(c.id); });
+        // ② 非UUIDカレンダーを新UUIDで再生成し末尾に追加・移行マップ登録
+        var _rescued = 0;
+        _invalidCals.forEach(function(c) {
+          var _newId = generateTaskId();
+          _validCals.push({ id: _newId, name: c.name || 'カレンダー', color: c.color || '#90caf9', visible: c.visible !== false, shareable: !!c.shareable });
+          _migMap[c.id] = _newId;
+          _rescued++;
+        });
+        if (_rescued > 0 || _invalidCals.length > 0) {
+          _calList = _validCals;
           allSettings.calendar.list = _calList;
+          allSettings.calendar.calIdMigMap = _migMap;
           saveAllSettings();
         }
         if (_calList.length === 0) {
-          // 非UUID除去で空になった場合→デフォルトカレンダーを自動生成
+          // 全て除去で空になった場合→デフォルトカレンダーを自動生成
           var _newCal = { id: generateTaskId(), name: 'メイン', color: '#90caf9', visible: true, shareable: false };
           allSettings.calendar.list = [_newCal];
           _calList = [_newCal];
@@ -24721,7 +24733,7 @@ function showDebugLog() {
 
        // ===== ST-34C: テストセクション自己存在確認 =====
        // テストセクション自己存在確認：ソースコード上の存在をチェック
-       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74'];
+       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -27375,6 +27387,118 @@ function showDebugLog() {
 
        ok('ST-74: 禅モード機能確認 完了');
      } catch(e) { ng('ST-74', e.message); }
+
+
+     // ===== ST-75: validateCalendarIds 非UUID救済テスト =====
+     try {
+       // 前提：現在のcalendar.listとallTasksを保存
+       var _st75PrevList = JSON.parse(JSON.stringify(allSettings.calendar.list || []));
+       var _st75PrevMigMap = JSON.parse(JSON.stringify(allSettings.calendar.calIdMigMap || {}));
+       var _st75PrevTasks = JSON.parse(JSON.stringify(allTasks));
+
+       // ── ケース1: 非UUIDカレンダー('work')が存在する場合の救済 ──
+       var _st75WorkCal = { id: 'work', name: '仕事', color: '#0161fd', visible: true, shareable: true };
+       var _st75ValidCal = { id: '00000000-0000-7000-8000-000000000001', name: 'メイン', color: '#90caf9', visible: true, shareable: false };
+       allSettings.calendar.list = [_st75ValidCal, _st75WorkCal];
+       allSettings.calendar.calIdMigMap = {};
+
+       // 'work'に紐づくテストタスク
+       var _st75Task1 = { id: generateTaskId(), kind: 'task', text: 'ST-75テストタスク(work)', calendarId: 'work', date: getLocalDateStr(new Date()), displayScope: 'both', done: false, completed: false, createdAt: new Date().toISOString() };
+       // 正規UUIDに紐づくテストタスク
+       var _st75Task2 = { id: generateTaskId(), kind: 'task', text: 'ST-75テストタスク(valid)', calendarId: '00000000-0000-7000-8000-000000000001', date: getLocalDateStr(new Date()), displayScope: 'both', done: false, completed: false, createdAt: new Date().toISOString() };
+       allTasks.push(_st75Task1);
+       allTasks.push(_st75Task2);
+       saveAllTasks();
+       saveAllSettings();
+
+       // validateCalendarIds実行
+       validateCalendarIds();
+
+       // 検証1: calendar.listに'work'が残っていない
+       var _st75ListAfter = allSettings.calendar.list;
+       var _st75HasWork = _st75ListAfter.some(function(c){ return c.id === 'work'; });
+       !_st75HasWork
+         ? ok('ST-75: work除去確認（calendar.listに残存なし）')
+         : ng('ST-75: work除去', 'workがlistに残存している');
+
+       // 検証2: 'work'の救済カレンダーがUUID形式で追加されている
+       var _uuidRe75 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+       var _st75RescuedCal = _st75ListAfter.find(function(c){ return c.name === '仕事' && _uuidRe75.test(c.id); });
+       _st75RescuedCal
+         ? ok('ST-75: 救済カレンダー生成確認（name=仕事・UUID形式）')
+         : ng('ST-75: 救済カレンダー未生成', 'name=仕事のUUIDカレンダーが見つからない');
+
+       // 検証3: 救済カレンダーのcolor・visibleが引き継がれている
+       (_st75RescuedCal && _st75RescuedCal.color === '#0161fd' && _st75RescuedCal.visible === true)
+         ? ok('ST-75: 救済カレンダー属性引き継ぎ確認（color・visible）')
+         : ng('ST-75: 属性引き継ぎ失敗', _st75RescuedCal ? JSON.stringify({color:_st75RescuedCal.color,visible:_st75RescuedCal.visible}) : 'calなし');
+
+       // 検証4: 正規UUIDカレンダーが先頭を維持している
+       (_st75ListAfter[0] && _st75ListAfter[0].id === '00000000-0000-7000-8000-000000000001')
+         ? ok('ST-75: 正規カレンダーが先頭を維持')
+         : ng('ST-75: 先頭カレンダー不正', _st75ListAfter[0] ? _st75ListAfter[0].id : 'empty');
+
+       // 検証5: migMapに work→新UUID が登録されている
+       var _st75MigMap = allSettings.calendar.calIdMigMap || {};
+       var _st75MappedId = _st75MigMap['work'];
+       (_st75MappedId && _uuidRe75.test(_st75MappedId))
+         ? ok('ST-75: migMap登録確認（work→UUID）')
+         : ng('ST-75: migMap未登録', 'work→' + _st75MappedId);
+
+       // 検証6: 'work'に紐づいていたタスクが救済UUIDに移行されている
+       var _st75Task1After = allTasks.find(function(t){ return t.text === 'ST-75テストタスク(work)'; });
+       (_st75Task1After && _st75Task1After.calendarId === _st75MappedId)
+         ? ok('ST-75: workタスク→救済UUID移行確認')
+         : ng('ST-75: workタスク移行失敗', _st75Task1After ? _st75Task1After.calendarId : 'task not found');
+
+       // 検証7: 正規UUIDに紐づいていたタスクは変わっていない
+       var _st75Task2After = allTasks.find(function(t){ return t.text === 'ST-75テストタスク(valid)'; });
+       (_st75Task2After && _st75Task2After.calendarId === '00000000-0000-7000-8000-000000000001')
+         ? ok('ST-75: 正規UUIDタスク不変確認')
+         : ng('ST-75: 正規UUIDタスク変化', _st75Task2After ? _st75Task2After.calendarId : 'task not found');
+
+       // ── ケース2: 全て非UUIDの場合→空→デフォルト自動生成 ──
+       allSettings.calendar.list = [{ id: 'default', name: 'デフォルト', color: '#4facfe', visible: true, shareable: true }];
+       allSettings.calendar.calIdMigMap = {};
+       validateCalendarIds();
+       var _st75ListCase2 = allSettings.calendar.list;
+       var _st75Case2Valid = _st75ListCase2.length > 0 && _st75ListCase2.every(function(c){ return _uuidRe75.test(c.id); });
+       _st75Case2Valid
+         ? ok('ST-75: 全非UUID除去後→デフォルトカレンダー自動生成確認（' + _st75ListCase2.length + '件）')
+         : ng('ST-75: デフォルト自動生成失敗', JSON.stringify(_st75ListCase2.map(function(c){return c.id;})));
+
+       // ── ケース3: 吸収時に非UUIDを除外する確認 ──
+       // 旧calendarsキーに'work'IDを持つカレンダーをセット
+       localStorage.setItem('calendars', JSON.stringify([
+         { id: 'work', name: '仕事', color: '#ff0000', visible: true },
+         { id: 'aaaaaaaa-bbbb-7ccc-8ddd-eeeeeeeeeeee', name: '個人', color: '#00ff00', visible: true }
+       ]));
+       allSettings.calendar.list = [];
+       allSettings.calendar.calIdMigMap = {};
+       validateCalendarIds();
+       var _st75ListCase3 = allSettings.calendar.list;
+       var _st75Case3NoWork = !_st75ListCase3.some(function(c){ return c.id === 'work'; });
+       var _st75Case3HasValid = _st75ListCase3.some(function(c){ return c.id === 'aaaaaaaa-bbbb-7ccc-8ddd-eeeeeeeeeeee'; });
+       _st75Case3NoWork
+         ? ok('ST-75: 吸収時work除外確認')
+         : ng('ST-75: 吸収時workが混入', 'workがlistに存在');
+       _st75Case3HasValid
+         ? ok('ST-75: 吸収時正規UUID取込確認')
+         : ng('ST-75: 吸収時正規UUIDが取り込まれていない', JSON.stringify(_st75ListCase3.map(function(c){return c.id;})));
+
+       // クリーンアップ
+       localStorage.removeItem('calendars');
+       allSettings.calendar.list = _st75PrevList;
+       allSettings.calendar.calIdMigMap = _st75PrevMigMap;
+       allTasks = _st75PrevTasks;
+       saveAllTasks();
+       saveAllSettings();
+       allTasks.length === _st75PrevTasks.length
+         ? ok('ST-75: クリーンアップ完了（' + allTasks.length + '件）')
+         : ng('ST-75: クリーンアップ失敗', allTasks.length + '件 ≠ ' + _st75PrevTasks.length + '件');
+
+       ok('ST-75: validateCalendarIds非UUID救済 完了');
+     } catch(e) { ng('ST-75', e.message); }
 
 
      // ===== APAG LAUNCH SEQUENCE =====
