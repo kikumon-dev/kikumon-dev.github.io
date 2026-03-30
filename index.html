@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.348';
+    const APP_VERSION = 'v0.39.351';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -13600,8 +13600,9 @@ function reviveBlueprint(id) {
           var _curList = allSettings.calendar.list || [];
           var _curIds = new Set(_curList.map(function(c){ return c.id; }));
           var _absorbed = 0;
+          var _uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
           _oldCals.forEach(function(oc) {
-            if (oc && oc.id && !_curIds.has(oc.id)) {
+            if (oc && oc.id && _uuidRe.test(oc.id) && !_curIds.has(oc.id)) {
               _curList.push(oc);
               _curIds.add(oc.id);
               _absorbed++;
@@ -13615,7 +13616,21 @@ function reviveBlueprint(id) {
         }
 
         var _calList = allSettings.calendar.list || [];
-        if (_calList.length === 0) return 0;
+        // ── calendar.list内の非UUID IDを除去 ──
+        var _uuidRe2 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        var _beforeLen = _calList.length;
+        _calList = _calList.filter(function(c){ return c && c.id && _uuidRe2.test(c.id); });
+        if (_calList.length !== _beforeLen) {
+          allSettings.calendar.list = _calList;
+          saveAllSettings();
+        }
+        if (_calList.length === 0) {
+          // 非UUID除去で空になった場合→デフォルトカレンダーを自動生成
+          var _newCal = { id: generateTaskId(), name: 'メイン', color: '#90caf9', visible: true, shareable: false };
+          allSettings.calendar.list = [_newCal];
+          _calList = [_newCal];
+          saveAllSettings();
+        }
         var _validCalIds = new Set(_calList.map(function(c){ return c.id; }));
         var _calIdMigMap = allSettings.calendar.calIdMigMap || {};
         var _defaultCalId = _calList[0].id;
@@ -13774,6 +13789,10 @@ function reviveBlueprint(id) {
       'dailyScrollInit', 'weeklyScrollInit',
       // GitHub Gist クラウド同期
       'gistToken', 'gistId', 'gistLastSync',
+      // 旧アプリ互換キー（他バージョンからの移行端末で発生・許容）
+      'orderMigrationDone_v96', 'showInDailyMigrationDone_v1',
+      'memoMigrationDone_v97', 'inspectionMode',
+      'autoMainCalendar', 'nbLastPageId',
     ]);
     window.KEY_WHITELIST = KEY_WHITELIST;
     const KNOWN_KEYS = KEY_WHITELIST; // 後方互換エイリアス
