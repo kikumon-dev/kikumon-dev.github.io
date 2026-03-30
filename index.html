@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.337';
+    const APP_VERSION = 'v0.39.339';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -12584,36 +12584,6 @@ function reviveBlueprint(id) {
       if (overlay) overlay.style.display = 'none';
     };
 
-    // ===== 禅ログ =====
-    window.openZenLog = function() {
-      var modal = document.getElementById('zenLogModal');
-      if (!modal) return;
-      var list = document.getElementById('zenLogList');
-      if (list) {
-        var items = allTasks
-          .filter(function(t){ return t.kind === 'zen'; })
-          .sort(function(a,b){ return new Date(b.createdAt) - new Date(a.createdAt); });
-        if (items.length === 0) {
-          list.innerHTML = '<div style="text-align:center;color:#bbb;padding:40px 0;font-size:0.88em;">まだ記録がありません</div>';
-        } else {
-          list.innerHTML = items.map(function(item){
-            var d = new Date(item.createdAt);
-            var label = (d.getMonth()+1) + '/' + d.getDate() + ' ' +
-              ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2);
-            return '<div style="padding:14px 2px;border-bottom:1px solid #f3f3f3;">' +
-              '<div style="font-size:0.72em;color:#ccc;margin-bottom:5px;letter-spacing:0.05em;">' + label + '</div>' +
-              '<div style="font-size:0.93em;color:#333;line-height:1.75;white-space:pre-wrap;">' +
-              escapeHtml(item.text) + '</div></div>';
-          }).join('');
-        }
-      }
-      modal.style.display = 'flex';
-    };
-    window.closeZenLog = function() {
-      var modal = document.getElementById('zenLogModal');
-      if (modal) modal.style.display = 'none';
-    };
-    // ===== 禅ログ ここまで =====
     window.saveZenMode = function() {
       var textarea = document.getElementById('zenTextarea');
       var text = textarea ? textarea.value.trim() : '';
@@ -27200,7 +27170,7 @@ function showDebugLog() {
        window.openZenMode();
        if (_zenTa) _zenTa.value = 'ST-74テスト用禅テキスト';
        window.saveZenMode();
-       var _afterCount2 = allTasks.filter(function(t){ return t.kind==='thought'; }).length;
+       var _afterCount2 = allTasks.filter(function(t){ return t.kind==='zen'; }).length;
        _afterCount2 === _prevCount2 + 1
          ? ok('ST-74: テキストあり保存 → 雑記帳+1確認')
          : ng('ST-74: テキストあり保存', '件数が変わらない');
@@ -29831,6 +29801,18 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- 王国入場アニメレイヤー（body直下・stacking context問題回避） -->
 <div id="_ycWelcomeAnim" style="position:fixed;inset:0;pointer-events:none;z-index:99999;display:none;"></div>
 <button id="zenModeBtn" onclick="window.openZenMode()" style="display:none;position:fixed;bottom:24px;left:20px;width:42px;height:42px;border-radius:50%;background:#fff;border:2px solid #ddd;color:#333;font-size:1.3em;font-weight:400;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.12);z-index:99990;line-height:38px;text-align:center;">⊙</button>
+
+
+<!-- 禅ログモーダル -->
+<div id="zenLogModal" style="display:none;position:fixed;inset:0;z-index:999996;background:rgba(0,0,0,0.4);align-items:flex-end;justify-content:center;">
+  <div style="background:#fff;width:100%;max-width:560px;border-radius:20px 20px 0 0;padding:20px 20px 32px;max-height:72vh;display:flex;flex-direction:column;box-shadow:0 -4px 24px rgba(0,0,0,0.08);">
+    <div style="display:flex;align-items:center;margin-bottom:16px;flex-shrink:0;">
+      <span style="font-size:0.82em;color:#aaa;letter-spacing:0.1em;">⊙ 禅のログ</span>
+      <button onclick="window.closeZenLog()" style="margin-left:auto;padding:5px 14px;background:none;border:1px solid #e8e8e8;border-radius:14px;color:#bbb;font-size:0.8em;cursor:pointer;">閉じる</button>
+    </div>
+    <div id="zenLogList" style="overflow-y:auto;flex:1;"></div>
+  </div>
+</div>
 
 <!-- 禅モードオーバーレイ -->
 <div id="zenModeOverlay" style="display:none;position:fixed;inset:0;z-index:999995;background:#ffffff;flex-direction:column;">
