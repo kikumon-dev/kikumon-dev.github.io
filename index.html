@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.355';
+    const APP_VERSION = 'v0.39.365';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -18830,9 +18830,20 @@ function renderDeckShop(filterCategory) {
       if (!_SDF_TODAY_QUESTIONS || !_SDF_TODAY_QUESTIONS.length) return;
       var idx = Math.floor(Math.random() * _SDF_TODAY_QUESTIONS.length);
       var suggestion = _SDF_TODAY_QUESTIONS[idx];
-      if (q) q.value = suggestion;
+      if (q) { q.value = ''; }
       if (t) t.textContent = suggestion;
-    };
+    }
+
+    window._sdfUseQuestion = function() {
+      var q = document.getElementById('sdf-question');
+      var t = document.getElementById('sdf-suggest-text');
+      if (!q || !t) return;
+      var suggestion = t.textContent || t.innerText || '';
+      if (!suggestion) return;
+      q.value = suggestion;
+      q.focus();
+      q.setSelectionRange(q.value.length, q.value.length);
+    };;
 
     function _sdfShowStep(n) {
       var s1 = document.getElementById('sdf-step1');
@@ -18915,17 +18926,39 @@ function renderDeckShop(filterCategory) {
         html += '<div data-sdf-id="' + t.id + '" style="padding:12px;background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.15);border-radius:12px;margin-bottom:10px;">';
         html += '<div style="font-size:0.78em;color:#4ade80;opacity:0.6;margin-bottom:4px;">' + (t.date||'') + '</div>';
         html += '<div style="font-size:0.85em;color:#ecfdf5;line-height:1.6;white-space:pre-wrap;">' + safeText + '</div>';
-        html += '<div style="margin-top:8px;">';
+        html += '<div style="margin-top:8px;display:flex;align-items:center;gap:4px;">';
         html += '<button onclick="_sdfHistoryEdit(\'' + t.id + '\')" style="font-size:0.72em;padding:3px 8px;background:none;border:1px solid rgba(74,222,128,0.3);border-radius:4px;color:#4ade80;cursor:pointer;">編集</button>';
         html += '<button onclick="_sdfHistoryDelete(\'' + t.id + '\')" style="font-size:0.72em;padding:3px 8px;background:none;border:1px solid rgba(239,68,68,0.3);border-radius:4px;color:#f87171;cursor:pointer;">削除</button>';
+
         html += '<button onclick="_sdfHistorySend(\'' + t.id + '\')" style="font-size:0.72em;padding:3px 8px;background:none;border:1px solid rgba(100,150,200,0.3);border-radius:4px;color:#93c5fd;cursor:pointer;">雑記帳に送る</button>';
+        html += '<button onclick="_sdfHistoryCopy(\'' + t.id + '\')" title="コピー" style="padding:3px 6px;background:none;border:1px solid rgba(167,139,250,0.3);border-radius:4px;color:rgba(167,139,250,0.7);cursor:pointer;line-height:1;vertical-align:middle;" aria-label="コピー"><svg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><rect x=\'9\' y=\'9\' width=\'13\' height=\'13\' rx=\'2\'/><path d=\'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\'/></svg></button>';
         html += '</div></div>';
       });
       area.innerHTML = html;
       area.style.display = 'block';
     }
 
-    function _sdfHistoryDelete(id) {
+    function _sdfHistoryCopy(id) {
+      var t = allTasks.find(function(t){ return t.id === id; });
+      if (!t) return;
+      var text = t.text || '';
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function(){
+          showToast('コピーしました ✦', {type:'success', duration:2000});
+        }).catch(function(){ _sdfCopyFallback(text); });
+      } else { _sdfCopyFallback(text); }
+    }
+    function _sdfCopyFallback(text) {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); showToast('コピーしました ✦', {type:'success', duration:2000}); }
+      catch(e) { showToast('コピーに失敗しました', {type:'warn'}); }
+      document.body.removeChild(ta);
+    }
+    window._sdfHistoryCopy = _sdfHistoryCopy;
+
+        function _sdfHistoryDelete(id) {
       showChoiceModal('この深考を削除しますか？', function() {
         allTasks = allTasks.filter(function(t){ return t.id !== id; });
         saveAllTasks();
@@ -24733,7 +24766,7 @@ function showDebugLog() {
 
        // ===== ST-34C: テストセクション自己存在確認 =====
        // テストセクション自己存在確認：ソースコード上の存在をチェック
-       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75'];
+       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75','ST-76'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -27501,6 +27534,40 @@ function showDebugLog() {
      } catch(e) { ng('ST-75', e.message); }
 
 
+
+     // ===== ST-76: SDF履歴コピーボタン =====
+     try {
+       typeof window._sdfHistoryCopy === 'function'
+         ? ok('ST-76: _sdfHistoryCopy 存在確認')
+         : ng('ST-76: _sdfHistoryCopy', '未定義');
+
+       var _st76r = { id: generateTaskId(), kind: 'singleDeepFocus',
+         question: 'ST-76テスト', text: '【深考】ST-76テスト\n本文',
+         date: getLocalDateStr(new Date()), createdAt: new Date().toISOString() };
+       allTasks.push(_st76r); saveAllTasks();
+
+       var _st76f = allTasks.find(function(t){ return t.id === _st76r.id; });
+       (_st76f && _st76f.text === _st76r.text)
+         ? ok('ST-76: コピー対象テキスト取得確認')
+         : ng('ST-76: テキスト取得', '不一致');
+
+       _sdfShowHistory();
+       var _st76a = document.getElementById('sdf-history-area');
+       (_st76a && _st76a.innerHTML.includes('_sdfHistoryCopy'))
+         ? ok('ST-76: コピーボタンHTML確認')
+         : ng('ST-76: コピーボタン', 'HTML未存在');
+
+       typeof _sdfCopyFallback === 'function'
+         ? ok('ST-76: _sdfCopyFallback 存在確認（iOS fallback）')
+         : ng('ST-76: _sdfCopyFallback', '未定義');
+
+       allTasks = allTasks.filter(function(t){ return t.id !== _st76r.id; });
+       saveAllTasks();
+       var _a2 = document.getElementById('sdf-history-area');
+       if (_a2) _a2.style.display = 'none';
+       ok('ST-76: SDF履歴コピーボタン 完了');
+     } catch(e) { ng('ST-76', e.message); }
+
      // ===== APAG LAUNCH SEQUENCE =====
      try {
        ok('');
@@ -30169,10 +30236,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div id="sdf-question-display" style="font-size:0.95em;font-weight:700;color:#f5f3ff;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-top:2px;"></div>
     </div>
     <button onclick="_sdfFinish()" style="flex-shrink:0;padding:8px 20px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#f5f3ff;border:none;border-radius:20px;font-size:0.82em;font-weight:700;cursor:pointer;box-shadow:0 2px 12px rgba(124,58,237,0.4);">保存</button>
-    <button onclick="_sdfCopyForAI()" title="コピー" style="flex-shrink:0;width:36px;height:36px;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.2);color:#c4b5fd;border-radius:10px;font-size:1em;cursor:pointer;display:flex;align-items:center;justify-content:center;">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-    </button>
-    <button onclick="_sdfShowHistory()" style="flex-shrink:0;padding:0 12px;height:36px;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.2);color:#c4b5fd;border-radius:10px;font-size:0.72em;cursor:pointer;white-space:nowrap;">📖</button>
+    <button onclick="_sdfShowHistory()" style="flex-shrink:0;padding:0 12px;height:36px;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.2);color:#c4b5fd;border-radius:10px;font-size:0.78em;font-weight:600;cursor:pointer;white-space:nowrap;">履歴</button>
     <button onclick="closeSingleDeepFocus()" style="flex-shrink:0;width:36px;height:36px;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.2);color:#c4b5fd;border-radius:10px;font-size:0.9em;cursor:pointer;">✕</button>
   </div>
 
@@ -30186,14 +30250,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
   <!-- step1 -->
   <div id="sdf-step1" style="display:flex;flex-direction:column;flex:1;overflow-y:auto;padding:20px 20px 28px;">
-    <!-- 今日の問い：ドーンと前面に -->
-    <div onclick="window._sdfSuggestQuestion()" style="cursor:pointer;flex:1;display:flex;flex-direction:column;justify-content:center;padding:28px 8px 20px;min-height:140px;">
-      <div style="font-size:0.72em;color:rgba(167,139,250,0.55);letter-spacing:0.12em;margin-bottom:12px;text-align:center;">今日の問い　— タップで次の問いへ</div>
-      <div id="sdf-suggest-text" style="font-size:1.35em;font-weight:700;color:#e9d5ff;line-height:1.65;text-align:center;letter-spacing:0.01em;"></div>
+    <!-- 今日の問い -->
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:24px 8px 16px;min-height:140px;">
+      <div style="font-size:0.75em;color:rgba(167,139,250,0.55);letter-spacing:0.1em;margin-bottom:16px;text-align:center;">今日の問い</div>
+      <div id="sdf-suggest-text" style="font-size:1.6em;font-weight:800;color:#f0e6ff;line-height:1.6;text-align:center;letter-spacing:0.01em;min-height:2em;"></div>
+      <div style="display:flex;align-items:center;justify-content:flex-start;gap:8px;margin-top:20px;padding:0 4px;">
+        <button onclick="window._sdfSuggestQuestion()" style="padding:8px 16px;background:none;border:1px solid rgba(167,139,250,0.25);border-radius:20px;color:rgba(196,181,253,0.6);font-size:0.82em;cursor:pointer;white-space:nowrap;">← 別の問いへ</button>
+        <button onclick="window._sdfUseQuestion()" style="padding:8px 18px;background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.4);border-radius:20px;color:#e9d5ff;font-size:0.82em;font-weight:700;cursor:pointer;white-space:nowrap;">この問いで考える</button>
+      </div>
     </div>
     <!-- textarea -->
     <div style="background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.18);border-radius:16px;padding:4px;margin-bottom:14px;">
-      <textarea id="sdf-question" placeholder="ここに書いてもいい、書かなくてもいい。" rows="3"
+      <textarea id="sdf-question" placeholder="ここに書く。" rows="3"
         style="width:100%;padding:14px 16px;background:transparent;border:none;color:#f5f3ff;font-size:1.15em;resize:none;box-sizing:border-box;line-height:1.8;outline:none;font-family:inherit;"></textarea>
     </div>
     <!-- 始めるボタン -->
@@ -30206,6 +30274,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
   <!-- step2 -->
   <div id="sdf-step2" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+  <div style="display:flex;justify-content:flex-end;padding:8px 18px 0;flex-shrink:0;">
+    <button onclick="_sdfCopyForAI()" title="AIにコピー" style="padding:4px 10px;background:none;border:1px solid rgba(167,139,250,0.2);border-radius:8px;color:rgba(196,181,253,0.5);font-size:0.72em;cursor:pointer;">AIにコピー</button>
+  </div>
     <textarea id="sdf-result" placeholder="思ったことを、自由に。"
       style="flex:1;width:100%;padding:24px 20px;background:transparent;border:none;color:#f5f3ff;font-size:1.3em;box-sizing:border-box;resize:none;font-family:inherit;line-height:2;outline:none;"></textarea>
   </div>
