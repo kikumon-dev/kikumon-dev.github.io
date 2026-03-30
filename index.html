@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.336';
+    const APP_VERSION = 'v0.39.337';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3019,6 +3019,7 @@
     <div class="scratch-header">
       <span class="scratch-date-label" id="scratchDateLabel"></span>
       <button onclick="openSingleDeepFocus()" style="padding:4px 12px;background:rgba(100,120,90,0.1);border:1px solid rgba(100,120,90,0.4);border-radius:7px;color:#5a7048;font-size:0.72em;font-weight:700;cursor:pointer;white-space:nowrap;margin-left:10px;">✦ 深考する</button>
+      <button onclick="window.openZenMode()" style="padding:4px 12px;background:rgba(80,110,130,0.08);border:1px solid rgba(80,110,130,0.35);border-radius:7px;color:#4a7088;font-size:0.72em;font-weight:700;cursor:pointer;white-space:nowrap;margin-left:6px;">⊙ 禅モード</button>
       <div style="margin-left:auto;position:relative;">
         <button id="scratchMoreBtn" onclick="toggleScratchMenu()" style="padding:4px 8px;background:transparent;border:1px solid rgba(150,140,130,0.25);border-radius:7px;color:#a09080;font-size:0.82em;cursor:pointer;line-height:1;">⋯</button>
         <div id="scratchMoreMenu" style="display:none;position:absolute;right:0;top:calc(100% + 4px);background:#fdfbf7;border:1px solid rgba(150,140,130,0.2);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.08);padding:6px;z-index:100;white-space:nowrap;">
@@ -11927,9 +11928,7 @@ function reviveBlueprint(id) {
       // タブのactive更新
       document.querySelectorAll('.daily-inner-tab').forEach(t => t.classList.remove('active'));
       var helpBtn = document.getElementById('tutorialHelpBtn');
-      var zenBtn = document.getElementById('zenModeBtn');
       if (helpBtn) helpBtn.style.display = (mode === 'scratch') ? 'none' : 'block';
-      if (zenBtn)  zenBtn.style.display  = (mode === 'scratch') ? 'block' : 'none';
       if (mode === 'scratch') {
         scratchView.style.display = 'flex';
         scratchView.style.flexDirection = 'column';
@@ -11959,7 +11958,7 @@ function reviveBlueprint(id) {
     }
     // ===== 雑記帳 CRUD =====
     function getScratchItems() {
-      return allTasks.filter(t => t.kind === 'scratch')
+      return allTasks.filter(t => t.kind === 'scratch' || t.kind === 'zen')
         .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
     }
     // アイテムをインライン編集モードに切り替え
@@ -12056,7 +12055,7 @@ function reviveBlueprint(id) {
       list.innerHTML = '';
       getScratchItems().forEach(item => {
         const div = document.createElement('div');
-        div.className = 'scratch-item' + (item.kind === 'task' ? ' promoted' : '');
+        div.className = 'scratch-item' + (item.kind === 'task' ? ' promoted' : '') + (item.kind === 'zen' ? ' zen-item' : '');
         div.dataset.id = item.id;
         if (item.kind === 'task') {
           div.innerHTML = `
@@ -12629,6 +12628,11 @@ function reviveBlueprint(id) {
       saveAllTasks();
       window.closeZenMode();
       showToast('⊙ 禅に記しました');
+      // 雑記帳タブへ遷移
+      if (typeof switchView === 'function') switchView('daily');
+      setTimeout(function(){
+        if (typeof switchDailyTab === 'function') switchDailyTab('scratch');
+      }, 150);
     };
     // ===== 禅モード ここまで =====
     var GIST_TOKEN_KEY = 'gistToken';
@@ -29912,4 +29916,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
 </div
 
->
+
+      .scratch-item.zen-item .scratch-item-dot {
+        background: #4a7088;
+        opacity: 0.6;
+      }
+      .scratch-item.zen-item .scratch-item-text {
+        color: #4a6070;
+        font-style: italic;
+      }>
