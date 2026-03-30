@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.340';
+    const APP_VERSION = 'v0.39.341';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -12596,15 +12596,38 @@ function reviveBlueprint(id) {
         if (items.length === 0) {
           list.innerHTML = '<div style="text-align:center;color:#bbb;padding:40px 0;font-size:0.88em;">まだ記録がありません</div>';
         } else {
-          list.innerHTML = items.map(function(item){
+          list.innerHTML = '';
+          items.forEach(function(item){
             var d = new Date(item.createdAt);
             var label = (d.getMonth()+1) + '/' + d.getDate() + ' ' +
               ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2);
-            return '<div style="padding:14px 2px;border-bottom:1px solid #f3f3f3;">' +
-              '<div style="font-size:0.72em;color:#ccc;margin-bottom:5px;">' + label + '</div>' +
-              '<div style="font-size:0.93em;color:#333;line-height:1.75;white-space:pre-wrap;">' +
-              escapeHtml(item.text) + '</div></div>';
-          }).join('');
+            var row = document.createElement('div');
+            row.style.cssText = 'padding:12px 2px;border-bottom:1px solid #f3f3f3;';
+            var header = document.createElement('div');
+            header.style.cssText = 'display:flex;align-items:center;margin-bottom:4px;';
+            var lbl = document.createElement('span');
+            lbl.style.cssText = 'font-size:0.72em;color:#ccc;letter-spacing:0.05em;';
+            lbl.textContent = label;
+            var editBtn = document.createElement('button');
+            editBtn.textContent = '編集';
+            editBtn.style.cssText = 'margin-left:auto;padding:2px 10px;background:none;border:1px solid #e8e8e8;border-radius:10px;color:#aaa;font-size:0.72em;cursor:pointer;';
+            editBtn.dataset.id = item.id;
+            editBtn.addEventListener('click', function(){ window.zenLogEdit(this.dataset.id); });
+            var delBtn = document.createElement('button');
+            delBtn.textContent = '削除';
+            delBtn.style.cssText = 'margin-left:6px;padding:2px 10px;background:none;border:1px solid #f0d8d8;border-radius:10px;color:#e08080;font-size:0.72em;cursor:pointer;';
+            delBtn.dataset.id = item.id;
+            delBtn.addEventListener('click', function(){ window.zenLogDelete(this.dataset.id); });
+            header.appendChild(lbl);
+            header.appendChild(editBtn);
+            header.appendChild(delBtn);
+            var body = document.createElement('div');
+            body.style.cssText = 'font-size:0.93em;color:#333;line-height:1.75;white-space:pre-wrap;';
+            body.textContent = item.text;
+            row.appendChild(header);
+            row.appendChild(body);
+            list.appendChild(row);
+          });
         }
       }
       modal.style.display = 'flex';
@@ -12612,6 +12635,24 @@ function reviveBlueprint(id) {
     window.closeZenLog = function() {
       var modal = document.getElementById('zenLogModal');
       if (modal) modal.style.display = 'none';
+    };
+
+    window.zenLogEdit = function(id) {
+      var item = allTasks.find(function(t){ return t.id === id && t.kind === 'zen'; });
+      if (!item) return;
+      var newText = prompt('編集', item.text);
+      if (newText === null) return;
+      newText = newText.trim();
+      if (!newText) return;
+      item.text = newText;
+      saveAllTasks();
+      window.openZenLog();
+    };
+    window.zenLogDelete = function(id) {
+      if (!confirm('この禅の記録を削除しますか？')) return;
+      allTasks = allTasks.filter(function(t){ return t.id !== id; });
+      saveAllTasks();
+      window.openZenLog();
     };
     // ===== 禅ログ ここまで =====
 
@@ -29835,8 +29876,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 <!-- 禅ログモーダル -->
-<div id="zenLogModal" style="display:none;position:fixed;inset:0;z-index:999996;background:rgba(0,0,0,0.4);align-items:flex-end;justify-content:center;">
-  <div style="background:#fff;width:100%;max-width:560px;border-radius:20px 20px 0 0;padding:20px 20px 32px;max-height:72vh;display:flex;flex-direction:column;box-shadow:0 -4px 24px rgba(0,0,0,0.08);">
+<div id="zenLogModal" style="display:none;position:fixed;inset:0;z-index:999996;background:rgba(0,0,0,0.4);align-items:flex-start;justify-content:center;">
+  <div style="background:#fff;width:100%;max-width:560px;border-radius:0 0 20px 20px;padding:20px 20px 28px;max-height:72vh;display:flex;flex-direction:column;box-shadow:0 4px 24px rgba(0,0,0,0.1);">
     <div style="display:flex;align-items:center;margin-bottom:16px;flex-shrink:0;">
       <span style="font-size:0.82em;color:#aaa;letter-spacing:0.1em;">⊙ 禅のログ</span>
       <button onclick="window.closeZenLog()" style="margin-left:auto;padding:5px 14px;background:none;border:1px solid #e8e8e8;border-radius:14px;color:#bbb;font-size:0.8em;cursor:pointer;">閉じる</button>
