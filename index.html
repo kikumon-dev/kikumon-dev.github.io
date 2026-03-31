@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.400';
+    const APP_VERSION = 'v0.39.401';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3922,7 +3922,7 @@
         <span class="photo-log-count" id="photoLogCount"></span>
         <span class="photo-reload-hint">↺</span>
       </div>
-      <button class="photo-log-add-btn" id="photoLogAddBtn" title="写真を追加">＋</button>
+      <button class="photo-log-add-btn" id="photoLogAddBtn" onclick="if(window.openPhotoUpload)window.openPhotoUpload();" title="写真を追加">＋</button>
     </div>
     <div class="photo-log-tagline">今日の創造を、刻め。</div>
     <div id="photoLogListArea" style="padding:8px 8px 40px;"></div>
@@ -30961,6 +30961,11 @@ document.addEventListener('DOMContentLoaded', function() {
   if (typeof updateGuildUI === 'function') updateGuildUI();
   // マイデッキ初期表示
   if (typeof renderMyDecks === 'function') renderMyDecks();
+  // 写真館：savedView=photoの場合、DOMContentLoaded完了後に再描画
+  if (localStorage.getItem('currentView') === 'photo') {
+    if (typeof window.loadPhotoImages === 'function') window.loadPhotoImages();
+    if (typeof window.renderPhotoLogView === 'function') window.renderPhotoLogView();
+  }
 });
     // ===== 王国日誌システム =====
     function formatJournalDate(dateStr) {
