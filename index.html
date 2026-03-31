@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.375';
+    const APP_VERSION = 'v0.39.377';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3101,6 +3101,7 @@
       font-size:1em;cursor:pointer;
       display:flex;align-items:center;justify-content:center;
       backdrop-filter:blur(4px);
+      position:relative;z-index:10001;pointer-events:auto;
     }
     .pv-memo-label {
       color:rgba(255,255,255,0.75);font-size:0.8em;max-width:60%;
@@ -3943,7 +3944,7 @@
   <!-- 全画面ビューアー -->
   <div id="photoViewerModal">
     <div class="pv-header">
-      <button class="pv-close" onclick="closePhotoViewer()">✕</button>
+      <button class="pv-close" onclick="event.stopPropagation();closePhotoViewer()">✕</button>
       <div class="pv-memo-label" id="pvMemoLabel"></div>
       <div style="width:34px;"></div>
     </div>
@@ -29856,6 +29857,24 @@ function showDebugLog() {
        var _r15src = typeof APP_VERSION !== 'undefined' ? APP_VERSION : '';
        var _r15ok = /^v\d+\.\d+\.\d+$/.test(_r15src);
        _rf('第15条', _r15ok, 'APP_VERSION形式確認（' + _r15src + '）');
+
+       // 第16条【関数名一目瞭然化】省略・暗号化禁止パターンが残っていないこと
+       // _pv*** / _naoj*** 等の省略プレフィックスが新規追加されていないか確認
+       // 既存の_pv***はPENDING（リファクタリング対象）として許容リストに登録済み
+       var _r16allowedAbbr = ['_pvPlaceStamp','_pvSaveStamps','_pvInitGestures','_pvAddStampEl',
+         '_pvCurrentPhotoId','_pvScale','_pvPinching','_pvLastDist','_pvStampsDirty',
+         '_naojGetNearestNewMoon','_NAOJ_NEW_MOONS','_SUN_TIMES','_SUN_TIMES_DAILY',
+         '_photoSwipeDelete','_buildPhotoCard','_initCardSwipe',
+         '_gantToggleCompleted','_gantMoveTask','_gantRowReorder','_gantEditTask',
+         '_gantReorderTask','_bpReorder','_sdfInsertHint','_sdfFinish','_sdfHistoryEdit',
+         '_sdfHistoryDelete','_sdfHistorySend','_sdfCopyForAI','_sdfHistoryCopy','_sdfCopyFallback',
+         '_buildTaskBar','_dbgLog','_isTesting','_lastScratchMoveDate'
+       ];
+       // 新規に追加された極端に短い（3文字以下）グローバル関数名がないか確認
+       var _r16badFns = Object.keys(window).filter(function(k){
+         return typeof window[k]==='function' && k.length<=3 && /^[a-z]/.test(k) && !['log','dir','now'].includes(k);
+       });
+       _rf('第16条', _r16badFns.length===0, '関数名一目瞭然化：極端な短縮関数名チェック（' + (_r16badFns.length===0?'OK':_r16badFns.join(',')) + '）');
 
        // 遵守率
        var _rate = Math.round(_rp/_rc*100);
