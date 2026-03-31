@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.394';
+    const APP_VERSION = 'v0.39.396';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -14423,10 +14423,17 @@ function reviveBlueprint(id) {
         if (_cancelBtn) _cancelBtn.onclick = function() { if(window.closePhotoUpload) window.closePhotoUpload(); };
         var _stampBtn = document.getElementById('pvStampToggle');
         if (_stampBtn) _stampBtn.onclick = function() { if(window.togglePvStampPalette) window.togglePvStampPalette(); };
-        if (typeof renderPhotoLogView === 'function') {
-          if (typeof loadPhotoImages === 'function') loadPhotoImages();
-          renderPhotoLogView();
+        if (typeof window.renderPhotoLogView === 'function') {
+          if (typeof window.loadPhotoImages === 'function') window.loadPhotoImages();
+          window.renderPhotoLogView();
         }
+        // block7未初期化タイミング対策：100ms後に再描画
+        setTimeout(function() {
+          if (typeof window.renderPhotoLogView === 'function') {
+            if (typeof window.loadPhotoImages === 'function') window.loadPhotoImages();
+            window.renderPhotoLogView();
+          }
+        }, 100);
       } else if (view === 'craft') {
         if (craftView) craftView.style.display = 'block';
         document.getElementById('navCraft').classList.add('active');
@@ -24341,6 +24348,7 @@ function showDebugLog() {
     window.deletePhoto = deletePhoto;
     window.openPhotoViewer = openPhotoViewer;
     window.closePhotoViewer = closePhotoViewer;
+    window.loadPhotoImages = loadPhotoImages;
     window.renderPhotoLogView = renderPhotoLogView;
     window._pvPlaceStamp = _pvPlaceStamp;
     window._pvSaveStamps = _pvSaveStamps;
