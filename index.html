@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.401';
+    const APP_VERSION = 'v0.39.402';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -14435,13 +14435,20 @@ function reviveBlueprint(id) {
           if (typeof window.loadPhotoImages === 'function') window.loadPhotoImages();
           window.renderPhotoLogView();
         }
-        // block7未初期化タイミング対策：500ms後に再描画
-        setTimeout(function() {
-          if (typeof window.renderPhotoLogView === 'function') {
-            if (typeof window.loadPhotoImages === 'function') window.loadPhotoImages();
-            window.renderPhotoLogView();
-          }
-        }, 500);
+        // iOS Safari対策：block7未初期化の場合に備えリトライ
+        (function() {
+          var _retry = 0;
+          var _photoInitTimer = setInterval(function() {
+            _retry++;
+            if (typeof window.renderPhotoLogView === 'function') {
+              if (typeof window.loadPhotoImages === 'function') window.loadPhotoImages();
+              window.renderPhotoLogView();
+              clearInterval(_photoInitTimer);
+            } else if (_retry >= 20) {
+              clearInterval(_photoInitTimer);
+            }
+          }, 100);
+        })();
       } else if (view === 'craft') {
         if (craftView) craftView.style.display = 'block';
         document.getElementById('navCraft').classList.add('active');
