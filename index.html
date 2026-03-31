@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.386';
+    const APP_VERSION = 'v0.39.387';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -28651,8 +28651,9 @@ function showDebugLog() {
        ok('ST-76: SDF履歴コピーボタン 完了');
      } catch(e) { ng('ST-76', e.message); }
 
-     // ===== ST-77〜81 写真帳テスト前: _photoImages退避（既存写真データを保護）=====
+     // ===== ST-77〜81 写真帳テスト前: _photoImages・photoレコード退避（既存写真データを保護）=====
      var _photoImagesBackup = JSON.parse(JSON.stringify(_photoImages));
+     var _photoTasksBackup = allTasks.filter(function(t){ return t.kind === 'photo'; }).map(function(t){ return JSON.parse(JSON.stringify(t)); });
 
      // ===== ST-77: スワイプ削除（閾値・Undo・復元） =====
      try {
@@ -29190,10 +29191,15 @@ function showDebugLog() {
        ok('ST-81: 写真保存・削除・SSOT整合 完了');
      } catch(e) { ng('ST-81', e.message); }
 
-     // ===== ST-77〜81 写真帳テスト後: _photoImages復元（既存写真データを保護）=====
+     // ===== ST-77〜81 写真帳テスト後: _photoImages・photoレコード復元（既存写真データを保護）=====
      _photoImages = _photoImagesBackup;
+     // allTasksからテスト用photoを除去し、元のphotoレコードを復元
+     allTasks = allTasks.filter(function(t){ return t.kind !== 'photo'; });
+     _photoTasksBackup.forEach(function(t){ allTasks.push(t); });
+     saveAllTasks();
      savePhotoImages();
      ok('ST-81: photoImages復元完了(' + Object.keys(_photoImages).length + '件)');
+     ok('ST-81: photoTasks復元完了(' + _photoTasksBackup.length + '件)');
      try {
        ok('');
        ok('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
