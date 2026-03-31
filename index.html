@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.372';
+    const APP_VERSION = 'v0.39.375';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3950,7 +3950,10 @@
     <img id="photoViewerImg" src="" alt="" draggable="false">
     <div id="pvStampLayer" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;"></div>
     <div class="pv-footer">
-      <div class="pv-stamp-palette" id="pvStampPalette"></div>
+      <div style="display:flex;justify-content:center;margin-bottom:8px;">
+        <button id="pvStampToggle" onclick="togglePvStampPalette()" style="background:rgba(255,255,255,0.15);border:none;border-radius:20px;color:#fff;padding:6px 18px;font-size:0.82em;cursor:pointer;backdrop-filter:blur(4px);">✏️ スタンプ</button>
+      </div>
+      <div class="pv-stamp-palette" id="pvStampPalette" style="display:none;"></div>
     </div>
   </div>
   <div id="notebookView" class="nb-view" style="background:#f5f5f5;position:relative;z-index:1;">
@@ -23628,7 +23631,17 @@ function showDebugLog() {
 
     function savePhotoImages() {
       try {
-        localStorage.setItem('photoImages', JSON.stringify(_photoImages));
+        var json = JSON.stringify(_photoImages);
+        var sizeKB = Math.round(json.length * 0.75 / 1024);
+        // 容量警告
+        if (sizeKB > 5000) {
+          showToast('⚠️ 写真の容量が限界です（' + sizeKB + 'KB）。古い写真を削除してください。', {type:'warn'});
+          return;
+        }
+        if (sizeKB > 3000) {
+          showToast('📷 写真の容量が多くなっています（' + sizeKB + 'KB / 上限約5MB）', {type:'warn'});
+        }
+        localStorage.setItem('photoImages', json);
       } catch(e) {
         showToast('📷 写真の保存に失敗しました（容量不足の可能性があります）', {type:'warn'});
         console.error('[savePhotoImages]', e);
@@ -23788,7 +23801,26 @@ function showDebugLog() {
         card.appendChild(overlay);
       }
 
-      // タップ→全画面
+      // インジケーター（常時表示・右下）
+      if (p.title || linkedTask || (p.stamps && p.stamps.length > 0)) {
+        var indicator = document.createElement('div');
+        indicator.style.cssText = 'position:absolute;bottom:4px;right:5px;display:flex;gap:3px;';
+        if (p.title) {
+          var iMemo = document.createElement('span');
+          iMemo.style.cssText = 'font-size:0.65em;background:rgba(0,0,0,0.5);color:#fff;border-radius:3px;padding:1px 3px;line-height:1.4;';
+          iMemo.textContent = '✏️';
+          indicator.appendChild(iMemo);
+        }
+        if (p.stamps && p.stamps.length > 0) {
+          var iStamp = document.createElement('span');
+          iStamp.style.cssText = 'font-size:0.65em;background:rgba(0,0,0,0.5);color:#fff;border-radius:3px;padding:1px 3px;line-height:1.4;';
+          iStamp.textContent = p.stamps[0].emoji;
+          indicator.appendChild(iStamp);
+        }
+        card.appendChild(indicator);
+      }
+
+      // タップ→全画面（スワイプ中はキャンセル）
       card.onclick = (function(pid){ return function(e) {
         if (card._swipeCanceled) { card._swipeCanceled = false; return; }
         openPhotoViewer(pid);
@@ -23947,6 +23979,13 @@ function showDebugLog() {
 
     function savePhoto() {
       if (!window._photoUploadDataUrl) { showToast('写真を選んでください', {type:'warn'}); return; }
+      // 容量チェック（5MB超えは拒否）
+      var _curSize = JSON.stringify(_photoImages).length * 0.75;
+      var _newSize = window._photoUploadDataUrl.length * 0.75;
+      if (_curSize + _newSize > 5 * 1024 * 1024) {
+        showToast('⚠️ 写真の容量が限界です。古い写真を削除してから追加してください。', {type:'warn'});
+        return;
+      }
       var memo = document.getElementById('photoMemoInput');
       var sel = document.getElementById('photoTaskSelect');
       var now = new Date();
@@ -23966,7 +24005,19 @@ function showDebugLog() {
       _photoImages[photoRecord.id] = window._photoUploadDataUrl;
       savePhotoImages();
       closePhotoUpload();
-      showToast('📷 刻みました', {type:'success'});
+
+      // 写真枚数×徳ボーナス（月5枚ごとに+5徳）
+      var _now2 = new Date();
+      var _thisMonth = _now2.getFullYear() + '/' + String(_now2.getMonth()+1).padStart(2,'0');
+      var _monthPhotos = allTasks.filter(function(t){
+        return t.kind === 'photo' && (t.date || '').slice(0, 7) === _thisMonth;
+      }).length;
+      if (_monthPhotos > 0 && _monthPhotos % 5 === 0) {
+        if (typeof addToku === 'function') addToku(5, '写真帳月次ボーナス（' + _thisMonth + '・' + _monthPhotos + '枚）');
+        showToast('📷 今月' + _monthPhotos + '枚達成！ 徳+5 獲得', {type:'success'});
+      } else {
+        showToast('📷 刻みました', {type:'success'});
+      }
       if (typeof currentView !== 'undefined' && currentView === 'photo') renderPhotoLogView();
     }
 
@@ -24025,6 +24076,11 @@ function showDebugLog() {
       }
 
       modal.classList.add('open');
+      // スタンプパレット初期非表示
+      var _pal = document.getElementById('pvStampPalette');
+      if (_pal) _pal.style.display = 'none';
+      var _ptbtn = document.getElementById('pvStampToggle');
+      if (_ptbtn) _ptbtn.style.background = 'rgba(255,255,255,0.15)';
       _pvInitGestures(modal, img);
     }
 
@@ -24067,9 +24123,17 @@ function showDebugLog() {
       layer.appendChild(el);
     }
 
+    function togglePvStampPalette() {
+      var palette = document.getElementById('pvStampPalette');
+      var btn = document.getElementById('pvStampToggle');
+      if (!palette) return;
+      var isOpen = palette.style.display !== 'none';
+      palette.style.display = isOpen ? 'none' : 'flex';
+      if (btn) btn.style.background = isOpen ? 'rgba(255,255,255,0.15)' : 'rgba(255,107,107,0.5)';
+    }
+
     function _pvPlaceStamp(emoji) {
       var layer = document.getElementById('pvStampLayer');
-      if (!layer) return;
       var x = 40 + Math.random() * 20;
       var y = 35 + Math.random() * 20;
       var photo = allTasks.find(function(t){ return t.id === _pvCurrentPhotoId; });
@@ -24079,6 +24143,7 @@ function showDebugLog() {
       photo.stamps.push({emoji: emoji, x: x, y: y});
       saveAllTasks();
       _pvAddStampEl(layer, emoji, x, y, idx);
+      _pvStampsDirty = true;
     }
 
     function _pvSaveStamps() {
@@ -24153,6 +24218,8 @@ function showDebugLog() {
       };
     }
 
+    var _pvStampsDirty = false; // スタンプ変更フラグ
+
     function closePhotoViewer() {
       var modal = document.getElementById('photoViewerModal');
       if (modal) { modal.classList.remove('open'); modal.onclick = null; }
@@ -24161,7 +24228,11 @@ function showDebugLog() {
       _pvScale = 1;
       var img = document.getElementById('photoViewerImg');
       if (img) img.style.transform = 'scale(1)';
-      if (typeof currentView !== 'undefined' && currentView === 'photo') renderPhotoLogView();
+      // スタンプが変更された時のみ再描画（最適化）
+      if (_pvStampsDirty && typeof currentView !== 'undefined' && currentView === 'photo') {
+        renderPhotoLogView();
+      }
+      _pvStampsDirty = false;
     }
 
     // 起動時にphotoImages読み込み
@@ -24177,6 +24248,7 @@ function showDebugLog() {
     window.renderPhotoLogView = renderPhotoLogView;
     window._pvPlaceStamp = _pvPlaceStamp;
     window._pvSaveStamps = _pvSaveStamps;
+    window.togglePvStampPalette = togglePvStampPalette;
     // ===== 写真帳 END =====
 
     // ===== スモークテストボタン =====
@@ -24306,7 +24378,7 @@ function showDebugLog() {
        // 写真帳
        'openPhotoUpload','closePhotoUpload','onPhotoFileSelected',
        'savePhoto','deletePhoto','openPhotoViewer','closePhotoViewer','renderPhotoLogView',
-       '_pvPlaceStamp','_pvSaveStamps',
+       '_pvPlaceStamp','_pvSaveStamps','togglePvStampPalette',
      ];
      // Script errorでwindow公開が失敗した場合の救済（block3ローカル関数をwindowに再公開）
      var _rescueFuncs = ['_bpReorder','_gantReorderTask','_gantMoveTask','_initBlueprintDrag','_initGantTaskDrag','_gantToggleCompleted'];
@@ -28328,6 +28400,9 @@ function showDebugLog() {
        var _st75PrevList = JSON.parse(JSON.stringify(allSettings.calendar.list || []));
        var _st75PrevMigMap = JSON.parse(JSON.stringify(allSettings.calendar.calIdMigMap || {}));
        var _st75PrevTasks = JSON.parse(JSON.stringify(allTasks));
+       // 旧calendarsキーを退避（validateCalendarIds内の吸収処理と干渉しないように）
+       var _st75PrevOldCals = localStorage.getItem('calendars');
+       localStorage.removeItem('calendars');
 
        // ── ケース1: 非UUIDカレンダー('work')が存在する場合の救済 ──
        var _st75WorkCal = { id: 'work', name: '仕事', color: '#0161fd', visible: true, shareable: true };
@@ -28421,6 +28496,8 @@ function showDebugLog() {
 
        // クリーンアップ
        localStorage.removeItem('calendars');
+       // 旧calendarsキーを復元（退避していた場合）
+       if (_st75PrevOldCals !== null) localStorage.setItem('calendars', _st75PrevOldCals);
        allSettings.calendar.list = _st75PrevList;
        allSettings.calendar.calIdMigMap = _st75PrevMigMap;
        allTasks = _st75PrevTasks;
