@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.383';
+    const APP_VERSION = 'v0.39.384';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -14414,15 +14414,16 @@ function reviveBlueprint(id) {
         if (phv) phv.style.display = 'block';
         var nph = document.getElementById('navPhoto');
         if (nph) nph.classList.add('active');
+        // ボタンのonclick直接代入（拡張機能によるHTML属性横取り対策）
+        var _addBtn = document.getElementById('photoLogAddBtn');
+        if (_addBtn) _addBtn.onclick = function() { openPhotoUpload(); };
+        var _saveBtn = document.getElementById('photoUploadSaveBtn');
+        if (_saveBtn) _saveBtn.onclick = function() { savePhoto(); };
+        var _cancelBtn = document.getElementById('photoUploadCancelBtn');
+        if (_cancelBtn) _cancelBtn.onclick = function() { closePhotoUpload(); };
+        var _stampBtn = document.getElementById('pvStampToggle');
+        if (_stampBtn) _stampBtn.onclick = function() { togglePvStampPalette(); };
         if (typeof renderPhotoLogView === 'function') renderPhotoLogView();
-        // ボタンのaddEventListener再登録（拡張機能対策・switchView時に確実に登録）
-        (function() {
-          var _addBtn = document.getElementById('photoLogAddBtn');
-          if (_addBtn && !_addBtn._photoEvtAttached) {
-            _addBtn.addEventListener('click', function() { if (typeof openPhotoUpload === 'function') openPhotoUpload(); });
-            _addBtn._photoEvtAttached = true;
-          }
-        })();
       } else if (view === 'craft') {
         if (craftView) craftView.style.display = 'block';
         document.getElementById('navCraft').classList.add('active');
@@ -24341,16 +24342,16 @@ function showDebugLog() {
     window._pvPlaceStamp = _pvPlaceStamp;
     window._pvSaveStamps = _pvSaveStamps;
     window.togglePvStampPalette = togglePvStampPalette;
-    // ===== 写真帳ボタン addEventListener登録（拡張機能によるonclick横取り対策）=====
+    // ===== 写真帳ボタン onclick直接代入（拡張機能によるHTML属性横取り対策）=====
     (function() {
-      function _attachPhotoBtn(id, fn) {
-        var el = document.getElementById(id);
-        if (el) el.addEventListener('click', fn);
-      }
-      _attachPhotoBtn('photoLogAddBtn', openPhotoUpload);
-      _attachPhotoBtn('photoUploadSaveBtn', savePhoto);
-      _attachPhotoBtn('photoUploadCancelBtn', closePhotoUpload);
-      _attachPhotoBtn('pvStampToggle', togglePvStampPalette);
+      var _b1 = document.getElementById('photoLogAddBtn');
+      if (_b1) _b1.onclick = function() { openPhotoUpload(); };
+      var _b2 = document.getElementById('photoUploadSaveBtn');
+      if (_b2) _b2.onclick = function() { savePhoto(); };
+      var _b3 = document.getElementById('photoUploadCancelBtn');
+      if (_b3) _b3.onclick = function() { closePhotoUpload(); };
+      var _b4 = document.getElementById('pvStampToggle');
+      if (_b4) _b4.onclick = function() { togglePvStampPalette(); };
     })();
     // ===== 写真帳 END =====
 
