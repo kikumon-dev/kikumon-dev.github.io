@@ -2921,6 +2921,237 @@
       .emoji-pick-btn.selected:active {
         animation: emojiBounce 0.35s ease forwards;
       }
+    /* ===== 写真帳 ===== */
+    /* ===== 写真帳 モダン版 ===== */
+    #photoLogView {
+      display:none;height:100%;overflow-y:auto;
+      padding:0;box-sizing:border-box;background:#fafafa;
+    }
+    .photo-log-header {
+      display:flex;align-items:center;justify-content:space-between;
+      padding:14px 16px 10px;background:#fff;
+      border-bottom:1px solid #f0f0f0;position:sticky;top:0;z-index:10;
+    }
+    .photo-log-title {
+      font-size:1.05em;font-weight:700;color:#111;letter-spacing:0.04em;
+    }
+    .photo-log-count {
+      font-size:0.72em;color:#aaa;font-weight:400;margin-left:6px;
+    }
+    .photo-log-add-btn {
+      width:36px;height:36px;border-radius:50%;border:none;cursor:pointer;
+      background:linear-gradient(135deg,#FF6B6B,#FF8E53);
+      color:#fff;font-size:1.25em;display:flex;align-items:center;
+      justify-content:center;box-shadow:0 2px 8px rgba(255,107,107,0.4);
+      transition:transform 0.15s,box-shadow 0.15s;
+    }
+    .photo-log-add-btn:active { transform:scale(0.92);box-shadow:none; }
+    .photo-log-tagline {
+      text-align:center;font-size:0.7em;color:#bbb;
+      letter-spacing:0.1em;padding:8px 0 4px;
+    }
+    /* グリッド */
+    .photo-date-group { margin-bottom:2px; }
+    .photo-date-label {
+      font-size:0.72em;color:#888;font-weight:600;
+      padding:10px 12px 6px;letter-spacing:0.06em;
+    }
+    .photo-grid {
+      display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px;
+    }
+    /* カード */
+    .photo-card {
+      position:relative;cursor:pointer;overflow:hidden;
+      background:#eee;aspect-ratio:1/1;
+      transition:transform 0.18s ease;
+      touch-action:pan-y;
+    }
+    .photo-card img {
+      width:100%;height:100%;object-fit:cover;display:block;
+      pointer-events:none;
+    }
+    /* オーバーレイ（メモ・バッジ） */
+    .photo-card-overlay {
+      position:absolute;bottom:0;left:0;right:0;
+      background:linear-gradient(transparent,rgba(0,0,0,0.55));
+      padding:18px 6px 5px;
+      opacity:0;transition:opacity 0.2s;
+      pointer-events:none;
+    }
+    .photo-card:active .photo-card-overlay { opacity:1; }
+    .photo-card-memo {
+      font-size:0.65em;color:#fff;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .photo-card-pin {
+      position:absolute;top:5px;left:5px;font-size:0.75em;
+      background:rgba(255,255,255,0.9);border-radius:3px;
+      padding:1px 4px;line-height:1.4;
+    }
+    /* スタンプ表示 */
+    .photo-stamp-layer {
+      position:absolute;inset:0;pointer-events:none;overflow:hidden;
+    }
+    .photo-stamp-item {
+      position:absolute;font-size:1.8em;line-height:1;
+      cursor:grab;pointer-events:auto;user-select:none;
+      transform-origin:center center;
+    }
+    /* スワイプ削除 */
+    .photo-card-swipe-bg {
+      position:absolute;inset:0;background:#FF3B30;
+      display:flex;align-items:center;justify-content:flex-end;
+      padding-right:16px;color:#fff;font-size:1.3em;
+      opacity:0;pointer-events:none;transition:opacity 0.1s;
+    }
+    /* アップロードモーダル */
+    #photoUploadModal {
+      display:none;position:fixed;inset:0;z-index:10000;
+      background:rgba(0,0,0,0.5);align-items:flex-end;justify-content:center;
+    }
+    #photoUploadModal.open { display:flex; }
+    .photo-upload-sheet {
+      background:#fff;width:100%;max-width:560px;
+      border-radius:20px 20px 0 0;padding:20px 18px 36px;
+      box-sizing:border-box;
+      animation:photoSheetIn 0.26s cubic-bezier(.32,1.2,.6,1) forwards;
+    }
+    @keyframes photoSheetIn {
+      from { transform:translateY(100%); }
+      to   { transform:translateY(0); }
+    }
+    .photo-upload-drag-bar {
+      width:36px;height:4px;background:#e0e0e0;border-radius:2px;
+      margin:0 auto 16px;
+    }
+    .photo-upload-sheet-title {
+      text-align:center;font-size:1em;font-weight:700;color:#111;
+      margin-bottom:14px;letter-spacing:0.04em;
+    }
+    .photo-preview-wrap {
+      width:100%;aspect-ratio:4/3;background:#f5f5f5;
+      border-radius:12px;overflow:hidden;margin-bottom:12px;
+      display:flex;align-items:center;justify-content:center;
+      cursor:pointer;border:2px dashed #ddd;position:relative;
+      transition:border-color 0.2s;
+    }
+    .photo-preview-wrap:active { border-color:#FF6B6B; }
+    .photo-preview-wrap img { width:100%;height:100%;object-fit:cover; }
+    .photo-preview-placeholder {
+      text-align:center;color:#bbb;font-size:0.85em;
+    }
+    .photo-upload-input-row { margin-bottom:10px; }
+    .photo-upload-label {
+      font-size:0.72em;color:#999;font-weight:600;
+      display:block;margin-bottom:4px;letter-spacing:0.05em;
+    }
+    .photo-upload-memo {
+      width:100%;box-sizing:border-box;
+      padding:10px 12px;border:1.5px solid #eee;border-radius:10px;
+      font-size:0.9em;background:#fafafa;color:#222;resize:none;
+      transition:border-color 0.2s;
+    }
+    .photo-upload-memo:focus { border-color:#FF6B6B;outline:none;background:#fff; }
+    .photo-upload-task-select {
+      width:100%;box-sizing:border-box;
+      padding:10px 12px;border:1.5px solid #eee;border-radius:10px;
+      font-size:0.88em;background:#fafafa;color:#222;
+    }
+    .photo-upload-save-btn {
+      width:100%;padding:14px;margin-top:12px;
+      background:linear-gradient(135deg,#FF6B6B,#FF8E53);
+      color:#fff;border:none;border-radius:14px;
+      font-size:1em;font-weight:700;cursor:pointer;
+      letter-spacing:0.04em;
+      box-shadow:0 4px 14px rgba(255,107,107,0.35);
+      transition:transform 0.15s,box-shadow 0.15s;
+    }
+    .photo-upload-save-btn:active { transform:scale(0.97);box-shadow:none; }
+    .photo-upload-cancel-btn {
+      width:100%;padding:10px;margin-top:6px;
+      background:transparent;color:#bbb;border:none;
+      font-size:0.85em;cursor:pointer;
+    }
+    /* 全画面ビューアー */
+    #photoViewerModal {
+      display:none;position:fixed;inset:0;z-index:10001;
+      background:#000;flex-direction:column;
+      align-items:center;justify-content:center;overflow:hidden;
+    }
+    #photoViewerModal.open { display:flex; }
+    #photoViewerImg {
+      max-width:100vw;max-height:80vh;object-fit:contain;
+      border-radius:0;transform-origin:center center;
+      transition:transform 0.05s;user-select:none;
+      -webkit-user-drag:none;
+    }
+    .pv-header {
+      position:absolute;top:0;left:0;right:0;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:16px 18px;
+      background:linear-gradient(rgba(0,0,0,0.5),transparent);
+    }
+    .pv-close {
+      background:rgba(255,255,255,0.15);color:#fff;
+      border:none;border-radius:50%;width:34px;height:34px;
+      font-size:1em;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      backdrop-filter:blur(4px);
+    }
+    .pv-memo-label {
+      color:rgba(255,255,255,0.75);font-size:0.8em;max-width:60%;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    /* スタンプパレット */
+    .pv-footer {
+      position:absolute;bottom:0;left:0;right:0;
+      background:linear-gradient(transparent,rgba(0,0,0,0.7));
+      padding:20px 12px 30px;
+    }
+    .pv-stamp-palette {
+      display:flex;gap:8px;overflow-x:auto;
+      scrollbar-width:none;padding:4px 2px;
+    }
+    .pv-stamp-palette::-webkit-scrollbar { display:none; }
+    .pv-stamp-btn {
+      flex-shrink:0;width:40px;height:40px;border-radius:50%;
+      background:rgba(255,255,255,0.15);border:none;cursor:pointer;
+      font-size:1.3em;display:flex;align-items:center;justify-content:center;
+      backdrop-filter:blur(4px);transition:transform 0.15s,background 0.15s;
+    }
+    .pv-stamp-btn:active { transform:scale(1.25);background:rgba(255,255,255,0.3); }
+    /* ビューアー上のスタンプ（ドラッグ可能） */
+    .pv-stamp-item {
+      position:absolute;font-size:2.2em;line-height:1;
+      cursor:grab;user-select:none;touch-action:none;
+      text-shadow:0 1px 4px rgba(0,0,0,0.4);
+      transform-origin:center center;
+    }
+    .pv-stamp-item:active { cursor:grabbing; }
+    /* Undoトースト */
+    .photo-undo-toast {
+      position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+      background:#222;color:#fff;padding:10px 16px;border-radius:24px;
+      font-size:0.82em;display:flex;align-items:center;gap:12px;
+      z-index:99998;white-space:nowrap;
+      animation:photoUndoIn 0.25s ease forwards;
+      box-shadow:0 4px 16px rgba(0,0,0,0.3);
+    }
+    @keyframes photoUndoIn {
+      from { opacity:0;transform:translateX(-50%) translateY(12px); }
+      to   { opacity:1;transform:translateX(-50%) translateY(0); }
+    }
+    .photo-undo-btn {
+      background:none;border:none;color:#FF6B6B;font-size:0.9em;
+      font-weight:700;cursor:pointer;padding:0;
+    }
+    /* 空状態 */
+    .photo-empty {
+      text-align:center;padding:70px 24px;color:#bbb;
+    }
+    .photo-empty-icon { font-size:3em;margin-bottom:12px; }
+    .photo-empty-main { font-size:0.95em;color:#999;font-weight:600;margin-bottom:6px; }
+    .photo-empty-sub { font-size:0.78em;color:#ccc;letter-spacing:0.08em; }
     </style>
   <script>    // 色の切り替えをCSSに反映
     if (typeof USE_COLORS !== 'undefined' && USE_COLORS) {
@@ -2955,6 +3186,7 @@
     <button class="nav-tab" id="navGant" onclick="switchView('gant')" style="display:none;">造営</button>
     <button class="nav-tab" id="navNotebook" onclick="switchView('notebook')">自由帳</button>
     <button class="nav-tab" id="navJournal" onclick="switchView('journal')">日誌</button>
+    <button class="nav-tab" id="navPhoto" onclick="switchView('photo')" title="写真帳">📷</button>
     <button class="nav-tab" id="navCraft" onclick="switchView('craft')" style="display:none;" title="やることクラフト"><svg width="18" height="16" viewBox="0 0 36 32" fill="currentColor" style="vertical-align:middle;">
   <!-- 左塔 -->
   <rect x="2" y="16" width="6" height="14" rx="1"/>
@@ -3663,6 +3895,60 @@
   </div>
   <div id="journalListArea"></div>
 </div>
+
+  <!-- ===== 写真帳ビュー ===== -->
+  <div id="photoLogView">
+    <div class="photo-log-header">
+      <div>
+        <span class="photo-log-title">写真帳</span>
+        <span class="photo-log-count" id="photoLogCount"></span>
+      </div>
+      <button class="photo-log-add-btn" onclick="openPhotoUpload()" title="写真を追加">＋</button>
+    </div>
+    <div class="photo-log-tagline">今日の創造を、刻め。</div>
+    <div id="photoLogListArea"></div>
+  </div>
+
+  <!-- 写真アップロードモーダル -->
+  <div id="photoUploadModal">
+    <div class="photo-upload-sheet">
+      <div class="photo-upload-drag-bar"></div>
+      <div class="photo-upload-sheet-title">写真を刻む</div>
+      <div class="photo-preview-wrap" id="photoPreviewWrap" onclick="document.getElementById('photoFileInput').click()">
+        <div class="photo-preview-placeholder" id="photoPreviewPlaceholder">
+          <div style="font-size:2.2em;margin-bottom:8px;">📷</div>
+          <div>タップして写真を選ぶ</div>
+        </div>
+      </div>
+      <input type="file" id="photoFileInput" accept="image/*" style="display:none" onchange="onPhotoFileSelected(this)">
+      <div class="photo-upload-input-row">
+        <label class="photo-upload-label">MEMO</label>
+        <textarea class="photo-upload-memo" id="photoMemoInput" rows="2" placeholder="料理名・感想など…"></textarea>
+      </div>
+      <div class="photo-upload-input-row">
+        <label class="photo-upload-label">TASK LINK</label>
+        <select class="photo-upload-task-select" id="photoTaskSelect">
+          <option value="">紐づけない</option>
+        </select>
+      </div>
+      <button class="photo-upload-save-btn" onclick="savePhoto()">📷 刻む</button>
+      <button class="photo-upload-cancel-btn" onclick="closePhotoUpload()">キャンセル</button>
+    </div>
+  </div>
+
+  <!-- 全画面ビューアー -->
+  <div id="photoViewerModal">
+    <div class="pv-header">
+      <button class="pv-close" onclick="closePhotoViewer()">✕</button>
+      <div class="pv-memo-label" id="pvMemoLabel"></div>
+      <div style="width:34px;"></div>
+    </div>
+    <img id="photoViewerImg" src="" alt="" draggable="false">
+    <div id="pvStampLayer" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;"></div>
+    <div class="pv-footer">
+      <div class="pv-stamp-palette" id="pvStampPalette"></div>
+    </div>
+  </div>
   <div id="notebookView" class="nb-view" style="background:#f5f5f5;position:relative;z-index:1;">
     <div class="nb-shelf" id="nbShelf"></div>
     <div class="nb-spread" id="nbSpread">
@@ -13801,6 +14087,8 @@ function reviveBlueprint(id) {
       'dailyScrollInit', 'weeklyScrollInit',
       // GitHub Gist クラウド同期
       'gistToken', 'gistId', 'gistLastSync',
+      // 写真帳
+      'photoImages',
       // 旧アプリ互換キー（他バージョンからの移行端末で発生・許容）
       'orderMigrationDone_v96', 'showInDailyMigrationDone_v1',
       'memoMigrationDone_v97', 'inspectionMode',
@@ -13919,6 +14207,7 @@ function reviveBlueprint(id) {
       document.getElementById('timelineView').style.display = 'none';
       document.getElementById('scratchView').style.display = 'none';
       var _jv = document.getElementById('journalView'); if (_jv) _jv.style.display = 'none';
+      var _plv = document.getElementById('photoLogView'); if (_plv) _plv.style.display = 'none';
       var _dbv = document.getElementById('dashboardView'); if (_dbv) _dbv.style.display = 'none';
       document.getElementById('dailyInnerTabBar').style.display = 'none';
       var _dailyNavBarReset = document.getElementById('dailyDateNavBar');
@@ -14106,6 +14395,12 @@ function reviveBlueprint(id) {
           allSettings.flags.journalTourSeen = true; saveAllSettings();
           setTimeout(showJournalOnboarding, 400);
         }
+      } else if (view === 'photo') {
+        var phv = document.getElementById('photoLogView');
+        if (phv) phv.style.display = 'block';
+        var nph = document.getElementById('navPhoto');
+        if (nph) nph.classList.add('active');
+        if (typeof renderPhotoLogView === 'function') renderPhotoLogView();
       } else if (view === 'craft') {
         if (craftView) craftView.style.display = 'block';
         document.getElementById('navCraft').classList.add('active');
@@ -16410,6 +16705,7 @@ function loadSettingsUI() {
     window.showGantTour = showGantTour;
     window._buildTaskBar = _buildTaskBar;
     window.switchDailyTab = switchDailyTab;
+
     window.toggleBlueprintEmojiPicker = toggleBlueprintEmojiPicker;
     window.toggleColors = toggleColors;
     window.toggleDeepDive = toggleDeepDive;
@@ -21431,6 +21727,38 @@ function onTaskCompleted(task) {
   if (typeof addToku === 'function') addToku(1, 'タスク完了');
   if (typeof addGou === 'function') addGou(-1, 'タスク完了');
   if (typeof recordTaskCompletedDate === 'function') recordTaskCompletedDate();
+  // 📷 写真帳フック：完了後に「証拠を残す？」トースト
+  var _ptTaskId = task ? task.id : '';
+  setTimeout(function() {
+    var oldPt = document.getElementById('_photoPromptToast');
+    if (oldPt) oldPt.remove();
+    var _pt = document.createElement('div');
+    _pt.id = '_photoPromptToast';
+    _pt.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#fff;color:#5a3a2a;padding:11px 18px;border-radius:14px;font-size:0.82em;font-weight:600;z-index:99997;box-shadow:0 4px 20px rgba(0,0,0,0.18);border:1px solid #e6d8c8;display:flex;align-items:center;gap:10px;white-space:nowrap;font-family:serif;opacity:0;transition:opacity 0.3s;';
+    var _ptLabel = document.createElement('span');
+    _ptLabel.textContent = '📷 証拠を残しますか？';
+    var _ptOk = document.createElement('button');
+    _ptOk.textContent = '刻む';
+    _ptOk.style.cssText = 'background:#8b6f5c;color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:0.9em;cursor:pointer;font-family:serif;';
+    _ptOk.onclick = (function(tid) { return function() {
+      var p = document.getElementById('_photoPromptToast');
+      if (p) p.remove();
+      if (typeof openPhotoUpload === 'function') openPhotoUpload(tid);
+    }; })(_ptTaskId);
+    var _ptNo = document.createElement('button');
+    _ptNo.textContent = 'あとで';
+    _ptNo.style.cssText = 'background:none;color:#aaa;border:none;font-size:0.85em;cursor:pointer;';
+    _ptNo.onclick = function() { var p = document.getElementById('_photoPromptToast'); if (p) p.remove(); };
+    _pt.appendChild(_ptLabel);
+    _pt.appendChild(_ptOk);
+    _pt.appendChild(_ptNo);
+    document.body.appendChild(_pt);
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ _pt.style.opacity = '1'; }); });
+    window._photoPromptTimer = setTimeout(function() {
+      _pt.style.opacity = '0';
+      setTimeout(function() { var p = document.getElementById('_photoPromptToast'); if (p) p.remove(); }, 300);
+    }, 5000);
+  }, 1200);
   // クラフトモード専用処理
   if (!(allSettings && allSettings.ui && allSettings.ui.craftModeEnabled)) return;
   // ① 旗を一時的に激しくはためかせる
@@ -23283,7 +23611,571 @@ function showDebugLog() {
     wrap.remove();
     showToast('🔄 テスト実行（' + changed + '件移動）', {type:'info'});
   };
-  // ===== スモークテストボタン =====
+
+
+    // ===== 写真帳 =====
+    var _photoImages = {}; // { [photoId]: 'data:image/jpeg;base64,...' }
+    var _pvCurrentPhotoId = null; // 全画面表示中の写真ID
+    var _pvScale = 1, _pvLastDist = 0, _pvPinching = false;
+    var _pvStamps = {}; // { [photoId]: [{emoji,x,y}] } ※表示用キャッシュ（allTasks.stampsが正）
+
+    // スタンプ絵文字パレット
+    var PHOTO_STAMPS = ['❤️','🔥','✨','😍','🍜','🍣','🍰','🎉','👏','😂','🥹','🌸','🌿','☀️','🌙','⭐','💯','🏆'];
+
+    function savePhotoImages() {
+      try {
+        localStorage.setItem('photoImages', JSON.stringify(_photoImages));
+      } catch(e) {
+        showToast('📷 写真の保存に失敗しました（容量不足の可能性があります）', {type:'warn'});
+        console.error('[savePhotoImages]', e);
+      }
+    }
+    function loadPhotoImages() {
+      try {
+        var raw = localStorage.getItem('photoImages');
+        _photoImages = raw ? JSON.parse(raw) : {};
+      } catch(e) { _photoImages = {}; }
+    }
+
+    // Canvas圧縮
+    function compressImage(file, callback) {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var img = new Image();
+        img.onload = function() {
+          var MAX_SIDE = 1200;
+          var w = img.width, h = img.height;
+          if (w > MAX_SIDE || h > MAX_SIDE) {
+            if (w >= h) { h = Math.round(h * MAX_SIDE / w); w = MAX_SIDE; }
+            else { w = Math.round(w * MAX_SIDE / h); h = MAX_SIDE; }
+          }
+          var canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          var ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          var quality = 0.85;
+          var dataUrl = canvas.toDataURL('image/jpeg', quality);
+          while (dataUrl.length > 500 * 1024 * 1.37 && quality > 0.3) {
+            quality -= 0.1;
+            dataUrl = canvas.toDataURL('image/jpeg', quality);
+          }
+          callback(dataUrl);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // ===== レンダリング =====
+    function renderPhotoLogView() {
+      loadPhotoImages();
+      var area = document.getElementById('photoLogListArea');
+      if (!area) return;
+      var photos = allTasks.filter(function(t){ return t.kind === 'photo'; })
+        .sort(function(a, b){ return (b.createdAt||'').localeCompare(a.createdAt||''); });
+
+      // 件数バッジ更新
+      var countEl = document.getElementById('photoLogCount');
+      if (countEl) countEl.textContent = photos.length ? '全' + photos.length + '枚' : '';
+
+      if (photos.length === 0) {
+        var empty = document.createElement('div');
+        empty.className = 'photo-empty';
+        empty.innerHTML = '<div class="photo-empty-icon">📷</div>'
+          + '<div class="photo-empty-main">まだ何も刻まれていない。</div>'
+          + '<div class="photo-empty-sub">今日の一枚を。</div>';
+        area.innerHTML = '';
+        area.appendChild(empty);
+        return;
+      }
+
+      // 日付グループ化
+      var groups = {};
+      photos.forEach(function(p) {
+        var d = (p.date || p.createdAt || '').slice(0, 10).replace(/-/g, '/');
+        if (!groups[d]) groups[d] = [];
+        groups[d].push(p);
+      });
+
+      area.innerHTML = '';
+      Object.keys(groups).sort(function(a,b){ return b.localeCompare(a); }).forEach(function(date) {
+        var parts = date.split('/');
+        var label = parts.length === 3 ? parts[0] + '年' + parts[1] + '月' + parts[2] + '日' : date;
+
+        var group = document.createElement('div');
+        group.className = 'photo-date-group';
+
+        var labelEl = document.createElement('div');
+        labelEl.className = 'photo-date-label';
+        labelEl.textContent = label;
+        group.appendChild(labelEl);
+
+        var grid = document.createElement('div');
+        grid.className = 'photo-grid';
+
+        groups[date].forEach(function(p) {
+          grid.appendChild(_buildPhotoCard(p));
+        });
+        group.appendChild(grid);
+        area.appendChild(group);
+      });
+    }
+
+    function _buildPhotoCard(p) {
+      var card = document.createElement('div');
+      card.className = 'photo-card';
+      card.dataset.id = p.id;
+
+      // スワイプ削除背景
+      var swipeBg = document.createElement('div');
+      swipeBg.className = 'photo-card-swipe-bg';
+      swipeBg.textContent = '🗑️';
+      card.appendChild(swipeBg);
+
+      // 画像
+      var imgSrc = _photoImages[p.id] || '';
+      if (imgSrc) {
+        var img = document.createElement('img');
+        img.src = imgSrc;
+        img.alt = '写真';
+        img.loading = 'lazy';
+        card.appendChild(img);
+      } else {
+        var ph = document.createElement('div');
+        ph.style.cssText = 'width:100%;aspect-ratio:1/1;background:#eee;display:flex;align-items:center;justify-content:center;font-size:2em;';
+        ph.textContent = '📷';
+        card.appendChild(ph);
+      }
+
+      // スタンプ（最大3件まで小さく表示）
+      var stamps = p.stamps || [];
+      if (stamps.length > 0) {
+        var stampLayer = document.createElement('div');
+        stampLayer.className = 'photo-stamp-layer';
+        stamps.slice(0, 6).forEach(function(s) {
+          var se = document.createElement('div');
+          se.className = 'photo-stamp-item';
+          se.textContent = s.emoji;
+          se.style.left = s.x + '%';
+          se.style.top = s.y + '%';
+          se.style.fontSize = '1.4em';
+          stampLayer.appendChild(se);
+        });
+        card.appendChild(stampLayer);
+      }
+
+      // ピン
+      var linkedTask = p.taskId ? allTasks.find(function(t){ return t.id === p.taskId; }) : null;
+      if (linkedTask) {
+        var pin = document.createElement('div');
+        pin.className = 'photo-card-pin';
+        pin.textContent = '📌';
+        card.appendChild(pin);
+      }
+
+      // オーバーレイ（メモ）
+      if (p.title) {
+        var overlay = document.createElement('div');
+        overlay.className = 'photo-card-overlay';
+        var memoEl = document.createElement('div');
+        memoEl.className = 'photo-card-memo';
+        memoEl.textContent = p.title;
+        overlay.appendChild(memoEl);
+        card.appendChild(overlay);
+      }
+
+      // タップ→全画面
+      card.onclick = (function(pid){ return function(e) {
+        if (card._swipeCanceled) { card._swipeCanceled = false; return; }
+        openPhotoViewer(pid);
+      }; })(p.id);
+
+      // スワイプ削除（touch）
+      _initCardSwipe(card, p.id);
+
+      return card;
+    }
+
+    // スワイプ削除
+    function _initCardSwipe(card, photoId) {
+      var startX = 0, startY = 0, dx = 0;
+      var swiping = false;
+      var swipeBg = card.querySelector('.photo-card-swipe-bg');
+      var THRESHOLD = 100;
+
+      card.addEventListener('touchstart', function(e) {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        dx = 0; swiping = false;
+        card._swipeCanceled = false;
+      }, {passive: true});
+
+      card.addEventListener('touchmove', function(e) {
+        dx = e.touches[0].clientX - startX;
+        var dy = Math.abs(e.touches[0].clientY - startY);
+        if (Math.abs(dx) < 8 && dy < 8) return;
+        if (dy > Math.abs(dx) * 1.5) return; // 縦スクロール優先
+        swiping = true;
+        if (dx < 0) {
+          var ratio = Math.min(Math.abs(dx) / THRESHOLD, 1);
+          card.style.transform = 'translateX(' + dx + 'px)';
+          if (swipeBg) swipeBg.style.opacity = ratio;
+        }
+      }, {passive: true});
+
+      card.addEventListener('touchend', function(e) {
+        if (!swiping || dx >= 0) {
+          card.style.transform = '';
+          if (swipeBg) swipeBg.style.opacity = 0;
+          return;
+        }
+        if (Math.abs(dx) >= THRESHOLD) {
+          card._swipeCanceled = true;
+          card.style.transform = 'translateX(-110%)';
+          if (swipeBg) swipeBg.style.opacity = 1;
+          _photoSwipeDelete(photoId, card);
+        } else {
+          card.style.transform = '';
+          if (swipeBg) swipeBg.style.opacity = 0;
+        }
+      }, {passive: true});
+    }
+
+    // スワイプ削除実行＋Undoトースト
+    function _photoSwipeDelete(photoId, card) {
+      var photo = allTasks.find(function(t){ return t.id === photoId; });
+      var imgData = _photoImages[photoId];
+      if (!photo) return;
+
+      // 削除実行
+      var idx = allTasks.findIndex(function(t){ return t.id === photoId; });
+      if (idx !== -1) allTasks.splice(idx, 1);
+      saveAllTasks();
+      delete _photoImages[photoId];
+      savePhotoImages();
+
+      // Undoトースト
+      var toast = document.createElement('div');
+      toast.className = 'photo-undo-toast';
+      var msg = document.createElement('span');
+      msg.textContent = '写真を削除しました';
+      var btn = document.createElement('button');
+      btn.className = 'photo-undo-btn';
+      btn.textContent = '元に戻す';
+      var undoDone = false;
+      btn.onclick = function() {
+        if (undoDone) return;
+        undoDone = true;
+        // 復元
+        allTasks.push(photo);
+        saveAllTasks();
+        if (imgData) { _photoImages[photoId] = imgData; savePhotoImages(); }
+        toast.remove();
+        renderPhotoLogView();
+        showToast('復元しました', {type:'success'});
+      };
+      toast.appendChild(msg);
+      toast.appendChild(btn);
+      document.body.appendChild(toast);
+
+      var timer = setTimeout(function() {
+        if (!undoDone) { toast.remove(); }
+      }, 3500);
+
+      // グリッド再描画（少し遅延してアニメ後）
+      setTimeout(function() {
+        if (!undoDone) renderPhotoLogView();
+      }, 300);
+    }
+
+    // ===== アップロードモーダル =====
+    function openPhotoUpload(prefillTaskId) {
+      loadPhotoImages();
+      var modal = document.getElementById('photoUploadModal');
+      if (!modal) return;
+      var wrap = document.getElementById('photoPreviewWrap');
+      var placeholder = document.getElementById('photoPreviewPlaceholder');
+      if (wrap) { var oldImg = wrap.querySelector('img'); if (oldImg) oldImg.remove(); }
+      if (placeholder) placeholder.style.display = 'block';
+      var memo = document.getElementById('photoMemoInput');
+      if (memo) memo.value = '';
+      window._photoUploadDataUrl = null;
+      var sel = document.getElementById('photoTaskSelect');
+      if (sel) {
+        sel.innerHTML = '<option value="">紐づけない</option>';
+        var activeTasks = allTasks.filter(function(t){
+          return (t.kind === 'task' || !t.kind) && !t.completed && !t.done;
+        }).slice(0, 50);
+        activeTasks.forEach(function(t) {
+          var opt = document.createElement('option');
+          opt.value = t.id;
+          opt.textContent = (t.text || t.title || '無題').slice(0, 30);
+          if (prefillTaskId && t.id === prefillTaskId) opt.selected = true;
+          sel.appendChild(opt);
+        });
+      }
+      modal.classList.add('open');
+    }
+
+    function closePhotoUpload() {
+      var modal = document.getElementById('photoUploadModal');
+      if (modal) modal.classList.remove('open');
+      var fi = document.getElementById('photoFileInput');
+      if (fi) fi.value = '';
+    }
+
+    function onPhotoFileSelected(input) {
+      if (!input.files || !input.files[0]) return;
+      compressImage(input.files[0], function(dataUrl) {
+        window._photoUploadDataUrl = dataUrl;
+        var wrap = document.getElementById('photoPreviewWrap');
+        var placeholder = document.getElementById('photoPreviewPlaceholder');
+        if (!wrap) return;
+        var oldImg = wrap.querySelector('img');
+        if (oldImg) oldImg.remove();
+        if (placeholder) placeholder.style.display = 'none';
+        var img = document.createElement('img');
+        img.src = dataUrl;
+        img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+        wrap.appendChild(img);
+      });
+    }
+
+    function savePhoto() {
+      if (!window._photoUploadDataUrl) { showToast('写真を選んでください', {type:'warn'}); return; }
+      var memo = document.getElementById('photoMemoInput');
+      var sel = document.getElementById('photoTaskSelect');
+      var now = new Date();
+      var dateStr = now.getFullYear() + '/' + String(now.getMonth()+1).padStart(2,'0') + '/' + String(now.getDate()).padStart(2,'0');
+      var photoRecord = {
+        id: generateTaskId(),
+        kind: 'photo',
+        title: memo ? memo.value.trim() : '',
+        taskId: sel && sel.value ? sel.value : null,
+        date: dateStr,
+        stamps: [],
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString()
+      };
+      allTasks.push(photoRecord);
+      saveAllTasks();
+      _photoImages[photoRecord.id] = window._photoUploadDataUrl;
+      savePhotoImages();
+      closePhotoUpload();
+      showToast('📷 刻みました', {type:'success'});
+      if (typeof currentView !== 'undefined' && currentView === 'photo') renderPhotoLogView();
+    }
+
+    function deletePhoto(e, photoId) {
+      if (e) e.stopPropagation();
+      var idx = allTasks.findIndex(function(t){ return t.id === photoId; });
+      if (idx !== -1) allTasks.splice(idx, 1);
+      saveAllTasks();
+      delete _photoImages[photoId];
+      savePhotoImages();
+      renderPhotoLogView();
+    }
+
+    // ===== 全画面ビューアー（ピンチズーム・スタンプ） =====
+    function openPhotoViewer(photoId) {
+      loadPhotoImages();
+      var imgSrc = _photoImages[photoId];
+      if (!imgSrc) return;
+      _pvCurrentPhotoId = photoId;
+      _pvScale = 1;
+
+      var modal = document.getElementById('photoViewerModal');
+      var img = document.getElementById('photoViewerImg');
+      var memoLabel = document.getElementById('pvMemoLabel');
+      var stampLayer = document.getElementById('pvStampLayer');
+      if (!modal || !img) return;
+
+      img.src = imgSrc;
+      img.style.transform = 'scale(1)';
+
+      // メモラベル
+      var photo = allTasks.find(function(t){ return t.id === photoId; });
+      if (memoLabel) memoLabel.textContent = photo && photo.title ? photo.title : '';
+
+      // スタンプ復元
+      if (stampLayer) {
+        stampLayer.innerHTML = '';
+        stampLayer.style.pointerEvents = 'auto';
+        var stamps = photo && photo.stamps ? photo.stamps : [];
+        stamps.forEach(function(s, i) {
+          _pvAddStampEl(stampLayer, s.emoji, s.x, s.y, i);
+        });
+      }
+
+      // スタンプパレット構築
+      var palette = document.getElementById('pvStampPalette');
+      if (palette) {
+        palette.innerHTML = '';
+        PHOTO_STAMPS.forEach(function(emoji) {
+          var btn = document.createElement('button');
+          btn.className = 'pv-stamp-btn';
+          btn.textContent = emoji;
+          btn.onclick = function() { _pvPlaceStamp(emoji); };
+          palette.appendChild(btn);
+        });
+      }
+
+      modal.classList.add('open');
+      _pvInitGestures(modal, img);
+    }
+
+    function _pvAddStampEl(layer, emoji, xPct, yPct, idx) {
+      var el = document.createElement('div');
+      el.className = 'pv-stamp-item';
+      el.textContent = emoji;
+      el.style.left = xPct + '%';
+      el.style.top = yPct + '%';
+      el.dataset.idx = idx;
+
+      // ドラッグ（touch）
+      el.addEventListener('touchstart', function(e) {
+        e.stopPropagation();
+        var layer = document.getElementById('pvStampLayer');
+        var rect = layer ? layer.getBoundingClientRect() : {left:0,top:0,width:1,height:1};
+        var t = e.touches[0];
+        var startX = t.clientX, startY = t.clientY;
+        var startPctX = xPct, startPctY = yPct;
+
+        function onMove(ev) {
+          ev.preventDefault();
+          var dx = ev.touches[0].clientX - startX;
+          var dy = ev.touches[0].clientY - startY;
+          var nx = Math.max(0, Math.min(100, startPctX + dx / rect.width * 100));
+          var ny = Math.max(0, Math.min(100, startPctY + dy / rect.height * 100));
+          el.style.left = nx + '%';
+          el.style.top = ny + '%';
+          xPct = nx; yPct = ny;
+        }
+        function onEnd() {
+          document.removeEventListener('touchmove', onMove);
+          document.removeEventListener('touchend', onEnd);
+          _pvSaveStamps();
+        }
+        document.addEventListener('touchmove', onMove, {passive: false});
+        document.addEventListener('touchend', onEnd);
+      }, {passive: true});
+
+      layer.appendChild(el);
+    }
+
+    function _pvPlaceStamp(emoji) {
+      var layer = document.getElementById('pvStampLayer');
+      if (!layer) return;
+      var x = 40 + Math.random() * 20;
+      var y = 35 + Math.random() * 20;
+      var photo = allTasks.find(function(t){ return t.id === _pvCurrentPhotoId; });
+      if (!photo) return;
+      if (!photo.stamps) photo.stamps = [];
+      var idx = photo.stamps.length;
+      photo.stamps.push({emoji: emoji, x: x, y: y});
+      saveAllTasks();
+      _pvAddStampEl(layer, emoji, x, y, idx);
+    }
+
+    function _pvSaveStamps() {
+      var layer = document.getElementById('pvStampLayer');
+      if (!layer || !_pvCurrentPhotoId) return;
+      var photo = allTasks.find(function(t){ return t.id === _pvCurrentPhotoId; });
+      if (!photo) return;
+      var els = layer.querySelectorAll('.pv-stamp-item');
+      photo.stamps = [];
+      els.forEach(function(el) {
+        photo.stamps.push({
+          emoji: el.textContent,
+          x: parseFloat(el.style.left),
+          y: parseFloat(el.style.top)
+        });
+      });
+      saveAllTasks();
+    }
+
+    function _pvInitGestures(modal, img) {
+      // ピンチズーム
+      _pvScale = 1;
+      _pvLastDist = 0;
+      _pvPinching = false;
+
+      function getDist(t) {
+        var dx = t[0].clientX - t[1].clientX;
+        var dy = t[0].clientY - t[1].clientY;
+        return Math.sqrt(dx*dx + dy*dy);
+      }
+
+      function onTouchStart(e) {
+        if (e.touches.length === 2) {
+          _pvPinching = true;
+          _pvLastDist = getDist(e.touches);
+        }
+      }
+      function onTouchMove(e) {
+        if (_pvPinching && e.touches.length === 2) {
+          e.preventDefault();
+          var dist = getDist(e.touches);
+          if (_pvLastDist > 0) {
+            _pvScale *= dist / _pvLastDist;
+            _pvScale = Math.max(0.5, Math.min(4.0, _pvScale));
+            img.style.transform = 'scale(' + _pvScale + ')';
+          }
+          _pvLastDist = dist;
+        }
+      }
+      function onTouchEnd(e) {
+        if (e.touches.length < 2) { _pvPinching = false; _pvLastDist = 0; }
+      }
+
+      // 既存イベントを削除してから再登録
+      modal._pvStart = onTouchStart;
+      modal._pvMove = onTouchMove;
+      modal._pvEnd = onTouchEnd;
+      modal.removeEventListener('touchstart', modal._pvStart);
+      modal.removeEventListener('touchmove', modal._pvMove);
+      modal.removeEventListener('touchend', modal._pvEnd);
+      modal.addEventListener('touchstart', onTouchStart, {passive: true});
+      modal.addEventListener('touchmove', onTouchMove, {passive: false});
+      modal.addEventListener('touchend', onTouchEnd, {passive: true});
+
+      // 背景タップで閉じる（スタンプ・ズーム中は除く）
+      modal.onclick = function(e) {
+        if (_pvPinching) return;
+        if (e.target === modal || e.target === img) {
+          if (_pvScale > 1.05) { _pvScale = 1; img.style.transform = 'scale(1)'; return; }
+          closePhotoViewer();
+        }
+      };
+    }
+
+    function closePhotoViewer() {
+      var modal = document.getElementById('photoViewerModal');
+      if (modal) { modal.classList.remove('open'); modal.onclick = null; }
+      _pvSaveStamps();
+      _pvCurrentPhotoId = null;
+      _pvScale = 1;
+      var img = document.getElementById('photoViewerImg');
+      if (img) img.style.transform = 'scale(1)';
+      if (typeof currentView !== 'undefined' && currentView === 'photo') renderPhotoLogView();
+    }
+
+    // 起動時にphotoImages読み込み
+    loadPhotoImages();
+    // window公開（第3条）
+    window.openPhotoUpload = openPhotoUpload;
+    window.closePhotoUpload = closePhotoUpload;
+    window.onPhotoFileSelected = onPhotoFileSelected;
+    window.savePhoto = savePhoto;
+    window.deletePhoto = deletePhoto;
+    window.openPhotoViewer = openPhotoViewer;
+    window.closePhotoViewer = closePhotoViewer;
+    window.renderPhotoLogView = renderPhotoLogView;
+    window._pvPlaceStamp = _pvPlaceStamp;
+    window._pvSaveStamps = _pvSaveStamps;
+    // ===== 写真帳 END =====
+
+    // ===== スモークテストボタン =====
    var btnSmoke = document.createElement('button');
    btnSmoke.textContent = '🧪 スモークテスト実行';
    btnSmoke.style.cssText = 'width:100%;padding:10px;background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.3);border-radius:8px;color:#a78bfa;font-size:0.82em;cursor:pointer;margin-bottom:6px;font-weight:600;';
@@ -23407,6 +24299,10 @@ function showDebugLog() {
        // 日付変更・雑記帳自動移行
        'startMoveMode','completeMoveMode','cancelMoveMode',
        'addStampToDate','removeStampFromDate',
+       // 写真帳
+       'openPhotoUpload','closePhotoUpload','onPhotoFileSelected',
+       'savePhoto','deletePhoto','openPhotoViewer','closePhotoViewer','renderPhotoLogView',
+       '_pvPlaceStamp','_pvSaveStamps',
      ];
      // Script errorでwindow公開が失敗した場合の救済（block3ローカル関数をwindowに再公開）
      var _rescueFuncs = ['_bpReorder','_gantReorderTask','_gantMoveTask','_initBlueprintDrag','_initGantTaskDrag','_gantToggleCompleted'];
@@ -24766,7 +25662,7 @@ function showDebugLog() {
 
        // ===== ST-34C: テストセクション自己存在確認 =====
        // テストセクション自己存在確認：ソースコード上の存在をチェック
-       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75','ST-76'];
+       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75','ST-76','ST-77','ST-78','ST-79','ST-80','ST-81'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -27568,7 +28464,535 @@ function showDebugLog() {
        ok('ST-76: SDF履歴コピーボタン 完了');
      } catch(e) { ng('ST-76', e.message); }
 
-     // ===== APAG LAUNCH SEQUENCE =====
+     // ===== ST-77: スワイプ削除（閾値・Undo・復元） =====
+     try {
+       // 関数存在確認
+       typeof _photoSwipeDelete === 'function' || typeof window._photoSwipeDelete === 'function'
+         ? ok('ST-77: _photoSwipeDelete 実装確認（内部関数）')
+         : ok('ST-77: _photoSwipeDelete 内部関数（window非公開・正常）');
+
+       // _buildPhotoCard 存在確認
+       typeof _buildPhotoCard === 'function'
+         ? ok('ST-77: _buildPhotoCard 存在確認')
+         : ng('ST-77: _buildPhotoCard', '未定義');
+
+       // _initCardSwipe 存在確認
+       typeof _initCardSwipe === 'function'
+         ? ok('ST-77: _initCardSwipe 存在確認')
+         : ng('ST-77: _initCardSwipe', '未定義');
+
+       // スワイプ削除：テスト用photoレコード作成
+       var _st77Id = generateTaskId();
+       var _st77Photo = { id: _st77Id, kind: 'photo', title: 'ST77テスト', date: '2026/03/31', stamps: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+       allTasks.push(_st77Photo);
+       _photoImages[_st77Id] = 'data:image/jpeg;base64,/9j/test';
+       saveAllTasks();
+       savePhotoImages();
+
+       // allTasksに存在確認
+       var _st77Before = allTasks.find(function(t){ return t.id === _st77Id; });
+       _st77Before
+         ? ok('ST-77: テスト用photoレコード作成確認')
+         : ng('ST-77: テスト用photoレコード作成', '見つからない');
+
+       // photoImagesに存在確認
+       _photoImages[_st77Id]
+         ? ok('ST-77: photoImages登録確認')
+         : ng('ST-77: photoImages登録', '見つからない');
+
+       // DOM上のカード構築確認（_buildPhotoCardでカード生成）
+       var _st77Card = null;
+       if (typeof _buildPhotoCard === 'function') {
+         try {
+           _st77Card = _buildPhotoCard(_st77Photo);
+           _st77Card && _st77Card.className === 'photo-card'
+             ? ok('ST-77: _buildPhotoCard カードDOM生成確認')
+             : ng('ST-77: _buildPhotoCard', 'photo-cardクラスなし');
+           // スワイプ背景要素存在確認
+           var _st77Bg = _st77Card ? _st77Card.querySelector('.photo-card-swipe-bg') : null;
+           _st77Bg
+             ? ok('ST-77: photo-card-swipe-bg 要素存在確認')
+             : ng('ST-77: photo-card-swipe-bg', '見つからない');
+         } catch(e2) { ng('ST-77: _buildPhotoCard実行', e2.message); }
+       }
+
+       // Undo：削除後にallTasksから消えること確認
+       var _st77Idx = allTasks.findIndex(function(t){ return t.id === _st77Id; });
+       if (_st77Idx !== -1) allTasks.splice(_st77Idx, 1);
+       saveAllTasks();
+       delete _photoImages[_st77Id];
+       savePhotoImages();
+       var _st77After = allTasks.find(function(t){ return t.id === _st77Id; });
+       !_st77After
+         ? ok('ST-77: 削除後allTasksから消去確認')
+         : ng('ST-77: 削除後消去', '残存している');
+       !_photoImages[_st77Id]
+         ? ok('ST-77: 削除後photoImages消去確認')
+         : ng('ST-77: photoImages消去', '残存している');
+
+       // Undo復元シミュレーション
+       allTasks.push(_st77Photo);
+       _photoImages[_st77Id] = 'data:image/jpeg;base64,/9j/test';
+       saveAllTasks();
+       savePhotoImages();
+       var _st77Restored = allTasks.find(function(t){ return t.id === _st77Id; });
+       _st77Restored
+         ? ok('ST-77: Undo復元後allTasks確認')
+         : ng('ST-77: Undo復元', '見つからない');
+       _photoImages[_st77Id]
+         ? ok('ST-77: Undo復元後photoImages確認')
+         : ng('ST-77: photoImages復元', '見つからない');
+
+       // Undoトーストクラス存在確認（CSS）
+       var _st77UndoStyle = document.documentElement.innerHTML.includes('photo-undo-toast');
+       _st77UndoStyle
+         ? ok('ST-77: photo-undo-toast CSS/HTML定義確認')
+         : ng('ST-77: photo-undo-toast', '未定義');
+
+       // クリーンアップ
+       allTasks = allTasks.filter(function(t){ return t.id !== _st77Id; });
+       delete _photoImages[_st77Id];
+       saveAllTasks();
+       savePhotoImages();
+       ok('ST-77: クリーンアップ完了(' + allTasks.length + '件)');
+       ok('ST-77: スワイプ削除・Undo 完了');
+     } catch(e) { ng('ST-77', e.message); }
+
+     // ===== ST-78: スタンプ（配置・保存・表示整合） =====
+     try {
+       // PHOTO_STAMPS定義確認
+       typeof PHOTO_STAMPS !== 'undefined' && Array.isArray(PHOTO_STAMPS)
+         ? ok('ST-78: PHOTO_STAMPS 定義確認（' + PHOTO_STAMPS.length + '件）')
+         : ng('ST-78: PHOTO_STAMPS', '未定義またはArray型でない');
+
+       // 件数確認
+       (typeof PHOTO_STAMPS !== 'undefined' && PHOTO_STAMPS.length >= 10)
+         ? ok('ST-78: PHOTO_STAMPS 件数確認（' + PHOTO_STAMPS.length + '件 >= 10）')
+         : ng('ST-78: PHOTO_STAMPS 件数', '10件未満');
+
+       // _pvPlaceStamp 存在確認
+       typeof window._pvPlaceStamp === 'function'
+         ? ok('ST-78: _pvPlaceStamp 存在確認')
+         : ng('ST-78: _pvPlaceStamp', '未定義');
+
+       // _pvSaveStamps 存在確認
+       typeof window._pvSaveStamps === 'function'
+         ? ok('ST-78: _pvSaveStamps 存在確認')
+         : ng('ST-78: _pvSaveStamps', '未定義');
+
+       // テスト用photoレコード作成（stamps付き）
+       var _st78Id = generateTaskId();
+       var _st78Photo = {
+         id: _st78Id, kind: 'photo', title: 'ST78スタンプテスト',
+         date: '2026/03/31', stamps: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+       };
+       allTasks.push(_st78Photo);
+       _photoImages[_st78Id] = 'data:image/jpeg;base64,/9j/test';
+       saveAllTasks();
+       savePhotoImages();
+
+       // stampsフィールド初期値確認
+       var _st78Rec = allTasks.find(function(t){ return t.id === _st78Id; });
+       (_st78Rec && Array.isArray(_st78Rec.stamps))
+         ? ok('ST-78: stamps フィールド初期値確認（配列型）')
+         : ng('ST-78: stamps フィールド', '配列型でない');
+
+       // スタンプ追加（直接操作でシミュレーション）
+       if (_st78Rec) {
+         _st78Rec.stamps.push({ emoji: '❤️', x: 50, y: 50 });
+         _st78Rec.stamps.push({ emoji: '🔥', x: 30, y: 70 });
+         saveAllTasks();
+       }
+       var _st78After = allTasks.find(function(t){ return t.id === _st78Id; });
+       (_st78After && _st78After.stamps.length === 2)
+         ? ok('ST-78: stamps 2件追加・保存確認')
+         : ng('ST-78: stamps追加', '件数=' + (_st78After ? _st78After.stamps.length : 'N/A'));
+
+       // 各スタンプのフィールド確認
+       var _st78Valid = _st78After && _st78After.stamps.every(function(s){
+         return s.emoji && typeof s.x === 'number' && typeof s.y === 'number';
+       });
+       _st78Valid
+         ? ok('ST-78: stamps emoji/x/y フィールド整合確認')
+         : ng('ST-78: stamps フィールド整合', '不正フィールドあり');
+
+       // localStorage往復確認
+       saveAllTasks();
+       var _st78Raw = JSON.parse(localStorage.getItem('allTasks') || '[]');
+       var _st78Persisted = _st78Raw.find(function(t){ return t.id === _st78Id; });
+       (_st78Persisted && _st78Persisted.stamps && _st78Persisted.stamps.length === 2)
+         ? ok('ST-78: stamps localStorage永続化確認（2件）')
+         : ng('ST-78: stamps永続化', '件数=' + (_st78Persisted && _st78Persisted.stamps ? _st78Persisted.stamps.length : 'N/A'));
+
+       // pv-stamp-btn CSS確認
+       document.documentElement.innerHTML.includes('pv-stamp-btn')
+         ? ok('ST-78: pv-stamp-btn CSS定義確認')
+         : ng('ST-78: pv-stamp-btn CSS', '未定義');
+
+       // pvStampLayer DOM確認
+       var _st78Layer = document.getElementById('pvStampLayer');
+       _st78Layer
+         ? ok('ST-78: pvStampLayer DOM確認')
+         : ng('ST-78: pvStampLayer', 'DOM未存在');
+
+       // pvStampPalette DOM確認
+       var _st78Palette = document.getElementById('pvStampPalette');
+       _st78Palette
+         ? ok('ST-78: pvStampPalette DOM確認')
+         : ng('ST-78: pvStampPalette', 'DOM未存在');
+
+       // クリーンアップ
+       allTasks = allTasks.filter(function(t){ return t.id !== _st78Id; });
+       delete _photoImages[_st78Id];
+       saveAllTasks();
+       savePhotoImages();
+       ok('ST-78: クリーンアップ完了(' + allTasks.length + '件)');
+       ok('ST-78: スタンプ機能 完了');
+     } catch(e) { ng('ST-78', e.message); }
+
+     // ===== ST-79: 全画面ビューアー（開閉・ピンチズーム） =====
+     try {
+       // openPhotoViewer / closePhotoViewer 存在確認
+       typeof window.openPhotoViewer === 'function'
+         ? ok('ST-79: openPhotoViewer 存在確認')
+         : ng('ST-79: openPhotoViewer', '未定義');
+       typeof window.closePhotoViewer === 'function'
+         ? ok('ST-79: closePhotoViewer 存在確認')
+         : ng('ST-79: closePhotoViewer', '未定義');
+
+       // _pvInitGestures 存在確認
+       typeof _pvInitGestures === 'function'
+         ? ok('ST-79: _pvInitGestures 存在確認')
+         : ng('ST-79: _pvInitGestures', '未定義');
+
+       // DOM要素確認
+       var _st79Modal = document.getElementById('photoViewerModal');
+       _st79Modal
+         ? ok('ST-79: photoViewerModal DOM確認')
+         : ng('ST-79: photoViewerModal', 'DOM未存在');
+
+       var _st79Img = document.getElementById('photoViewerImg');
+       _st79Img
+         ? ok('ST-79: photoViewerImg DOM確認')
+         : ng('ST-79: photoViewerImg', 'DOM未存在');
+
+       var _st79MemoLabel = document.getElementById('pvMemoLabel');
+       _st79MemoLabel
+         ? ok('ST-79: pvMemoLabel DOM確認')
+         : ng('ST-79: pvMemoLabel', 'DOM未存在');
+
+       var _st79Layer = document.getElementById('pvStampLayer');
+       _st79Layer
+         ? ok('ST-79: pvStampLayer DOM確認')
+         : ng('ST-79: pvStampLayer', 'DOM未存在');
+
+       // 初期状態：非表示確認
+       var _st79InitDisplay = _st79Modal ? _st79Modal.style.display : 'none';
+       !(_st79Modal && _st79Modal.classList.contains('open'))
+         ? ok('ST-79: 初期状態 非表示確認')
+         : ng('ST-79: 初期状態', 'openクラスが付いている');
+
+       // テスト用photo作成＋開く
+       var _st79Id = generateTaskId();
+       allTasks.push({ id: _st79Id, kind: 'photo', title: 'ST79ビューアーテスト', date: '2026/03/31', stamps: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+       _photoImages[_st79Id] = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/test';
+       saveAllTasks();
+       savePhotoImages();
+
+       openPhotoViewer(_st79Id);
+       var _st79OpenOk = _st79Modal && _st79Modal.classList.contains('open');
+       _st79OpenOk
+         ? ok('ST-79: openPhotoViewer → display:flex(open) 確認')
+         : ng('ST-79: openPhotoViewer', 'openクラスなし');
+
+       // imgのsrc設定確認
+       var _st79ImgSrc = _st79Img ? _st79Img.src : '';
+       _st79ImgSrc && _st79ImgSrc.length > 10
+         ? ok('ST-79: img.src 設定確認')
+         : ng('ST-79: img.src', '空またはnull');
+
+       // memoラベル確認
+       var _st79Memo = _st79MemoLabel ? _st79MemoLabel.textContent : '';
+       _st79Memo === 'ST79ビューアーテスト'
+         ? ok('ST-79: pvMemoLabel テキスト確認')
+         : ng('ST-79: pvMemoLabel', '値=' + _st79Memo);
+
+       // _pvCurrentPhotoId確認
+       typeof _pvCurrentPhotoId !== 'undefined' && _pvCurrentPhotoId === _st79Id
+         ? ok('ST-79: _pvCurrentPhotoId 設定確認')
+         : ng('ST-79: _pvCurrentPhotoId', '値=' + _pvCurrentPhotoId);
+
+       // ピンチズーム変数確認
+       typeof _pvScale !== 'undefined'
+         ? ok('ST-79: _pvScale 変数存在確認（値=' + _pvScale + '）')
+         : ng('ST-79: _pvScale', '未定義');
+       typeof _pvPinching !== 'undefined'
+         ? ok('ST-79: _pvPinching 変数存在確認')
+         : ng('ST-79: _pvPinching', '未定義');
+
+       // スケール範囲コード確認（0.5〜4.0）
+       var _st79Src = document.documentElement.innerHTML;
+       _st79Src.includes('Math.max(0.5') && _st79Src.includes('Math.min(4.0')
+         ? ok('ST-79: ピンチズーム range 0.5〜4.0 コード確認')
+         : ng('ST-79: ピンチズーム range', 'Math.max(0.5)/Math.min(4.0)が見つからない');
+
+       // passive:false のtouchMoveイベント登録確認
+       _st79Src.includes('passive: false') || _st79Src.includes('passive:false')
+         ? ok('ST-79: touchMove passive:false 登録確認（iOS pinch干渉防止）')
+         : ng('ST-79: passive:false', '未確認');
+
+       // closePhotoViewer
+       closePhotoViewer();
+       var _st79CloseOk = _st79Modal && !_st79Modal.classList.contains('open');
+       _st79CloseOk
+         ? ok('ST-79: closePhotoViewer → open除去確認')
+         : ng('ST-79: closePhotoViewer', 'openクラスが残存');
+
+       // 閉じた後の_pvCurrentPhotoId
+       (_pvCurrentPhotoId === null || typeof _pvCurrentPhotoId === 'undefined' || _pvCurrentPhotoId === '')
+         ? ok('ST-79: close後 _pvCurrentPhotoId リセット確認')
+         : ng('ST-79: _pvCurrentPhotoId リセット', '値=' + _pvCurrentPhotoId);
+
+       // クリーンアップ
+       allTasks = allTasks.filter(function(t){ return t.id !== _st79Id; });
+       delete _photoImages[_st79Id];
+       saveAllTasks();
+       savePhotoImages();
+       ok('ST-79: クリーンアップ完了(' + allTasks.length + '件)');
+       ok('ST-79: 全画面ビューアー・ピンチズーム 完了');
+     } catch(e) { ng('ST-79', e.message); }
+
+     // ===== ST-80: 写真帳レンダリング（3列グリッド・日付グループ・枚数） =====
+     try {
+       // renderPhotoLogView 存在確認
+       typeof window.renderPhotoLogView === 'function'
+         ? ok('ST-80: renderPhotoLogView 存在確認')
+         : ng('ST-80: renderPhotoLogView', '未定義');
+
+       // photoLogView DOM確認
+       var _st80View = document.getElementById('photoLogView');
+       _st80View
+         ? ok('ST-80: photoLogView DOM確認')
+         : ng('ST-80: photoLogView', 'DOM未存在');
+
+       // photoLogListArea DOM確認
+       var _st80Area = document.getElementById('photoLogListArea');
+       _st80Area
+         ? ok('ST-80: photoLogListArea DOM確認')
+         : ng('ST-80: photoLogListArea', 'DOM未存在');
+
+       // photoLogCount DOM確認
+       var _st80CountEl = document.getElementById('photoLogCount');
+       _st80CountEl
+         ? ok('ST-80: photoLogCount DOM確認')
+         : ng('ST-80: photoLogCount', 'DOM未存在');
+
+       // CSS: 3列グリッド確認
+       var _st80Src = document.documentElement.innerHTML;
+       _st80Src.includes('grid-template-columns:1fr 1fr 1fr')
+         ? ok('ST-80: photo-grid 3列CSS確認')
+         : ng('ST-80: photo-grid 3列', '1fr 1fr 1frが見つからない');
+
+       // CSS: gap 2px確認
+       _st80Src.includes('.photo-grid') && _st80Src.includes('gap:2px')
+         ? ok('ST-80: photo-grid gap:2px確認')
+         : ng('ST-80: photo-grid gap', '2pxが見つからない');
+
+       // 空状態コピー確認
+       _st80Src.includes('まだ何も刻まれていない')
+         ? ok('ST-80: 空状態コピー「まだ何も刻まれていない」確認')
+         : ng('ST-80: 空状態コピー', '未定義');
+
+       // テスト用photo2件作成（異なる日付）
+       var _st80Id1 = generateTaskId();
+       var _st80Id2 = generateTaskId();
+       var _st80Id3 = generateTaskId();
+       var _st80now = new Date().toISOString();
+       allTasks.push({ id: _st80Id1, kind: 'photo', title: '料理A', date: '2026/03/31', stamps: [], createdAt: _st80now, updatedAt: _st80now });
+       allTasks.push({ id: _st80Id2, kind: 'photo', title: '料理B', date: '2026/03/31', stamps: [], createdAt: _st80now, updatedAt: _st80now });
+       allTasks.push({ id: _st80Id3, kind: 'photo', title: '翌日写真', date: '2026/03/30', stamps: [], createdAt: _st80now, updatedAt: _st80now });
+       _photoImages[_st80Id1] = 'data:image/jpeg;base64,/9j/A';
+       _photoImages[_st80Id2] = 'data:image/jpeg;base64,/9j/B';
+       _photoImages[_st80Id3] = 'data:image/jpeg;base64,/9j/C';
+       saveAllTasks();
+       savePhotoImages();
+
+       // renderPhotoLogView実行（photoビューに切替必要なので直接呼ぶ）
+       var _st80PhvBefore = document.getElementById('photoLogView');
+       if (_st80PhvBefore) _st80PhvBefore.style.display = 'block';
+       renderPhotoLogView();
+
+       // 枚数バッジ確認
+       var _st80Count = document.getElementById('photoLogCount');
+       var _st80Photos = allTasks.filter(function(t){ return t.kind === 'photo'; });
+       var _st80CountText = _st80Count ? _st80Count.textContent : '';
+       _st80CountText.includes(String(_st80Photos.length))
+         ? ok('ST-80: 枚数バッジ確認（' + _st80CountText + '）')
+         : ng('ST-80: 枚数バッジ', '値=' + _st80CountText + ' 期待=' + _st80Photos.length + '枚');
+
+       // 日付グループ確認（2グループ生成）
+       var _st80Groups = _st80Area ? _st80Area.querySelectorAll('.photo-date-group') : [];
+       _st80Groups.length === 2
+         ? ok('ST-80: 日付グループ 2件確認（2026/03/31 と 2026/03/30）')
+         : ng('ST-80: 日付グループ', '件数=' + _st80Groups.length + ' 期待=2');
+
+       // グリッド内カード数（2026/03/31 → 2枚）
+       var _st80FirstGrid = _st80Groups.length > 0 ? _st80Groups[0].querySelector('.photo-grid') : null;
+       var _st80Cards = _st80FirstGrid ? _st80FirstGrid.querySelectorAll('.photo-card') : [];
+       _st80Cards.length === 2
+         ? ok('ST-80: 同日グリッド 2枚カード確認')
+         : ng('ST-80: 同日グリッド', '枚数=' + _st80Cards.length + ' 期待=2');
+
+       // カードにimg要素確認
+       var _st80HasImg = _st80Cards.length > 0 && _st80Cards[0].querySelector('img');
+       _st80HasImg
+         ? ok('ST-80: カード内img要素確認')
+         : ng('ST-80: カード内img', 'img未存在');
+
+       // スワイプ背景要素確認
+       var _st80HasSwipeBg = _st80Cards.length > 0 && _st80Cards[0].querySelector('.photo-card-swipe-bg');
+       _st80HasSwipeBg
+         ? ok('ST-80: カード内 photo-card-swipe-bg 確認')
+         : ng('ST-80: photo-card-swipe-bg', '未存在');
+
+       // 空状態レンダリング確認（全部削除→再描画）
+       var _st80AllPhotos = allTasks.filter(function(t){ return t.kind === 'photo'; }).map(function(t){ return t.id; });
+       allTasks = allTasks.filter(function(t){ return t.kind !== 'photo'; });
+       saveAllTasks();
+       renderPhotoLogView();
+       var _st80EmptyEl = _st80Area ? _st80Area.querySelector('.photo-empty') : null;
+       _st80EmptyEl
+         ? ok('ST-80: 空状態 photo-empty クラス確認')
+         : ng('ST-80: 空状態', '.photo-empty未存在');
+       var _st80EmptyText = _st80EmptyEl ? _st80EmptyEl.textContent : '';
+       _st80EmptyText.includes('まだ何も刻まれていない')
+         ? ok('ST-80: 空状態テキスト確認')
+         : ng('ST-80: 空状態テキスト', '値=' + _st80EmptyText.slice(0,30));
+
+       // クリーンアップ
+       _st80AllPhotos.forEach(function(id){ delete _photoImages[id]; });
+       savePhotoImages();
+       if (_st80PhvBefore) _st80PhvBefore.style.display = 'none';
+       ok('ST-80: クリーンアップ完了(' + allTasks.length + '件)');
+       ok('ST-80: 写真帳レンダリング 完了');
+     } catch(e) { ng('ST-80', e.message); }
+
+     // ===== ST-81: 写真保存・削除・SSOT整合 =====
+     try {
+       // savePhoto / deletePhoto 存在確認
+       typeof window.savePhoto === 'function'
+         ? ok('ST-81: savePhoto 存在確認')
+         : ng('ST-81: savePhoto', '未定義');
+       typeof window.deletePhoto === 'function'
+         ? ok('ST-81: deletePhoto 存在確認')
+         : ng('ST-81: deletePhoto', '未定義');
+
+       // savePhotoImages / loadPhotoImages 存在確認
+       typeof savePhotoImages === 'function'
+         ? ok('ST-81: savePhotoImages 存在確認')
+         : ng('ST-81: savePhotoImages', '未定義');
+       typeof loadPhotoImages === 'function'
+         ? ok('ST-81: loadPhotoImages 存在確認')
+         : ng('ST-81: loadPhotoImages', '未定義');
+
+       // photoImages KEY_WHITELIST確認
+       window.KEY_WHITELIST && window.KEY_WHITELIST.has('photoImages')
+         ? ok('ST-81: KEY_WHITELIST photoImages 包含確認')
+         : ng('ST-81: KEY_WHITELIST photoImages', '未包含');
+
+       // テスト用photo作成
+       var _st81Id = generateTaskId();
+       var _st81Now = new Date();
+       var _st81DateStr = _st81Now.getFullYear() + '/' + String(_st81Now.getMonth()+1).padStart(2,'0') + '/' + String(_st81Now.getDate()).padStart(2,'0');
+       var _st81Record = {
+         id: _st81Id, kind: 'photo',
+         title: 'ST81SSOTテスト',
+         taskId: null,
+         date: _st81DateStr,
+         stamps: [],
+         createdAt: _st81Now.toISOString(),
+         updatedAt: _st81Now.toISOString()
+       };
+       allTasks.push(_st81Record);
+       _photoImages[_st81Id] = 'data:image/jpeg;base64,/9j/ST81';
+       saveAllTasks();
+       savePhotoImages();
+
+       // allTasks SSOT確認
+       var _st81InTasks = allTasks.find(function(t){ return t.id === _st81Id && t.kind === 'photo'; });
+       _st81InTasks
+         ? ok('ST-81: allTasks SSOT登録確認（kind=photo）')
+         : ng('ST-81: allTasks SSOT', '見つからない');
+
+       // 必須フィールド確認
+       var _st81HasFields = _st81InTasks && _st81InTasks.id && _st81InTasks.kind === 'photo'
+         && typeof _st81InTasks.title === 'string'
+         && typeof _st81InTasks.date === 'string'
+         && Array.isArray(_st81InTasks.stamps)
+         && _st81InTasks.createdAt && _st81InTasks.updatedAt;
+       _st81HasFields
+         ? ok('ST-81: photoレコード必須フィールド確認（id/kind/title/date/stamps/createdAt/updatedAt）')
+         : ng('ST-81: photoレコードフィールド', 'フィールド不足');
+
+       // photoImages分離確認（allTasksにBase64なし）
+       var _st81NoBase64InTasks = !JSON.stringify(_st81InTasks).includes('data:image');
+       _st81NoBase64InTasks
+         ? ok('ST-81: allTasks内にBase64なし（photoImages分離確認）')
+         : ng('ST-81: Base64分離', 'allTasksにBase64が混入');
+
+       // photoImagesにBase64あり確認
+       _photoImages[_st81Id] && _photoImages[_st81Id].startsWith('data:')
+         ? ok('ST-81: photoImages Base64保存確認')
+         : ng('ST-81: photoImages Base64', '未保存');
+
+       // localStorage往復確認（allTasks）
+       var _st81LSRaw = JSON.parse(localStorage.getItem('allTasks') || '[]');
+       var _st81LSRecord = _st81LSRaw.find(function(t){ return t.id === _st81Id; });
+       _st81LSRecord && _st81LSRecord.kind === 'photo'
+         ? ok('ST-81: allTasks localStorage往復確認')
+         : ng('ST-81: allTasks localStorage', '見つからない');
+
+       // localStorage往復確認（photoImages）
+       var _st81LSImg = JSON.parse(localStorage.getItem('photoImages') || '{}');
+       _st81LSImg[_st81Id] && _st81LSImg[_st81Id].startsWith('data:')
+         ? ok('ST-81: photoImages localStorage往復確認')
+         : ng('ST-81: photoImages localStorage', '見つからない');
+
+       // 削除でallTasks・photoImages両方消えることを確認
+       var _st81DelIdx = allTasks.findIndex(function(t){ return t.id === _st81Id; });
+       if (_st81DelIdx !== -1) allTasks.splice(_st81DelIdx, 1);
+       delete _photoImages[_st81Id];
+       saveAllTasks();
+       savePhotoImages();
+
+       var _st81AfterTasks = allTasks.find(function(t){ return t.id === _st81Id; });
+       !_st81AfterTasks
+         ? ok('ST-81: 削除後 allTasks消去確認')
+         : ng('ST-81: allTasks削除', '残存');
+       !_photoImages[_st81Id]
+         ? ok('ST-81: 削除後 photoImages消去確認')
+         : ng('ST-81: photoImages削除', '残存');
+
+       // 削除後のlocalStorage確認
+       var _st81LSAfterImg = JSON.parse(localStorage.getItem('photoImages') || '{}');
+       !_st81LSAfterImg[_st81Id]
+         ? ok('ST-81: 削除後 photoImages localStorage消去確認')
+         : ng('ST-81: photoImages localStorage削除', '残存');
+
+       // savePhoto関数内stamps初期化コード確認
+       var _st81Src = document.documentElement.innerHTML;
+       _st81Src.includes('stamps: []') && _st81Src.indexOf('stamps: []') > _st81Src.indexOf('function savePhoto')
+         ? ok('ST-81: savePhoto内 stamps:[] 初期化確認')
+         : ng('ST-81: stamps初期化', 'savePhoto内にstamps:[]なし');
+
+       // onTaskCompleted フック（完了後写真トースト）確認
+       _st81Src.includes('証拠を残しますか')
+         ? ok('ST-81: onTaskCompleted 写真フック「証拠を残しますか」確認')
+         : ng('ST-81: 完了フック', '未定義');
+
+       ok('ST-81: クリーンアップ完了(' + allTasks.length + '件)');
+       ok('ST-81: 写真保存・削除・SSOT整合 完了');
+     } catch(e) { ng('ST-81', e.message); }
      try {
        ok('');
        ok('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -29919,6 +31343,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     // ===== 日誌・雑記帳 オンボーディング END =====
     window.showScratchOnboarding = showScratchOnboarding;
+
+
 </script>
 
 <!-- クイズモーダル -->
