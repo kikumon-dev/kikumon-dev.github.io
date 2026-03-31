@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.377';
+    const APP_VERSION = 'v0.39.378';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -2925,12 +2925,12 @@
     /* ===== 写真帳 モダン版 ===== */
     #photoLogView {
       display:none;height:100%;overflow-y:auto;
-      padding:0;box-sizing:border-box;background:#fafafa;
+      padding:0;box-sizing:border-box;background:#f0ede8;
     }
     .photo-log-header {
       display:flex;align-items:center;justify-content:space-between;
-      padding:14px 16px 10px;background:#fff;
-      border-bottom:1px solid #f0f0f0;position:sticky;top:0;z-index:10;
+      padding:14px 16px 10px;background:#f0ede8;
+      border-bottom:1px solid #ddd7cf;position:sticky;top:0;z-index:10;
     }
     .photo-log-title {
       font-size:1.05em;font-weight:700;color:#111;letter-spacing:0.04em;
@@ -2951,10 +2951,15 @@
       letter-spacing:0.1em;padding:8px 0 4px;
     }
     /* グリッド */
-    .photo-date-group { margin-bottom:2px; }
+    .photo-date-group { margin-bottom:12px; }
     .photo-date-label {
-      font-size:0.72em;color:#888;font-weight:600;
-      padding:10px 12px 6px;letter-spacing:0.06em;
+      font-size:0.72em;color:#8a7e70;letter-spacing:0.08em;
+      padding:8px 10px 5px;
+      display:flex;align-items:center;gap:6px;
+    }
+    .photo-date-label::before,
+    .photo-date-label::after {
+      content:'';flex:1;height:1px;background:#d4ccc2;
     }
     .photo-grid {
       display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px;
@@ -2963,6 +2968,7 @@
     .photo-card {
       position:relative;cursor:pointer;overflow:hidden;
       background:#eee;aspect-ratio:1/1;
+      border-radius:2px;
       transition:transform 0.18s ease;
       touch-action:pan-y;
     }
@@ -3911,7 +3917,7 @@
       <button class="photo-log-add-btn" onclick="openPhotoUpload()" title="写真を追加">＋</button>
     </div>
     <div class="photo-log-tagline">今日の創造を、刻め。</div>
-    <div id="photoLogListArea"></div>
+    <div id="photoLogListArea" style="padding:8px 8px 40px;"></div>
   </div>
 
   <!-- 写真アップロードモーダル -->
@@ -23625,6 +23631,7 @@ function showDebugLog() {
     var _photoImages = {}; // { [photoId]: 'data:image/jpeg;base64,...' }
     var _pvCurrentPhotoId = null; // 全画面表示中の写真ID
     var _pvScale = 1, _pvLastDist = 0, _pvPinching = false;
+    var _pvStampMode = false; // スタンプ配置モード
     var _pvStamps = {}; // { [photoId]: [{emoji,x,y}] } ※表示用キャッシュ（allTasks.stampsが正）
 
     // スタンプ絵文字パレット
@@ -24063,7 +24070,7 @@ function showDebugLog() {
         });
       }
 
-      // スタンプパレット構築
+      // スタンプパレット構築（絵文字選択→写真タップで位置指定）
       var palette = document.getElementById('pvStampPalette');
       if (palette) {
         palette.innerHTML = '';
@@ -24071,17 +24078,26 @@ function showDebugLog() {
           var btn = document.createElement('button');
           btn.className = 'pv-stamp-btn';
           btn.textContent = emoji;
-          btn.onclick = function() { _pvPlaceStamp(emoji); };
+          btn.onclick = function() {
+            window._pvPendingStampEmoji = emoji;
+            var pal = document.getElementById('pvStampPalette');
+            var tbtn = document.getElementById('pvStampToggle');
+            if (pal) pal.style.display = 'none';
+            if (tbtn) { tbtn.textContent = emoji + ' タップで配置'; tbtn.style.background = 'rgba(255,200,0,0.55)'; }
+            _pvStampMode = false;
+          };
           palette.appendChild(btn);
         });
       }
 
       modal.classList.add('open');
-      // スタンプパレット初期非表示
+      // 初期化：スタンプモードOFF・パレット非表示・ペンディングクリア
+      window._pvPendingStampEmoji = null;
+      _pvStampMode = false;
       var _pal = document.getElementById('pvStampPalette');
       if (_pal) _pal.style.display = 'none';
       var _ptbtn = document.getElementById('pvStampToggle');
-      if (_ptbtn) _ptbtn.style.background = 'rgba(255,255,255,0.15)';
+      if (_ptbtn) { _ptbtn.style.background = 'rgba(255,255,255,0.15)'; _ptbtn.textContent = '✏️ スタンプ'; }
       _pvInitGestures(modal, img);
     }
 
@@ -24128,15 +24144,18 @@ function showDebugLog() {
       var palette = document.getElementById('pvStampPalette');
       var btn = document.getElementById('pvStampToggle');
       if (!palette) return;
-      var isOpen = palette.style.display !== 'none';
-      palette.style.display = isOpen ? 'none' : 'flex';
-      if (btn) btn.style.background = isOpen ? 'rgba(255,255,255,0.15)' : 'rgba(255,107,107,0.5)';
+      _pvStampMode = !_pvStampMode;
+      palette.style.display = _pvStampMode ? 'flex' : 'none';
+      if (btn) {
+        btn.style.background = _pvStampMode ? 'rgba(255,107,107,0.6)' : 'rgba(255,255,255,0.15)';
+        btn.textContent = _pvStampMode ? '✕ 閉じる' : '✏️ スタンプ';
+      }
     }
 
-    function _pvPlaceStamp(emoji) {
+    function _pvPlaceStamp(emoji, xPct, yPct) {
       var layer = document.getElementById('pvStampLayer');
-      var x = 40 + Math.random() * 20;
-      var y = 35 + Math.random() * 20;
+      var x = (typeof xPct === 'number') ? xPct : 40 + Math.random() * 20;
+      var y = (typeof yPct === 'number') ? yPct : 35 + Math.random() * 20;
       var photo = allTasks.find(function(t){ return t.id === _pvCurrentPhotoId; });
       if (!photo) return;
       if (!photo.stamps) photo.stamps = [];
@@ -24145,6 +24164,7 @@ function showDebugLog() {
       saveAllTasks();
       _pvAddStampEl(layer, emoji, x, y, idx);
       _pvStampsDirty = true;
+      // スタンプ配置後モードを維持（連続配置可能）
     }
 
     function _pvSaveStamps() {
@@ -24209,9 +24229,64 @@ function showDebugLog() {
       modal.addEventListener('touchmove', onTouchMove, {passive: false});
       modal.addEventListener('touchend', onTouchEnd, {passive: true});
 
-      // 背景タップで閉じる（スタンプ・ズーム中は除く）
+      // 背景タップで閉じる / スタンプ位置指定配置
       modal.onclick = function(e) {
         if (_pvPinching) return;
+
+        // ③ スタンプ要素タップ → ゴミ箱ボタン表示
+        if (e.target && e.target.classList && e.target.classList.contains('pv-stamp-item')) {
+          var stampEl = e.target;
+          // 既存のゴミ箱ボタンがあれば削除
+          var existingTrash = document.querySelector('.pv-stamp-trash');
+          if (existingTrash) {
+            if (existingTrash.dataset.target === stampEl.dataset.idx) {
+              existingTrash.remove(); return;
+            }
+            existingTrash.remove();
+          }
+          var trash = document.createElement('button');
+          trash.className = 'pv-stamp-trash';
+          trash.dataset.target = stampEl.dataset.idx;
+          trash.textContent = '🗑️';
+          trash.style.cssText = 'position:absolute;top:' + stampEl.style.top + ';left:calc(' + stampEl.style.left + ' + 1.2em);background:rgba(0,0,0,0.65);border:none;border-radius:50%;color:#fff;font-size:0.75em;width:24px;height:24px;cursor:pointer;z-index:200;display:flex;align-items:center;justify-content:center;';
+          trash.onclick = function(ev) {
+            ev.stopPropagation();
+            var photo = allTasks.find(function(t){ return t.id === _pvCurrentPhotoId; });
+            if (photo && photo.stamps) {
+              var removeIdx = parseInt(stampEl.dataset.idx);
+              photo.stamps.splice(removeIdx, 1);
+              saveAllTasks();
+              _pvStampsDirty = true;
+              // スタンプ再描画
+              var layer = document.getElementById('pvStampLayer');
+              if (layer) {
+                layer.innerHTML = '';
+                photo.stamps.forEach(function(s, i) { _pvAddStampEl(layer, s.emoji, s.x, s.y, i); });
+              }
+            }
+            trash.remove();
+          };
+          var layer = document.getElementById('pvStampLayer');
+          if (layer) layer.appendChild(trash);
+          return;
+        }
+
+        // ② スタンプ位置指定配置
+        if (window._pvPendingStampEmoji && (e.target === img || e.target === modal)) {
+          var rect = img.getBoundingClientRect();
+          var xPct = Math.round((e.clientX - rect.left) / rect.width * 100);
+          var yPct = Math.round((e.clientY - rect.top) / rect.height * 100);
+          xPct = Math.max(2, Math.min(95, xPct));
+          yPct = Math.max(2, Math.min(95, yPct));
+          _pvPlaceStamp(window._pvPendingStampEmoji, xPct, yPct);
+          // 配置後リセット
+          var tbtn = document.getElementById('pvStampToggle');
+          if (tbtn) { tbtn.textContent = '✏️ スタンプ'; tbtn.style.background = 'rgba(255,255,255,0.15)'; }
+          window._pvPendingStampEmoji = null;
+          return;
+        }
+
+        // 通常タップ：ズームリセット or 閉じる
         if (e.target === modal || e.target === img) {
           if (_pvScale > 1.05) { _pvScale = 1; img.style.transform = 'scale(1)'; return; }
           closePhotoViewer();
@@ -24227,9 +24302,13 @@ function showDebugLog() {
       _pvSaveStamps();
       _pvCurrentPhotoId = null;
       _pvScale = 1;
+      _pvStampMode = false;
+      window._pvPendingStampEmoji = null;
+      // ゴミ箱ボタン残骸クリア
+      var trash = document.querySelector('.pv-stamp-trash');
+      if (trash) trash.remove();
       var img = document.getElementById('photoViewerImg');
       if (img) img.style.transform = 'scale(1)';
-      // スタンプが変更された時のみ再描画（最適化）
       if (_pvStampsDirty && typeof currentView !== 'undefined' && currentView === 'photo') {
         renderPhotoLogView();
       }
