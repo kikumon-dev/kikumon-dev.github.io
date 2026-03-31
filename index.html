@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.381';
+    const APP_VERSION = 'v0.39.382';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3914,7 +3914,7 @@
         <span class="photo-log-title">写真帳</span>
         <span class="photo-log-count" id="photoLogCount"></span>
       </div>
-      <button class="photo-log-add-btn" onclick="openPhotoUpload()" title="写真を追加">＋</button>
+      <button class="photo-log-add-btn" id="photoLogAddBtn" title="写真を追加">＋</button>
     </div>
     <div class="photo-log-tagline">今日の創造を、刻め。</div>
     <div id="photoLogListArea" style="padding:8px 8px 40px;"></div>
@@ -3942,8 +3942,8 @@
           <option value="">紐づけない</option>
         </select>
       </div>
-      <button class="photo-upload-save-btn" onclick="savePhoto()">📷 刻む</button>
-      <button class="photo-upload-cancel-btn" onclick="closePhotoUpload()">キャンセル</button>
+      <button class="photo-upload-save-btn" id="photoUploadSaveBtn">📷 刻む</button>
+      <button class="photo-upload-cancel-btn" id="photoUploadCancelBtn">キャンセル</button>
     </div>
   </div>
 
@@ -3958,7 +3958,7 @@
     <div id="pvStampLayer" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;"></div>
     <div class="pv-footer">
       <div style="display:flex;justify-content:center;margin-bottom:8px;">
-        <button id="pvStampToggle" onclick="togglePvStampPalette()" style="background:rgba(255,255,255,0.15);border:none;border-radius:20px;color:#fff;padding:6px 18px;font-size:0.82em;cursor:pointer;backdrop-filter:blur(4px);">✏️ スタンプ</button>
+        <button id="pvStampToggle" style="background:rgba(255,255,255,0.15);border:none;border-radius:20px;color:#fff;padding:6px 18px;font-size:0.82em;cursor:pointer;backdrop-filter:blur(4px);">✏️ スタンプ</button>
       </div>
       <div class="pv-stamp-palette" id="pvStampPalette" style="display:none;"></div>
     </div>
@@ -24329,6 +24329,17 @@ function showDebugLog() {
     window._pvPlaceStamp = _pvPlaceStamp;
     window._pvSaveStamps = _pvSaveStamps;
     window.togglePvStampPalette = togglePvStampPalette;
+    // ===== 写真帳ボタン addEventListener登録（拡張機能によるonclick横取り対策）=====
+    (function() {
+      function _attachPhotoBtn(id, fn) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('click', fn);
+      }
+      _attachPhotoBtn('photoLogAddBtn', openPhotoUpload);
+      _attachPhotoBtn('photoUploadSaveBtn', savePhoto);
+      _attachPhotoBtn('photoUploadCancelBtn', closePhotoUpload);
+      _attachPhotoBtn('pvStampToggle', togglePvStampPalette);
+    })();
     // ===== 写真帳 END =====
 
     // ===== スモークテストボタン =====
@@ -28937,6 +28948,12 @@ function showDebugLog() {
        _st80View
          ? ok('ST-80: photoLogView DOM確認')
          : ng('ST-80: photoLogView', 'DOM未存在');
+
+       // photoLogAddBtn DOM確認（addEventListener登録対象）
+       var _st80AddBtn = document.getElementById('photoLogAddBtn');
+       _st80AddBtn
+         ? ok('ST-80: photoLogAddBtn DOM確認')
+         : ng('ST-80: photoLogAddBtn', 'DOM未存在');
 
        // photoLogListArea DOM確認
        var _st80Area = document.getElementById('photoLogListArea');
