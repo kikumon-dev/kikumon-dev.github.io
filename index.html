@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.403';
+    const APP_VERSION = 'v0.39.413';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3958,9 +3958,9 @@
   <!-- 全画面ビューアー -->
   <div id="photoViewerModal">
     <div class="pv-header">
-      <button class="pv-close" onclick="event.stopPropagation();closePhotoViewer()">✕</button>
-      <div class="pv-memo-label" id="pvMemoLabel"></div>
-      <div style="width:34px;"></div>
+      <button class="pv-close" onclick="event.stopPropagation();if(window.closePhotoViewer)window.closePhotoViewer();" ontouchend="event.stopPropagation();event.preventDefault();if(window.closePhotoViewer)window.closePhotoViewer();">✕</button>
+      <div class="pv-memo-label" id="pvMemoLabel" onclick="event.stopPropagation();if(window.editPhotoMemo)window.editPhotoMemo();" style="cursor:pointer;flex:1;text-align:center;min-height:20px;" title="タップでメモ編集"></div>
+      <button id="pvDeleteBtn" onclick="event.stopPropagation();if(window.deletePhotoFromViewer)window.deletePhotoFromViewer();" ontouchend="event.stopPropagation();event.preventDefault();if(window.deletePhotoFromViewer)window.deletePhotoFromViewer();" style="background:rgba(255,60,60,0.7);border:none;border-radius:50%;color:#fff;width:34px;height:34px;font-size:1em;cursor:pointer;flex-shrink:0;">🗑️</button>
     </div>
     <img id="photoViewerImg" src="" alt="" draggable="false">
     <div id="pvStampLayer" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;"></div>
@@ -23662,734 +23662,9 @@ function showDebugLog(_initOnly) {
   };
 
 
-    // ===== 写真帳 =====
-    var _photoImages = {}; // { [photoId]: 'data:image/jpeg;base64,...' }
-    var _pvCurrentPhotoId = null; // 全画面表示中の写真ID
-    var _pvScale = 1, _pvLastDist = 0, _pvPinching = false;
-    var _pvStampMode = false; // スタンプ配置モード
-    var _pvStamps = {}; // { [photoId]: [{emoji,x,y}] } ※表示用キャッシュ（allTasks.stampsが正）
 
-    // スタンプ絵文字パレット
-    var PHOTO_STAMPS = ['❤️','🔥','✨','😍','🍜','🍣','🍰','🎉','👏','😂','🥹','🌸','🌿','☀️','🌙','⭐','💯','🏆'];
+    // ===== 写真館は独立scriptブロックに移動済み（showDebugLogスコープ外） =====
 
-    function savePhotoImages() {
-      try {
-        var json = JSON.stringify(_photoImages);
-        var sizeKB = Math.round(json.length * 0.75 / 1024);
-        console.log('[savePhotoImages] saving:', Object.keys(_photoImages).length, '件', sizeKB, 'KB');
-        // 容量警告
-        if (sizeKB > 5000) {
-          showToast('⚠️ 写真の容量が限界です（' + sizeKB + 'KB）。古い写真を削除してください。', {type:'warn'});
-          return;
-        }
-        if (sizeKB > 3000) {
-          showToast('📷 写真の容量が多くなっています（' + sizeKB + 'KB / 上限約5MB）', {type:'warn'});
-        }
-        localStorage.setItem('photoImages', json);
-        console.log('[savePhotoImages] saved OK');
-      } catch(e) {
-        showToast('📷 写真の保存に失敗しました（容量不足の可能性があります）', {type:'warn'});
-        console.error('[savePhotoImages]', e);
-      }
-    }
-    function loadPhotoImages() {
-      try {
-        var raw = localStorage.getItem('photoImages');
-        _photoImages = raw ? JSON.parse(raw) : {};
-        var cnt = Object.keys(_photoImages).length;
-        console.log('[loadPhotoImages] loaded:', cnt, '件');
-      } catch(e) { _photoImages = {}; }
-    }
-
-    // Canvas圧縮
-    function compressImage(file, callback) {
-      var reader = new FileReader();
-      reader.onload = function(e) {
-        var img = new Image();
-        img.onload = function() {
-          var MAX_SIDE = 1200;
-          var w = img.width, h = img.height;
-          if (w > MAX_SIDE || h > MAX_SIDE) {
-            if (w >= h) { h = Math.round(h * MAX_SIDE / w); w = MAX_SIDE; }
-            else { w = Math.round(w * MAX_SIDE / h); h = MAX_SIDE; }
-          }
-          var canvas = document.createElement('canvas');
-          canvas.width = w; canvas.height = h;
-          var ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, w, h);
-          var quality = 0.85;
-          var dataUrl = canvas.toDataURL('image/jpeg', quality);
-          while (dataUrl.length > 500 * 1024 * 1.37 && quality > 0.3) {
-            quality -= 0.1;
-            dataUrl = canvas.toDataURL('image/jpeg', quality);
-          }
-          callback(dataUrl);
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
-
-    // ===== レンダリング =====
-    function renderPhotoLogView() {
-      loadPhotoImages();
-      var area = document.getElementById('photoLogListArea');
-      if (!area) return;
-      var photos = allTasks.filter(function(t){ return t.kind === 'photo'; })
-        .sort(function(a, b){ return (b.createdAt||'').localeCompare(a.createdAt||''); });
-
-      // 件数バッジ更新
-      var countEl = document.getElementById('photoLogCount');
-      if (countEl) countEl.textContent = photos.length ? '全' + photos.length + '枚' : '';
-
-      if (photos.length === 0) {
-        var empty = document.createElement('div');
-        empty.className = 'photo-empty';
-        empty.innerHTML = '<div class="photo-empty-icon">📷</div>'
-          + '<div class="photo-empty-main">まだ何も刻まれていない。</div>'
-          + '<div class="photo-empty-sub">今日の一枚を。</div>';
-        area.innerHTML = '';
-        area.appendChild(empty);
-        return;
-      }
-
-      // 日付グループ化
-      var groups = {};
-      photos.forEach(function(p) {
-        var d = (p.date || p.createdAt || '').slice(0, 10).replace(/-/g, '/');
-        if (!groups[d]) groups[d] = [];
-        groups[d].push(p);
-      });
-
-      area.innerHTML = '';
-      Object.keys(groups).sort(function(a,b){ return b.localeCompare(a); }).forEach(function(date) {
-        var parts = date.split('/');
-        var label = parts.length === 3 ? parts[0] + '年' + parts[1] + '月' + parts[2] + '日' : date;
-
-        var group = document.createElement('div');
-        group.className = 'photo-date-group';
-
-        var labelEl = document.createElement('div');
-        labelEl.className = 'photo-date-label';
-        labelEl.textContent = label;
-        group.appendChild(labelEl);
-
-        var grid = document.createElement('div');
-        grid.className = 'photo-grid';
-
-        groups[date].forEach(function(p) {
-          grid.appendChild(_buildPhotoCard(p));
-        });
-        group.appendChild(grid);
-        area.appendChild(group);
-      });
-    }
-
-    function _buildPhotoCard(p) {
-      var card = document.createElement('div');
-      card.className = 'photo-card';
-      card.dataset.id = p.id;
-
-      // スワイプ削除背景
-      var swipeBg = document.createElement('div');
-      swipeBg.className = 'photo-card-swipe-bg';
-      swipeBg.textContent = '🗑️';
-      card.appendChild(swipeBg);
-
-      // 画像
-      var imgSrc = _photoImages[p.id] || '';
-      if (imgSrc) {
-        var img = document.createElement('img');
-        img.src = imgSrc;
-        img.alt = '写真';
-        img.loading = 'lazy';
-        card.appendChild(img);
-      } else {
-        var ph = document.createElement('div');
-        ph.style.cssText = 'width:100%;aspect-ratio:1/1;background:#eee;display:flex;align-items:center;justify-content:center;font-size:2em;';
-        ph.textContent = '📷';
-        card.appendChild(ph);
-      }
-
-      // スタンプ（最大3件まで小さく表示）
-      var stamps = p.stamps || [];
-      if (stamps.length > 0) {
-        var stampLayer = document.createElement('div');
-        stampLayer.className = 'photo-stamp-layer';
-        stamps.slice(0, 6).forEach(function(s) {
-          var se = document.createElement('div');
-          se.className = 'photo-stamp-item';
-          se.textContent = s.emoji;
-          se.style.left = s.x + '%';
-          se.style.top = s.y + '%';
-          se.style.fontSize = '1.4em';
-          stampLayer.appendChild(se);
-        });
-        card.appendChild(stampLayer);
-      }
-
-      // ピン
-      var linkedTask = p.taskId ? allTasks.find(function(t){ return t.id === p.taskId; }) : null;
-      if (linkedTask) {
-        var pin = document.createElement('div');
-        pin.className = 'photo-card-pin';
-        pin.textContent = '📌';
-        card.appendChild(pin);
-      }
-
-      // オーバーレイ（メモ）
-      if (p.title) {
-        var overlay = document.createElement('div');
-        overlay.className = 'photo-card-overlay';
-        var memoEl = document.createElement('div');
-        memoEl.className = 'photo-card-memo';
-        memoEl.textContent = p.title;
-        overlay.appendChild(memoEl);
-        card.appendChild(overlay);
-      }
-
-      // インジケーター（常時表示・右下）
-      if (p.title || linkedTask || (p.stamps && p.stamps.length > 0)) {
-        var indicator = document.createElement('div');
-        indicator.style.cssText = 'position:absolute;bottom:4px;right:5px;display:flex;gap:3px;';
-        if (p.title) {
-          var iMemo = document.createElement('span');
-          iMemo.style.cssText = 'font-size:0.65em;background:rgba(0,0,0,0.5);color:#fff;border-radius:3px;padding:1px 3px;line-height:1.4;';
-          iMemo.textContent = '✏️';
-          indicator.appendChild(iMemo);
-        }
-        if (p.stamps && p.stamps.length > 0) {
-          var iStamp = document.createElement('span');
-          iStamp.style.cssText = 'font-size:0.65em;background:rgba(0,0,0,0.5);color:#fff;border-radius:3px;padding:1px 3px;line-height:1.4;';
-          iStamp.textContent = p.stamps[0].emoji;
-          indicator.appendChild(iStamp);
-        }
-        card.appendChild(indicator);
-      }
-
-      // タップ→全画面（スワイプ中はキャンセル）
-      card.onclick = (function(pid){ return function(e) {
-        if (card._swipeCanceled) { card._swipeCanceled = false; return; }
-        openPhotoViewer(pid);
-      }; })(p.id);
-
-      // スワイプ削除（touch）
-      _initCardSwipe(card, p.id);
-
-      return card;
-    }
-
-    // スワイプ削除
-    function _initCardSwipe(card, photoId) {
-      var startX = 0, startY = 0, dx = 0;
-      var swiping = false;
-      var swipeBg = card.querySelector('.photo-card-swipe-bg');
-      var THRESHOLD = 100;
-
-      card.addEventListener('touchstart', function(e) {
-        startX = e.touches[0].clientX;
-        startY = e.touches[0].clientY;
-        dx = 0; swiping = false;
-        card._swipeCanceled = false;
-      }, {passive: true});
-
-      card.addEventListener('touchmove', function(e) {
-        dx = e.touches[0].clientX - startX;
-        var dy = Math.abs(e.touches[0].clientY - startY);
-        if (Math.abs(dx) < 8 && dy < 8) return;
-        if (dy > Math.abs(dx) * 1.5) return; // 縦スクロール優先
-        swiping = true;
-        if (dx < 0) {
-          var ratio = Math.min(Math.abs(dx) / THRESHOLD, 1);
-          card.style.transform = 'translateX(' + dx + 'px)';
-          if (swipeBg) swipeBg.style.opacity = ratio;
-        }
-      }, {passive: true});
-
-      card.addEventListener('touchend', function(e) {
-        if (!swiping || dx >= 0) {
-          card.style.transform = '';
-          if (swipeBg) swipeBg.style.opacity = 0;
-          return;
-        }
-        if (Math.abs(dx) >= THRESHOLD) {
-          card._swipeCanceled = true;
-          card.style.transform = 'translateX(-110%)';
-          if (swipeBg) swipeBg.style.opacity = 1;
-          _photoSwipeDelete(photoId, card);
-        } else {
-          card.style.transform = '';
-          if (swipeBg) swipeBg.style.opacity = 0;
-        }
-      }, {passive: true});
-    }
-
-    // スワイプ削除実行＋Undoトースト
-    function _photoSwipeDelete(photoId, card) {
-      var photo = allTasks.find(function(t){ return t.id === photoId; });
-      var imgData = _photoImages[photoId];
-      if (!photo) return;
-
-      // 削除実行
-      var idx = allTasks.findIndex(function(t){ return t.id === photoId; });
-      if (idx !== -1) allTasks.splice(idx, 1);
-      saveAllTasks();
-      delete _photoImages[photoId];
-      savePhotoImages();
-
-      // Undoトースト
-      var toast = document.createElement('div');
-      toast.className = 'photo-undo-toast';
-      var msg = document.createElement('span');
-      msg.textContent = '写真を削除しました';
-      var btn = document.createElement('button');
-      btn.className = 'photo-undo-btn';
-      btn.textContent = '元に戻す';
-      var undoDone = false;
-      btn.onclick = function() {
-        if (undoDone) return;
-        undoDone = true;
-        // 復元
-        allTasks.push(photo);
-        saveAllTasks();
-        if (imgData) { _photoImages[photoId] = imgData; savePhotoImages(); }
-        toast.remove();
-        renderPhotoLogView();
-        showToast('復元しました', {type:'success'});
-      };
-      toast.appendChild(msg);
-      toast.appendChild(btn);
-      document.body.appendChild(toast);
-
-      var timer = setTimeout(function() {
-        if (!undoDone) { toast.remove(); }
-      }, 3500);
-
-      // グリッド再描画（少し遅延してアニメ後）
-      setTimeout(function() {
-        if (!undoDone) renderPhotoLogView();
-      }, 300);
-    }
-
-    // ===== アップロードモーダル =====
-    function openPhotoUpload(prefillTaskId) {
-      loadPhotoImages();
-      var modal = document.getElementById('photoUploadModal');
-      if (!modal) return;
-      var wrap = document.getElementById('photoPreviewWrap');
-      var placeholder = document.getElementById('photoPreviewPlaceholder');
-      if (wrap) { var oldImg = wrap.querySelector('img'); if (oldImg) oldImg.remove(); }
-      if (placeholder) placeholder.style.display = 'block';
-      var memo = document.getElementById('photoMemoInput');
-      if (memo) memo.value = '';
-      window._photoUploadDataUrl = null;
-      var sel = document.getElementById('photoTaskSelect');
-      if (sel) {
-        sel.innerHTML = '<option value="">紐づけない</option>';
-        var activeTasks = allTasks.filter(function(t){
-          return (t.kind === 'task' || !t.kind) && !t.completed && !t.done;
-        }).slice(0, 50);
-        activeTasks.forEach(function(t) {
-          var opt = document.createElement('option');
-          opt.value = t.id;
-          opt.textContent = (t.text || t.title || '無題').slice(0, 30);
-          if (prefillTaskId && t.id === prefillTaskId) opt.selected = true;
-          sel.appendChild(opt);
-        });
-      }
-      modal.classList.add('open');
-    }
-
-    function closePhotoUpload() {
-      var modal = document.getElementById('photoUploadModal');
-      if (modal) modal.classList.remove('open');
-      var fi = document.getElementById('photoFileInput');
-      if (fi) fi.value = '';
-    }
-
-    function onPhotoFileSelected(input) {
-      if (!input.files || !input.files[0]) return;
-      compressImage(input.files[0], function(dataUrl) {
-        window._photoUploadDataUrl = dataUrl;
-        var wrap = document.getElementById('photoPreviewWrap');
-        var placeholder = document.getElementById('photoPreviewPlaceholder');
-        if (!wrap) return;
-        var oldImg = wrap.querySelector('img');
-        if (oldImg) oldImg.remove();
-        if (placeholder) placeholder.style.display = 'none';
-        var img = document.createElement('img');
-        img.src = dataUrl;
-        img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
-        wrap.appendChild(img);
-      });
-    }
-
-    function savePhoto() {
-      if (!window._photoUploadDataUrl) { showToast('写真を選んでください', {type:'warn'}); return; }
-      // 容量チェック（5MB超えは拒否）
-      var _curSize = JSON.stringify(_photoImages).length * 0.75;
-      var _newSize = window._photoUploadDataUrl.length * 0.75;
-      if (_curSize + _newSize > 5 * 1024 * 1024) {
-        showToast('⚠️ 写真の容量が限界です。古い写真を削除してから追加してください。', {type:'warn'});
-        return;
-      }
-      var memo = document.getElementById('photoMemoInput');
-      var sel = document.getElementById('photoTaskSelect');
-      var now = new Date();
-      var dateStr = now.getFullYear() + '/' + String(now.getMonth()+1).padStart(2,'0') + '/' + String(now.getDate()).padStart(2,'0');
-      var photoRecord = {
-        id: generateTaskId(),
-        kind: 'photo',
-        title: memo ? memo.value.trim() : '',
-        taskId: sel && sel.value ? sel.value : null,
-        date: dateStr,
-        stamps: [],
-        createdAt: now.toISOString(),
-        updatedAt: now.toISOString()
-      };
-      allTasks.push(photoRecord);
-      saveAllTasks();
-      _photoImages[photoRecord.id] = window._photoUploadDataUrl;
-      savePhotoImages();
-      closePhotoUpload();
-
-      // 写真枚数×徳ボーナス（月5枚ごとに+5徳）
-      var _now2 = new Date();
-      var _thisMonth = _now2.getFullYear() + '/' + String(_now2.getMonth()+1).padStart(2,'0');
-      var _monthPhotos = allTasks.filter(function(t){
-        return t.kind === 'photo' && (t.date || '').slice(0, 7) === _thisMonth;
-      }).length;
-      if (_monthPhotos > 0 && _monthPhotos % 5 === 0) {
-        if (typeof addToku === 'function') addToku(5, '写真館月次ボーナス（' + _thisMonth + '・' + _monthPhotos + '枚）');
-        showToast('📷 今月' + _monthPhotos + '枚達成！ 徳+5 獲得', {type:'success'});
-      } else {
-        showToast('📷 刻みました', {type:'success'});
-      }
-      if (typeof currentView !== 'undefined' && currentView === 'photo') renderPhotoLogView();
-    }
-
-    function deletePhoto(e, photoId) {
-      if (e) e.stopPropagation();
-      var idx = allTasks.findIndex(function(t){ return t.id === photoId; });
-      if (idx !== -1) allTasks.splice(idx, 1);
-      saveAllTasks();
-      delete _photoImages[photoId];
-      savePhotoImages();
-      renderPhotoLogView();
-    }
-
-    // ===== 全画面ビューアー（ピンチズーム・スタンプ） =====
-    function openPhotoViewer(photoId) {
-      loadPhotoImages();
-      var imgSrc = _photoImages[photoId];
-      if (!imgSrc) return;
-      _pvCurrentPhotoId = photoId;
-      _pvScale = 1;
-
-      var modal = document.getElementById('photoViewerModal');
-      var img = document.getElementById('photoViewerImg');
-      var memoLabel = document.getElementById('pvMemoLabel');
-      var stampLayer = document.getElementById('pvStampLayer');
-      if (!modal || !img) return;
-
-      img.src = imgSrc;
-      img.style.transform = 'scale(1)';
-
-      // メモラベル
-      var photo = allTasks.find(function(t){ return t.id === photoId; });
-      if (memoLabel) memoLabel.textContent = photo && photo.title ? photo.title : '';
-
-      // スタンプ復元
-      if (stampLayer) {
-        stampLayer.innerHTML = '';
-        stampLayer.style.pointerEvents = 'auto';
-        var stamps = photo && photo.stamps ? photo.stamps : [];
-        stamps.forEach(function(s, i) {
-          _pvAddStampEl(stampLayer, s.emoji, s.x, s.y, i);
-        });
-      }
-
-      // スタンプパレット構築（絵文字選択→写真タップで位置指定）
-      var palette = document.getElementById('pvStampPalette');
-      if (palette) {
-        palette.innerHTML = '';
-        PHOTO_STAMPS.forEach(function(emoji) {
-          var btn = document.createElement('button');
-          btn.className = 'pv-stamp-btn';
-          btn.textContent = emoji;
-          btn.onclick = function() {
-            window._pvPendingStampEmoji = emoji;
-            var pal = document.getElementById('pvStampPalette');
-            var tbtn = document.getElementById('pvStampToggle');
-            if (pal) pal.style.display = 'none';
-            if (tbtn) { tbtn.textContent = emoji + ' タップで配置'; tbtn.style.background = 'rgba(255,200,0,0.55)'; }
-            _pvStampMode = false;
-          };
-          palette.appendChild(btn);
-        });
-      }
-
-      modal.classList.add('open');
-      // 初期化：スタンプモードOFF・パレット非表示・ペンディングクリア
-      window._pvPendingStampEmoji = null;
-      _pvStampMode = false;
-      var _pal = document.getElementById('pvStampPalette');
-      if (_pal) _pal.style.display = 'none';
-      var _ptbtn = document.getElementById('pvStampToggle');
-      if (_ptbtn) { _ptbtn.style.background = 'rgba(255,255,255,0.15)'; _ptbtn.textContent = '✏️ スタンプ'; }
-      _pvInitGestures(modal, img);
-    }
-
-    function _pvAddStampEl(layer, emoji, xPct, yPct, idx) {
-      var el = document.createElement('div');
-      el.className = 'pv-stamp-item';
-      el.textContent = emoji;
-      el.style.left = xPct + '%';
-      el.style.top = yPct + '%';
-      el.dataset.idx = idx;
-
-      // ドラッグ（touch）
-      el.addEventListener('touchstart', function(e) {
-        e.stopPropagation();
-        var layer = document.getElementById('pvStampLayer');
-        var rect = layer ? layer.getBoundingClientRect() : {left:0,top:0,width:1,height:1};
-        var t = e.touches[0];
-        var startX = t.clientX, startY = t.clientY;
-        var startPctX = xPct, startPctY = yPct;
-
-        function onMove(ev) {
-          ev.preventDefault();
-          var dx = ev.touches[0].clientX - startX;
-          var dy = ev.touches[0].clientY - startY;
-          var nx = Math.max(0, Math.min(100, startPctX + dx / rect.width * 100));
-          var ny = Math.max(0, Math.min(100, startPctY + dy / rect.height * 100));
-          el.style.left = nx + '%';
-          el.style.top = ny + '%';
-          xPct = nx; yPct = ny;
-        }
-        function onEnd() {
-          document.removeEventListener('touchmove', onMove);
-          document.removeEventListener('touchend', onEnd);
-          _pvSaveStamps();
-        }
-        document.addEventListener('touchmove', onMove, {passive: false});
-        document.addEventListener('touchend', onEnd);
-      }, {passive: true});
-
-      layer.appendChild(el);
-    }
-
-    function togglePvStampPalette() {
-      var palette = document.getElementById('pvStampPalette');
-      var btn = document.getElementById('pvStampToggle');
-      if (!palette) return;
-      _pvStampMode = !_pvStampMode;
-      palette.style.display = _pvStampMode ? 'flex' : 'none';
-      if (btn) {
-        btn.style.background = _pvStampMode ? 'rgba(255,107,107,0.6)' : 'rgba(255,255,255,0.15)';
-        btn.textContent = _pvStampMode ? '✕ 閉じる' : '✏️ スタンプ';
-      }
-    }
-
-    function _pvPlaceStamp(emoji, xPct, yPct) {
-      var layer = document.getElementById('pvStampLayer');
-      var x = (typeof xPct === 'number') ? xPct : 40 + Math.random() * 20;
-      var y = (typeof yPct === 'number') ? yPct : 35 + Math.random() * 20;
-      var photo = allTasks.find(function(t){ return t.id === _pvCurrentPhotoId; });
-      if (!photo) return;
-      if (!photo.stamps) photo.stamps = [];
-      var idx = photo.stamps.length;
-      photo.stamps.push({emoji: emoji, x: x, y: y});
-      saveAllTasks();
-      _pvAddStampEl(layer, emoji, x, y, idx);
-      _pvStampsDirty = true;
-      // スタンプ配置後モードを維持（連続配置可能）
-    }
-
-    function _pvSaveStamps() {
-      var layer = document.getElementById('pvStampLayer');
-      if (!layer || !_pvCurrentPhotoId) return;
-      var photo = allTasks.find(function(t){ return t.id === _pvCurrentPhotoId; });
-      if (!photo) return;
-      var els = layer.querySelectorAll('.pv-stamp-item');
-      photo.stamps = [];
-      els.forEach(function(el) {
-        photo.stamps.push({
-          emoji: el.textContent,
-          x: parseFloat(el.style.left),
-          y: parseFloat(el.style.top)
-        });
-      });
-      saveAllTasks();
-    }
-
-    function _pvInitGestures(modal, img) {
-      // ピンチズーム
-      _pvScale = 1;
-      _pvLastDist = 0;
-      _pvPinching = false;
-
-      function getDist(t) {
-        var dx = t[0].clientX - t[1].clientX;
-        var dy = t[0].clientY - t[1].clientY;
-        return Math.sqrt(dx*dx + dy*dy);
-      }
-
-      function onTouchStart(e) {
-        if (e.touches.length === 2) {
-          _pvPinching = true;
-          _pvLastDist = getDist(e.touches);
-        }
-      }
-      function onTouchMove(e) {
-        if (_pvPinching && e.touches.length === 2) {
-          e.preventDefault();
-          var dist = getDist(e.touches);
-          if (_pvLastDist > 0) {
-            _pvScale *= dist / _pvLastDist;
-            _pvScale = Math.max(0.5, Math.min(4.0, _pvScale));
-            img.style.transform = 'scale(' + _pvScale + ')';
-          }
-          _pvLastDist = dist;
-        }
-      }
-      function onTouchEnd(e) {
-        if (e.touches.length < 2) { _pvPinching = false; _pvLastDist = 0; }
-      }
-
-      // 既存イベントを削除してから再登録
-      modal._pvStart = onTouchStart;
-      modal._pvMove = onTouchMove;
-      modal._pvEnd = onTouchEnd;
-      modal.removeEventListener('touchstart', modal._pvStart);
-      modal.removeEventListener('touchmove', modal._pvMove);
-      modal.removeEventListener('touchend', modal._pvEnd);
-      modal.addEventListener('touchstart', onTouchStart, {passive: true});
-      modal.addEventListener('touchmove', onTouchMove, {passive: false});
-      modal.addEventListener('touchend', onTouchEnd, {passive: true});
-
-      // 背景タップで閉じる / スタンプ位置指定配置
-      modal.onclick = function(e) {
-        if (_pvPinching) return;
-
-        // ③ スタンプ要素タップ → ゴミ箱ボタン表示
-        if (e.target && e.target.classList && e.target.classList.contains('pv-stamp-item')) {
-          var stampEl = e.target;
-          // 既存のゴミ箱ボタンがあれば削除
-          var existingTrash = document.querySelector('.pv-stamp-trash');
-          if (existingTrash) {
-            if (existingTrash.dataset.target === stampEl.dataset.idx) {
-              existingTrash.remove(); return;
-            }
-            existingTrash.remove();
-          }
-          var trash = document.createElement('button');
-          trash.className = 'pv-stamp-trash';
-          trash.dataset.target = stampEl.dataset.idx;
-          trash.textContent = '🗑️';
-          trash.style.cssText = 'position:absolute;top:' + stampEl.style.top + ';left:calc(' + stampEl.style.left + ' + 1.2em);background:rgba(0,0,0,0.65);border:none;border-radius:50%;color:#fff;font-size:0.75em;width:24px;height:24px;cursor:pointer;z-index:200;display:flex;align-items:center;justify-content:center;';
-          trash.onclick = function(ev) {
-            ev.stopPropagation();
-            var photo = allTasks.find(function(t){ return t.id === _pvCurrentPhotoId; });
-            if (photo && photo.stamps) {
-              var removeIdx = parseInt(stampEl.dataset.idx);
-              photo.stamps.splice(removeIdx, 1);
-              saveAllTasks();
-              _pvStampsDirty = true;
-              // スタンプ再描画
-              var layer = document.getElementById('pvStampLayer');
-              if (layer) {
-                layer.innerHTML = '';
-                photo.stamps.forEach(function(s, i) { _pvAddStampEl(layer, s.emoji, s.x, s.y, i); });
-              }
-            }
-            trash.remove();
-          };
-          var layer = document.getElementById('pvStampLayer');
-          if (layer) layer.appendChild(trash);
-          return;
-        }
-
-        // ② スタンプ位置指定配置
-        if (window._pvPendingStampEmoji && (e.target === img || e.target === modal)) {
-          var rect = img.getBoundingClientRect();
-          var xPct = Math.round((e.clientX - rect.left) / rect.width * 100);
-          var yPct = Math.round((e.clientY - rect.top) / rect.height * 100);
-          xPct = Math.max(2, Math.min(95, xPct));
-          yPct = Math.max(2, Math.min(95, yPct));
-          _pvPlaceStamp(window._pvPendingStampEmoji, xPct, yPct);
-          // 配置後リセット
-          var tbtn = document.getElementById('pvStampToggle');
-          if (tbtn) { tbtn.textContent = '✏️ スタンプ'; tbtn.style.background = 'rgba(255,255,255,0.15)'; }
-          window._pvPendingStampEmoji = null;
-          return;
-        }
-
-        // 通常タップ：ズームリセット or 閉じる
-        if (e.target === modal || e.target === img) {
-          if (_pvScale > 1.05) { _pvScale = 1; img.style.transform = 'scale(1)'; return; }
-          closePhotoViewer();
-        }
-      };
-    }
-
-    var _pvStampsDirty = false; // スタンプ変更フラグ
-
-    function closePhotoViewer() {
-      var modal = document.getElementById('photoViewerModal');
-      if (modal) { modal.classList.remove('open'); modal.onclick = null; }
-      _pvSaveStamps();
-      _pvCurrentPhotoId = null;
-      _pvScale = 1;
-      _pvStampMode = false;
-      window._pvPendingStampEmoji = null;
-      // ゴミ箱ボタン残骸クリア
-      var trash = document.querySelector('.pv-stamp-trash');
-      if (trash) trash.remove();
-      var img = document.getElementById('photoViewerImg');
-      if (img) img.style.transform = 'scale(1)';
-      if (_pvStampsDirty && typeof currentView !== 'undefined' && currentView === 'photo') {
-        renderPhotoLogView();
-      }
-      _pvStampsDirty = false;
-    }
-
-    // 起動時にphotoImages読み込み
-    loadPhotoImages();
-    // window公開（第3条）
-    window.openPhotoUpload = openPhotoUpload;
-    window.closePhotoUpload = closePhotoUpload;
-    window.onPhotoFileSelected = onPhotoFileSelected;
-    window.savePhoto = savePhoto;
-    window.deletePhoto = deletePhoto;
-    window.openPhotoViewer = openPhotoViewer;
-    window.closePhotoViewer = closePhotoViewer;
-    window.loadPhotoImages = loadPhotoImages;
-    window.renderPhotoLogView = renderPhotoLogView;
-    // block7初期化完了後、savedView=photoなら写真帳を再描画（window公開後に実行）
-    (function() {
-      var _sv = localStorage.getItem('currentView');
-      if (_sv === 'photo') {
-        renderPhotoLogView();
-      }
-    })();
-    // initOnlyモード：window公開のみ行いUIを表示しない
-    if (_initOnly) return;
-    window._pvPlaceStamp = _pvPlaceStamp;
-    window._pvSaveStamps = _pvSaveStamps;
-    window.togglePvStampPalette = togglePvStampPalette;
-    // ===== 写真帳ボタン onclick直接代入（拡張機能によるHTML属性横取り対策）=====
-    (function() {
-      var _b1 = document.getElementById('photoLogAddBtn');
-      if (_b1) _b1.onclick = function() { openPhotoUpload(); };
-      var _b2 = document.getElementById('photoUploadSaveBtn');
-      if (_b2) _b2.onclick = function() { savePhoto(); };
-      var _b3 = document.getElementById('photoUploadCancelBtn');
-      if (_b3) _b3.onclick = function() { closePhotoUpload(); };
-      var _b4 = document.getElementById('pvStampToggle');
-      if (_b4) _b4.onclick = function() { togglePvStampPalette(); };
-    })();
-    // ===== 写真帳 END =====
 
     // ===== スモークテストボタン =====
    var btnSmoke = document.createElement('button');
@@ -29231,13 +28506,12 @@ function showDebugLog(_initOnly) {
          : ng('ST-81: photoImages localStorage削除', '残存');
 
        // savePhoto関数内stamps初期化コード確認
-       var _st81Src = document.documentElement.innerHTML;
-       _st81Src.includes('stamps: []') && _st81Src.indexOf('stamps: []') > _st81Src.indexOf('function savePhoto')
+       typeof savePhoto === 'function' && savePhoto.toString().includes('stamps: []')
          ? ok('ST-81: savePhoto内 stamps:[] 初期化確認')
          : ng('ST-81: stamps初期化', 'savePhoto内にstamps:[]なし');
 
        // onTaskCompleted フック（完了後写真トースト）確認
-       _st81Src.includes('証拠を残しますか')
+       document.documentElement.innerHTML.includes('証拠を残しますか')
          ? ok('ST-81: onTaskCompleted 写真フック「証拠を残しますか」確認')
          : ng('ST-81: 完了フック', '未定義');
 
@@ -31634,6 +30908,801 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 </script>
+
+<script>
+// ===== 写真館（showDebugLogから独立・グローバルスコープ） =====
+// ===== 写真帳 =====
+var _photoImages = {}; // { [photoId]: 'data:image/jpeg;base64,...' }
+var _pvCurrentPhotoId = null; // 全画面表示中の写真ID
+var _pvScale = 1, _pvLastDist = 0, _pvPinching = false;
+var _pvStampMode = false; // スタンプ配置モード
+var _pvStamps = {}; // { [photoId]: [{emoji,x,y}] } ※表示用キャッシュ（allTasks.stampsが正）
+
+// スタンプ絵文字パレット
+var PHOTO_STAMPS = ['❤️','🔥','✨','😍','🍜','🍣','🍰','🎉','👏','😂','🥹','🌸','🌿','☀️','🌙','⭐','💯','🏆'];
+
+function savePhotoImages() {
+  try {
+    var json = JSON.stringify(_photoImages);
+    var sizeKB = Math.round(json.length * 0.75 / 1024);
+    console.log('[savePhotoImages] saving:', Object.keys(_photoImages).length, '件', sizeKB, 'KB');
+    // 容量警告
+    if (sizeKB > 5000) {
+      showToast('⚠️ 写真の容量が限界です（' + sizeKB + 'KB）。古い写真を削除してください。', {type:'warn'});
+      return;
+    }
+    if (sizeKB > 3000) {
+      showToast('📷 写真の容量が多くなっています（' + sizeKB + 'KB / 上限約5MB）', {type:'warn'});
+    }
+    localStorage.setItem('photoImages', json);
+    console.log('[savePhotoImages] saved OK');
+  } catch(e) {
+    showToast('📷 写真の保存に失敗しました（容量不足の可能性があります）', {type:'warn'});
+    console.error('[savePhotoImages]', e);
+  }
+}
+function loadPhotoImages() {
+  try {
+    var raw = localStorage.getItem('photoImages');
+    _photoImages = raw ? JSON.parse(raw) : {};
+    var cnt = Object.keys(_photoImages).length;
+    console.log('[loadPhotoImages] loaded:', cnt, '件');
+  } catch(e) { _photoImages = {}; }
+}
+
+// Canvas圧縮
+function compressImage(file, callback) {
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = new Image();
+    img.onload = function() {
+      var MAX_SIDE = 1200;
+      var w = img.width, h = img.height;
+      if (w > MAX_SIDE || h > MAX_SIDE) {
+        if (w >= h) { h = Math.round(h * MAX_SIDE / w); w = MAX_SIDE; }
+        else { w = Math.round(w * MAX_SIDE / h); h = MAX_SIDE; }
+      }
+      var canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      var quality = 0.85;
+      var dataUrl = canvas.toDataURL('image/jpeg', quality);
+      while (dataUrl.length > 500 * 1024 * 1.37 && quality > 0.3) {
+        quality -= 0.1;
+        dataUrl = canvas.toDataURL('image/jpeg', quality);
+      }
+      callback(dataUrl);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ===== レンダリング =====
+function renderPhotoLogView() {
+  loadPhotoImages();
+  var area = document.getElementById('photoLogListArea');
+  if (!area) return;
+  var photos = allTasks.filter(function(t){ return t.kind === 'photo'; })
+    .sort(function(a, b){ return (b.createdAt||'').localeCompare(a.createdAt||''); });
+
+  // 件数バッジ更新
+  var countEl = document.getElementById('photoLogCount');
+  if (countEl) countEl.textContent = photos.length ? '全' + photos.length + '枚' : '';
+
+  if (photos.length === 0) {
+    var empty = document.createElement('div');
+    empty.className = 'photo-empty';
+    empty.innerHTML = '<div class="photo-empty-icon">📷</div>'
+      + '<div class="photo-empty-main">まだ何も刻まれていない。</div>'
+      + '<div class="photo-empty-sub">今日の一枚を。</div>';
+    area.innerHTML = '';
+    area.appendChild(empty);
+    return;
+  }
+
+  // 日付グループ化
+  var groups = {};
+  photos.forEach(function(p) {
+    var d = (p.date || p.createdAt || '').slice(0, 10).replace(/-/g, '/');
+    if (!groups[d]) groups[d] = [];
+    groups[d].push(p);
+  });
+
+  area.innerHTML = '';
+  Object.keys(groups).sort(function(a,b){ return b.localeCompare(a); }).forEach(function(date) {
+    var parts = date.split('/');
+    var label = parts.length === 3 ? parts[0] + '年' + parts[1] + '月' + parts[2] + '日' : date;
+
+    var group = document.createElement('div');
+    group.className = 'photo-date-group';
+
+    var labelEl = document.createElement('div');
+    labelEl.className = 'photo-date-label';
+    labelEl.textContent = label;
+    group.appendChild(labelEl);
+
+    var grid = document.createElement('div');
+    grid.className = 'photo-grid';
+
+    groups[date].forEach(function(p) {
+      grid.appendChild(_buildPhotoCard(p));
+    });
+    group.appendChild(grid);
+    area.appendChild(group);
+  });
+}
+
+function _buildPhotoCard(p) {
+  var card = document.createElement('div');
+  card.className = 'photo-card';
+  card.dataset.id = p.id;
+
+  // スワイプ削除背景
+  var swipeBg = document.createElement('div');
+  swipeBg.className = 'photo-card-swipe-bg';
+  swipeBg.textContent = '🗑️';
+  card.appendChild(swipeBg);
+
+  // 画像
+  var imgSrc = _photoImages[p.id] || '';
+  if (imgSrc) {
+    var img = document.createElement('img');
+    img.src = imgSrc;
+    img.alt = '写真';
+    img.loading = 'lazy';
+    card.appendChild(img);
+  } else {
+    var ph = document.createElement('div');
+    ph.style.cssText = 'width:100%;aspect-ratio:1/1;background:#eee;display:flex;align-items:center;justify-content:center;font-size:2em;';
+    ph.textContent = '📷';
+    card.appendChild(ph);
+  }
+
+  // スタンプ（最大3件まで小さく表示）
+  var stamps = p.stamps || [];
+  if (stamps.length > 0) {
+    var stampLayer = document.createElement('div');
+    stampLayer.className = 'photo-stamp-layer';
+    stamps.slice(0, 6).forEach(function(s) {
+      var se = document.createElement('div');
+      se.className = 'photo-stamp-item';
+      se.textContent = s.emoji;
+      se.style.left = s.x + '%';
+      se.style.top = s.y + '%';
+      se.style.fontSize = '1.4em';
+      stampLayer.appendChild(se);
+    });
+    card.appendChild(stampLayer);
+  }
+
+  // ピン
+  var linkedTask = p.taskId ? allTasks.find(function(t){ return t.id === p.taskId; }) : null;
+  if (linkedTask) {
+    var pin = document.createElement('div');
+    pin.className = 'photo-card-pin';
+    pin.textContent = '📌';
+    card.appendChild(pin);
+  }
+
+  // オーバーレイ（メモ）
+  if (p.title) {
+    var overlay = document.createElement('div');
+    overlay.className = 'photo-card-overlay';
+    var memoEl = document.createElement('div');
+    memoEl.className = 'photo-card-memo';
+    memoEl.textContent = p.title;
+    overlay.appendChild(memoEl);
+    card.appendChild(overlay);
+  }
+
+  // インジケーター（常時表示・右下）
+  if (p.title || linkedTask || (p.stamps && p.stamps.length > 0)) {
+    var indicator = document.createElement('div');
+    indicator.style.cssText = 'position:absolute;bottom:4px;right:5px;display:flex;gap:3px;';
+    if (p.title) {
+      var iMemo = document.createElement('span');
+      iMemo.style.cssText = 'font-size:0.65em;background:rgba(0,0,0,0.5);color:#fff;border-radius:3px;padding:1px 3px;line-height:1.4;';
+      iMemo.textContent = '✏️';
+      indicator.appendChild(iMemo);
+    }
+    if (p.stamps && p.stamps.length > 0) {
+      var iStamp = document.createElement('span');
+      iStamp.style.cssText = 'font-size:0.65em;background:rgba(0,0,0,0.5);color:#fff;border-radius:3px;padding:1px 3px;line-height:1.4;';
+      iStamp.textContent = p.stamps[0].emoji;
+      indicator.appendChild(iStamp);
+    }
+    card.appendChild(indicator);
+  }
+
+  // タップ→全画面（スワイプ中はキャンセル）
+  card.onclick = (function(pid){ return function(e) {
+    if (card._swipeCanceled) { card._swipeCanceled = false; return; }
+    if (window.openPhotoViewer) window.openPhotoViewer(pid);
+    else openPhotoViewer(pid);
+  }; })(p.id);
+
+  // スワイプ削除（touch）
+  _initCardSwipe(card, p.id);
+
+  return card;
+}
+
+// スワイプ削除
+function _initCardSwipe(card, photoId) {
+  var startX = 0, startY = 0, dx = 0;
+  var swiping = false;
+  var swipeBg = card.querySelector('.photo-card-swipe-bg');
+  var THRESHOLD = 100;
+
+  card.addEventListener('touchstart', function(e) {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    dx = 0; swiping = false;
+    card._swipeCanceled = false;
+  }, {passive: true});
+
+  card.addEventListener('touchmove', function(e) {
+    dx = e.touches[0].clientX - startX;
+    var dy = Math.abs(e.touches[0].clientY - startY);
+    if (Math.abs(dx) < 8 && dy < 8) return;
+    if (dy > Math.abs(dx) * 1.5) return; // 縦スクロール優先
+    swiping = true;
+    if (dx < 0) {
+      var ratio = Math.min(Math.abs(dx) / THRESHOLD, 1);
+      card.style.transform = 'translateX(' + dx + 'px)';
+      if (swipeBg) swipeBg.style.opacity = ratio;
+    }
+  }, {passive: true});
+
+  card.addEventListener('touchend', function(e) {
+    if (!swiping || dx >= 0) {
+      card.style.transform = '';
+      if (swipeBg) swipeBg.style.opacity = 0;
+      return;
+    }
+    if (Math.abs(dx) >= THRESHOLD) {
+      card._swipeCanceled = true;
+      card.style.transform = 'translateX(-110%)';
+      if (swipeBg) swipeBg.style.opacity = 1;
+      _photoSwipeDelete(photoId, card);
+    } else {
+      card.style.transform = '';
+      if (swipeBg) swipeBg.style.opacity = 0;
+    }
+  }, {passive: true});
+}
+
+// スワイプ削除実行＋Undoトースト
+function _photoSwipeDelete(photoId, card) {
+  var photo = allTasks.find(function(t){ return t.id === photoId; });
+  var imgData = _photoImages[photoId];
+  if (!photo) return;
+
+  // 削除実行
+  var idx = allTasks.findIndex(function(t){ return t.id === photoId; });
+  if (idx !== -1) allTasks.splice(idx, 1);
+  saveAllTasks();
+  delete _photoImages[photoId];
+  savePhotoImages();
+
+  // Undoトースト
+  var toast = document.createElement('div');
+  toast.className = 'photo-undo-toast';
+  var msg = document.createElement('span');
+  msg.textContent = '写真を削除しました';
+  var btn = document.createElement('button');
+  btn.className = 'photo-undo-btn';
+  btn.textContent = '元に戻す';
+  var undoDone = false;
+  btn.onclick = function() {
+    if (undoDone) return;
+    undoDone = true;
+    // 復元
+    allTasks.push(photo);
+    saveAllTasks();
+    if (imgData) { _photoImages[photoId] = imgData; savePhotoImages(); }
+    toast.remove();
+    renderPhotoLogView();
+    showToast('復元しました', {type:'success'});
+  };
+  toast.appendChild(msg);
+  toast.appendChild(btn);
+  document.body.appendChild(toast);
+
+  var timer = setTimeout(function() {
+    if (!undoDone) { toast.remove(); }
+  }, 3500);
+
+  // グリッド再描画（少し遅延してアニメ後）
+  setTimeout(function() {
+    if (!undoDone) renderPhotoLogView();
+  }, 300);
+}
+
+// ===== アップロードモーダル =====
+function openPhotoUpload(prefillTaskId) {
+  loadPhotoImages();
+  var modal = document.getElementById('photoUploadModal');
+  if (!modal) return;
+  var wrap = document.getElementById('photoPreviewWrap');
+  var placeholder = document.getElementById('photoPreviewPlaceholder');
+  if (wrap) { var oldImg = wrap.querySelector('img'); if (oldImg) oldImg.remove(); }
+  if (placeholder) placeholder.style.display = 'block';
+  var memo = document.getElementById('photoMemoInput');
+  if (memo) memo.value = '';
+  window._photoUploadDataUrl = null;
+  var sel = document.getElementById('photoTaskSelect');
+  if (sel) {
+    sel.innerHTML = '<option value="">紐づけない</option>';
+    var activeTasks = allTasks.filter(function(t){
+      return (t.kind === 'task' || !t.kind) && !t.completed && !t.done;
+    }).slice(0, 50);
+    activeTasks.forEach(function(t) {
+      var opt = document.createElement('option');
+      opt.value = t.id;
+      opt.textContent = (t.text || t.title || '無題').slice(0, 30);
+      if (prefillTaskId && t.id === prefillTaskId) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+  modal.classList.add('open');
+}
+
+function closePhotoUpload() {
+  var modal = document.getElementById('photoUploadModal');
+  if (modal) modal.classList.remove('open');
+  var fi = document.getElementById('photoFileInput');
+  if (fi) fi.value = '';
+}
+
+function onPhotoFileSelected(input) {
+  if (!input.files || !input.files[0]) return;
+  compressImage(input.files[0], function(dataUrl) {
+    window._photoUploadDataUrl = dataUrl;
+    var wrap = document.getElementById('photoPreviewWrap');
+    var placeholder = document.getElementById('photoPreviewPlaceholder');
+    if (!wrap) return;
+    var oldImg = wrap.querySelector('img');
+    if (oldImg) oldImg.remove();
+    if (placeholder) placeholder.style.display = 'none';
+    var img = document.createElement('img');
+    img.src = dataUrl;
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+    wrap.appendChild(img);
+  });
+}
+
+function savePhoto() {
+  if (!window._photoUploadDataUrl) { showToast('写真を選んでください', {type:'warn'}); return; }
+  // 容量チェック（5MB超えは拒否）
+  var _curSize = JSON.stringify(_photoImages).length * 0.75;
+  var _newSize = window._photoUploadDataUrl.length * 0.75;
+  if (_curSize + _newSize > 5 * 1024 * 1024) {
+    showToast('⚠️ 写真の容量が限界です。古い写真を削除してから追加してください。', {type:'warn'});
+    return;
+  }
+  var memo = document.getElementById('photoMemoInput');
+  var sel = document.getElementById('photoTaskSelect');
+  var now = new Date();
+  var dateStr = now.getFullYear() + '/' + String(now.getMonth()+1).padStart(2,'0') + '/' + String(now.getDate()).padStart(2,'0');
+  var photoRecord = {
+    id: generateTaskId(),
+    kind: 'photo',
+    title: memo ? memo.value.trim() : '',
+    taskId: sel && sel.value ? sel.value : null,
+    date: dateStr,
+    stamps: [],
+    createdAt: now.toISOString(),
+    updatedAt: now.toISOString()
+  };
+  allTasks.push(photoRecord);
+  saveAllTasks();
+  _photoImages[photoRecord.id] = window._photoUploadDataUrl;
+  savePhotoImages();
+  closePhotoUpload();
+
+  // 写真枚数×徳ボーナス（月5枚ごとに+5徳）
+  var _now2 = new Date();
+  var _thisMonth = _now2.getFullYear() + '/' + String(_now2.getMonth()+1).padStart(2,'0');
+  var _monthPhotos = allTasks.filter(function(t){
+    return t.kind === 'photo' && (t.date || '').slice(0, 7) === _thisMonth;
+  }).length;
+  if (_monthPhotos > 0 && _monthPhotos % 5 === 0) {
+    if (typeof addToku === 'function') addToku(5, '写真館月次ボーナス（' + _thisMonth + '・' + _monthPhotos + '枚）');
+    showToast('📷 今月' + _monthPhotos + '枚達成！ 徳+5 獲得', {type:'success'});
+  } else {
+    showToast('📷 刻みました', {type:'success'});
+  }
+  if (typeof currentView !== 'undefined' && currentView === 'photo') renderPhotoLogView();
+}
+
+function deletePhoto(e, photoId) {
+  if (e) e.stopPropagation();
+  var idx = allTasks.findIndex(function(t){ return t.id === photoId; });
+  if (idx !== -1) allTasks.splice(idx, 1);
+  saveAllTasks();
+  delete _photoImages[photoId];
+  savePhotoImages();
+  renderPhotoLogView();
+}
+
+// ===== 全画面ビューアー（ピンチズーム・スタンプ） =====
+function openPhotoViewer(photoId) {
+  loadPhotoImages();
+  var imgSrc = _photoImages[photoId];
+  if (!imgSrc) return;
+  _pvCurrentPhotoId = photoId;
+  window._pvCurrentPhotoId = photoId; // グローバルからも参照できるように
+  _pvScale = 1;
+
+  var modal = document.getElementById('photoViewerModal');
+  var img = document.getElementById('photoViewerImg');
+  var memoLabel = document.getElementById('pvMemoLabel');
+  var stampLayer = document.getElementById('pvStampLayer');
+  if (!modal || !img) return;
+
+  img.src = imgSrc;
+  img.style.transform = 'scale(1)';
+
+  // メモラベル
+  var photo = allTasks.find(function(t){ return t.id === photoId; });
+  if (memoLabel) memoLabel.textContent = photo && photo.title ? photo.title : '';
+
+  // スタンプ復元
+  if (stampLayer) {
+    stampLayer.innerHTML = '';
+    stampLayer.style.pointerEvents = 'auto';
+    var stamps = photo && photo.stamps ? photo.stamps : [];
+    stamps.forEach(function(s, i) {
+      _pvAddStampEl(stampLayer, s.emoji, s.x, s.y, i);
+    });
+  }
+
+  // スタンプパレット構築（絵文字選択→写真タップで位置指定）
+  var palette = document.getElementById('pvStampPalette');
+  if (palette) {
+    palette.innerHTML = '';
+    PHOTO_STAMPS.forEach(function(emoji) {
+      var btn = document.createElement('button');
+      btn.className = 'pv-stamp-btn';
+      btn.textContent = emoji;
+      btn.onclick = function() {
+        window._pvPendingStampEmoji = emoji;
+        var pal = document.getElementById('pvStampPalette');
+        var tbtn = document.getElementById('pvStampToggle');
+        if (pal) pal.style.display = 'none';
+        if (tbtn) { tbtn.textContent = emoji + ' タップで配置'; tbtn.style.background = 'rgba(255,200,0,0.55)'; }
+        _pvStampMode = false;
+      };
+      palette.appendChild(btn);
+    });
+  }
+
+  modal.classList.add('open');
+  // 初期化：スタンプモードOFF・パレット非表示・ペンディングクリア
+  window._pvPendingStampEmoji = null;
+  _pvStampMode = false;
+  var _pal = document.getElementById('pvStampPalette');
+  if (_pal) _pal.style.display = 'none';
+  var _ptbtn = document.getElementById('pvStampToggle');
+  if (_ptbtn) { _ptbtn.style.background = 'rgba(255,255,255,0.15)'; _ptbtn.textContent = '✏️ スタンプ'; }
+  _pvInitGestures(modal, img);
+}
+
+function _pvAddStampEl(layer, emoji, xPct, yPct, idx) {
+  var el = document.createElement('div');
+  el.className = 'pv-stamp-item';
+  el.textContent = emoji;
+  el.style.left = xPct + '%';
+  el.style.top = yPct + '%';
+  el.dataset.idx = idx;
+
+  // ドラッグ（touch）
+  el.addEventListener('touchstart', function(e) {
+    e.stopPropagation();
+    var layer = document.getElementById('pvStampLayer');
+    var rect = layer ? layer.getBoundingClientRect() : {left:0,top:0,width:1,height:1};
+    var t = e.touches[0];
+    var startX = t.clientX, startY = t.clientY;
+    var startPctX = xPct, startPctY = yPct;
+
+    function onMove(ev) {
+      ev.preventDefault();
+      var dx = ev.touches[0].clientX - startX;
+      var dy = ev.touches[0].clientY - startY;
+      var nx = Math.max(0, Math.min(100, startPctX + dx / rect.width * 100));
+      var ny = Math.max(0, Math.min(100, startPctY + dy / rect.height * 100));
+      el.style.left = nx + '%';
+      el.style.top = ny + '%';
+      xPct = nx; yPct = ny;
+    }
+    function onEnd() {
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', onEnd);
+      _pvSaveStamps();
+    }
+    document.addEventListener('touchmove', onMove, {passive: false});
+    document.addEventListener('touchend', onEnd);
+  }, {passive: true});
+
+  layer.appendChild(el);
+}
+
+function togglePvStampPalette() {
+  var palette = document.getElementById('pvStampPalette');
+  var btn = document.getElementById('pvStampToggle');
+  if (!palette) return;
+  _pvStampMode = !_pvStampMode;
+  palette.style.display = _pvStampMode ? 'flex' : 'none';
+  if (btn) {
+    btn.style.background = _pvStampMode ? 'rgba(255,107,107,0.6)' : 'rgba(255,255,255,0.15)';
+    btn.textContent = _pvStampMode ? '✕ 閉じる' : '✏️ スタンプ';
+  }
+}
+
+function _pvPlaceStamp(emoji, xPct, yPct) {
+  var layer = document.getElementById('pvStampLayer');
+  var x = (typeof xPct === 'number') ? xPct : 40 + Math.random() * 20;
+  var y = (typeof yPct === 'number') ? yPct : 35 + Math.random() * 20;
+  var photo = allTasks.find(function(t){ return t.id === _pvCurrentPhotoId; });
+  if (!photo) return;
+  if (!photo.stamps) photo.stamps = [];
+  var idx = photo.stamps.length;
+  photo.stamps.push({emoji: emoji, x: x, y: y});
+  saveAllTasks();
+  _pvAddStampEl(layer, emoji, x, y, idx);
+  _pvStampsDirty = true;
+  // スタンプ配置後モードを維持（連続配置可能）
+}
+
+function _pvSaveStamps() {
+  var layer = document.getElementById('pvStampLayer');
+  if (!layer || !_pvCurrentPhotoId) return;
+  var photo = allTasks.find(function(t){ return t.id === _pvCurrentPhotoId; });
+  if (!photo) return;
+  var els = layer.querySelectorAll('.pv-stamp-item');
+  photo.stamps = [];
+  els.forEach(function(el) {
+    photo.stamps.push({
+      emoji: el.textContent,
+      x: parseFloat(el.style.left),
+      y: parseFloat(el.style.top)
+    });
+  });
+  saveAllTasks();
+}
+
+function _pvInitGestures(modal, img) {
+  // ピンチズーム
+  _pvScale = 1;
+  _pvLastDist = 0;
+  _pvPinching = false;
+
+  function getDist(t) {
+    var dx = t[0].clientX - t[1].clientX;
+    var dy = t[0].clientY - t[1].clientY;
+    return Math.sqrt(dx*dx + dy*dy);
+  }
+
+  function onTouchStart(e) {
+    if (e.touches.length === 2) {
+      _pvPinching = true;
+      _pvLastDist = getDist(e.touches);
+    }
+  }
+  function onTouchMove(e) {
+    if (_pvPinching && e.touches.length === 2) {
+      e.preventDefault();
+      var dist = getDist(e.touches);
+      if (_pvLastDist > 0) {
+        _pvScale *= dist / _pvLastDist;
+        _pvScale = Math.max(0.5, Math.min(4.0, _pvScale));
+        img.style.transform = 'scale(' + _pvScale + ')';
+      }
+      _pvLastDist = dist;
+    }
+  }
+  function onTouchEnd(e) {
+    if (e.touches.length < 2) { _pvPinching = false; _pvLastDist = 0; }
+  }
+
+  // 既存イベントを削除してから再登録
+  modal._pvStart = onTouchStart;
+  modal._pvMove = onTouchMove;
+  modal._pvEnd = onTouchEnd;
+  modal.removeEventListener('touchstart', modal._pvStart);
+  modal.removeEventListener('touchmove', modal._pvMove);
+  modal.removeEventListener('touchend', modal._pvEnd);
+  modal.addEventListener('touchstart', onTouchStart, {passive: true});
+  modal.addEventListener('touchmove', onTouchMove, {passive: false});
+  modal.addEventListener('touchend', onTouchEnd, {passive: true});
+
+  // 背景タップで閉じる / スタンプ位置指定配置
+  // iOS Safari対策：touchendとclickの両方に対応
+  var _pvTapHandler = function(e) {
+    // touchendの場合はclientX/Yをtouches/changedTouchesから取得
+    if (e.type === 'touchend' && e.changedTouches && e.changedTouches.length > 0) {
+      e.clientX = e.changedTouches[0].clientX;
+      e.clientY = e.changedTouches[0].clientY;
+    }
+    if (_pvPinching) return;
+
+    // ③ スタンプ要素タップ → ゴミ箱ボタン表示
+    if (e.target && e.target.classList && e.target.classList.contains('pv-stamp-item')) {
+      var stampEl = e.target;
+      // 既存のゴミ箱ボタンがあれば削除
+      var existingTrash = document.querySelector('.pv-stamp-trash');
+      if (existingTrash) {
+        if (existingTrash.dataset.target === stampEl.dataset.idx) {
+          existingTrash.remove(); return;
+        }
+        existingTrash.remove();
+      }
+      var trash = document.createElement('button');
+      trash.className = 'pv-stamp-trash';
+      trash.dataset.target = stampEl.dataset.idx;
+      trash.textContent = '🗑️';
+      trash.style.cssText = 'position:absolute;top:' + stampEl.style.top + ';left:calc(' + stampEl.style.left + ' + 1.2em);background:rgba(0,0,0,0.65);border:none;border-radius:50%;color:#fff;font-size:0.75em;width:24px;height:24px;cursor:pointer;z-index:200;display:flex;align-items:center;justify-content:center;';
+      trash.onclick = function(ev) {
+        ev.stopPropagation();
+        var photo = allTasks.find(function(t){ return t.id === _pvCurrentPhotoId; });
+        if (photo && photo.stamps) {
+          var removeIdx = parseInt(stampEl.dataset.idx);
+          photo.stamps.splice(removeIdx, 1);
+          saveAllTasks();
+          _pvStampsDirty = true;
+          // スタンプ再描画
+          var layer = document.getElementById('pvStampLayer');
+          if (layer) {
+            layer.innerHTML = '';
+            photo.stamps.forEach(function(s, i) { _pvAddStampEl(layer, s.emoji, s.x, s.y, i); });
+          }
+        }
+        trash.remove();
+      };
+      var layer = document.getElementById('pvStampLayer');
+      if (layer) layer.appendChild(trash);
+      return;
+    }
+
+    // ② スタンプ位置指定配置
+    if (window._pvPendingStampEmoji) {
+      // pv-stamp-item・pv-stamp-trash以外ならどこタップでも配置
+      if (e.target && e.target.classList &&
+          (e.target.classList.contains('pv-stamp-item') || e.target.classList.contains('pv-stamp-trash'))) {
+        // スタンプ要素タップは配置しない（ゴミ箱処理に任せる）
+      } else {
+        var rect = img.getBoundingClientRect();
+        var xPct = Math.round((e.clientX - rect.left) / rect.width * 100);
+        var yPct = Math.round((e.clientY - rect.top) / rect.height * 100);
+        xPct = Math.max(2, Math.min(95, xPct));
+        yPct = Math.max(2, Math.min(95, yPct));
+        _pvPlaceStamp(window._pvPendingStampEmoji, xPct, yPct);
+        var tbtn = document.getElementById('pvStampToggle');
+        if (tbtn) { tbtn.textContent = '✏️ スタンプ'; tbtn.style.background = 'rgba(255,255,255,0.15)'; }
+        window._pvPendingStampEmoji = null;
+        return;
+      }
+    }
+
+    // 通常タップ：ズームリセット or 閉じる
+    if (e.target === modal || e.target === img) {
+      if (_pvScale > 1.05) { _pvScale = 1; img.style.transform = 'scale(1)'; return; }
+      closePhotoViewer();
+    }
+  };
+  // iOS Safari対策：touchendとclickの両方登録（重複防止）
+  modal.removeEventListener('touchend', modal._pvTapHandler);
+  modal.removeEventListener('click', modal._pvTapHandler);
+  modal._pvTapHandler = _pvTapHandler;
+  modal.addEventListener('touchend', _pvTapHandler, {passive: true});
+  modal.addEventListener('click', _pvTapHandler);
+}
+
+var _pvStampsDirty = false; // スタンプ変更フラグ
+
+function closePhotoViewer() {
+  var modal = document.getElementById('photoViewerModal');
+  if (modal) {
+    modal.classList.remove('open');
+    modal.onclick = null;
+    if (modal._pvTapHandler) {
+      modal.removeEventListener('touchend', modal._pvTapHandler);
+      modal.removeEventListener('click', modal._pvTapHandler);
+      modal._pvTapHandler = null;
+    }
+  }
+  _pvSaveStamps();
+  _pvCurrentPhotoId = null;
+  _pvScale = 1;
+  _pvStampMode = false;
+  window._pvPendingStampEmoji = null;
+  // ゴミ箱ボタン残骸クリア
+  var trash = document.querySelector('.pv-stamp-trash');
+  if (trash) trash.remove();
+  var img = document.getElementById('photoViewerImg');
+  if (img) img.style.transform = 'scale(1)';
+  if (_pvStampsDirty && typeof currentView !== 'undefined' && currentView === 'photo') {
+    renderPhotoLogView();
+  }
+  _pvStampsDirty = false;
+}
+
+// 起動時にphotoImages読み込み
+loadPhotoImages();
+// window公開（第3条）
+window.openPhotoUpload = openPhotoUpload;
+window.closePhotoUpload = closePhotoUpload;
+window.onPhotoFileSelected = onPhotoFileSelected;
+window.savePhoto = savePhoto;
+window.deletePhoto = deletePhoto;
+window.openPhotoViewer = openPhotoViewer;
+window.closePhotoViewer = closePhotoViewer;
+window.loadPhotoImages = loadPhotoImages;
+window.renderPhotoLogView = renderPhotoLogView;
+// ビューアー内削除
+window.deletePhotoFromViewer = function() {
+  if (!_pvCurrentPhotoId) return;
+  var pid = _pvCurrentPhotoId;
+  // 確認トースト（iOS confirm()非対応対策）
+  var toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:120px;left:50%;transform:translateX(-50%);background:rgba(20,20,20,0.95);color:#fff;padding:14px 20px;border-radius:14px;z-index:9999;display:flex;gap:12px;align-items:center;font-size:0.95em;box-shadow:0 4px 20px rgba(0,0,0,0.5);';
+  toast.innerHTML = '<span>この写真を削除しますか？</span><button style="background:#ff3b3b;border:none;border-radius:8px;color:#fff;padding:6px 14px;font-size:0.9em;cursor:pointer;">削除</button><button style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;color:#fff;padding:6px 14px;font-size:0.9em;cursor:pointer;">キャンセル</button>';
+  document.body.appendChild(toast);
+  var btnDel = toast.querySelectorAll('button')[0];
+  var btnCan = toast.querySelectorAll('button')[1];
+  var cleanup = function() { if (toast.parentNode) toast.parentNode.removeChild(toast); };
+  btnDel.ontouchend = btnDel.onclick = function(e) {
+    e.stopPropagation(); cleanup();
+    _pvCurrentPhotoId = null;
+    closePhotoViewer();
+    deletePhoto(pid);
+    renderPhotoLogView();
+    showToast('🗑️ 写真を削除しました');
+  };
+  btnCan.ontouchend = btnCan.onclick = function(e) { e.stopPropagation(); cleanup(); };
+  setTimeout(cleanup, 5000);
+};
+// ビューアー内メモ編集
+window.editPhotoMemo = function() {
+  if (!_pvCurrentPhotoId) return;
+  var photo = allTasks.find(function(t){ return t.id === _pvCurrentPhotoId; });
+  if (!photo) return;
+  var newMemo = prompt('メモを編集', photo.title || '');
+  if (newMemo === null) return;
+  photo.title = newMemo;
+  photo.updatedAt = new Date().toISOString();
+  saveAllTasks();
+  var memoLabel = document.getElementById('pvMemoLabel');
+  if (memoLabel) memoLabel.textContent = newMemo;
+};
+// block7初期化完了後、savedView=photoなら写真帳を再描画（window公開後に実行）
+(function() {
+  var _sv = localStorage.getItem('currentView');
+  if (_sv === 'photo') {
+    renderPhotoLogView();
+  }
+})();
+window._pvPlaceStamp = _pvPlaceStamp;
+window._pvSaveStamps = _pvSaveStamps;
+window.togglePvStampPalette = togglePvStampPalette;
+// ===== 写真館ボタン onclick直接代入（拡張機能によるHTML属性横取り対策）=====
+(function() {
+  var _b1 = document.getElementById('photoLogAddBtn');
+  if (_b1) _b1.onclick = function() { openPhotoUpload(); };
+  var _b2 = document.getElementById('photoUploadSaveBtn');
+  if (_b2) _b2.onclick = function() { savePhoto(); };
+  var _b3 = document.getElementById('photoUploadCancelBtn');
+  if (_b3) _b3.onclick = function() { closePhotoUpload(); };
+  var _b4 = document.getElementById('pvStampToggle');
+  if (_b4) _b4.onclick = function() { togglePvStampPalette(); };
+})();
+// initOnlyモード：window公開のみ行いUIを表示しない
+// ===== 写真帳 END =====
+</script>
+
 
 <!-- クイズモーダル -->
 <div id="quizModal" style="display:none;position:fixed;inset:0;background:#0a0a0a;z-index:10000;flex-direction:column;overflow:hidden;">
