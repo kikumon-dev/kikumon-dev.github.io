@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.398';
+    const APP_VERSION = 'v0.39.400';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -2932,6 +2932,13 @@
       padding:14px 16px 10px;background:#f0ede8;
       border-bottom:1px solid #ddd7cf;position:sticky;top:0;z-index:10;
     }
+    .photo-title-reload-btn:hover .photo-reload-hint,
+    .photo-title-reload-btn:active .photo-reload-hint { opacity:1; }
+    .photo-reload-hint {
+      font-size:0.8em;color:#aaa;opacity:0;transition:opacity 0.2s;
+      user-select:none;
+    }
+    .photo-title-reload-btn:hover { opacity:0.75; }
     .photo-log-title {
       font-size:1.05em;font-weight:700;color:#111;letter-spacing:0.04em;
     }
@@ -3196,7 +3203,7 @@
     <button class="nav-tab" id="navYearly" onclick="switchView('yearly')">年間</button>
     <button class="nav-tab" id="navGant" onclick="switchView('gant')" style="display:none;">造営</button>
     <button class="nav-tab" id="navNotebook" onclick="switchView('notebook')">自由帳</button>
-    <button class="nav-tab" id="navPhoto" onclick="switchView('photo')" title="写真帳">写真</button>
+    <button class="nav-tab" id="navPhoto" onclick="switchView('photo')" title="写真館">写真</button>
     <button class="nav-tab" id="navJournal" onclick="switchView('journal')">日誌</button>
     <button class="nav-tab" id="navCraft" onclick="switchView('craft')" style="display:none;" title="やることクラフト"><svg width="18" height="16" viewBox="0 0 36 32" fill="currentColor" style="vertical-align:middle;">
   <!-- 左塔 -->
@@ -3910,9 +3917,10 @@
   <!-- ===== 写真帳ビュー ===== -->
   <div id="photoLogView" style="display:none;height:100%;overflow-y:auto;box-sizing:border-box;">
     <div class="photo-log-header">
-      <div>
-        <span class="photo-log-title">写真帳</span>
+      <div onclick="if(window.loadPhotoImages)window.loadPhotoImages();if(window.renderPhotoLogView)window.renderPhotoLogView();" title="タップして写真を再読み込み" style="cursor:pointer;display:flex;align-items:center;gap:6px;" class="photo-title-reload-btn">
+        <span class="photo-log-title">写真館</span>
         <span class="photo-log-count" id="photoLogCount"></span>
+        <span class="photo-reload-hint">↺</span>
       </div>
       <button class="photo-log-add-btn" id="photoLogAddBtn" title="写真を追加">＋</button>
     </div>
@@ -24044,7 +24052,7 @@ function showDebugLog() {
         return t.kind === 'photo' && (t.date || '').slice(0, 7) === _thisMonth;
       }).length;
       if (_monthPhotos > 0 && _monthPhotos % 5 === 0) {
-        if (typeof addToku === 'function') addToku(5, '写真帳月次ボーナス（' + _thisMonth + '・' + _monthPhotos + '枚）');
+        if (typeof addToku === 'function') addToku(5, '写真館月次ボーナス（' + _thisMonth + '・' + _monthPhotos + '枚）');
         showToast('📷 今月' + _monthPhotos + '枚達成！ 徳+5 獲得', {type:'success'});
       } else {
         showToast('📷 刻みました', {type:'success'});
@@ -28704,7 +28712,7 @@ function showDebugLog() {
          ok('ST-76b: photoレコードなし（写真帳は空）');
        }
 
-       ok('ST-76b: 写真帳現状把握 完了');
+       ok('ST-76b: 写真館現状把握 完了');
      } catch(e) { ng('ST-76b', e.message); }
 
      // ===== ST-77〜81 写真帳テスト前: _photoImages・photoレコード退避（既存写真データを保護）=====
@@ -29102,8 +29110,18 @@ function showDebugLog() {
        // クリーンアップ
        _st80AllPhotos.forEach(function(id){ delete _photoImages[id]; });
        if (_st80PhvBefore) _st80PhvBefore.style.display = 'none';
+       // タイトル確認
+       var _st80TitleEl = document.querySelector('.photo-log-title');
+       _st80TitleEl && _st80TitleEl.textContent === '写真館'
+         ? ok('ST-80: 写真館タイトル確認（「写真館」）')
+         : ng('ST-80: 写真館タイトル', '値=' + (_st80TitleEl ? _st80TitleEl.textContent : 'null'));
+       // リロードボタン確認
+       var _st80ReloadBtn = document.querySelector('.photo-title-reload-btn');
+       _st80ReloadBtn
+         ? ok('ST-80: 写真館リロードボタン存在確認')
+         : ng('ST-80: 写真館リロードボタン', '未存在');
        ok('ST-80: クリーンアップ完了(' + allTasks.length + '件)');
-       ok('ST-80: 写真帳レンダリング 完了');
+       ok('ST-80: 写真館レンダリング 完了');
      } catch(e) { ng('ST-80', e.message); }
 
      // ===== ST-81: 写真保存・削除・SSOT整合 =====
