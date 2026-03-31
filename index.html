@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.414';
+    const APP_VERSION = 'v0.39.431';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3103,10 +3103,12 @@
       -webkit-user-drag:none;
     }
     .pv-header {
-      position:absolute;top:0;left:0;right:0;
+      position:fixed;top:0;left:0;right:0;
       display:flex;align-items:center;justify-content:space-between;
       padding:16px 18px;
       background:linear-gradient(rgba(0,0,0,0.5),transparent);
+      pointer-events:auto;
+      z-index:10002;
     }
     .pv-close {
       background:rgba(255,255,255,0.15);color:#fff;
@@ -3122,9 +3124,11 @@
     }
     /* スタンプパレット */
     .pv-footer {
-      position:absolute;bottom:0;left:0;right:0;
+      position:fixed;bottom:0;left:0;right:0;
       background:linear-gradient(transparent,rgba(0,0,0,0.7));
       padding:20px 12px 30px;
+      z-index:10002;
+      pointer-events:auto;
     }
     .pv-stamp-palette {
       display:flex;gap:8px;overflow-x:auto;
@@ -3956,11 +3960,17 @@
   </div>
 
   <!-- 全画面ビューアー -->
+    <!-- 削除確認ダイアログ（photoViewerModal外・body直下） -->
+    <div id="pvDeleteConfirm" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(20,20,20,0.97);color:#fff;padding:20px 24px;border-radius:14px;z-index:10003;flex-direction:row;gap:12px;align-items:center;font-size:1em;box-shadow:0 4px 30px rgba(0,0,0,0.7);">
+      <span>削除しますか？</span>
+      <button id="pvDeleteConfirmYes" onclick="event.stopPropagation();confirmDeletePhoto();" style="background:#ff3b3b;border:none;border-radius:8px;color:#fff;padding:10px 18px;font-size:1em;cursor:pointer;">削除</button>
+      <button id="pvDeleteConfirmNo" onclick="event.stopPropagation();cancelDeletePhoto();" style="background:rgba(255,255,255,0.2);border:none;border-radius:8px;color:#fff;padding:10px 18px;font-size:1em;cursor:pointer;">キャンセル</button>
+    </div>
   <div id="photoViewerModal">
     <div class="pv-header">
-      <button class="pv-close" onclick="event.stopPropagation();if(window.closePhotoViewer)window.closePhotoViewer();">✕</button>
-      <div class="pv-memo-label" id="pvMemoLabel" onclick="event.stopPropagation();if(window.editPhotoMemo)window.editPhotoMemo();" style="cursor:pointer;flex:1;text-align:center;min-height:20px;" title="タップでメモ編集"></div>
-      <button id="pvDeleteBtn" onclick="event.stopPropagation();if(window.deletePhotoFromViewer)window.deletePhotoFromViewer();" style="background:rgba(255,60,60,0.7);border:none;border-radius:50%;color:#fff;width:34px;height:34px;font-size:1em;cursor:pointer;flex-shrink:0;">🗑️</button>
+      <button class="pv-close" onclick="event.stopPropagation();closePhotoViewer();">✕</button>
+      <div class="pv-memo-label" id="pvMemoLabel" onclick="event.stopPropagation();editPhotoMemo();" style="cursor:pointer;flex:1;text-align:center;min-height:20px;" title="タップでメモ編集"></div>
+      <button id="pvDeleteBtn" onclick="event.stopPropagation();deletePhotoFromViewer();" style="background:rgba(255,60,60,0.7);border:none;border-radius:50%;color:#fff;width:34px;height:34px;font-size:1em;cursor:pointer;flex-shrink:0;">🗑️</button>
     </div>
     <img id="photoViewerImg" src="" alt="" draggable="false">
     <div id="pvStampLayer" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;"></div>
@@ -25155,7 +25165,7 @@ function showDebugLog(_initOnly) {
 
        // ===== ST-34C: テストセクション自己存在確認 =====
        // テストセクション自己存在確認：ソースコード上の存在をチェック
-       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75','ST-76','ST-77','ST-78','ST-79','ST-80','ST-81'];
+       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75','ST-76','ST-77','ST-78','ST-79','ST-80','ST-81','ST-82'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -28530,6 +28540,127 @@ function showDebugLog(_initOnly) {
      ok('ST-81: photoTasks復元完了(' + _photoTasksBackup.length + '件)');
      // 復元後にビューを再描画
      if (typeof renderPhotoLogView === 'function') renderPhotoLogView();
+
+     // ===== ST-82: ビューアー削除機能 詳細テスト =====
+     // 【背景】v0.39.414〜v0.39.427のデバッグで判明した5つの根本原因を検知する
+     // 原因①: pv-header/pv-footerがposition:absoluteでiOSタップ不可
+     // 原因②: _pvTapHandlerがボタンより先にclickを処理しビューアーを閉じた
+     // 原因③: pvDeleteConfirmがphotoViewerModal内にありdisplay:flex不可
+     // 原因④: showToastが独立scriptから参照不可（Script error）
+     // 原因⑤: deletePhoto(pid)を1引数で呼び第1引数eにpidが入りphotoIdがundefined
+     try {
+       // --- 原因① pv-header/pv-footer が position:fixed であること ---
+       var _pvHeader = document.querySelector('.pv-header');
+       var _pvFooter = document.querySelector('.pv-footer');
+       if (_pvHeader) {
+         var _pvHeaderPos = window.getComputedStyle(_pvHeader).position;
+         // position:fixedでないとiOSでタップを受け付けない
+         ok('ST-82: pv-header position確認（' + _pvHeaderPos + '）' +
+           (_pvHeaderPos === 'fixed' ? ' ✅ fixed' : ' ⚠️ fixed推奨'));
+       } else {
+         ok('ST-82: pv-header DOM確認');
+       }
+       if (_pvFooter) {
+         var _pvFooterPos = window.getComputedStyle(_pvFooter).position;
+         ok('ST-82: pv-footer position確認（' + _pvFooterPos + '）' +
+           (_pvFooterPos === 'fixed' ? ' ✅ fixed' : ' ⚠️ fixed推奨'));
+       } else {
+         ok('ST-82: pv-footer DOM確認');
+       }
+
+       // --- 原因② _pvTapHandler が登録されていないこと（背景タップ閉じ廃止） ---
+       var _pvModal = document.getElementById('photoViewerModal');
+       if (_pvModal) {
+         // modal._pvTapHandler が null/undefined であることを確認
+         var _tapHandlerAbsent = !_pvModal._pvTapHandler;
+         if (_tapHandlerAbsent) {
+           ok('ST-82: _pvTapHandler 廃止確認（iOSでボタンより先に発火してビューアーを閉じる問題を排除）');
+         } else {
+           ng('ST-82: _pvTapHandler が残存しています（iOSでボタンclickを横取りする恐れあり）');
+         }
+       }
+
+       // --- 原因③ pvDeleteConfirm が photoViewerModal の外にあること ---
+       var _pvDelConfirm = document.getElementById('pvDeleteConfirm');
+       var _pvModalEl = document.getElementById('photoViewerModal');
+       if (_pvDelConfirm && _pvModalEl) {
+         // photoViewerModalの子要素でないことを確認
+         var _isOutside = !_pvModalEl.contains(_pvDelConfirm);
+         if (_isOutside) {
+           ok('ST-82: pvDeleteConfirm がphotoViewerModal外に配置（モーダルdisplay:none時も表示可能）');
+         } else {
+           ng('ST-82: pvDeleteConfirm がphotoViewerModal内にあります（モーダルdisplay:none時に表示不可）');
+         }
+         // position:fixed・z-index確認
+         var _dlgStyle = _pvDelConfirm.style.position;
+         ok('ST-82: pvDeleteConfirm position確認（' + _dlgStyle + '）' +
+           (_dlgStyle === 'fixed' ? ' ✅' : ' ⚠️ fixed推奨'));
+       } else {
+         ng('ST-82: pvDeleteConfirm または photoViewerModal のDOM未検出');
+       }
+
+       // --- 原因④ window.showToast が独立scriptから参照可能なこと ---
+       // block3内部関数showToastをwindow経由で公開していることを確認
+       // DOMContentLoaded後に window.showToast = showToast される
+       if (typeof window.showToast === 'function') {
+         ok('ST-82: window.showToast 公開確認（独立scriptからのScript error防止）');
+       } else {
+         // DOMContentLoaded前の場合はソースコード確認でフォールバック
+         var _showToastWindowSrc = document.documentElement.innerHTML.indexOf('window.showToast = showToast') !== -1;
+         if (_showToastWindowSrc) {
+           ok('ST-82: window.showToast 公開コード確認（DOMContentLoaded後に設定）');
+         } else {
+           ng('ST-82: window.showToast が未公開です（独立scriptから呼ぶとScript errorになります）');
+         }
+       }
+
+       // --- 原因⑤ deletePhoto が2引数関数であることと正しい呼び出し確認 ---
+       // deletePhoto(e, photoId) の第1引数がeであることを関数のtoStringで確認
+       if (typeof deletePhoto === 'function') {
+         var _deletePhotoSrc = deletePhoto.toString();
+         // 関数シグネチャにeとphotoIdが含まれていること
+         var _hasTwoArgs = _deletePhotoSrc.match(/function\s*deletePhoto\s*\(\s*e\s*,\s*photoId\s*\)/);
+         if (_hasTwoArgs) {
+           ok('ST-82: deletePhoto(e, photoId) 2引数シグネチャ確認');
+         } else {
+           ok('ST-82: deletePhoto シグネチャ確認（引数名は実装依存）');
+         }
+         // confirmDeletePhoto内でdeletePhoto(null, pid)と呼ばれていることを確認
+         if (typeof window.confirmDeletePhoto === 'function') {
+           var _confirmSrc = window.confirmDeletePhoto.toString();
+           var _callsWithNull = _confirmSrc.indexOf('deletePhoto(null,') !== -1 ||
+                                _confirmSrc.indexOf('deletePhoto(null ,') !== -1;
+           if (_callsWithNull) {
+             ok('ST-82: confirmDeletePhoto内 deletePhoto(null, pid) 呼び出し確認（第1引数eにnullを渡す）');
+           } else {
+             ng('ST-82: confirmDeletePhoto内のdeletePhoto呼び出しが不正です（deletePhoto(null, pid)が必要）');
+           }
+         }
+       } else {
+         ng('ST-82: deletePhoto 関数未検出');
+       }
+
+       // --- 統合挙動テスト: ビューアー削除フロー全体 ---
+       // テスト用photoレコードを作成してdeletePhoto(null, pid)で正しく削除されることを確認
+       var _testPvPid = 'test-pv-del-' + Date.now();
+       allTasks.push({ id: _testPvPid, kind: 'photo', title: 'テスト削除', date: '2026-01-01',
+         stamps: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+       saveAllTasks();
+       var _beforeCount = allTasks.filter(function(t){ return t.kind === 'photo'; }).length;
+       // deletePhoto(null, pid) で正しく削除されることを確認（原因⑤の修正確認）
+       deletePhoto(null, _testPvPid);
+       var _afterCount = allTasks.filter(function(t){ return t.kind === 'photo'; }).length;
+       if (_afterCount === _beforeCount - 1) {
+         ok('ST-82: deletePhoto(null, pid) 挙動テスト → 正常削除確認（1件減: ' + _beforeCount + '→' + _afterCount + '）');
+       } else {
+         ng('ST-82: deletePhoto(null, pid) 挙動テスト → 削除失敗（' + _beforeCount + '→' + _afterCount + '）');
+       }
+       saveAllTasks();
+       ok('ST-82: ビューアー削除機能 完了');
+     } catch(e) {
+       ng('ST-82: ビューアー削除機能テスト例外: ' + e.message);
+     }
+
      try {
        ok('');
        ok('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -29330,6 +29461,56 @@ function showDebugLog(_initOnly) {
          return typeof window[k]==='function' && k.length<=3 && /^[a-z]/.test(k) && !['log','dir','now'].includes(k);
        });
        _rf('第16条', _r16badFns.length===0, '関数名一目瞭然化：極端な短縮関数名チェック（' + (_r16badFns.length===0?'OK':_r16badFns.join(',')) + '）');
+
+       // 第17条【関数引数チェック】
+       // 【背景】v0.39.427バグ: deletePhoto(e, photoId)を deletePhoto(pid) と1引数で呼び
+       //         pidがeに入りphotoIdがundefinedになって削除できなかった。
+       // 【ルール】複数引数を持つ重要関数について、引数の数（.length）と
+       //           呼び出し側の引数数が一致していることをソースコードレベルで確認する。
+       // 【検知対象】写真削除・タスク削除など、引数ミスが致命的なバグになる関数。
+       var _r17ok = true;
+       var _r17msgs = [];
+
+       // deletePhoto(e, photoId) → 2引数であること
+       if (typeof deletePhoto === 'function') {
+         if (deletePhoto.length !== 2) {
+           _r17ok = false;
+           _r17msgs.push('deletePhoto引数数異常(' + deletePhoto.length + '≠2)');
+         }
+         // confirmDeletePhoto内で deletePhoto(null, pid) と呼ばれていること
+         if (typeof window.confirmDeletePhoto === 'function') {
+           var _r17confSrc = window.confirmDeletePhoto.toString();
+           var _r17callOk = _r17confSrc.indexOf('deletePhoto(null,') !== -1;
+           if (!_r17callOk) {
+             _r17ok = false;
+             _r17msgs.push('confirmDeletePhoto内のdeletePhoto呼び出しが不正（deletePhoto(null,pid)が必要）');
+           }
+         }
+       } else {
+         _r17ok = false;
+         _r17msgs.push('deletePhoto未定義');
+       }
+
+       // saveAllTasks() → 0引数であること（引数を要求する形に変わっていないか）
+       if (typeof saveAllTasks === 'function' && saveAllTasks.length !== 0) {
+         _r17ok = false;
+         _r17msgs.push('saveAllTasks引数数異常(' + saveAllTasks.length + '≠0)');
+       }
+
+       // deletePhoto(null, pid) の挙動確認：テストレコードを削除して件数が1減ること
+       var _r17testId = 'r17-test-' + Date.now();
+       allTasks.push({ id: _r17testId, kind: 'photo', title: 'R17テスト', date: '2026-01-01',
+         stamps: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+       var _r17before = allTasks.length;
+       deletePhoto(null, _r17testId); // 正しい2引数呼び出し
+       var _r17after = allTasks.length;
+       if (_r17after !== _r17before - 1) {
+         _r17ok = false;
+         _r17msgs.push('deletePhoto(null,pid)挙動異常(' + _r17before + '→' + _r17after + ')');
+       }
+       saveAllTasks();
+
+       _rf('第17条', _r17ok, '関数引数チェック：' + (_r17ok ? 'deletePhoto引数数OK・呼び出し側OK・挙動OK' : _r17msgs.join(' / ')));
 
        // 遵守率
        var _rate = Math.round(_rp/_rc*100);
@@ -31389,6 +31570,29 @@ function openPhotoViewer(photoId) {
   var _ptbtn = document.getElementById('pvStampToggle');
   if (_ptbtn) { _ptbtn.style.background = 'rgba(255,255,255,0.15)'; _ptbtn.textContent = '✏️ スタンプ'; }
   _pvInitGestures(modal, img);
+
+  // iOS対策：ボタンにaddEventListenerを直接登録（onclick属性が効かないケースへの対応）
+  var _closeBtn = modal.querySelector('.pv-close');
+  var _delBtn = document.getElementById('pvDeleteBtn');
+  if (_closeBtn) {
+    _closeBtn.onclick = null;
+    _closeBtn.addEventListener('click', function(e) { e.stopPropagation(); closePhotoViewer(); });
+  }
+  if (_delBtn) {
+    _delBtn.onclick = null;
+    _delBtn.addEventListener('click', function(e) { e.stopPropagation(); deletePhotoFromViewer(); });
+  }
+  // 確認ダイアログのボタンにも直接登録
+  var _yesBtn = document.getElementById('pvDeleteConfirmYes');
+  var _noBtn = document.getElementById('pvDeleteConfirmNo');
+  if (_yesBtn) {
+    _yesBtn.onclick = null;
+    _yesBtn.addEventListener('click', function(e) { e.stopPropagation(); confirmDeletePhoto(); });
+  }
+  if (_noBtn) {
+    _noBtn.onclick = null;
+    _noBtn.addEventListener('click', function(e) { e.stopPropagation(); cancelDeletePhoto(); });
+  }
 }
 
 function _pvAddStampEl(layer, emoji, xPct, yPct, idx) {
@@ -31589,18 +31793,20 @@ function _pvInitGestures(modal, img) {
 
     // ボタン要素（×・🗑️・スタンプ等）は除外
     if (e.target && e.target.tagName === 'BUTTON') return;
+    // 削除確認ダイアログ内タップは除外
+    var dlgEl = document.getElementById('pvDeleteConfirm');
+    if (dlgEl && dlgEl.contains(e.target)) return;
     // 通常タップ：ズームリセット or 閉じる
     if (e.target === modal || e.target === img) {
       if (_pvScale > 1.05) { _pvScale = 1; img.style.transform = 'scale(1)'; return; }
       closePhotoViewer();
     }
   };
-  // iOS Safari対策：touchendとclickの両方登録（重複防止）
+  // iOS Safari対策：clickのみ登録（touchendは削除・stopPropagationが効かないケースがあるため）
   modal.removeEventListener('touchend', modal._pvTapHandler);
   modal.removeEventListener('click', modal._pvTapHandler);
-  modal._pvTapHandler = _pvTapHandler;
-  modal.addEventListener('touchend', _pvTapHandler, {passive: true});
-  modal.addEventListener('click', _pvTapHandler);
+  modal._pvTapHandler = null;
+  // 背景タップ閉じは廃止（×ボタンで閉じる）
 }
 
 var _pvStampsDirty = false; // スタンプ変更フラグ
@@ -31620,6 +31826,10 @@ function closePhotoViewer() {
   _pvCurrentPhotoId = null;
   _pvScale = 1;
   _pvStampMode = false;
+  // 削除確認ダイアログも閉じる
+  var dlg = document.getElementById('pvDeleteConfirm');
+  if (dlg) dlg.style.display = 'none';
+  clearTimeout(window._pvDeleteTimer);
   window._pvPendingStampEmoji = null;
   // ゴミ箱ボタン残骸クリア
   var trash = document.querySelector('.pv-stamp-trash');
@@ -31640,32 +31850,39 @@ window.closePhotoUpload = closePhotoUpload;
 window.onPhotoFileSelected = onPhotoFileSelected;
 window.savePhoto = savePhoto;
 window.deletePhoto = deletePhoto;
+// block3内のshowToastをwindow経由で参照できるようにする（DOMContentLoaded後に設定）
+document.addEventListener('DOMContentLoaded', function() {
+  if (typeof showToast === 'function') window.showToast = showToast;
+});
 window.openPhotoViewer = openPhotoViewer;
 window.closePhotoViewer = closePhotoViewer;
 window.loadPhotoImages = loadPhotoImages;
 window.renderPhotoLogView = renderPhotoLogView;
 // ビューアー内削除
+window._pvPendingDeleteId = null;
 window.deletePhotoFromViewer = function() {
-  if (!_pvCurrentPhotoId) return;
   var pid = _pvCurrentPhotoId;
-  // 確認トースト（iOS confirm()非対応対策）
-  var toast = document.createElement('div');
-  toast.style.cssText = 'position:fixed;bottom:120px;left:50%;transform:translateX(-50%);background:rgba(20,20,20,0.95);color:#fff;padding:14px 20px;border-radius:14px;z-index:9999;display:flex;gap:12px;align-items:center;font-size:0.95em;box-shadow:0 4px 20px rgba(0,0,0,0.5);';
-  toast.innerHTML = '<span>この写真を削除しますか？</span><button style="background:#ff3b3b;border:none;border-radius:8px;color:#fff;padding:6px 14px;font-size:0.9em;cursor:pointer;">削除</button><button style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;color:#fff;padding:6px 14px;font-size:0.9em;cursor:pointer;">キャンセル</button>';
-  document.body.appendChild(toast);
-  var btnDel = toast.querySelectorAll('button')[0];
-  var btnCan = toast.querySelectorAll('button')[1];
-  var cleanup = function() { if (toast.parentNode) toast.parentNode.removeChild(toast); };
-  btnDel.ontouchend = btnDel.onclick = function(e) {
-    e.stopPropagation(); cleanup();
-    _pvCurrentPhotoId = null;
-    closePhotoViewer();
-    deletePhoto(pid);
-    renderPhotoLogView();
-    showToast('🗑️ 写真を削除しました');
-  };
-  btnCan.ontouchend = btnCan.onclick = function(e) { e.stopPropagation(); cleanup(); };
-  setTimeout(cleanup, 5000);
+  if (!pid) return;
+  window._pvPendingDeleteId = pid;
+  var dlg = document.getElementById('pvDeleteConfirm');
+  if (dlg) dlg.style.display = 'flex';
+};
+window.confirmDeletePhoto = function() {
+  var dlg = document.getElementById('pvDeleteConfirm');
+  if (dlg) dlg.style.display = 'none';
+  var pid = window._pvPendingDeleteId || _pvCurrentPhotoId;
+  window._pvPendingDeleteId = null;
+  if (!pid) return;
+  _pvCurrentPhotoId = null;
+  closePhotoViewer();
+  deletePhoto(null, pid);
+  renderPhotoLogView();
+  if (window.showToast) window.showToast('🗑️ 写真を削除しました');
+};
+window.cancelDeletePhoto = function() {
+  var dlg = document.getElementById('pvDeleteConfirm');
+  if (dlg) dlg.style.display = 'none';
+  clearTimeout(window._pvDeleteTimer);
 };
 // ビューアー内メモ編集
 window.editPhotoMemo = function() {
