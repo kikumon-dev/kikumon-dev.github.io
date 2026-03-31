@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.402';
+    const APP_VERSION = 'v0.39.403';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -23483,7 +23483,8 @@ function checkAdminPw() {
     input.value = '';
   }
 }
-function showDebugLog() {
+function showDebugLog(_initOnly) {
+  // _initOnly=true の場合はwindow公開のみ行いUIを表示しない
   var logArr = [], errArr = [];
   try { logArr = JSON.parse(localStorage.getItem('_dbg_log') || '[]'); } catch(e) {}
   try { errArr = JSON.parse(localStorage.getItem('_dbg_errors') || '[]'); } catch(e) {}
@@ -24372,6 +24373,8 @@ function showDebugLog() {
         renderPhotoLogView();
       }
     })();
+    // initOnlyモード：window公開のみ行いUIを表示しない
+    if (_initOnly) return;
     window._pvPlaceStamp = _pvPlaceStamp;
     window._pvSaveStamps = _pvSaveStamps;
     window.togglePvStampPalette = togglePvStampPalette;
@@ -30968,6 +30971,8 @@ document.addEventListener('DOMContentLoaded', function() {
   if (typeof updateGuildUI === 'function') updateGuildUI();
   // マイデッキ初期表示
   if (typeof renderMyDecks === 'function') renderMyDecks();
+  // 写真館関数をwindowに登録（showDebugLog内にあるため initOnlyモードで呼ぶ）
+  if (typeof showDebugLog === 'function') showDebugLog(true);
   // 写真館：savedView=photoの場合、DOMContentLoaded完了後に再描画
   if (localStorage.getItem('currentView') === 'photo') {
     if (typeof window.loadPhotoImages === 'function') window.loadPhotoImages();
