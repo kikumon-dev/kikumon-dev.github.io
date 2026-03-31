@@ -3,14 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
   <title>やることクラフト</title>  <!-- バージョンはJSで動的設定 -->
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.380';
+    const APP_VERSION = 'v0.39.381';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -24464,7 +24461,9 @@ function showDebugLog() {
        '_pvPlaceStamp','_pvSaveStamps','togglePvStampPalette',
      ];
      // Script errorでwindow公開が失敗した場合の救済（block3ローカル関数をwindowに再公開）
-     var _rescueFuncs = ['_bpReorder','_gantReorderTask','_gantMoveTask','_initBlueprintDrag','_initGantTaskDrag','_gantToggleCompleted'];
+     var _rescueFuncs = ['_bpReorder','_gantReorderTask','_gantMoveTask','_initBlueprintDrag','_initGantTaskDrag','_gantToggleCompleted',
+       'openPhotoUpload','closePhotoUpload','onPhotoFileSelected','savePhoto','deletePhoto',
+       'openPhotoViewer','closePhotoViewer','renderPhotoLogView','togglePvStampPalette'];
      _rescueFuncs.forEach(function(f) {
        if (typeof window[f] !== 'function') {
          try { if (typeof eval(f) === 'function') window[f] = eval(f); } catch(e) {}
