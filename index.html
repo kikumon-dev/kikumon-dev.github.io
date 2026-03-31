@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.413';
+    const APP_VERSION = 'v0.39.414';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3958,9 +3958,9 @@
   <!-- 全画面ビューアー -->
   <div id="photoViewerModal">
     <div class="pv-header">
-      <button class="pv-close" onclick="event.stopPropagation();if(window.closePhotoViewer)window.closePhotoViewer();" ontouchend="event.stopPropagation();event.preventDefault();if(window.closePhotoViewer)window.closePhotoViewer();">✕</button>
+      <button class="pv-close" onclick="event.stopPropagation();if(window.closePhotoViewer)window.closePhotoViewer();">✕</button>
       <div class="pv-memo-label" id="pvMemoLabel" onclick="event.stopPropagation();if(window.editPhotoMemo)window.editPhotoMemo();" style="cursor:pointer;flex:1;text-align:center;min-height:20px;" title="タップでメモ編集"></div>
-      <button id="pvDeleteBtn" onclick="event.stopPropagation();if(window.deletePhotoFromViewer)window.deletePhotoFromViewer();" ontouchend="event.stopPropagation();event.preventDefault();if(window.deletePhotoFromViewer)window.deletePhotoFromViewer();" style="background:rgba(255,60,60,0.7);border:none;border-radius:50%;color:#fff;width:34px;height:34px;font-size:1em;cursor:pointer;flex-shrink:0;">🗑️</button>
+      <button id="pvDeleteBtn" onclick="event.stopPropagation();if(window.deletePhotoFromViewer)window.deletePhotoFromViewer();" style="background:rgba(255,60,60,0.7);border:none;border-radius:50%;color:#fff;width:34px;height:34px;font-size:1em;cursor:pointer;flex-shrink:0;">🗑️</button>
     </div>
     <img id="photoViewerImg" src="" alt="" draggable="false">
     <div id="pvStampLayer" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;"></div>
@@ -31587,6 +31587,8 @@ function _pvInitGestures(modal, img) {
       }
     }
 
+    // ボタン要素（×・🗑️・スタンプ等）は除外
+    if (e.target && e.target.tagName === 'BUTTON') return;
     // 通常タップ：ズームリセット or 閉じる
     if (e.target === modal || e.target === img) {
       if (_pvScale > 1.05) { _pvScale = 1; img.style.transform = 'scale(1)'; return; }
