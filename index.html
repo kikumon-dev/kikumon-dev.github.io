@@ -3007,9 +3007,11 @@
     /* アップロードモーダル */
     #photoUploadModal {
       display:none;position:fixed;inset:0;z-index:10000;
-      background:rgba(0,0,0,0.5);align-items:flex-end;justify-content:center;
+      background:rgba(0,0,0,0.5);
     }
-    #photoUploadModal.open { display:flex; }
+    #photoUploadModal.open {
+      display:flex;align-items:flex-end;justify-content:center;
+    }
     .photo-upload-sheet {
       background:#fff;width:100%;max-width:560px;
       border-radius:20px 20px 0 0;padding:20px 18px 36px;
@@ -3075,10 +3077,12 @@
     /* 全画面ビューアー */
     #photoViewerModal {
       display:none;position:fixed;inset:0;z-index:10001;
-      background:#000;flex-direction:column;
-      align-items:center;justify-content:center;overflow:hidden;
+      background:#000;overflow:hidden;
     }
-    #photoViewerModal.open { display:flex; }
+    #photoViewerModal.open {
+      display:flex;flex-direction:column;
+      align-items:center;justify-content:center;
+    }
     #photoViewerImg {
       max-width:100vw;max-height:80vh;object-fit:contain;
       border-radius:0;transform-origin:center center;
@@ -3186,7 +3190,7 @@
     <button class="nav-tab" id="navGant" onclick="switchView('gant')" style="display:none;">造営</button>
     <button class="nav-tab" id="navNotebook" onclick="switchView('notebook')">自由帳</button>
     <button class="nav-tab" id="navJournal" onclick="switchView('journal')">日誌</button>
-    <button class="nav-tab" id="navPhoto" onclick="switchView('photo')" title="写真帳">📷</button>
+    <button class="nav-tab" id="navPhoto" onclick="switchView('photo')" title="写真帳">写真</button>
     <button class="nav-tab" id="navCraft" onclick="switchView('craft')" style="display:none;" title="やることクラフト"><svg width="18" height="16" viewBox="0 0 36 32" fill="currentColor" style="vertical-align:middle;">
   <!-- 左塔 -->
   <rect x="2" y="16" width="6" height="14" rx="1"/>
