@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.387';
+    const APP_VERSION = 'v0.39.391';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -28651,6 +28651,44 @@ function showDebugLog() {
        ok('ST-76: SDF履歴コピーボタン 完了');
      } catch(e) { ng('ST-76', e.message); }
 
+     // ===== ST-76b: 写真帳現状把握（本番データ読み取り専用）=====
+     try {
+       // allTasks内のphotoレコード件数
+       var _st76bPhotoTasks = allTasks.filter(function(t){ return t.kind === 'photo'; });
+       ok('ST-76b: allTasks内photoレコード数=' + _st76bPhotoTasks.length + '件');
+
+       // localStorage内のphotoImages件数
+       var _st76bImgRaw = JSON.parse(localStorage.getItem('photoImages') || '{}');
+       var _st76bImgKeys = Object.keys(_st76bImgRaw);
+       ok('ST-76b: localStorage photoImages件数=' + _st76bImgKeys.length + '件');
+
+       // メモリ内_photoImages件数
+       var _st76bMemKeys = Object.keys(_photoImages);
+       ok('ST-76b: メモリ _photoImages件数=' + _st76bMemKeys.length + '件');
+
+       // allTasksとphotoImagesの整合性確認
+       var _st76bOrphanTask = _st76bPhotoTasks.filter(function(t){
+         return !_st76bImgRaw[t.id];
+       });
+       var _st76bOrphanImg = _st76bImgKeys.filter(function(k){
+         return !_st76bPhotoTasks.find(function(t){ return t.id === k; });
+       });
+       ok('ST-76b: photoTask孤立（画像なし）=' + _st76bOrphanTask.length + '件');
+       ok('ST-76b: photoImage孤立（レコードなし）=' + _st76bOrphanImg.length + '件');
+
+       // 各photoレコードのid・date表示
+       if (_st76bPhotoTasks.length > 0) {
+         _st76bPhotoTasks.forEach(function(t, i){
+           var hasImg = !!_st76bImgRaw[t.id];
+           ok('ST-76b: photo[' + i + '] id=' + t.id.slice(-8) + ' date=' + t.date + ' 画像=' + (hasImg ? '✅' : '❌'));
+         });
+       } else {
+         ok('ST-76b: photoレコードなし（写真帳は空）');
+       }
+
+       ok('ST-76b: 写真帳現状把握 完了');
+     } catch(e) { ng('ST-76b', e.message); }
+
      // ===== ST-77〜81 写真帳テスト前: _photoImages・photoレコード退避（既存写真データを保護）=====
      var _photoImagesBackup = JSON.parse(JSON.stringify(_photoImages));
      var _photoTasksBackup = allTasks.filter(function(t){ return t.kind === 'photo'; }).map(function(t){ return JSON.parse(JSON.stringify(t)); });
@@ -28677,8 +28715,6 @@ function showDebugLog() {
        var _st77Photo = { id: _st77Id, kind: 'photo', title: 'ST77テスト', date: '2026/03/31', stamps: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
        allTasks.push(_st77Photo);
        _photoImages[_st77Id] = 'data:image/jpeg;base64,/9j/test';
-       saveAllTasks();
-       savePhotoImages();
 
        // allTasksに存在確認
        var _st77Before = allTasks.find(function(t){ return t.id === _st77Id; });
@@ -28710,9 +28746,7 @@ function showDebugLog() {
        // Undo：削除後にallTasksから消えること確認
        var _st77Idx = allTasks.findIndex(function(t){ return t.id === _st77Id; });
        if (_st77Idx !== -1) allTasks.splice(_st77Idx, 1);
-       saveAllTasks();
        delete _photoImages[_st77Id];
-       savePhotoImages();
        var _st77After = allTasks.find(function(t){ return t.id === _st77Id; });
        !_st77After
          ? ok('ST-77: 削除後allTasksから消去確認')
@@ -28724,8 +28758,6 @@ function showDebugLog() {
        // Undo復元シミュレーション
        allTasks.push(_st77Photo);
        _photoImages[_st77Id] = 'data:image/jpeg;base64,/9j/test';
-       saveAllTasks();
-       savePhotoImages();
        var _st77Restored = allTasks.find(function(t){ return t.id === _st77Id; });
        _st77Restored
          ? ok('ST-77: Undo復元後allTasks確認')
@@ -28743,8 +28775,6 @@ function showDebugLog() {
        // クリーンアップ
        allTasks = allTasks.filter(function(t){ return t.id !== _st77Id; });
        delete _photoImages[_st77Id];
-       saveAllTasks();
-       savePhotoImages();
        ok('ST-77: クリーンアップ完了(' + allTasks.length + '件)');
        ok('ST-77: スワイプ削除・Undo 完了');
      } catch(e) { ng('ST-77', e.message); }
@@ -28779,8 +28809,6 @@ function showDebugLog() {
        };
        allTasks.push(_st78Photo);
        _photoImages[_st78Id] = 'data:image/jpeg;base64,/9j/test';
-       saveAllTasks();
-       savePhotoImages();
 
        // stampsフィールド初期値確認
        var _st78Rec = allTasks.find(function(t){ return t.id === _st78Id; });
@@ -28792,7 +28820,6 @@ function showDebugLog() {
        if (_st78Rec) {
          _st78Rec.stamps.push({ emoji: '❤️', x: 50, y: 50 });
          _st78Rec.stamps.push({ emoji: '🔥', x: 30, y: 70 });
-         saveAllTasks();
        }
        var _st78After = allTasks.find(function(t){ return t.id === _st78Id; });
        (_st78After && _st78After.stamps.length === 2)
@@ -28808,7 +28835,6 @@ function showDebugLog() {
          : ng('ST-78: stamps フィールド整合', '不正フィールドあり');
 
        // localStorage往復確認
-       saveAllTasks();
        var _st78Raw = JSON.parse(localStorage.getItem('allTasks') || '[]');
        var _st78Persisted = _st78Raw.find(function(t){ return t.id === _st78Id; });
        (_st78Persisted && _st78Persisted.stamps && _st78Persisted.stamps.length === 2)
@@ -28835,8 +28861,6 @@ function showDebugLog() {
        // クリーンアップ
        allTasks = allTasks.filter(function(t){ return t.id !== _st78Id; });
        delete _photoImages[_st78Id];
-       saveAllTasks();
-       savePhotoImages();
        ok('ST-78: クリーンアップ完了(' + allTasks.length + '件)');
        ok('ST-78: スタンプ機能 完了');
      } catch(e) { ng('ST-78', e.message); }
@@ -28887,8 +28911,6 @@ function showDebugLog() {
        var _st79Id = generateTaskId();
        allTasks.push({ id: _st79Id, kind: 'photo', title: 'ST79ビューアーテスト', date: '2026/03/31', stamps: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
        _photoImages[_st79Id] = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/test';
-       saveAllTasks();
-       savePhotoImages();
 
        openPhotoViewer(_st79Id);
        var _st79OpenOk = _st79Modal && _st79Modal.classList.contains('open');
@@ -28947,8 +28969,6 @@ function showDebugLog() {
        // クリーンアップ
        allTasks = allTasks.filter(function(t){ return t.id !== _st79Id; });
        delete _photoImages[_st79Id];
-       saveAllTasks();
-       savePhotoImages();
        ok('ST-79: クリーンアップ完了(' + allTasks.length + '件)');
        ok('ST-79: 全画面ビューアー・ピンチズーム 完了');
      } catch(e) { ng('ST-79', e.message); }
@@ -29011,8 +29031,6 @@ function showDebugLog() {
        _photoImages[_st80Id1] = 'data:image/jpeg;base64,/9j/A';
        _photoImages[_st80Id2] = 'data:image/jpeg;base64,/9j/B';
        _photoImages[_st80Id3] = 'data:image/jpeg;base64,/9j/C';
-       saveAllTasks();
-       savePhotoImages();
 
        // renderPhotoLogView実行（photoビューに切替必要なので直接呼ぶ）
        var _st80PhvBefore = document.getElementById('photoLogView');
@@ -29055,7 +29073,6 @@ function showDebugLog() {
        // 空状態レンダリング確認（全部削除→再描画）
        var _st80AllPhotos = allTasks.filter(function(t){ return t.kind === 'photo'; }).map(function(t){ return t.id; });
        allTasks = allTasks.filter(function(t){ return t.kind !== 'photo'; });
-       saveAllTasks();
        renderPhotoLogView();
        var _st80EmptyEl = _st80Area ? _st80Area.querySelector('.photo-empty') : null;
        _st80EmptyEl
@@ -29068,7 +29085,6 @@ function showDebugLog() {
 
        // クリーンアップ
        _st80AllPhotos.forEach(function(id){ delete _photoImages[id]; });
-       savePhotoImages();
        if (_st80PhvBefore) _st80PhvBefore.style.display = 'none';
        ok('ST-80: クリーンアップ完了(' + allTasks.length + '件)');
        ok('ST-80: 写真帳レンダリング 完了');
@@ -29112,8 +29128,6 @@ function showDebugLog() {
        };
        allTasks.push(_st81Record);
        _photoImages[_st81Id] = 'data:image/jpeg;base64,/9j/ST81';
-       saveAllTasks();
-       savePhotoImages();
 
        // allTasks SSOT確認
        var _st81InTasks = allTasks.find(function(t){ return t.id === _st81Id && t.kind === 'photo'; });
@@ -29159,8 +29173,6 @@ function showDebugLog() {
        var _st81DelIdx = allTasks.findIndex(function(t){ return t.id === _st81Id; });
        if (_st81DelIdx !== -1) allTasks.splice(_st81DelIdx, 1);
        delete _photoImages[_st81Id];
-       saveAllTasks();
-       savePhotoImages();
 
        var _st81AfterTasks = allTasks.find(function(t){ return t.id === _st81Id; });
        !_st81AfterTasks
@@ -29200,6 +29212,8 @@ function showDebugLog() {
      savePhotoImages();
      ok('ST-81: photoImages復元完了(' + Object.keys(_photoImages).length + '件)');
      ok('ST-81: photoTasks復元完了(' + _photoTasksBackup.length + '件)');
+     // 復元後にビューを再描画
+     if (typeof renderPhotoLogView === 'function') renderPhotoLogView();
      try {
        ok('');
        ok('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
