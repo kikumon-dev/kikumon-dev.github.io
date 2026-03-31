@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.397';
+    const APP_VERSION = 'v0.39.398';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -14427,13 +14427,13 @@ function reviveBlueprint(id) {
           if (typeof window.loadPhotoImages === 'function') window.loadPhotoImages();
           window.renderPhotoLogView();
         }
-        // block7未初期化タイミング対策：100ms後に再描画
+        // block7未初期化タイミング対策：500ms後に再描画
         setTimeout(function() {
           if (typeof window.renderPhotoLogView === 'function') {
             if (typeof window.loadPhotoImages === 'function') window.loadPhotoImages();
             window.renderPhotoLogView();
           }
-        }, 100);
+        }, 500);
       } else if (view === 'craft') {
         if (craftView) craftView.style.display = 'block';
         document.getElementById('navCraft').classList.add('active');
@@ -24340,13 +24340,6 @@ function showDebugLog() {
 
     // 起動時にphotoImages読み込み
     loadPhotoImages();
-    // block7初期化完了後、savedView=photoなら写真帳を再描画
-    (function() {
-      var _sv = localStorage.getItem('currentView');
-      if (_sv === 'photo') {
-        renderPhotoLogView();
-      }
-    })();
     // window公開（第3条）
     window.openPhotoUpload = openPhotoUpload;
     window.closePhotoUpload = closePhotoUpload;
@@ -24357,6 +24350,13 @@ function showDebugLog() {
     window.closePhotoViewer = closePhotoViewer;
     window.loadPhotoImages = loadPhotoImages;
     window.renderPhotoLogView = renderPhotoLogView;
+    // block7初期化完了後、savedView=photoなら写真帳を再描画（window公開後に実行）
+    (function() {
+      var _sv = localStorage.getItem('currentView');
+      if (_sv === 'photo') {
+        renderPhotoLogView();
+      }
+    })();
     window._pvPlaceStamp = _pvPlaceStamp;
     window._pvSaveStamps = _pvSaveStamps;
     window.togglePvStampPalette = togglePvStampPalette;
