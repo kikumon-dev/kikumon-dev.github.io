@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.382';
+    const APP_VERSION = 'v0.39.383';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -14415,6 +14415,14 @@ function reviveBlueprint(id) {
         var nph = document.getElementById('navPhoto');
         if (nph) nph.classList.add('active');
         if (typeof renderPhotoLogView === 'function') renderPhotoLogView();
+        // ボタンのaddEventListener再登録（拡張機能対策・switchView時に確実に登録）
+        (function() {
+          var _addBtn = document.getElementById('photoLogAddBtn');
+          if (_addBtn && !_addBtn._photoEvtAttached) {
+            _addBtn.addEventListener('click', function() { if (typeof openPhotoUpload === 'function') openPhotoUpload(); });
+            _addBtn._photoEvtAttached = true;
+          }
+        })();
       } else if (view === 'craft') {
         if (craftView) craftView.style.display = 'block';
         document.getElementById('navCraft').classList.add('active');
@@ -23641,6 +23649,7 @@ function showDebugLog() {
       try {
         var json = JSON.stringify(_photoImages);
         var sizeKB = Math.round(json.length * 0.75 / 1024);
+        console.log('[savePhotoImages] saving:', Object.keys(_photoImages).length, '件', sizeKB, 'KB');
         // 容量警告
         if (sizeKB > 5000) {
           showToast('⚠️ 写真の容量が限界です（' + sizeKB + 'KB）。古い写真を削除してください。', {type:'warn'});
@@ -23650,6 +23659,7 @@ function showDebugLog() {
           showToast('📷 写真の容量が多くなっています（' + sizeKB + 'KB / 上限約5MB）', {type:'warn'});
         }
         localStorage.setItem('photoImages', json);
+        console.log('[savePhotoImages] saved OK');
       } catch(e) {
         showToast('📷 写真の保存に失敗しました（容量不足の可能性があります）', {type:'warn'});
         console.error('[savePhotoImages]', e);
@@ -23659,6 +23669,8 @@ function showDebugLog() {
       try {
         var raw = localStorage.getItem('photoImages');
         _photoImages = raw ? JSON.parse(raw) : {};
+        var cnt = Object.keys(_photoImages).length;
+        console.log('[loadPhotoImages] loaded:', cnt, '件');
       } catch(e) { _photoImages = {}; }
     }
 
