@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.439';
+    const APP_VERSION = 'v0.39.452';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3272,7 +3272,7 @@
     <!-- ヘッダー：日付のみ -->
     <div class="scratch-header">
       <span class="scratch-date-label" id="scratchDateLabel"></span>
-      <button onclick="openSingleDeepFocus()" style="padding:4px 12px;background:rgba(100,120,90,0.1);border:1px solid rgba(100,120,90,0.4);border-radius:7px;color:#5a7048;font-size:0.72em;font-weight:700;cursor:pointer;white-space:nowrap;margin-left:10px;">✦ 深考する</button>
+      <button id="scratchSdfBtn" onclick="openSingleDeepFocus()" style="padding:4px 12px;background:rgba(100,120,90,0.1);border:1px solid rgba(100,120,90,0.4);border-radius:7px;color:#5a7048;font-size:0.72em;font-weight:700;cursor:pointer;white-space:nowrap;margin-left:10px;">✦ 深考する</button>
       <button onclick="window.openZenMode()" style="padding:4px 12px;background:rgba(80,110,130,0.08);border:1px solid rgba(80,110,130,0.35);border-radius:7px;color:#4a7088;font-size:0.72em;font-weight:700;cursor:pointer;white-space:nowrap;margin-left:6px;">⊙ 禅モード</button>
       <div style="margin-left:auto;position:relative;">
         <button id="scratchMoreBtn" onclick="toggleScratchMenu()" style="padding:4px 8px;background:transparent;border:1px solid rgba(150,140,130,0.25);border-radius:7px;color:#a09080;font-size:0.82em;cursor:pointer;line-height:1;">⋯</button>
@@ -4482,6 +4482,28 @@
           <button class="avatar-remove-btn" id="avatarRemoveBtn" onclick="removeAvatar()" style="display: none;">アイコンを削除</button>
           <!-- プロフィール即時保存ボタン -->
           <button onclick="saveProfileQuick()" style="margin-top:14px;width:100%;padding:11px;background:linear-gradient(135deg,#4facfe,#00c6fb);border:none;border-radius:10px;color:#fff;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(79,172,254,0.3);">👑 名前・性別を保存する</button>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">🏰 王国の規模</h3>
+        <p style="margin:0 0 14px 0;font-size:0.8em;color:#888;">今の自分に合ったサイズで始めよう。あとからいつでも変えられます。</p>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <button onclick="selectKingdomMode('camp')" id="kingdomModeBtn_camp" style="width:100%;padding:14px 16px;background:#f8f8f8;border:2px solid #e0e0e0;border-radius:12px;text-align:left;cursor:pointer;transition:all 0.15s;">
+            <div style="font-size:1.05em;font-weight:700;color:#333;">🏕️ 野営地</div>
+            <div style="font-size:0.78em;color:#888;margin-top:3px;">日次・雑記帳・日誌・クラフト・ショップ。まず今日を生きる。</div>
+          </button>
+          <button onclick="selectKingdomMode('village')" id="kingdomModeBtn_village" style="width:100%;padding:14px 16px;background:#f8f8f8;border:2px solid #e0e0e0;border-radius:12px;text-align:left;cursor:pointer;transition:all 0.15s;">
+            <div style="font-size:1.05em;font-weight:700;color:#333;">🏘️ 村</div>
+            <div style="font-size:0.78em;color:#888;margin-top:3px;">週間・月間・自由帳も解放。計画が生まれる。</div>
+          </button>
+          <button onclick="selectKingdomMode('town')" id="kingdomModeBtn_town" style="width:100%;padding:14px 16px;background:#f8f8f8;border:2px solid #e0e0e0;border-radius:12px;text-align:left;cursor:pointer;transition:all 0.15s;">
+            <div style="font-size:1.05em;font-weight:700;color:#333;">🏙️ 町</div>
+            <div style="font-size:0.78em;color:#888;margin-top:3px;">造営・写真館・コロシアム・年間が解放。世界が広がる。</div>
+          </button>
+          <button onclick="selectKingdomMode('kingdom')" id="kingdomModeBtn_kingdom" style="width:100%;padding:14px 16px;background:#f8f8f8;border:2px solid #e0e0e0;border-radius:12px;text-align:left;cursor:pointer;transition:all 0.15s;">
+            <div style="font-size:1.05em;font-weight:700;color:#333;">🏰 王国</div>
+            <div style="font-size:0.78em;color:#888;margin-top:3px;">全機能解放。コロシアム・写真館・深考（SDF）・年間。</div>
+          </button>
         </div>
       </div>
       <!-- カレンダー管理セクション -->
@@ -9279,6 +9301,7 @@ function applyVisibleTabsSettings() {
     { id: 'navShop',       key: 'shop' },
     { id: 'navColosseum',  key: 'colosseum' },
     { id: 'navDashboard',  key: 'dashboard' },
+    { id: 'navPhoto',      key: 'photo' },
   ];
   tabs.forEach(function(t) {
     var el = document.getElementById(t.id);
@@ -9295,11 +9318,118 @@ function applyVisibleTabsSettings() {
   if (gantEl) gantEl.style.display = allSettings.ui.gantEnabled === true ? '' : 'none';
 }
 
+// 王国規模モード定義
+var KINGDOM_MODES = {
+  camp: {
+    label: '🏕️ 野営地',
+    // 日次・日誌・クラフト・ショップ
+    visibleTabs: { yearly: false, notebook: false, craft: true, shop: true, colosseum: false, dashboard: false, photo: false },
+    gantEnabled: false,
+    craftModeEnabled: true,
+    showJournalBtn: true,
+    showGantBtn: false,
+    showSDF: false
+  },
+  village: {
+    label: '🏘️ 村',
+    // +週間・月間・自由帳・ダッシュボード
+    visibleTabs: { yearly: false, notebook: true, craft: true, shop: true, colosseum: false, dashboard: true, photo: false },
+    gantEnabled: false,
+    craftModeEnabled: true,
+    showJournalBtn: true,
+    showGantBtn: false,
+    showSDF: false
+  },
+  town: {
+    label: '🏙️ 町',
+    // +造営・写真・コロシアム・年間
+    visibleTabs: { yearly: true, notebook: true, craft: true, shop: true, colosseum: true, dashboard: true, photo: true },
+    gantEnabled: true,
+    craftModeEnabled: true,
+    showJournalBtn: true,
+    showGantBtn: true,
+    showSDF: false
+  },
+  kingdom: {
+    label: '🏰 王国',
+    // 全機能解放（深考追加）
+    visibleTabs: { yearly: true, notebook: true, craft: true, shop: true, colosseum: true, dashboard: true, photo: true },
+    gantEnabled: true,
+    craftModeEnabled: true,
+    showJournalBtn: true,
+    showGantBtn: true,
+    showSDF: true
+  }
+};
+
+function selectKingdomMode(mode) {
+  var def = KINGDOM_MODES[mode];
+  if (!def) return;
+  allSettings.ui.visibleTabs = Object.assign({}, def.visibleTabs);
+  allSettings.ui.gantEnabled = def.gantEnabled;
+  allSettings.ui.craftModeEnabled = def.craftModeEnabled;
+  allSettings.ui.kingdomMode = mode;
+  saveAllSettings();
+  applyVisibleTabsSettings();
+  // 造営タブも反映
+  var gantEl = document.getElementById('navGant');
+  if (gantEl) gantEl.style.display = def.gantEnabled ? '' : 'none';
+  // クラフトタブも反映（craftModeEnabledがfalseなら非表示）
+  var craftNavEl = document.getElementById('navCraft');
+  if (craftNavEl) craftNavEl.style.display = def.craftModeEnabled ? '' : 'none';
+  // SDFボタン（✦ 深考する）を制御
+  var sdfBtn = document.getElementById('scratchSdfBtn');
+  if (sdfBtn) sdfBtn.style.display = def.showSDF !== false ? '' : 'none';
+  // 現在ビューが非表示になった場合は日次へ
+  var hiddenViews = Object.keys(def.visibleTabs).filter(function(k){ return !def.visibleTabs[k]; });
+  if (hiddenViews.indexOf(currentView) !== -1 || (currentView === 'gant' && !def.gantEnabled)) {
+    switchView('daily');
+  }
+  updateKingdomModeButtons();
+  showToast(def.label + ' モードに切り替えました', { type: 'success' });
+}
+
+function updateKingdomModeButtons() {
+  var current = (allSettings.ui && allSettings.ui.kingdomMode) || 'kingdom';
+  ['camp', 'village', 'town', 'kingdom'].forEach(function(mode) {
+    var btn = document.getElementById('kingdomModeBtn_' + mode);
+    if (!btn) return;
+    if (mode === current) {
+      btn.style.background = '#eff6ff';
+      btn.style.borderColor = '#4facfe';
+    } else {
+      btn.style.background = '#f8f8f8';
+      btn.style.borderColor = '#e0e0e0';
+    }
+  });
+  // ナビタブ表示チェックボックスも現在のvisibleTabsに同期
+  var vt = (allSettings.ui && allSettings.ui.visibleTabs) || {};
+  var vtMap = { yearly: 'visTabYearly', notebook: 'visTabNotebook', craft: 'visTabCraft', shop: 'visTabShop', colosseum: 'visTabColosseum' };
+  Object.keys(vtMap).forEach(function(key) {
+    var el = document.getElementById(vtMap[key]);
+    if (el) el.checked = vt[key] !== false;
+  });
+  // クラフトモード・造営チェックボックスも同期
+  var craftCheck = document.getElementById('craftModeEnabled');
+  if (craftCheck) craftCheck.checked = allSettings.ui.craftModeEnabled === true;
+  var gantCheck = document.getElementById('gantEnabled');
+  if (gantCheck) gantCheck.checked = allSettings.ui.gantEnabled === true;
+  // SDFボタン表示も同期
+  var _curMode = allSettings.ui.kingdomMode;
+  var _curDef = (typeof KINGDOM_MODES !== 'undefined' && _curMode) ? KINGDOM_MODES[_curMode] : null;
+  var sdfBtn = document.getElementById('scratchSdfBtn');
+  if (sdfBtn) sdfBtn.style.display = (!_curDef || _curDef.showSDF !== false) ? '' : 'none';
+}
+
 function toggleVisibleTab(key, checked) {
   if (!allSettings.ui.visibleTabs) allSettings.ui.visibleTabs = {};
   allSettings.ui.visibleTabs[key] = checked;
+  // 手動でチェックボックスを変更した場合は「カスタム」扱いにする
+  // （王国規模ボタンのハイライトをリセット）
+  allSettings.ui.kingdomMode = 'custom';
   saveAllSettings();
   applyVisibleTabsSettings();
+  updateKingdomModeButtons();
 }
 
 function toggleGantEnabled(checked) {
@@ -12314,21 +12444,26 @@ function reviveBlueprint(id) {
         ta.focus();
         ta.setSelectionRange(ta.value.length, ta.value.length);
       }, 0);
-      // ボタン差し込み
+      // ボタン差し込み（王国規模モードに応じて日誌・造営ボタンを出し分け）
       const actions = document.createElement('div');
       actions.className = 'scratch-item-actions';
-      actions.innerHTML = `
-        <button class="btn-promote">タスクに</button>
-        <button class="btn-journal">日誌に</button>
-        <button class="btn-gant">造営に</button>
-        <button class="btn-save">保存</button>
-        <button class="btn-del">削除</button>
-      `;
+      const _km = (typeof KINGDOM_MODES !== 'undefined' && allSettings.ui.kingdomMode)
+        ? KINGDOM_MODES[allSettings.ui.kingdomMode] : null;
+      const _showJournal = !_km || _km.showJournalBtn !== false;
+      const _showGant    = !_km || _km.showGantBtn !== false;
+      actions.innerHTML =
+        '<button class="btn-promote">タスクに</button>' +
+        (_showJournal ? '<button class="btn-journal">日誌に</button>' : '') +
+        (_showGant    ? '<button class="btn-gant">造営に</button>' : '') +
+        '<button class="btn-save">保存</button>' +
+        '<button class="btn-del">削除</button>';
       actions.querySelector('.btn-save').onclick    = (e) => { e.stopPropagation(); saveInlineEdit(div, item, ta.value); };
       actions.querySelector('.btn-promote').onclick = (e) => { e.stopPropagation(); promoteInlineItem(div, item); };
       actions.querySelector('.btn-del').onclick     = (e) => { e.stopPropagation(); deleteInlineItem(div, item); };
-      actions.querySelector('.btn-gant').onclick    = (e) => { e.stopPropagation(); promoteScratchToGant(ta.value, item); };
-      actions.querySelector('.btn-journal').onclick = (e) => { e.stopPropagation(); saveScratchItemAsJournal(ta.value, item); };
+      const _btnGant    = actions.querySelector('.btn-gant');
+      const _btnJournal = actions.querySelector('.btn-journal');
+      if (_btnGant)    _btnGant.onclick    = (e) => { e.stopPropagation(); promoteScratchToGant(ta.value, item); };
+      if (_btnJournal) _btnJournal.onclick = (e) => { e.stopPropagation(); saveScratchItemAsJournal(ta.value, item); };
       div.appendChild(actions);
     }
     function cancelInlineEdit(div) {
@@ -15754,6 +15889,8 @@ function loadSettingsUI() {
           if (el) el.checked = _vt[key] !== false;
         });
       })();
+      // 王国規模ボタンのハイライト更新
+      if (typeof updateKingdomModeButtons === 'function') updateKingdomModeButtons();
       // 描画モード
       const renderMode = allSettings.ui.craftRenderMode || '2d';
       const r2d = document.getElementById('craftMode2D');
@@ -16700,6 +16837,8 @@ function loadSettingsUI() {
     window.moveScratchToThoughts = moveScratchToThoughts;
     window.switchShopTab = switchShopTab;
     window.applyVisibleTabsSettings = applyVisibleTabsSettings;
+    window.selectKingdomMode = selectKingdomMode;
+    window.updateKingdomModeButtons = updateKingdomModeButtons;
     window.openGouLogModal = openGouLogModal;
     window.switchSearchTab = switchSearchTab;
     window.renderTodoList = renderTodoList;
@@ -19512,7 +19651,18 @@ window.addEventListener('afterprint', function() {
       delete el.dataset.printHidden;
     }
   });
-  // containerを元に戻す（再描画）
+  // containerのインラインスタイルをリセット（beforeprintで上書きした分を戻す）
+  const c = document.querySelector('.container');
+  if (c) {
+    c.style.removeProperty('display');
+    c.style.width = '';
+    c.style.height = '';
+    c.style.gridTemplateColumns = '';
+    c.style.gridTemplateRows = '';
+    c.style.margin = '';
+    c.style.position = '';
+  }
+  // 再描画
   if (typeof switchView === 'function') switchView(localStorage.getItem('currentView') || 'daily');
 });</script>
   <!-- タスク編集モーダル -->
@@ -28799,6 +28949,99 @@ function showDebugLog(_initOnly) {
        ng('ST-84: showDebugLog非自動起動テスト例外', e.message);
      }
 
+
+     // ===== ST-85: 王国規模モード選択テスト =====
+     try {
+       // KINGDOM_MODES の4件存在確認
+       var _km = typeof KINGDOM_MODES !== 'undefined' ? KINGDOM_MODES : null;
+       var _kmKeys = _km ? Object.keys(_km) : [];
+       var _kmHas4 = ['camp','village','town','kingdom'].every(function(k){ return !!_km && !!_km[k]; });
+       if (_kmHas4) {
+         ok('ST-85: KINGDOM_MODES 4件確認（camp/village/town/kingdom）');
+       } else {
+         ng('ST-85: KINGDOM_MODES 4件未満', _kmKeys.join(','));
+       }
+
+       // 必須フィールド確認
+       var _kmRequired = ['label','visibleTabs','gantEnabled','craftModeEnabled','showJournalBtn','showGantBtn','showSDF'];
+       var _kmFieldOk = _kmHas4 && ['camp','village','town','kingdom'].every(function(mode) {
+         return _kmRequired.every(function(f){ return _km[mode].hasOwnProperty(f); });
+       });
+       if (_kmFieldOk) {
+         ok('ST-85: 各モード必須フィールド全確認（' + _kmRequired.join('/') + '）');
+       } else {
+         ng('ST-85: 必須フィールド不足');
+       }
+
+       // 各モードのvisibleTabs・フラグ整合確認
+       if (_km && _km.camp) {
+         var _campOk = _km.camp.visibleTabs.photo === false && _km.camp.gantEnabled === false && _km.camp.showSDF === false;
+         _campOk ? ok('ST-85: camp 整合確認（photo:false gant:false SDF:false）') : ng('ST-85: camp 整合異常', JSON.stringify({photo:_km.camp.visibleTabs.photo, gant:_km.camp.gantEnabled, sdf:_km.camp.showSDF}));
+       }
+       if (_km && _km.village) {
+         var _villageOk = _km.village.visibleTabs.photo === false && _km.village.gantEnabled === false && _km.village.showSDF === false;
+         _villageOk ? ok('ST-85: village 整合確認（photo:false gant:false SDF:false）') : ng('ST-85: village 整合異常', JSON.stringify({photo:_km.village.visibleTabs.photo, gant:_km.village.gantEnabled, sdf:_km.village.showSDF}));
+       }
+       if (_km && _km.town) {
+         var _townOk = _km.town.visibleTabs.photo === true && _km.town.gantEnabled === true && _km.town.showSDF === false;
+         _townOk ? ok('ST-85: town 整合確認（photo:true gant:true SDF:false）') : ng('ST-85: town 整合異常', JSON.stringify({photo:_km.town.visibleTabs.photo, gant:_km.town.gantEnabled, sdf:_km.town.showSDF}));
+       }
+       if (_km && _km.kingdom) {
+         var _kingdomOk = _km.kingdom.visibleTabs.photo === true && _km.kingdom.gantEnabled === true && _km.kingdom.showSDF === true;
+         _kingdomOk ? ok('ST-85: kingdom 整合確認（photo:true gant:true SDF:true）') : ng('ST-85: kingdom 整合異常', JSON.stringify({photo:_km.kingdom.visibleTabs.photo, gant:_km.kingdom.gantEnabled, sdf:_km.kingdom.showSDF}));
+       }
+
+       // DOM: 4ボタン存在確認
+       var _kmBtns = ['camp','village','town','kingdom'].map(function(m){ return document.getElementById('kingdomModeBtn_' + m); });
+       var _kmBtnOk = _kmBtns.every(function(b){ return b !== null; });
+       _kmBtnOk ? ok('ST-85: kingdomModeBtn 4件DOM確認（camp/village/town/kingdom）') : ng('ST-85: kingdomModeBtn DOM不足', _kmBtns.map(function(b,i){ return b?'ok':'NG:'+['camp','village','town','kingdom'][i]; }).join(','));
+
+       // selectKingdomMode('camp') 挙動テスト
+       var _kmPrev = allSettings.ui.kingdomMode;
+       var _kmPrevVt = JSON.stringify(allSettings.ui.visibleTabs);
+       var _kmPrevGant = allSettings.ui.gantEnabled;
+       try {
+         selectKingdomMode('camp');
+         var _campApplied = allSettings.ui.kingdomMode === 'camp' &&
+           allSettings.ui.gantEnabled === false &&
+           allSettings.ui.visibleTabs.photo === false;
+         _campApplied ? ok('ST-85: selectKingdomMode(camp) 適用確認') : ng('ST-85: selectKingdomMode(camp) 適用異常');
+         // town挙動テスト
+         selectKingdomMode('town');
+         var _townApplied = allSettings.ui.kingdomMode === 'town' &&
+           allSettings.ui.gantEnabled === true &&
+           allSettings.ui.visibleTabs.photo === true;
+         _townApplied ? ok('ST-85: selectKingdomMode(town) 適用確認') : ng('ST-85: selectKingdomMode(town) 適用異常');
+       } finally {
+         // ロールバック
+         allSettings.ui.kingdomMode = _kmPrev;
+         allSettings.ui.visibleTabs = JSON.parse(_kmPrevVt);
+         allSettings.ui.gantEnabled = _kmPrevGant;
+         saveAllSettings();
+         applyVisibleTabsSettings();
+         ok('ST-85: クリーンアップ完了');
+       }
+
+       // updateKingdomModeButtons: townボタンがハイライトされること
+       var _kmSaved = allSettings.ui.kingdomMode;
+       allSettings.ui.kingdomMode = 'town';
+       updateKingdomModeButtons();
+       var _townBtn = document.getElementById('kingdomModeBtn_town');
+       // style.backgroundとstyle.borderColorをJSプロパティで直接確認
+       var _townBg = _townBtn ? _townBtn.style.background : '';
+       var _townBorder = _townBtn ? _townBtn.style.borderColor : '';
+       // HEX(#eff6ff/#4facfe)またはRGB(239,246,255/79,172,254)どちらでも対応
+       var _townHighlight = (_townBg.indexOf('eff6ff') !== -1 || _townBg.indexOf('239') !== -1) ||
+                            (_townBorder.indexOf('4facfe') !== -1 || _townBorder.indexOf('79') !== -1);
+       _townHighlight ? ok('ST-85: updateKingdomModeButtons town ハイライト確認') : ng('ST-85: townボタンハイライト未反映（bg=' + _townBg + ' border=' + _townBorder + '）');
+       allSettings.ui.kingdomMode = _kmSaved;
+       updateKingdomModeButtons();
+
+       ok('ST-85: 王国規模モード選択テスト 完了');
+     } catch(e) {
+       ng('ST-85: 王国規模モードテスト例外', e.message);
+     }
+
      try {
        ok('');
        ok('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -29649,6 +29892,18 @@ function showDebugLog(_initOnly) {
        saveAllTasks();
 
        _rf('第17条', _r17ok, '関数引数チェック：' + (_r17ok ? 'deletePhoto引数数OK・呼び出し側OK・挙動OK' : _r17msgs.join(' / ')));
+
+
+       // 第18条【kingdomMode整合性】
+       // KINGDOM_MODESの全キーに必須フィールドが揃い、
+       // allSettings.ui.kingdomModeが有効なキーであること。
+       var _r18km = typeof KINGDOM_MODES !== 'undefined' ? KINGDOM_MODES : null;
+       var _r18keys = ['camp','village','town','kingdom'];
+       var _r18required = ['label','visibleTabs','gantEnabled','craftModeEnabled','showJournalBtn','showGantBtn','showSDF'];
+       var _r18defOk = _r18km && _r18keys.every(function(k){
+         return _r18km[k] && _r18required.every(function(f){ return _r18km[k].hasOwnProperty(f); });
+       });
+       _rf('第18条', !!_r18defOk, 'KINGDOM_MODES定義整合確認（4モード×' + _r18required.length + 'フィールド）');
 
        // 遵守率
        var _rate = Math.round(_rp/_rc*100);
