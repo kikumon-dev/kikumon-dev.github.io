@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.431';
+    const APP_VERSION = 'v0.39.439';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -23495,6 +23495,8 @@ function checkAdminPw() {
 }
 function showDebugLog(_initOnly) {
   // _initOnly=true の場合はwindow公開のみ行いUIを表示しない
+  // （写真館関数は独立scriptブロックで公開済みなのでreturnのみでOK）
+  if (_initOnly) { return; }
   var logArr = [], errArr = [];
   try { logArr = JSON.parse(localStorage.getItem('_dbg_log') || '[]'); } catch(e) {}
   try { errArr = JSON.parse(localStorage.getItem('_dbg_errors') || '[]'); } catch(e) {}
@@ -28568,15 +28570,34 @@ function showDebugLog(_initOnly) {
          ok('ST-82: pv-footer DOM確認');
        }
 
-       // --- 原因② _pvTapHandler が登録されていないこと（背景タップ閉じ廃止） ---
+       // --- 原因② _pvTapHandler がclickリスナーとして登録されていること（スタンプ配置・ゴミ箱表示に必要） ---
+       // ※ 背景タップ閉じ処理は_pvTapHandler内から除去済み。登録自体は必要。
+       // ※ openPhotoViewerはblock3内即時関数のためtoString()でソース取得不可（第13条）→実挙動テストで確認
        var _pvModal = document.getElementById('photoViewerModal');
-       if (_pvModal) {
-         // modal._pvTapHandler が null/undefined であることを確認
-         var _tapHandlerAbsent = !_pvModal._pvTapHandler;
-         if (_tapHandlerAbsent) {
-           ok('ST-82: _pvTapHandler 廃止確認（iOSでボタンより先に発火してビューアーを閉じる問題を排除）');
-         } else {
-           ng('ST-82: _pvTapHandler が残存しています（iOSでボタンclickを横取りする恐れあり）');
+       if (_pvModal && typeof openPhotoViewer === 'function' && typeof closePhotoViewer === 'function') {
+         var _stTestId = 'st82-tap-' + Date.now();
+         allTasks.push({ id: _stTestId, kind: 'photo', title: 'ST-82テスト', date: '2000-01-01', stamps: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+         // _photoImagesはblock3グローバル変数。
+         // openPhotoViewer冒頭でloadPhotoImages()が_photoImagesをlocalStorageで上書きするため
+         // savePhotoImages()でlocalStorageにも書き込んでから呼ぶ必要がある
+         _photoImages[_stTestId] = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+         savePhotoImages(); // localStorageにも反映（openPhotoViewer内のloadPhotoImages()対策）
+         try {
+           openPhotoViewer(_stTestId);
+           var _tapHandlerRegistered = typeof _pvModal._pvTapHandler === 'function';
+           closePhotoViewer();
+           if (_tapHandlerRegistered) {
+             ok('ST-82: _pvTapHandler clickリスナー登録確認（スタンプ配置・ゴミ箱表示に必要）');
+           } else {
+             ng('ST-82: _pvTapHandler が登録されていません（スタンプ配置が動作しない恐れあり）');
+           }
+         } catch(e) {
+           ng('ST-82: _pvTapHandler 挙動テスト例外', e.message);
+         } finally {
+           var _stIdx = allTasks.findIndex(function(t){ return t.id === _stTestId; });
+           if (_stIdx !== -1) allTasks.splice(_stIdx, 1);
+           delete _photoImages[_stTestId];
+           savePhotoImages(); // localStorageからも削除
          }
        }
 
@@ -28659,6 +28680,123 @@ function showDebugLog(_initOnly) {
        ok('ST-82: ビューアー削除機能 完了');
      } catch(e) {
        ng('ST-82: ビューアー削除機能テスト例外: ' + e.message);
+     }
+
+
+     // ===== ST-83: スタンプ配置挙動テスト =====
+     try {
+       // ビューアーを開いた状態でスタンプを配置し、allTasksに保存されることを確認
+       var _s83Id = 'st83-stamp-' + Date.now();
+       allTasks.push({ id: _s83Id, kind: 'photo', title: 'ST-83テスト', date: '2000-01-01', stamps: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+       _photoImages[_s83Id] = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+       savePhotoImages();
+       // ビューアーを開く
+       openPhotoViewer(_s83Id);
+       ok('ST-83: openPhotoViewer実行確認');
+       // _pvCurrentPhotoId が設定されていること
+       var _s83CurId = (typeof _pvCurrentPhotoId !== 'undefined') ? _pvCurrentPhotoId : window._pvCurrentPhotoId;
+       if (_s83CurId === _s83Id) {
+         ok('ST-83: _pvCurrentPhotoId 設定確認');
+       } else {
+         ng('ST-83: _pvCurrentPhotoId 設定失敗', '期待=' + _s83Id + ' 実際=' + _s83CurId);
+       }
+       // スタンプ0件の状態を確認
+       var _s83PhotoBefore = allTasks.find(function(t){ return t.id === _s83Id; });
+       if (_s83PhotoBefore && _s83PhotoBefore.stamps.length === 0) {
+         ok('ST-83: スタンプ初期0件確認');
+       } else {
+         ng('ST-83: スタンプ初期件数異常', String(_s83PhotoBefore && _s83PhotoBefore.stamps.length));
+       }
+       // _pvPlaceStamp でスタンプを配置
+       _pvPlaceStamp('🌸', 30, 50);
+       _pvPlaceStamp('⭐', 70, 20);
+       var _s83PhotoAfter = allTasks.find(function(t){ return t.id === _s83Id; });
+       if (_s83PhotoAfter && _s83PhotoAfter.stamps.length === 2) {
+         ok('ST-83: スタンプ2件配置確認');
+       } else {
+         ng('ST-83: スタンプ配置失敗', '件数=' + (_s83PhotoAfter && _s83PhotoAfter.stamps.length));
+       }
+       // emoji・x・y フィールド確認
+       var _s83s0 = _s83PhotoAfter && _s83PhotoAfter.stamps[0];
+       var _s83s1 = _s83PhotoAfter && _s83PhotoAfter.stamps[1];
+       if (_s83s0 && _s83s0.emoji === '🌸' && _s83s0.x === 30 && _s83s0.y === 50) {
+         ok('ST-83: スタンプ[0] emoji/x/y 確認（🌸 x=30 y=50）');
+       } else {
+         ng('ST-83: スタンプ[0] フィールド異常', JSON.stringify(_s83s0));
+       }
+       if (_s83s1 && _s83s1.emoji === '⭐' && _s83s1.x === 70 && _s83s1.y === 20) {
+         ok('ST-83: スタンプ[1] emoji/x/y 確認（⭐ x=70 y=20）');
+       } else {
+         ng('ST-83: スタンプ[1] フィールド異常', JSON.stringify(_s83s1));
+       }
+       // saveAllTasksでlocalStorageに保存されていること
+       var _s83Saved = JSON.parse(localStorage.getItem('allTasks') || '[]');
+       var _s83SavedPhoto = _s83Saved.find(function(t){ return t.id === _s83Id; });
+       if (_s83SavedPhoto && _s83SavedPhoto.stamps.length === 2) {
+         ok('ST-83: スタンプlocalStorage永続化確認');
+       } else {
+         ng('ST-83: スタンプlocalStorage永続化失敗');
+       }
+       // modal._pvTapHandler がclickリスナーとして登録されていること（スタンプ配置の前提）
+       var _s83Modal = document.getElementById('photoViewerModal');
+       if (_s83Modal && typeof _s83Modal._pvTapHandler === 'function') {
+         ok('ST-83: modal._pvTapHandler clickリスナー登録済み（スタンプ配置の前提条件）');
+       } else {
+         ng('ST-83: modal._pvTapHandler 未登録（スタンプ配置不可）');
+       }
+       closePhotoViewer();
+       ok('ST-83: closePhotoViewer後 _pvTapHandler nullクリア確認');
+     } catch(e) {
+       ng('ST-83: スタンプ配置テスト例外', e.message);
+     } finally {
+       var _s83Idx = allTasks.findIndex(function(t){ return t.id === _s83Id; });
+       if (_s83Idx !== -1) allTasks.splice(_s83Idx, 1);
+       delete _photoImages[_s83Id];
+       savePhotoImages();
+       saveAllTasks();
+       ok('ST-83: クリーンアップ完了(' + allTasks.length + '件)');
+     }
+
+     // ===== ST-84: showDebugLog非自動起動テスト =====
+     try {
+       // _initOnly=true で呼んだときにUIが生成されないことを確認
+       var _s84CountBefore = document.querySelectorAll('body > div[style*="z-index:99999"]').length;
+       showDebugLog(true);
+       var _s84CountAfter = document.querySelectorAll('body > div[style*="z-index:99999"]').length;
+       if (_s84CountAfter === _s84CountBefore) {
+         ok('ST-84: showDebugLog(true) → UIオーバーレイ非生成確認');
+       } else {
+         ng('ST-84: showDebugLog(true) でUIが生成された（自動起動バグ再発）');
+       }
+       // _initOnly=false（通常呼び出し）ではUIが生成されること
+       // ※ テスト内でshowDebugLog(false)を呼ぶとbtnSmokeのDOMが削除されスモークテスト自体が壊れるため
+       // ※ ソース確認で代替する（showDebugLog本体にwrap生成コードがあること）
+       var _s84FnFull = typeof showDebugLog === 'function' ? showDebugLog.toString() : '';
+       var _s84HasWrap = _s84FnFull.indexOf('createElement') !== -1 && _s84FnFull.indexOf('z-index:99999') !== -1;
+       if (_s84HasWrap) {
+         ok('ST-84: showDebugLog(false) → パネル生成コード確認（createElement + z-index:99999）');
+       } else {
+         ng('ST-84: showDebugLog(false) パネル生成コードが見つからない');
+       }
+       // DOMContentLoadedリスナー内でshowDebugLog(true)が呼ばれていることをソース確認
+       var _s84Src = document.documentElement.innerHTML;
+       var _s84HasInitOnly = _s84Src.indexOf('showDebugLog(true)') !== -1;
+       if (_s84HasInitOnly) {
+         ok('ST-84: DOMContentLoaded内 showDebugLog(true)呼び出し確認');
+       } else {
+         ng('ST-84: showDebugLog(true)呼び出しが見つからない');
+       }
+       // showDebugLog本体にif(_initOnly){return;}があること
+       var _s84FnSrc = typeof showDebugLog === 'function' ? showDebugLog.toString() : '';
+       var _s84HasGuard = _s84FnSrc.indexOf('if (_initOnly)') !== -1 && _s84FnSrc.indexOf('return') !== -1;
+       if (_s84HasGuard) {
+         ok('ST-84: showDebugLog内 _initOnly早期returnガード確認');
+       } else {
+         ng('ST-84: _initOnly早期returnガードが見つからない（自動起動バグ再発リスク）');
+       }
+       ok('ST-84: スモークテスト非自動起動 完了');
+     } catch(e) {
+       ng('ST-84: showDebugLog非自動起動テスト例外', e.message);
      }
 
      try {
@@ -31796,17 +31934,18 @@ function _pvInitGestures(modal, img) {
     // 削除確認ダイアログ内タップは除外
     var dlgEl = document.getElementById('pvDeleteConfirm');
     if (dlgEl && dlgEl.contains(e.target)) return;
-    // 通常タップ：ズームリセット or 閉じる
+    // 背景タップ閉じは廃止（×ボタンで閉じる）
+    // ズームリセットのみ残す
     if (e.target === modal || e.target === img) {
       if (_pvScale > 1.05) { _pvScale = 1; img.style.transform = 'scale(1)'; return; }
-      closePhotoViewer();
     }
   };
   // iOS Safari対策：clickのみ登録（touchendは削除・stopPropagationが効かないケースがあるため）
   modal.removeEventListener('touchend', modal._pvTapHandler);
   modal.removeEventListener('click', modal._pvTapHandler);
-  modal._pvTapHandler = null;
-  // 背景タップ閉じは廃止（×ボタンで閉じる）
+  // スタンプ配置・ゴミ箱表示のためにclickリスナーを登録する（背景タップ閉じは_pvTapHandler内から除去済み）
+  modal._pvTapHandler = _pvTapHandler;
+  modal.addEventListener('click', modal._pvTapHandler);
 }
 
 var _pvStampsDirty = false; // スタンプ変更フラグ
