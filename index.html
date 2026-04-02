@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.470';
+    const APP_VERSION = 'v0.39.477';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -4490,19 +4490,19 @@
         <div style="display:flex;flex-direction:column;gap:10px;">
           <button onclick="selectKingdomMode('camp')" id="kingdomModeBtn_camp" style="width:100%;padding:14px 16px;background:#f8f8f8;border:2px solid #e0e0e0;border-radius:12px;text-align:left;cursor:pointer;transition:all 0.15s;">
             <div style="font-size:1.05em;font-weight:700;color:#333;">🏕️ 野営地</div>
-            <div style="font-size:0.78em;color:#888;margin-top:3px;">開くだけで、もう動いてる。</div>
+            <div style="font-size:1.0em;font-weight:600;color:#555;margin-top:2px;">開くだけで、もう動いてる。</div><div style="font-size:0.88em;color:#aaa;margin-top:2px;">日次・雑記帳・日誌・クラフト・ショップが使える</div>
           </button>
           <button onclick="selectKingdomMode('village')" id="kingdomModeBtn_village" style="width:100%;padding:14px 16px;background:#f8f8f8;border:2px solid #e0e0e0;border-radius:12px;text-align:left;cursor:pointer;transition:all 0.15s;">
             <div style="font-size:1.05em;font-weight:700;color:#333;">🏘️ 村</div>
-            <div style="font-size:0.78em;color:#888;margin-top:3px;">続けた人だけが見える景色がある。</div>
+            <div style="font-size:1.0em;font-weight:600;color:#555;margin-top:2px;">続けた人だけが見える景色がある。</div><div style="font-size:0.88em;color:#aaa;margin-top:2px;">週間・月間ビューが開く</div>
           </button>
           <button onclick="selectKingdomMode('town')" id="kingdomModeBtn_town" style="width:100%;padding:14px 16px;background:#f8f8f8;border:2px solid #e0e0e0;border-radius:12px;text-align:left;cursor:pointer;transition:all 0.15s;">
             <div style="font-size:1.05em;font-weight:700;color:#333;">🏙️ 町</div>
-            <div style="font-size:0.78em;color:#888;margin-top:3px;">動いた日だけ、未来が変わる。</div>
+            <div style="font-size:1.0em;font-weight:600;color:#555;margin-top:2px;">動いた日だけ、未来が変わる。</div><div style="font-size:0.88em;color:#aaa;margin-top:2px;">写真館・年間・ダッシュボードも使える</div>
           </button>
           <button onclick="selectKingdomMode('kingdom')" id="kingdomModeBtn_kingdom" style="width:100%;padding:14px 16px;background:#f8f8f8;border:2px solid #e0e0e0;border-radius:12px;text-align:left;cursor:pointer;transition:all 0.15s;">
             <div style="font-size:1.05em;font-weight:700;color:#333;">🏰 王国</div>
-            <div style="font-size:0.78em;color:#888;margin-top:3px;">あ、これが使命だったのか。</div>
+            <div style="font-size:1.0em;font-weight:600;color:#555;margin-top:2px;">これが、使命かもしれない。</div><div style="font-size:0.88em;color:#aaa;margin-top:2px;">すべての機能が解放される</div>
           </button>
         </div>
       </div>
@@ -9369,9 +9369,9 @@ var KINGDOM_MODES = {
   },
   town: {
     label: '🏙️ 町',
-    // +造営・写真・年間
+    // +写真・年間（造営は王国のみ）
     visibleTabs: { weekly: true, monthly: true, yearly: true, notebook: true, craft: true, shop: true, colosseum: false, dashboard: true, photo: true },
-    gantEnabled: true,
+    gantEnabled: false,
     craftModeEnabled: true,
     showJournalBtn: true,
     showGantBtn: true,
@@ -14508,6 +14508,9 @@ function reviveBlueprint(id) {
           for (var _i = 0; _i < _im; _i++) toggleDeepDive();
         }
       } else if (view === 'weekly') {
+        // モード制限チェック
+        var _wkKm = (typeof KINGDOM_MODES !== 'undefined' && allSettings.ui && allSettings.ui.kingdomMode) ? KINGDOM_MODES[allSettings.ui.kingdomMode] : null;
+        if (_wkKm && _wkKm.visibleTabs && _wkKm.visibleTabs.weekly === false) { switchView('daily'); return; }
         weeklyView.style.display = 'flex';
         document.getElementById('navWeekly').classList.add('active');
         currentWeekDate = new Date();
@@ -14522,6 +14525,8 @@ function reviveBlueprint(id) {
           }
         }, 50);
       } else if (view === 'monthly') {
+        var _moKm = (typeof KINGDOM_MODES !== 'undefined' && allSettings.ui && allSettings.ui.kingdomMode) ? KINGDOM_MODES[allSettings.ui.kingdomMode] : null;
+        if (_moKm && _moKm.visibleTabs && _moKm.visibleTabs.monthly === false) { switchView('daily'); return; }
         monthlyView.style.display = 'flex';
         document.getElementById('navMonthly').classList.add('active');
         currentMonthDate = new Date();
@@ -14539,6 +14544,8 @@ function reviveBlueprint(id) {
         if (typeof renderDeckHistory === 'function') renderDeckHistory();
       if (typeof renderMyDecks === 'function') renderMyDecks();
       } else if (view === 'colosseum') {
+        var _clKm = (typeof KINGDOM_MODES !== 'undefined' && allSettings.ui && allSettings.ui.kingdomMode) ? KINGDOM_MODES[allSettings.ui.kingdomMode] : null;
+        if (_clKm && _clKm.visibleTabs && _clKm.visibleTabs.colosseum === false) { switchView('daily'); return; }
         document.getElementById('colosseumView').style.display = 'block';
         var _ncol = document.getElementById('navColosseum');
         if (_ncol) _ncol.classList.add('active');
@@ -14571,6 +14578,8 @@ function reviveBlueprint(id) {
         document.getElementById('navSettings').classList.add('active');
         loadSettingsUI();
       } else if (view === 'notebook') {
+        var _nbKm = (typeof KINGDOM_MODES !== 'undefined' && allSettings.ui && allSettings.ui.kingdomMode) ? KINGDOM_MODES[allSettings.ui.kingdomMode] : null;
+        if (_nbKm && _nbKm.visibleTabs && _nbKm.visibleTabs.notebook === false) { switchView('daily'); return; }
         notebookView.style.display = 'block';
         document.getElementById('navNotebook').classList.add('active');
         // 初回のみObserver起動（以降は自動追従）
