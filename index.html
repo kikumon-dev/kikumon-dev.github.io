@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.479';
+    const APP_VERSION = 'v0.39.480';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -14282,7 +14282,7 @@ function reviveBlueprint(id) {
     function moveScratchToThoughts() {
       var today = getLocalDateStr(new Date());
       if (localStorage.getItem('_lastScratchMoveDate') === today) return;
-      var oldS = allTasks.filter(function(t){ return t.kind === 'scratch' && t.date && t.date < today; });
+      var oldS = allTasks.filter(function(t){ return (t.kind === 'scratch' || t.kind === 'zen') && t.date && t.date < today; });
       if (oldS.length === 0) { localStorage.setItem('_lastScratchMoveDate', today); return; }
       var byDate = {};
       oldS.forEach(function(s){ if (!byDate[s.date]) byDate[s.date]=[]; byDate[s.date].push({ id: generateTaskId(), text: s.text }); });
