@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.452';
+    const APP_VERSION = 'v0.39.468';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -4498,7 +4498,7 @@
           </button>
           <button onclick="selectKingdomMode('town')" id="kingdomModeBtn_town" style="width:100%;padding:14px 16px;background:#f8f8f8;border:2px solid #e0e0e0;border-radius:12px;text-align:left;cursor:pointer;transition:all 0.15s;">
             <div style="font-size:1.05em;font-weight:700;color:#333;">🏙️ 町</div>
-            <div style="font-size:0.78em;color:#888;margin-top:3px;">造営・写真館・コロシアム・年間が解放。世界が広がる。</div>
+            <div style="font-size:0.78em;color:#888;margin-top:3px;">造営・写真館・年間が解放。世界が広がる。</div>
           </button>
           <button onclick="selectKingdomMode('kingdom')" id="kingdomModeBtn_kingdom" style="width:100%;padding:14px 16px;background:#f8f8f8;border:2px solid #e0e0e0;border-radius:12px;text-align:left;cursor:pointer;transition:all 0.15s;">
             <div style="font-size:1.05em;font-weight:700;color:#333;">🏰 王国</div>
@@ -4529,7 +4529,7 @@
         </div>
       </div>
       <!-- 造営タブ設定 -->
-      <div class="settings-section">
+      <div class="settings-section" id="settingsGantSection">
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">🏗 造営</h3>
         <div class="settings-item" style="margin-bottom: 16px;">
           <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
@@ -4557,21 +4557,41 @@
       </div>
       <div class="settings-section">
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">📱 ナビタブ表示</h3>
-        <p style="margin:0 0 12px 0;font-size:0.8em;color:#888;">表示するタブを選択できます。日次・週間・月間・日誌・🔍・⚙️は常時表示。</p>
+        <p style="margin:0 0 12px 0;font-size:0.8em;color:#888;">表示するタブを選択できます。日次・🔍・⚙️は常時表示。</p>
         <div style="display:flex;flex-direction:column;gap:10px;">
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-            <input type="checkbox" id="visTabYearly" onchange="toggleVisibleTab('yearly',this.checked)" style="width:18px;height:18px;accent-color:#4facfe;cursor:pointer;">
-            <span style="font-size:0.9em;color:#333;font-weight:600;">年間</span>
+          <label style="display:flex;align-items:center;gap:10px;opacity:0.45;">
+            <input type="checkbox" checked disabled style="width:18px;height:18px;accent-color:#4facfe;cursor:not-allowed;">
+            <span style="font-size:0.9em;color:#333;font-weight:600;">📅 日次 <span style="font-size:0.78em;color:#aaa;font-weight:400;">（常時表示）</span></span>
           </label>
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+          <label id="settingsLabelWeekly" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="visTabWeekly" onchange="toggleVisibleTab('weekly',this.checked)" style="width:18px;height:18px;accent-color:#4facfe;cursor:pointer;">
+            <span style="font-size:0.9em;color:#333;font-weight:600;">📊 週間</span>
+          </label>
+          <label id="settingsLabelMonthly" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="visTabMonthly" onchange="toggleVisibleTab('monthly',this.checked)" style="width:18px;height:18px;accent-color:#4facfe;cursor:pointer;">
+            <span style="font-size:0.9em;color:#333;font-weight:600;">🗓️ 月間</span>
+          </label>
+          <label id="settingsLabelYearly" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="visTabYearly" onchange="toggleVisibleTab('yearly',this.checked)" style="width:18px;height:18px;accent-color:#4facfe;cursor:pointer;">
+            <span style="font-size:0.9em;color:#333;font-weight:600;">📆 年間</span>
+          </label>
+          <label id="settingsLabelGant" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="visTabGant" onchange="toggleGantEnabled(this.checked)" style="width:18px;height:18px;accent-color:#4facfe;cursor:pointer;">
+            <span style="font-size:0.9em;color:#333;font-weight:600;">🏗️ 造営</span>
+          </label>
+          <label id="settingsLabelNotebook" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
             <input type="checkbox" id="visTabNotebook" onchange="toggleVisibleTab('notebook',this.checked)" style="width:18px;height:18px;accent-color:#4facfe;cursor:pointer;">
-            <span style="font-size:0.9em;color:#333;font-weight:600;">自由帳</span>
+            <span style="font-size:0.9em;color:#333;font-weight:600;">📓 自由帳</span>
+          </label>
+          <label id="settingsLabelJournal" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="visTabJournal" onchange="toggleVisibleTab('journal',this.checked)" style="width:18px;height:18px;accent-color:#4facfe;cursor:pointer;">
+            <span style="font-size:0.9em;color:#333;font-weight:600;">📖 日誌</span>
           </label>
           <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
             <input type="checkbox" id="visTabCraft" onchange="toggleVisibleTab('craft',this.checked)" style="width:18px;height:18px;accent-color:#4facfe;cursor:pointer;">
             <span style="font-size:0.9em;color:#333;font-weight:600;">🏰 クラフト</span>
           </label>
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+          <label id="settingsLabelColosseum" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
             <input type="checkbox" id="visTabColosseum" onchange="toggleVisibleTab('colosseum',this.checked)" style="width:18px;height:18px;accent-color:#4facfe;cursor:pointer;">
             <span style="font-size:0.9em;color:#333;font-weight:600;">⚔️ コロシアム</span>
           </label>
@@ -9295,6 +9315,9 @@ function applyVisibleTabsSettings() {
   if (!allSettings.ui.visibleTabs) allSettings.ui.visibleTabs = {};
   var vt = allSettings.ui.visibleTabs;
   var tabs = [
+    { id: 'navWeekly',     key: 'weekly' },
+    { id: 'navJournal',    key: 'journal' },
+    { id: 'navMonthly',    key: 'monthly' },
     { id: 'navYearly',     key: 'yearly' },
     { id: 'navNotebook',   key: 'notebook' },
     { id: 'navCraft',      key: 'craft' },
@@ -9313,9 +9336,13 @@ function applyVisibleTabsSettings() {
     }
     el.style.display = visible ? '' : 'none';
   });
-  // gantは既存のgantEnabledに従う
+  // gantはgantEnabledとKINGDOM_MODESの両方を考慮
+  var _gantKm = (typeof KINGDOM_MODES !== 'undefined' && allSettings.ui.kingdomMode)
+    ? KINGDOM_MODES[allSettings.ui.kingdomMode] : null;
+  var _gantAllowed = !_gantKm || _gantKm.gantEnabled !== false;
+  var _gantEnabled = allSettings.ui.gantEnabled === true && _gantAllowed;
   var gantEl = document.getElementById('navGant');
-  if (gantEl) gantEl.style.display = allSettings.ui.gantEnabled === true ? '' : 'none';
+  if (gantEl) gantEl.style.display = _gantEnabled ? '' : 'none';
 }
 
 // 王国規模モード定義
@@ -9323,7 +9350,7 @@ var KINGDOM_MODES = {
   camp: {
     label: '🏕️ 野営地',
     // 日次・日誌・クラフト・ショップ
-    visibleTabs: { yearly: false, notebook: false, craft: true, shop: true, colosseum: false, dashboard: false, photo: false },
+    visibleTabs: { weekly: false, monthly: false, yearly: false, notebook: false, craft: true, shop: true, colosseum: false, dashboard: false, photo: false },
     gantEnabled: false,
     craftModeEnabled: true,
     showJournalBtn: true,
@@ -9333,7 +9360,7 @@ var KINGDOM_MODES = {
   village: {
     label: '🏘️ 村',
     // +週間・月間・自由帳・ダッシュボード
-    visibleTabs: { yearly: false, notebook: true, craft: true, shop: true, colosseum: false, dashboard: true, photo: false },
+    visibleTabs: { weekly: true, monthly: true, yearly: false, notebook: true, craft: true, shop: true, colosseum: false, dashboard: true, photo: false },
     gantEnabled: false,
     craftModeEnabled: true,
     showJournalBtn: true,
@@ -9342,8 +9369,8 @@ var KINGDOM_MODES = {
   },
   town: {
     label: '🏙️ 町',
-    // +造営・写真・コロシアム・年間
-    visibleTabs: { yearly: true, notebook: true, craft: true, shop: true, colosseum: true, dashboard: true, photo: true },
+    // +造営・写真・年間
+    visibleTabs: { weekly: true, monthly: true, yearly: true, notebook: true, craft: true, shop: true, colosseum: false, dashboard: true, photo: true },
     gantEnabled: true,
     craftModeEnabled: true,
     showJournalBtn: true,
@@ -9353,7 +9380,7 @@ var KINGDOM_MODES = {
   kingdom: {
     label: '🏰 王国',
     // 全機能解放（深考追加）
-    visibleTabs: { yearly: true, notebook: true, craft: true, shop: true, colosseum: true, dashboard: true, photo: true },
+    visibleTabs: { weekly: true, monthly: true, yearly: true, notebook: true, craft: true, shop: true, colosseum: true, dashboard: true, photo: true },
     gantEnabled: true,
     craftModeEnabled: true,
     showJournalBtn: true,
@@ -9386,6 +9413,7 @@ function selectKingdomMode(mode) {
     switchView('daily');
   }
   updateKingdomModeButtons();
+  applySettingsSectionVisibility();
   showToast(def.label + ' モードに切り替えました', { type: 'success' });
 }
 
@@ -9404,7 +9432,7 @@ function updateKingdomModeButtons() {
   });
   // ナビタブ表示チェックボックスも現在のvisibleTabsに同期
   var vt = (allSettings.ui && allSettings.ui.visibleTabs) || {};
-  var vtMap = { yearly: 'visTabYearly', notebook: 'visTabNotebook', craft: 'visTabCraft', shop: 'visTabShop', colosseum: 'visTabColosseum' };
+  var vtMap = { weekly: 'visTabWeekly', monthly: 'visTabMonthly', yearly: 'visTabYearly', notebook: 'visTabNotebook', craft: 'visTabCraft', shop: 'visTabShop', colosseum: 'visTabColosseum', journal: 'visTabJournal' };
   Object.keys(vtMap).forEach(function(key) {
     var el = document.getElementById(vtMap[key]);
     if (el) el.checked = vt[key] !== false;
@@ -9414,18 +9442,68 @@ function updateKingdomModeButtons() {
   if (craftCheck) craftCheck.checked = allSettings.ui.craftModeEnabled === true;
   var gantCheck = document.getElementById('gantEnabled');
   if (gantCheck) gantCheck.checked = allSettings.ui.gantEnabled === true;
+  var visTabGantCheck = document.getElementById('visTabGant');
+  if (visTabGantCheck) visTabGantCheck.checked = allSettings.ui.gantEnabled === true;
   // SDFボタン表示も同期
   var _curMode = allSettings.ui.kingdomMode;
   var _curDef = (typeof KINGDOM_MODES !== 'undefined' && _curMode) ? KINGDOM_MODES[_curMode] : null;
   var sdfBtn = document.getElementById('scratchSdfBtn');
   if (sdfBtn) sdfBtn.style.display = (!_curDef || _curDef.showSDF !== false) ? '' : 'none';
+  // 設定画面セクション表示も同期
+  applySettingsSectionVisibility();
+}
+
+
+function applySettingsSectionVisibility() {
+  var _km = (typeof KINGDOM_MODES !== 'undefined' && allSettings.ui && allSettings.ui.kingdomMode)
+    ? KINGDOM_MODES[allSettings.ui.kingdomMode] : null;
+
+  // 造営セクション：町以上のみ表示
+  var gantSection = document.getElementById('settingsGantSection');
+  if (gantSection) gantSection.style.display = (_km && _km.gantEnabled) ? '' : 'none';
+  // ナビタブ表示セクションの造営ラベル：町以上のみ表示
+  var labelGant = document.getElementById('settingsLabelGant');
+  if (labelGant) labelGant.style.display = (_km && _km.gantEnabled) ? '' : 'none';
+
+  // ナビタブ：週間（村以上）
+  var labelWeekly = document.getElementById('settingsLabelWeekly');
+  if (labelWeekly) labelWeekly.style.display = (!_km || _km.visibleTabs.weekly !== false) ? '' : 'none';
+  // ナビタブ：月間（村以上）
+  var labelMonthly = document.getElementById('settingsLabelMonthly');
+  if (labelMonthly) labelMonthly.style.display = (!_km || _km.visibleTabs.monthly !== false) ? '' : 'none';
+  // ナビタブ：年間（町以上）
+  var labelYearly = document.getElementById('settingsLabelYearly');
+  if (labelYearly) labelYearly.style.display = (_km && _km.visibleTabs && _km.visibleTabs.yearly !== false) ? '' : 'none';
+
+  // ナビタブ：自由帳（村以上）
+  var labelNotebook = document.getElementById('settingsLabelNotebook');
+  if (labelNotebook) labelNotebook.style.display = (!_km || _km.visibleTabs.notebook !== false) ? '' : 'none';
+
+  // ナビタブ：コロシアム（町以上）
+  var labelColosseum = document.getElementById('settingsLabelColosseum');
+  if (labelColosseum) labelColosseum.style.display = (_km && _km.visibleTabs && _km.visibleTabs.colosseum !== false) ? '' : 'none';
 }
 
 function toggleVisibleTab(key, checked) {
   if (!allSettings.ui.visibleTabs) allSettings.ui.visibleTabs = {};
+  // モード制限チェック：現在のモードでOFFになっているタブをONにしようとしたら警告
+  if (checked) {
+    var _km = (typeof KINGDOM_MODES !== 'undefined' && allSettings.ui.kingdomMode)
+      ? KINGDOM_MODES[allSettings.ui.kingdomMode] : null;
+    if (_km && _km.visibleTabs && _km.visibleTabs[key] === false) {
+      var _modeLabel = {
+        camp: '野営地', village: '村', town: '町', kingdom: '王国'
+      };
+      var _required = { yearly:'町', notebook:'村', colosseum:'町', photo:'町', dashboard:'村' };
+      var _req = _required[key] || '上位';
+      showToast('🏰 このタブは' + _req + 'モード以上で使えます', { type: 'info', duration: 3000 });
+      var el = document.getElementById('visTab' + key.charAt(0).toUpperCase() + key.slice(1));
+      if (el) el.checked = false;
+      return;
+    }
+  }
   allSettings.ui.visibleTabs[key] = checked;
   // 手動でチェックボックスを変更した場合は「カスタム」扱いにする
-  // （王国規模ボタンのハイライトをリセット）
   allSettings.ui.kingdomMode = 'custom';
   saveAllSettings();
   applyVisibleTabsSettings();
@@ -9433,6 +9511,18 @@ function toggleVisibleTab(key, checked) {
 }
 
 function toggleGantEnabled(checked) {
+      // モード制限チェック（camp・villageは造営不可）
+      if (checked) {
+        var _km = (typeof KINGDOM_MODES !== 'undefined' && allSettings.ui.kingdomMode)
+          ? KINGDOM_MODES[allSettings.ui.kingdomMode] : null;
+        if (_km && _km.gantEnabled === false) {
+          showToast('🏙️ 造営は町モード以上で使えます', { type: 'info', duration: 3000 });
+          // チェックを戻す
+          var gantCheck = document.getElementById('gantEnabled');
+          if (gantCheck) gantCheck.checked = false;
+          return;
+        }
+      }
       allSettings.ui.gantEnabled = checked;
       saveAllSettings();
       const gantBtn = document.getElementById('navGant');
@@ -13807,6 +13897,23 @@ function reviveBlueprint(id) {
       saveAllSettings();
       localStorage.setItem('mig_gant_enabled_default_v0_32', '1');
     }
+    // kingdomMode未設定ユーザーはデフォルト'kingdom'に（全機能解放状態を維持）
+    if (!localStorage.getItem('mig_kingdom_mode_default_v1')) {
+      if (!allSettings.ui.kingdomMode) {
+        allSettings.ui.kingdomMode = 'kingdom';
+        // visibleTabsにweekly/monthly/journal/photo/dashboard未設定の場合はデフォルトtrue
+        if (!allSettings.ui.visibleTabs) allSettings.ui.visibleTabs = {};
+        var _vtDef = allSettings.ui.visibleTabs;
+        if (_vtDef.weekly === undefined) _vtDef.weekly = true;
+        if (_vtDef.monthly === undefined) _vtDef.monthly = true;
+        if (_vtDef.journal === undefined) _vtDef.journal = true;
+        if (_vtDef.photo === undefined) _vtDef.photo = true;
+        if (_vtDef.dashboard === undefined) _vtDef.dashboard = true;
+        if (_vtDef.colosseum === undefined) _vtDef.colosseum = true;
+        saveAllSettings();
+      }
+      localStorage.setItem('mig_kingdom_mode_default_v1', '1');
+    }
     // 旧命名フラグを新命名に引き継ぎ（migrate実行前に必ず行う）
     const _migRename = {
       'mig_uuid_v7':          'mig_ids_to_uuid_v7',
@@ -14242,7 +14349,7 @@ function reviveBlueprint(id) {
       // マイグレーション済みキー
       'mig_ids_to_uuid_v7', 'mig_show_in_daily_to_display_scope_v1', 'mig_display_scope_empty_v1',
       'mig_category_to_calendar_v170', 'mig_death_ghost_flags_v0_24_59',
-      'mig_gant_enabled_default_v0_32', 'mig_journals_to_alltasks_v1',
+      'mig_gant_enabled_default_v0_32', 'mig_journals_to_alltasks_v1', 'mig_kingdom_mode_default_v1',
       'mig_gdp_to_oku_v1', 'mig_orphan_taskids_v1', 'mig_done_completed_sync_v1',
       'mig_dedup_tasks_v1', 'mig_dedup_tasks_v2', 'mig_calid_to_settings_v1',
       'mig_toku_retroactive_v1', 'mig_journal_ids_to_uuid_v7',
@@ -14557,6 +14664,8 @@ function reviveBlueprint(id) {
         if (jv) jv.style.display = 'block';
         var nj = document.getElementById('navJournal');
         if (nj) nj.classList.add('active');
+        // 日誌タブが非表示設定なら日次へ
+        if (allSettings.ui.visibleTabs && allSettings.ui.visibleTabs.journal === false) { switchView('daily'); return; }
         if (typeof renderJournalView === 'function') renderJournalView();
         if (!allSettings.flags.journalTourSeen) {
           allSettings.flags.journalTourSeen = true; saveAllSettings();
@@ -15862,6 +15971,8 @@ var OFFICIAL_DECKS = [
   }
 ];
 function loadSettingsUI() {
+      // モードに応じた設定セクション表示制御
+      if (typeof applySettingsSectionVisibility === 'function') applySettingsSectionVisibility();
       // クラフトモード
       const craftCheck = document.getElementById('craftModeEnabled');
       if (craftCheck) {
@@ -16855,7 +16966,8 @@ function loadSettingsUI() {
     window.checkAbsencePenalty = checkAbsencePenalty;
     window.recordTaskCompletedDate = recordTaskCompletedDate;
     window.getGDPTitle = getGDPTitle;
-    window.toggleVisibleTab = toggleVisibleTab;
+    window.applySettingsSectionVisibility = applySettingsSectionVisibility;
+  window.toggleVisibleTab = toggleVisibleTab;
     window.openDeckDetailModal = openDeckDetailModal;
     window.renderColosseumView = renderColosseumView;
     window.renderDashboardView = renderDashboardView;
@@ -28984,7 +29096,7 @@ function showDebugLog(_initOnly) {
        }
        if (_km && _km.town) {
          var _townOk = _km.town.visibleTabs.photo === true && _km.town.gantEnabled === true && _km.town.showSDF === false;
-         _townOk ? ok('ST-85: town 整合確認（photo:true gant:true SDF:false）') : ng('ST-85: town 整合異常', JSON.stringify({photo:_km.town.visibleTabs.photo, gant:_km.town.gantEnabled, sdf:_km.town.showSDF}));
+         _townOk ? ok('ST-85: town 整合確認（photo:true gant:true colosseum:false SDF:false）') : ng('ST-85: town 整合異常', JSON.stringify({photo:_km.town.visibleTabs.photo, gant:_km.town.gantEnabled, sdf:_km.town.showSDF}));
        }
        if (_km && _km.kingdom) {
          var _kingdomOk = _km.kingdom.visibleTabs.photo === true && _km.kingdom.gantEnabled === true && _km.kingdom.showSDF === true;
@@ -29920,7 +30032,7 @@ function showDebugLog(_initOnly) {
        // APAG個別評価: 各ガーディアンのマーカーがresultsに存在するか
        var _apagItems = [
          { name:'SPAG  SSOT', marker:'SPAG — ALL AUTHORITY VERIFIED' },
-         { name:'SCPAG SCop', marker:'SCPAG — ALL SCOPE VERIFIED' },
+         { name:'SCPAG Scope', marker:'SCPAG — ALL SCOPE VERIFIED' },
          { name:'KPAG  Keys', marker:'KPAG — ALL KEYS VERIFIED' },
          { name:'LPAG  Laws', marker:'LPAG]: 開発ルール遵守率 100%' },
        ];
@@ -29942,7 +30054,7 @@ function showDebugLog(_initOnly) {
        _apagLines.forEach(function(l){ ok(l); });
        ok('║                                                  ║');
        if (_apagAllGreen) {
-         ok('║  🟢🟢🟢🟢🟢  ABSOLUTE PROGRESSIVE GUARDIAN        ║');
+         ok('║  🟢🟢🟢🟢🟢  ABSOLUTE PROGRESSIVE ANGEL GUARDIAN   ║');
          ok('║  ★★★★★  FOUR GUARDIANS ONLINE · KINGDOM PROTECTED║');
          ok('║  これが、わたしのクラフトだ！                    ║');
        } else {
