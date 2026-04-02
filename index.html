@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.480';
+    const APP_VERSION = 'v0.39.483';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -4502,7 +4502,7 @@
           </button>
           <button onclick="selectKingdomMode('kingdom')" id="kingdomModeBtn_kingdom" style="width:100%;padding:14px 16px;background:#f8f8f8;border:2px solid #e0e0e0;border-radius:12px;text-align:left;cursor:pointer;transition:all 0.15s;">
             <div style="font-size:1.05em;font-weight:700;color:#333;">🏰 王国</div>
-            <div style="font-size:1.0em;font-weight:600;color:#555;margin-top:2px;">これが、使命かもしれない。</div><div style="font-size:0.88em;color:#aaa;margin-top:2px;">すべての機能が解放される</div>
+            <div style="font-size:1.0em;font-weight:600;color:#555;margin-top:2px;">これが、使命かもしれない。</div><div style="font-size:0.88em;color:#aaa;margin-top:2px;">全機能解放。ナビタブは自由にカスタマイズできる</div>
           </button>
         </div>
       </div>
@@ -4582,6 +4582,10 @@
           <label id="settingsLabelNotebook" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
             <input type="checkbox" id="visTabNotebook" onchange="toggleVisibleTab('notebook',this.checked)" style="width:18px;height:18px;accent-color:#4facfe;cursor:pointer;">
             <span style="font-size:0.9em;color:#333;font-weight:600;">📓 自由帳</span>
+          </label>
+          <label id="settingsLabelPhoto" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="visTabPhoto" onchange="toggleVisibleTab('photo',this.checked)" style="width:18px;height:18px;accent-color:#4facfe;cursor:pointer;">
+            <span style="font-size:0.9em;color:#333;font-weight:600;">📸 写真館</span>
           </label>
           <label id="settingsLabelJournal" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
             <input type="checkbox" id="visTabJournal" onchange="toggleVisibleTab('journal',this.checked)" style="width:18px;height:18px;accent-color:#4facfe;cursor:pointer;">
@@ -9432,7 +9436,7 @@ function updateKingdomModeButtons() {
   });
   // ナビタブ表示チェックボックスも現在のvisibleTabsに同期
   var vt = (allSettings.ui && allSettings.ui.visibleTabs) || {};
-  var vtMap = { weekly: 'visTabWeekly', monthly: 'visTabMonthly', yearly: 'visTabYearly', notebook: 'visTabNotebook', craft: 'visTabCraft', shop: 'visTabShop', colosseum: 'visTabColosseum', journal: 'visTabJournal' };
+  var vtMap = { weekly: 'visTabWeekly', monthly: 'visTabMonthly', yearly: 'visTabYearly', notebook: 'visTabNotebook', craft: 'visTabCraft', shop: 'visTabShop', colosseum: 'visTabColosseum', journal: 'visTabJournal', photo: 'visTabPhoto' };
   Object.keys(vtMap).forEach(function(key) {
     var el = document.getElementById(vtMap[key]);
     if (el) el.checked = vt[key] !== false;
@@ -14406,7 +14410,7 @@ function reviveBlueprint(id) {
       if (typeof applyVisibleTabsSettings === 'function') applyVisibleTabsSettings();
       // ナビタブ設定のチェックボックスを初期化
       var vt = allSettings.ui.visibleTabs || {};
-      var vtMap = { yearly:'visTabYearly', notebook:'visTabNotebook', craft:'visTabCraft', shop:'visTabShop', colosseum:'visTabColosseum' };
+      var vtMap = { yearly:'visTabYearly', notebook:'visTabNotebook', craft:'visTabCraft', shop:'visTabShop', colosseum:'visTabColosseum', photo:'visTabPhoto' };
       Object.keys(vtMap).forEach(function(key) {
         var el = document.getElementById(vtMap[key]);
         if (el) el.checked = vt[key] !== false;
@@ -16003,7 +16007,7 @@ function loadSettingsUI() {
       // ナビタブ表示チェックボックスを現在の設定で初期化
       (function() {
         var _vt = allSettings.ui.visibleTabs || {};
-        var _vtMap = { yearly:'visTabYearly', notebook:'visTabNotebook', craft:'visTabCraft', shop:'visTabShop', colosseum:'visTabColosseum' };
+        var _vtMap = { yearly:'visTabYearly', notebook:'visTabNotebook', craft:'visTabCraft', shop:'visTabShop', colosseum:'visTabColosseum', photo:'visTabPhoto' };
         Object.keys(_vtMap).forEach(function(key) {
           var el = document.getElementById(_vtMap[key]);
           if (el) el.checked = _vt[key] !== false;
