@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.468';
+    const APP_VERSION = 'v0.39.470';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -4490,19 +4490,19 @@
         <div style="display:flex;flex-direction:column;gap:10px;">
           <button onclick="selectKingdomMode('camp')" id="kingdomModeBtn_camp" style="width:100%;padding:14px 16px;background:#f8f8f8;border:2px solid #e0e0e0;border-radius:12px;text-align:left;cursor:pointer;transition:all 0.15s;">
             <div style="font-size:1.05em;font-weight:700;color:#333;">🏕️ 野営地</div>
-            <div style="font-size:0.78em;color:#888;margin-top:3px;">日次・雑記帳・日誌・クラフト・ショップ。まず今日を生きる。</div>
+            <div style="font-size:0.78em;color:#888;margin-top:3px;">開くだけで、もう動いてる。</div>
           </button>
           <button onclick="selectKingdomMode('village')" id="kingdomModeBtn_village" style="width:100%;padding:14px 16px;background:#f8f8f8;border:2px solid #e0e0e0;border-radius:12px;text-align:left;cursor:pointer;transition:all 0.15s;">
             <div style="font-size:1.05em;font-weight:700;color:#333;">🏘️ 村</div>
-            <div style="font-size:0.78em;color:#888;margin-top:3px;">週間・月間・自由帳も解放。計画が生まれる。</div>
+            <div style="font-size:0.78em;color:#888;margin-top:3px;">続けた人だけが見える景色がある。</div>
           </button>
           <button onclick="selectKingdomMode('town')" id="kingdomModeBtn_town" style="width:100%;padding:14px 16px;background:#f8f8f8;border:2px solid #e0e0e0;border-radius:12px;text-align:left;cursor:pointer;transition:all 0.15s;">
             <div style="font-size:1.05em;font-weight:700;color:#333;">🏙️ 町</div>
-            <div style="font-size:0.78em;color:#888;margin-top:3px;">造営・写真館・年間が解放。世界が広がる。</div>
+            <div style="font-size:0.78em;color:#888;margin-top:3px;">動いた日だけ、未来が変わる。</div>
           </button>
           <button onclick="selectKingdomMode('kingdom')" id="kingdomModeBtn_kingdom" style="width:100%;padding:14px 16px;background:#f8f8f8;border:2px solid #e0e0e0;border-radius:12px;text-align:left;cursor:pointer;transition:all 0.15s;">
             <div style="font-size:1.05em;font-weight:700;color:#333;">🏰 王国</div>
-            <div style="font-size:0.78em;color:#888;margin-top:3px;">全機能解放。コロシアム・写真館・深考（SDF）・年間。</div>
+            <div style="font-size:0.78em;color:#888;margin-top:3px;">あ、これが使命だったのか。</div>
           </button>
         </div>
       </div>
@@ -9360,7 +9360,7 @@ var KINGDOM_MODES = {
   village: {
     label: '🏘️ 村',
     // +週間・月間・自由帳・ダッシュボード
-    visibleTabs: { weekly: true, monthly: true, yearly: false, notebook: true, craft: true, shop: true, colosseum: false, dashboard: true, photo: false },
+    visibleTabs: { weekly: true, monthly: true, yearly: false, notebook: false, craft: true, shop: true, colosseum: false, dashboard: false, photo: false },
     gantEnabled: false,
     craftModeEnabled: true,
     showJournalBtn: true,
