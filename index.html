@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.478';
+    const APP_VERSION = 'v0.39.479';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3684,7 +3684,7 @@
     <!-- 月間スライダーバー（週間と同じスタイル） -->
     <div style="width:100%;display:flex;align-items:center;gap:0;padding:3px 8px 4px;box-sizing:border-box;border-bottom:1px solid #f0f0f0;background:#fff;position:sticky;top:48px;z-index:25;">
       <span style="font-size:0.65em;color:#f472b6;flex-shrink:0;margin-right:3px;line-height:1;vertical-align:middle;">↕︎</span>
-      <input type="range" id="monthlyRowHSlider" min="60" max="240" value="80"
+      <input type="range" id="monthlyRowHSlider" min="80" max="300" value="80"
         style="flex:1;accent-color:#f472b6;cursor:pointer;min-width:0;background:transparent;-webkit-appearance:none;height:4px;border-radius:2px;background:linear-gradient(to right,#f472b6 0%,#f472b6 0%,#e5e7eb 0%);"
         oninput="window.adjustMonthlyRowH(this.value)"
         ondblclick="window.resetMonthlyRowH()">
