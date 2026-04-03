@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.507';
+    const APP_VERSION = 'v0.39.516';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3670,7 +3670,7 @@
       <!-- 2行目：↕縦 / ↔横 を半分半分 + リセット（縦が左・横が右） -->
       <div style="width:100%;display:flex;align-items:center;gap:0;padding:3px 8px 4px;box-sizing:border-box;border-bottom:1px solid #f0f0f0;">
         <span style="font-size:0.65em;color:#f472b6;flex-shrink:0;margin-right:3px;line-height:1;vertical-align:middle;">↕︎</span>
-        <input type="range" id="weeklyRowHSlider" min="80" max="240" value="80"
+        <input type="range" id="weeklyRowHSlider" min="80" max="600" value="80"
           style="flex:1;accent-color:#f472b6;cursor:pointer;min-width:0;background:transparent;-webkit-appearance:none;height:4px;border-radius:2px;background:linear-gradient(to right,#f472b6 0%,#f472b6 0%,#e5e7eb 0%);"
           oninput="window.adjustWeeklyRowH(this.value)"
           ondblclick="window.resetWeeklyRowH()">
@@ -3683,7 +3683,7 @@
           style="font-size:0.6em;color:#aaa;background:none;border:1px solid #ddd;border-radius:3px;padding:1px 5px;cursor:pointer;flex-shrink:0;margin-left:4px;">↺</button>
       </div>
       <!-- 非表示ダミー（JS互換用） -->
-      <input type="range" id="weeklyRowHSliderSp" min="80" max="240" value="80" style="display:none;" oninput="window.adjustWeeklyRowH(this.value)">
+      <input type="range" id="weeklyRowHSliderSp" min="80" max="600" value="80" style="display:none;" oninput="window.adjustWeeklyRowH(this.value)">
       <!-- カレンダークイックフィルター -->
       <div id="weeklyCalendarFilter" style="display:flex;gap:6px;padding:4px 12px 6px;flex-wrap:wrap;border-bottom:1px solid #f0f0f0;background:#fff;"></div>
     </div>
@@ -5469,6 +5469,8 @@
         gantDayEndH: 24,
         gantTimeScale:    'day',
         gantShowCompleted: true,
+        kingdomMode:      'kingdom',
+        kingdomModeBase:  'kingdom',
         visibleTabs: {
           yearly: true, notebook: true, craft: true,
           shop: true, colosseum: true
@@ -8302,7 +8304,7 @@ function myDeckApply(idx) {
     function adjustWeeklyRowH(v) {
       v = parseInt(v);
       allSettings.ui.weeklyRowH = v; saveAllSettings();
-      const pct = ((v - 80) / (240 - 80) * 100).toFixed(1);
+      const pct = ((v - 80) / (600 - 80) * 100).toFixed(1);
       ['weeklyRowHSlider','weeklyRowHSliderSp'].forEach(function(id){
         var sl = document.getElementById(id);
         if (sl) { sl.value = v; sl.style.background = `linear-gradient(to right,#f472b6 0%,#f472b6 ${pct}%,#e5e7eb ${pct}%)`; }
@@ -9563,6 +9565,7 @@ function selectKingdomMode(mode) {
   allSettings.ui.gantEnabled = def.gantEnabled;
   allSettings.ui.craftModeEnabled = def.craftModeEnabled;
   allSettings.ui.kingdomMode = mode;
+  allSettings.ui.kingdomModeBase = mode; // カスタム時のベースモードを記録
   saveAllSettings();
   applyVisibleTabsSettings();
   // 造営タブも反映
@@ -9586,17 +9589,38 @@ function selectKingdomMode(mode) {
 
 function updateKingdomModeButtons() {
   var current = (allSettings.ui && allSettings.ui.kingdomMode) || 'kingdom';
+  var isCustom = (current === 'custom');
+  var baseMode = (allSettings.ui && allSettings.ui.kingdomModeBase) || 'kingdom';
+  var highlightMode = isCustom ? baseMode : current;
   ['camp', 'village', 'town', 'kingdom'].forEach(function(mode) {
     var btn = document.getElementById('kingdomModeBtn_' + mode);
     if (!btn) return;
-    if (mode === current) {
-      btn.style.background = '#eff6ff';
-      btn.style.borderColor = '#4facfe';
+    if (mode === highlightMode) {
+      btn.style.background = isCustom ? '#fff8f0' : '#eff6ff';
+      btn.style.borderColor = isCustom ? '#f97316' : '#4facfe';
     } else {
       btn.style.background = '#f8f8f8';
       btn.style.borderColor = '#e0e0e0';
     }
   });
+  // カスタム中ラベルを表示
+  var customLabel = document.getElementById('_kingdomCustomLabel');
+  if (isCustom) {
+    if (!customLabel) {
+      customLabel = document.createElement('div');
+      customLabel.id = '_kingdomCustomLabel';
+      customLabel.style.cssText = 'font-size:0.78em;color:#f97316;font-weight:700;margin-top:6px;text-align:center;';
+      var _baseLabel = {camp:'野営地',village:'村',town:'町',kingdom:'王国'}[baseMode] || '王国';
+      customLabel.textContent = '⚙️ カスタム中（' + _baseLabel + 'ベース）';
+      var kingdomBtn = document.getElementById('kingdomModeBtn_kingdom');
+      if (kingdomBtn && kingdomBtn.parentNode) kingdomBtn.parentNode.insertBefore(customLabel, kingdomBtn.nextSibling);
+    }
+    var _baseLabel2 = {camp:'野営地',village:'村',town:'町',kingdom:'王国'}[baseMode] || '王国';
+    customLabel.textContent = '⚙️ カスタム中（' + _baseLabel2 + 'ベース）';
+    customLabel.style.display = '';
+  } else {
+    if (customLabel) customLabel.style.display = 'none';
+  }
   // ナビタブ表示チェックボックスも現在のvisibleTabsに同期
   var vt = (allSettings.ui && allSettings.ui.visibleTabs) || {};
   var vtMap = { weekly: 'visTabWeekly', monthly: 'visTabMonthly', yearly: 'visTabYearly', notebook: 'visTabNotebook', craft: 'visTabCraft', shop: 'visTabShop', colosseum: 'visTabColosseum', journal: 'visTabJournal', photo: 'visTabPhoto' };
@@ -9625,34 +9649,45 @@ function applySettingsSectionVisibility() {
   var _km = (typeof KINGDOM_MODES !== 'undefined' && allSettings.ui && allSettings.ui.kingdomMode)
     ? KINGDOM_MODES[allSettings.ui.kingdomMode] : null;
   var _modeKey = (allSettings.ui && allSettings.ui.kingdomMode) || 'kingdom';
+  // カスタムモード時は権限判断にベースモードを使う
+  var _effectiveModeKey = (_modeKey === 'custom')
+    ? ((allSettings.ui && allSettings.ui.kingdomModeBase) || 'kingdom')
+    : _modeKey;
 
   // 造営セクション：王国のみ表示
   var gantSection = document.getElementById('settingsGantSection');
-  if (gantSection) gantSection.style.display = (_km && _km.gantEnabled) ? '' : 'none';
+  var _effectiveKmForGant = (typeof KINGDOM_MODES !== 'undefined') ? KINGDOM_MODES[_effectiveModeKey] : null;
+  if (gantSection) gantSection.style.display = (_effectiveKmForGant && _effectiveKmForGant.gantEnabled) ? '' : 'none';
   // ナビタブ表示セクションの造営ラベル：王国のみ表示
   var labelGant = document.getElementById('settingsLabelGant');
-  var _gantAvailable = (_modeKey === 'kingdom' || _modeKey === 'custom');
+  var _gantAvailable = (_effectiveModeKey === 'kingdom');
   if (labelGant) labelGant.style.display = _gantAvailable ? '' : 'none';
 
   // ナビタブ：週間（村以上）
   var labelWeekly = document.getElementById('settingsLabelWeekly');
-  if (labelWeekly) labelWeekly.style.display = (!_km || _km.visibleTabs.weekly !== false) ? '' : 'none';
+  // 週間：村・町・王国のみ表示
+  var _effectiveKm = (typeof KINGDOM_MODES !== 'undefined') ? KINGDOM_MODES[_effectiveModeKey] : null;
+  if (labelWeekly) labelWeekly.style.display = (!_effectiveKm || _effectiveKm.visibleTabs.weekly !== false) ? '' : 'none';
   // ナビタブ：月間（村以上）
   var labelMonthly = document.getElementById('settingsLabelMonthly');
-  if (labelMonthly) labelMonthly.style.display = (!_km || _km.visibleTabs.monthly !== false) ? '' : 'none';
+  if (labelMonthly) labelMonthly.style.display = (!_effectiveKm || _effectiveKm.visibleTabs.monthly !== false) ? '' : 'none';
   // ナビタブ：年間（モードが町・王国なら常に表示。ユーザーがOFFにしても消えない）
   var labelYearly = document.getElementById('settingsLabelYearly');
-  var _yearlyAvailable = (_modeKey === 'town' || _modeKey === 'kingdom' || _modeKey === 'custom');
+  var _yearlyAvailable = (_effectiveModeKey === 'town' || _effectiveModeKey === 'kingdom');
   if (labelYearly) labelYearly.style.display = _yearlyAvailable ? '' : 'none';
 
   // ナビタブ：自由帳（村以上）
   var labelNotebook = document.getElementById('settingsLabelNotebook');
-  if (labelNotebook) labelNotebook.style.display = (!_km || _km.visibleTabs.notebook !== false) ? '' : 'none';
+  if (labelNotebook) labelNotebook.style.display = (!_effectiveKm || _effectiveKm.visibleTabs.notebook !== false) ? '' : 'none';
 
   // ナビタブ：コロシアム（王国のみ表示）
   var labelColosseum = document.getElementById('settingsLabelColosseum');
-  var _colosseumAvailable = (_modeKey === 'kingdom' || _modeKey === 'custom');
+  var _colosseumAvailable = (_effectiveModeKey === 'kingdom');
   if (labelColosseum) labelColosseum.style.display = _colosseumAvailable ? '' : 'none';
+  // ナビタブ：写真館（町・王国のみ表示）
+  var labelPhoto = document.getElementById('settingsLabelPhoto');
+  var _photoAvailable = (_effectiveModeKey === 'town' || _effectiveModeKey === 'kingdom');
+  if (labelPhoto) labelPhoto.style.display = _photoAvailable ? '' : 'none';
 }
 
 function toggleVisibleTab(key, checked) {
@@ -9675,6 +9710,7 @@ function toggleVisibleTab(key, checked) {
   }
   allSettings.ui.visibleTabs[key] = checked;
   // 手動でチェックボックスを変更した場合は「カスタム」扱いにする
+  if (allSettings.ui.kingdomMode !== 'custom') allSettings.ui.kingdomModeBase = allSettings.ui.kingdomMode;
   allSettings.ui.kingdomMode = 'custom';
   saveAllSettings();
   applyVisibleTabsSettings();
@@ -16174,7 +16210,7 @@ function loadSettingsUI() {
       // ナビタブ表示チェックボックスを現在の設定で初期化
       (function() {
         var _vt = allSettings.ui.visibleTabs || {};
-        var _vtMap = { yearly:'visTabYearly', notebook:'visTabNotebook', craft:'visTabCraft', shop:'visTabShop', colosseum:'visTabColosseum', photo:'visTabPhoto' };
+        var _vtMap = { weekly:'visTabWeekly', monthly:'visTabMonthly', yearly:'visTabYearly', notebook:'visTabNotebook', craft:'visTabCraft', shop:'visTabShop', colosseum:'visTabColosseum', journal:'visTabJournal', photo:'visTabPhoto' };
         Object.keys(_vtMap).forEach(function(key) {
           var el = document.getElementById(_vtMap[key]);
           if (el) el.checked = _vt[key] !== false;
