@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.486';
+    const APP_VERSION = 'v0.39.492';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -1904,6 +1904,10 @@
       margin: 0;
     }
     @media print {
+      @page {
+        margin: 0;
+        size: A4 landscape;
+      }
       * { box-sizing: border-box; }
       body, html {
         width: 297mm;
@@ -2026,6 +2030,14 @@
       /* ダッシュボードのエクスポート・インポートボタンを印刷時に非表示 */
       #dashboardView button[onclick*="exportData"],
       #dashboardView button[onclick*="dbImportInput"] {
+        display: none !important;
+      }
+      /* 日付ナビバー（前日・翌日）を印刷時に非表示 */
+      #dailyDateNavBar {
+        display: none !important;
+      }
+      /* 禅モードボタンを印刷時に非表示 */
+      #zenModeBtn {
         display: none !important;
       }
       .escape-btn {
@@ -29182,6 +29194,144 @@ function showDebugLog(_initOnly) {
      } catch(e) {
        ng('ST-85: 王国規模モードテスト例外', e.message);
      }
+
+     // ===== ST-86: 印刷CSS エクスポート/インポート非表示 =====
+     try {
+       var _printCss = document.head ? document.head.innerHTML : '';
+       var _hasPrintDataBtn = content => content.includes('@media print') && content.includes('.data-btn') && content.includes('display: none');
+       var _srcCode = document.documentElement.innerHTML;
+       _srcCode.includes('@media print') && _srcCode.includes('.data-btn')
+         ? ok('ST-86: 印刷CSS .data-btn非表示定義確認')
+         : ng('ST-86: 印刷CSS .data-btn非表示定義なし', '');
+       // data-btnクラスのボタンが存在するか
+       var _dataBtns = document.querySelectorAll('.data-btn');
+       _dataBtns.length >= 1
+         ? ok('ST-86: .data-btnボタン存在確認（' + _dataBtns.length + '件）')
+         : ng('ST-86: .data-btnボタンなし', '');
+       ok('ST-86: 印刷CSS エクスポート/インポート非表示 完了');
+     } catch(e) { ng('ST-86: 例外', e.message); }
+
+     // ===== ST-87: moveScratchToThoughts zen含む移動 =====
+     try {
+       var _mstSrc = (typeof moveScratchToThoughts === 'function') ? moveScratchToThoughts.toString() : '';
+       _mstSrc.includes("t.kind === 'zen'")
+         ? ok('ST-87: moveScratchToThoughts zen対象確認')
+         : ng('ST-87: moveScratchToThoughts zenが対象外', '');
+       // zenアイテムを作成して移動テスト
+       var _zenId = generateTaskId();
+       var _yesterday2 = new Date(); _yesterday2.setDate(_yesterday2.getDate()-1);
+       var _yStr2 = _yesterday2.getFullYear()+'-'+String(_yesterday2.getMonth()+1).padStart(2,'0')+'-'+String(_yesterday2.getDate()).padStart(2,'0');
+       allTasks.push({ id: _zenId, kind: 'zen', text: 'テスト禅アイテム', date: _yStr2, createdAt: new Date().toISOString() });
+       saveAllTasks();
+       localStorage.removeItem('_lastScratchMoveDate');
+       moveScratchToThoughts();
+       var _zenGone = !allTasks.find(t => t.id === _zenId);
+       _zenGone ? ok('ST-87: zenアイテム日誌移動確認') : ng('ST-87: zenアイテムが移動されなかった', '');
+       // クリーンアップ
+       allTasks = allTasks.filter(t => t.kind !== 'journal' || !t.thoughts || !t.thoughts.find(th => th.text === 'テスト禅アイテム'));
+       var _delJ = allTasks.findIndex(t => t.kind === 'journal' && t.date === _yStr2 && t.thoughts && t.thoughts.find(th => th.text === 'テスト禅アイテム'));
+       if (_delJ !== -1) allTasks.splice(_delJ, 1);
+       saveAllTasks();
+       ok('ST-87: moveScratchToThoughts zen含む移動 完了');
+     } catch(e) { ng('ST-87: 例外', e.message); }
+
+     // ===== ST-88: 写真館タブ ON/OFF =====
+     try {
+       var _vTabPhoto = document.getElementById('visTabPhoto');
+       _vTabPhoto ? ok('ST-88: visTabPhoto DOM確認') : ng('ST-88: visTabPhoto DOMなし', '');
+       var _labelPhoto = document.getElementById('settingsLabelPhoto');
+       _labelPhoto ? ok('ST-88: settingsLabelPhoto DOM確認') : ng('ST-88: settingsLabelPhoto DOMなし', '');
+       // photo=falseでnavPhotoが非表示になるか
+       var _prevPhoto = allSettings.ui.visibleTabs.photo;
+       if (typeof toggleVisibleTab === 'function') toggleVisibleTab('photo', false);
+       var _navPhoto = document.getElementById('navPhoto');
+       var _photoHidden = _navPhoto && _navPhoto.style.display === 'none';
+       _photoHidden ? ok('ST-88: photo=false → navPhoto非表示確認') : ng('ST-88: photo=false → navPhoto非表示にならなかった', _navPhoto ? _navPhoto.style.display : 'null');
+       // 復元
+       if (typeof toggleVisibleTab === 'function') toggleVisibleTab('photo', _prevPhoto !== false);
+       ok('ST-88: 写真館タブ ON/OFF 完了');
+     } catch(e) { ng('ST-88: 例外', e.message); }
+
+     // ===== ST-89: applySettingsSectionVisibility 権限ベース表示 =====
+     try {
+       typeof applySettingsSectionVisibility === 'function'
+         ? ok('ST-89: applySettingsSectionVisibility 存在確認')
+         : ng('ST-89: applySettingsSectionVisibility なし', '');
+       var _prevMode = allSettings.ui.kingdomMode;
+       // 野営地モードで造営ラベルが非表示
+       allSettings.ui.kingdomMode = 'camp';
+       applySettingsSectionVisibility();
+       var _lgCamp = document.getElementById('settingsLabelGant');
+       var _lgCampHidden = _lgCamp && _lgCamp.style.display === 'none';
+       _lgCampHidden ? ok('ST-89: camp → 造営ラベル非表示確認') : ng('ST-89: camp → 造営ラベル非表示にならなかった', '');
+       // 王国モードで造営ラベルが表示
+       allSettings.ui.kingdomMode = 'kingdom';
+       applySettingsSectionVisibility();
+       var _lgKingdom = document.getElementById('settingsLabelGant');
+       var _lgKingdomVisible = _lgKingdom && _lgKingdom.style.display !== 'none';
+       _lgKingdomVisible ? ok('ST-89: kingdom → 造営ラベル表示確認') : ng('ST-89: kingdom → 造営ラベル表示にならなかった', '');
+       // 年間ラベル：王国でOFFにしても消えない
+       allSettings.ui.kingdomMode = 'kingdom';
+       allSettings.ui.visibleTabs.yearly = false;
+       applySettingsSectionVisibility();
+       var _lyKingdom = document.getElementById('settingsLabelYearly');
+       var _lyVisible = _lyKingdom && _lyKingdom.style.display !== 'none';
+       _lyVisible ? ok('ST-89: kingdom・yearly=false → 年間ラベル消えない確認') : ng('ST-89: kingdom・yearly=false → 年間ラベルが消えた', '');
+       // 復元
+       allSettings.ui.kingdomMode = _prevMode;
+       allSettings.ui.visibleTabs.yearly = true;
+       applySettingsSectionVisibility();
+       ok('ST-89: applySettingsSectionVisibility 権限ベース表示 完了');
+     } catch(e) { ng('ST-89: 例外', e.message); }
+
+     // ===== ST-90: switchView モード制限チェック =====
+     try {
+       var _prevMode90 = allSettings.ui.kingdomMode;
+       // 野営地で週間に切り替えようとするとdailyにリダイレクト
+       allSettings.ui.kingdomMode = 'camp';
+       if (typeof selectKingdomMode === 'function') selectKingdomMode('camp');
+       var _prevView = allSettings.ui.currentView;
+       switchView('weekly');
+       var _weeklyHidden = document.getElementById('weeklyView') && document.getElementById('weeklyView').style.display === 'none';
+       _weeklyHidden ? ok('ST-90: camp → weekly切替→dailyリダイレクト確認') : ng('ST-90: camp → weeklyが表示された', '');
+       // 復元
+       allSettings.ui.kingdomMode = _prevMode90;
+       if (typeof selectKingdomMode === 'function') selectKingdomMode(_prevMode90 || 'kingdom');
+       switchView('daily');
+       ok('ST-90: switchView モード制限チェック 完了');
+     } catch(e) { ng('ST-90: 例外', e.message); }
+
+     // ===== ST-91: 印刷CSS @pageルール・dailyDateNavBar非表示 =====
+     try {
+       var _srcHtml = document.documentElement.innerHTML;
+       // @pageルール確認
+       _srcHtml.includes('@page') && _srcHtml.includes('margin: 0')
+         ? ok('ST-91: @page margin:0 定義確認')
+         : ng('ST-91: @page margin:0 未定義', '');
+       _srcHtml.includes('size: A4')
+         ? ok('ST-91: @page size:A4 定義確認')
+         : ng('ST-91: @page size:A4 未定義', '');
+       // dailyDateNavBar非表示定義確認
+       _srcHtml.includes('#dailyDateNavBar') && _srcHtml.includes('display: none !important')
+         ? ok('ST-91: 印刷CSS #dailyDateNavBar非表示定義確認')
+         : ng('ST-91: 印刷CSS #dailyDateNavBar非表示定義なし', '');
+       // DOM存在確認
+       var _navBar = document.getElementById('dailyDateNavBar');
+       _navBar ? ok('ST-91: #dailyDateNavBar DOM確認') : ng('ST-91: #dailyDateNavBar DOMなし', '');
+       ok('ST-91: 印刷CSS @page・dailyDateNavBar非表示 完了');
+     } catch(e) { ng('ST-91: 例外', e.message); }
+
+     // ===== ST-92: 印刷CSS zenModeBtn非表示 =====
+     try {
+       var _srcHtml92 = document.documentElement.innerHTML;
+       _srcHtml92.includes('#zenModeBtn') && _srcHtml92.includes('display: none !important')
+         ? ok('ST-92: 印刷CSS #zenModeBtn非表示定義確認')
+         : ng('ST-92: 印刷CSS #zenModeBtn非表示定義なし', '');
+       var _zenBtn = document.getElementById('zenModeBtn');
+       _zenBtn ? ok('ST-92: #zenModeBtn DOM確認') : ng('ST-92: #zenModeBtn DOMなし', '');
+       ok('ST-92: 印刷CSS zenModeBtn非表示 完了');
+     } catch(e) { ng('ST-92: 例外', e.message); }
+
 
      try {
        ok('');
