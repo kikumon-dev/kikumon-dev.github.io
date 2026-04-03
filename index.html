@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.493';
+    const APP_VERSION = 'v0.39.507';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -6065,7 +6065,149 @@ function switchSearchTab(tab) {
 }
 
 // ===== 業タスク一覧 =====
-function renderGouTaskList() {
+
+    function openGouVanishOptions(taskId) {
+      // 既存のバニッシュパネルを閉じる
+      var existing = document.getElementById('_gouVanishPanel');
+      if (existing) {
+        var existingId = existing.dataset.taskId;
+        existing.remove();
+        if (existingId === taskId) return; // 同じタスクなら閉じるだけ
+      }
+      var task = allTasks.find(function(t){ return t.id === taskId; });
+      if (!task) return;
+      var row = document.getElementById('_gouRow_' + taskId);
+      if (!row) return;
+      var panel = document.createElement('div');
+      panel.id = '_gouVanishPanel';
+      panel.dataset.taskId = taskId;
+      panel.style.cssText = 'display:flex;gap:6px;padding:6px 8px;background:#fff8f8;border-top:1px solid #ffcdd2;flex-wrap:wrap;';
+      var modes = [
+        { key: 'today',    label: '今日に移す' },
+        { key: 'edit',     label: '編集して小さくする' },
+        { key: 'complete', label: '✅ 完了した' },
+        { key: 'release',  label: '🚮 捨てる・手放す' }
+      ];
+      modes.forEach(function(m) {
+        var btn = document.createElement('button');
+        btn.textContent = m.label;
+        btn.style.cssText = 'font-size:0.78em;padding:4px 10px;border-radius:8px;border:1px solid #ffcdd2;background:#fff;color:#c62828;cursor:pointer;font-weight:600;';
+        btn.onclick = (function(key){ return function(e){
+          e.stopPropagation();
+          executeGouVanish(taskId, key);
+        }; })(m.key);
+        panel.appendChild(btn);
+      });
+      row.insertAdjacentElement('afterend', panel);
+      // パネルが見えるようにスクロール
+      setTimeout(function() {
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 50);
+    }
+    window.openGouVanishOptions = openGouVanishOptions;
+
+    function executeGouVanish(taskId, mode) {
+      var task = allTasks.find(function(t){ return t.id === taskId; });
+      if (!task) return;
+      var panel = document.getElementById('_gouVanishPanel');
+      if (panel) panel.remove();
+      var row = document.getElementById('_gouRow_' + taskId);
+
+      function animateAndRefresh() {
+        if (row) {
+          row.style.transition = 'opacity 0.3s, max-height 0.3s';
+          row.style.opacity = '0';
+          row.style.maxHeight = '0';
+          row.style.overflow = 'hidden';
+          setTimeout(function(){ renderGouTaskList(); }, 320);
+        } else {
+          renderGouTaskList();
+        }
+      }
+
+      if (mode === 'complete') {
+        task.completed = true;
+        task.done = true;
+        task.updatedAt = new Date().toISOString();
+        saveAllTasks();
+        if (typeof onTaskCompleted === 'function') onTaskCompleted(task);
+        showToast('完了しました 🌸 徳+1', { type: 'success', duration: 2000 });
+        animateAndRefresh();
+      } else if (mode === 'today') {
+        var todayStr = getLocalDateStr(new Date());
+        task.date = todayStr;
+        task.updatedAt = new Date().toISOString();
+        saveAllTasks();
+        showToast('今日に移しました', { type: 'success', duration: 2000 });
+        animateAndRefresh();
+      } else if (mode === 'edit') {
+        // インライン編集：rowのテキスト部分をinputに差し替える
+        var row = document.getElementById('_gouRow_' + taskId);
+        if (!row) return;
+        var textEl = row.querySelector('._gouTaskText');
+        if (!textEl) return;
+        var originalText = task.text || '';
+        var input = document.createElement('input');
+        input.type = 'text';
+        input.value = originalText;
+        input.style.cssText = 'flex:1;font-size:0.85em;font-weight:600;border:1.5px solid #ffcdd2;border-radius:6px;padding:2px 6px;color:#c62828;outline:none;min-width:0;';
+        textEl.replaceWith(input);
+        window._gouEditingInline = true;
+        // 親のinfo.onclickを無効化（画面遷移防止）
+        var infoEl = input.parentElement;
+        var savedOnclick = infoEl ? infoEl.onclick : null;
+        if (infoEl) infoEl.onclick = function(e){ e.stopPropagation(); };
+        // doSaveをpanelの外で定義（Enterキーでも使えるように）
+        var doSave = function() {
+          var newText = input.value.trim();
+          if (!newText) { showToast('テキストが空です', { type: 'error', duration: 2000 }); return; }
+          task.text = newText;
+          task.updatedAt = new Date().toISOString();
+          saveAllTasks();
+          window._gouEditingInline = false;
+          if (infoEl && savedOnclick !== null) infoEl.onclick = savedOnclick;
+          showToast('形を変えました', { type: 'success', duration: 2000 });
+          renderGouTaskList();
+        };
+        var doCancel = function() {
+          window._gouEditingInline = false;
+          if (infoEl && savedOnclick !== null) infoEl.onclick = savedOnclick;
+          renderGouTaskList();
+        };
+        input.onkeydown = function(e) {
+          if (e.key === 'Enter') { e.preventDefault(); doSave(); }
+          if (e.key === 'Escape') { e.preventDefault(); doCancel(); }
+        };
+        input.focus();
+        input.select();
+        // バニッシュパネルのボタンを保存ボタンに変更
+        var panel = document.getElementById('_gouVanishPanel');
+        if (panel) {
+          panel.innerHTML = '';
+          var saveBtn = document.createElement('button');
+          saveBtn.textContent = '保存';
+          saveBtn.style.cssText = 'font-size:0.78em;padding:4px 12px;border-radius:8px;border:1px solid #4caf50;background:#f1f8e9;color:#2e7d32;cursor:pointer;font-weight:600;';
+          var cancelBtn = document.createElement('button');
+          cancelBtn.textContent = 'キャンセル';
+          cancelBtn.style.cssText = 'font-size:0.78em;padding:4px 10px;border-radius:8px;border:1px solid #ccc;background:#fff;color:#aaa;cursor:pointer;';
+          saveBtn.onclick = doSave;
+          cancelBtn.onclick = doCancel;
+          panel.appendChild(saveBtn);
+          panel.appendChild(cancelBtn);
+        }
+        return; // animateAndRefreshしない
+      } else if (mode === 'release') {
+        task.completed = true;
+        task.done = true;
+        task.updatedAt = new Date().toISOString();
+        saveAllTasks();
+        showToast('手放しました', { type: 'success', duration: 2000 });
+        animateAndRefresh();
+      }
+    }
+    window.executeGouVanish = executeGouVanish;
+
+    function renderGouTaskList() {
   var container = document.getElementById('gouTaskResults');
   var countEl   = document.getElementById('gouTaskCount');
   if (!container || !countEl) return;
@@ -6172,6 +6314,7 @@ function renderGouTaskList() {
       var rowBg = daysOld >= 14 ? '#ffcdd2' : daysOld >= 7 ? '#ffebee' : '#fff5f5';
       var textColor = daysOld >= 14 ? '#b71c1c' : daysOld >= 7 ? '#c62828' : '#e53935';
       var row = document.createElement('div');
+      row.id = '_gouRow_' + t.id;
       row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:7px 6px;' +
         'border-bottom:1px solid #fdf0f0;border-radius:4px;background:' + rowBg + ';';
 
@@ -6184,6 +6327,7 @@ function renderGouTaskList() {
       var info = document.createElement('div');
       info.style.cssText = 'flex:1;min-width:0;cursor:pointer;';
       var textEl = document.createElement('div');
+      textEl.className = '_gouTaskText';
       textEl.style.cssText = 'font-size:0.85em;font-weight:' + (daysOld >= 7 ? '700' : '500') + ';color:' + textColor + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
       textEl.textContent = t.text || '（無題）';
       var secLabel = ['緊急×重要','重要のみ','緊急のみ','どちらでもない'];
@@ -6201,22 +6345,17 @@ function renderGouTaskList() {
         setTimeout(function(){ switchDailyTab('matrix'); }, 50);
       }; })(t, dateStr);
 
-      // 案1: インライン完了ボタン
+      // バニッシュボタン
       var doneBtn = document.createElement('button');
-      doneBtn.textContent = '✅';
-      doneBtn.title = '完了にする';
-      doneBtn.style.cssText = 'background:none;border:1.5px solid #ccc;border-radius:6px;padding:2px 6px;cursor:pointer;font-size:0.85em;flex-shrink:0;transition:all 0.15s;';
-      doneBtn.onmouseover = function(){ doneBtn.style.borderColor='#4caf50';doneBtn.style.background='#f1f8e9'; };
-      doneBtn.onmouseout  = function(){ doneBtn.style.borderColor='#ccc';doneBtn.style.background='none'; };
-      doneBtn.onclick = (function(task){ return function(e) {
+      doneBtn.textContent = 'バニッシュ';
+      doneBtn.title = '業をバニッシュする';
+      doneBtn.style.cssText = 'background:#fff0f0;border:1.5px solid #ffcdd2;border-radius:8px;padding:3px 8px;cursor:pointer;font-size:0.75em;font-weight:700;color:#c62828;flex-shrink:0;transition:all 0.15s;';
+      doneBtn.onmouseover = function(){ doneBtn.style.background='#ffcdd2'; };
+      doneBtn.onmouseout  = function(){ doneBtn.style.background='#fff0f0'; };
+      doneBtn.onclick = (function(tid){ return function(e) {
         e.stopPropagation();
-        task.completed = true;
-        task.done = true;
-        task.updatedAt = new Date().toISOString();
-        saveAllTasks();
-        if (typeof onTaskCompleted === 'function') onTaskCompleted(task);
-        renderGouTaskList();
-      }; })(t);
+        openGouVanishOptions(tid);
+      }; })(t.id);
 
       row.appendChild(dot);
       row.appendChild(info);
@@ -19820,7 +19959,7 @@ window.addEventListener('afterprint', function() {
 });</script>
   <!-- タスク編集モーダル -->
   <!-- 検索モーダル -->
-  <div id="searchModal" class="custom-modal" onclick="if(event.target.id==='searchModal') closeSearchModal();">
+  <div id="searchModal" class="custom-modal" onclick="if(event.target.id==='searchModal' && !window._gouEditingInline) closeSearchModal();">
     <div class="modal-content" style="max-width:480px;text-align:left;max-height:80vh;display:flex;flex-direction:column;">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
         <span style="font-size:1.2em;">🔍</span>
@@ -19849,7 +19988,7 @@ window.addEventListener('afterprint', function() {
         <div id="todoResults" style="overflow-y:auto;flex:1;"></div>
       </div>
       <div id="searchPaneGou" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
-        <div style="font-size:0.78em;color:#e53935;margin-bottom:8px;">👹 過去の放置タスク＝業の種。完了して業を祓おう。<span id="gouTaskCount" style="margin-left:6px;font-weight:700;"></span></div>
+        <div style="font-size:0.78em;color:#e53935;margin-bottom:8px;">👹 過去の放置タスク＝業の種。バニッシュして業を祓おう。<span id="gouTaskCount" style="margin-left:6px;font-weight:700;"></span></div>
         <div id="gouTaskResults" style="overflow-y:auto;flex:1;"></div>
       </div>
     </div>
@@ -28794,10 +28933,10 @@ function showDebugLog(_initOnly) {
          ? ok('ST-81: savePhoto内 stamps:[] 初期化確認')
          : ng('ST-81: stamps初期化', 'savePhoto内にstamps:[]なし');
 
-       // onTaskCompleted フック（完了後写真トースト）確認
-       document.documentElement.innerHTML.includes('証拠を残しますか')
-         ? ok('ST-81: onTaskCompleted 写真フック「証拠を残しますか」確認')
-         : ng('ST-81: 完了フック', '未定義');
+       // onTaskCompleted フック（写真トーストは削除済み）
+       (typeof onTaskCompleted === 'function' && !onTaskCompleted.toString().includes('証拠を残しますか'))
+         ? ok('ST-81: onTaskCompleted 写真フック削除確認（削除済み）')
+         : ng('ST-81: 写真フック残存', '');
 
        ok('ST-81: クリーンアップ完了(' + allTasks.length + '件)');
        ok('ST-81: 写真保存・削除・SSOT整合 完了');
@@ -29300,6 +29439,55 @@ function showDebugLog(_initOnly) {
        _zenBtn ? ok('ST-92: #zenModeBtn DOM確認') : ng('ST-92: #zenModeBtn DOMなし', '');
        ok('ST-92: 印刷CSS zenModeBtn非表示 完了');
      } catch(e) { ng('ST-92: 例外', e.message); }
+
+     // ===== ST-93: 業GOVanish =====
+     try {
+       // 関数存在確認
+       typeof openGouVanishOptions === 'function'
+         ? ok('ST-93: openGouVanishOptions 存在確認')
+         : ng('ST-93: openGouVanishOptions なし', '');
+       typeof executeGouVanish === 'function'
+         ? ok('ST-93: executeGouVanish 存在確認')
+         : ng('ST-93: executeGouVanish なし', '');
+       // executeGouVanish内のsaveAllTasks参照確認
+       var _evSrc = executeGouVanish.toString();
+       _evSrc.includes('saveAllTasks()')
+         ? ok('ST-93: executeGouVanish saveAllTasks参照確認')
+         : ng('ST-93: executeGouVanish saveAllTasks参照なし', '');
+       // renderGouTaskList参照確認
+       _evSrc.includes('renderGouTaskList()')
+         ? ok('ST-93: executeGouVanish renderGouTaskList参照確認')
+         : ng('ST-93: executeGouVanish renderGouTaskList参照なし', '');
+       // today mode テスト
+       var _today93 = getLocalDateStr(new Date());
+       var _yesterday93 = new Date(); _yesterday93.setDate(_yesterday93.getDate()-1);
+       var _yStr93 = getLocalDateStr(_yesterday93);
+       var _calId93 = (allSettings.calendar && allSettings.calendar.list && allSettings.calendar.list[0]) ? allSettings.calendar.list[0].id : 'test';
+       var _testId93 = generateTaskId();
+       allTasks.push({ id: _testId93, kind: 'task', text: 'バニッシュテスト', date: _yStr93, section: 4, done: false, completed: false, displayScope: 'both', calendarId: _calId93, createdAt: new Date().toISOString() });
+       saveAllTasks();
+       executeGouVanish(_testId93, 'today');
+       var _movedTask = allTasks.find(function(t){ return t.id === _testId93; });
+       (_movedTask && _movedTask.date === _today93)
+         ? ok('ST-93: executeGouVanish today → 今日に移動確認')
+         : ng('ST-93: executeGouVanish today 失敗', _movedTask ? _movedTask.date : 'not found');
+       // release mode テスト
+       executeGouVanish(_testId93, 'release');
+       var _releasedTask = allTasks.find(function(t){ return t.id === _testId93; });
+       (_releasedTask && _releasedTask.completed === true && _releasedTask.done === true)
+         ? ok('ST-93: executeGouVanish release → 完了確認')
+         : ng('ST-93: executeGouVanish release 失敗', '');
+       // クリーンアップ
+       allTasks = allTasks.filter(function(t){ return t.id !== _testId93; });
+       saveAllTasks();
+       ok('ST-93: クリーンアップ完了(' + allTasks.length + '件)');
+       // バニッシュボタンHTML確認
+       var _gouSrc = renderGouTaskList.toString();
+       _gouSrc.includes('バニッシュ')
+         ? ok('ST-93: バニッシュボタン定義確認')
+         : ng('ST-93: バニッシュボタン定義なし', '');
+       ok('ST-93: 業GOVanish 完了');
+     } catch(e) { ng('ST-93: 例外', e.message); }
 
 
      try {
