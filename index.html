@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.492';
+    const APP_VERSION = 'v0.39.493';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -22088,38 +22088,7 @@ function onTaskCompleted(task) {
   if (typeof addToku === 'function') addToku(1, 'タスク完了');
   if (typeof addGou === 'function') addGou(-1, 'タスク完了');
   if (typeof recordTaskCompletedDate === 'function') recordTaskCompletedDate();
-  // 📷 写真帳フック：完了後に「証拠を残す？」トースト
-  var _ptTaskId = task ? task.id : '';
-  setTimeout(function() {
-    var oldPt = document.getElementById('_photoPromptToast');
-    if (oldPt) oldPt.remove();
-    var _pt = document.createElement('div');
-    _pt.id = '_photoPromptToast';
-    _pt.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#fff;color:#5a3a2a;padding:11px 18px;border-radius:14px;font-size:0.82em;font-weight:600;z-index:99997;box-shadow:0 4px 20px rgba(0,0,0,0.18);border:1px solid #e6d8c8;display:flex;align-items:center;gap:10px;white-space:nowrap;font-family:serif;opacity:0;transition:opacity 0.3s;';
-    var _ptLabel = document.createElement('span');
-    _ptLabel.textContent = '📷 証拠を残しますか？';
-    var _ptOk = document.createElement('button');
-    _ptOk.textContent = '刻む';
-    _ptOk.style.cssText = 'background:#8b6f5c;color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:0.9em;cursor:pointer;font-family:serif;';
-    _ptOk.onclick = (function(tid) { return function() {
-      var p = document.getElementById('_photoPromptToast');
-      if (p) p.remove();
-      if (typeof openPhotoUpload === 'function') openPhotoUpload(tid);
-    }; })(_ptTaskId);
-    var _ptNo = document.createElement('button');
-    _ptNo.textContent = 'あとで';
-    _ptNo.style.cssText = 'background:none;color:#aaa;border:none;font-size:0.85em;cursor:pointer;';
-    _ptNo.onclick = function() { var p = document.getElementById('_photoPromptToast'); if (p) p.remove(); };
-    _pt.appendChild(_ptLabel);
-    _pt.appendChild(_ptOk);
-    _pt.appendChild(_ptNo);
-    document.body.appendChild(_pt);
-    requestAnimationFrame(function(){ requestAnimationFrame(function(){ _pt.style.opacity = '1'; }); });
-    window._photoPromptTimer = setTimeout(function() {
-      _pt.style.opacity = '0';
-      setTimeout(function() { var p = document.getElementById('_photoPromptToast'); if (p) p.remove(); }, 300);
-    }, 5000);
-  }, 1200);
+  // 📷 写真帳フック削除済み
   // クラフトモード専用処理
   if (!(allSettings && allSettings.ui && allSettings.ui.craftModeEnabled)) return;
   // ① 旗を一時的に激しくはためかせる
