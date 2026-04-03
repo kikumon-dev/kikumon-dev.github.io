@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.483';
+    const APP_VERSION = 'v0.39.486';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -2014,6 +2014,18 @@
       }
       /* タスクのボタンを印刷時に非表示 */
       .edit-task-btn, .wg-task-edit {
+        display: none !important;
+      }
+      /* エクスポート・インポートボタンを印刷時に非表示 */
+      .data-btn {
+        display: none !important;
+      }
+      #dbImportInput {
+        display: none !important;
+      }
+      /* ダッシュボードのエクスポート・インポートボタンを印刷時に非表示 */
+      #dashboardView button[onclick*="exportData"],
+      #dashboardView button[onclick*="dbImportInput"] {
         display: none !important;
       }
       .escape-btn {
@@ -9461,13 +9473,15 @@ function updateKingdomModeButtons() {
 function applySettingsSectionVisibility() {
   var _km = (typeof KINGDOM_MODES !== 'undefined' && allSettings.ui && allSettings.ui.kingdomMode)
     ? KINGDOM_MODES[allSettings.ui.kingdomMode] : null;
+  var _modeKey = (allSettings.ui && allSettings.ui.kingdomMode) || 'kingdom';
 
-  // 造営セクション：町以上のみ表示
+  // 造営セクション：王国のみ表示
   var gantSection = document.getElementById('settingsGantSection');
   if (gantSection) gantSection.style.display = (_km && _km.gantEnabled) ? '' : 'none';
-  // ナビタブ表示セクションの造営ラベル：町以上のみ表示
+  // ナビタブ表示セクションの造営ラベル：王国のみ表示
   var labelGant = document.getElementById('settingsLabelGant');
-  if (labelGant) labelGant.style.display = (_km && _km.gantEnabled) ? '' : 'none';
+  var _gantAvailable = (_modeKey === 'kingdom' || _modeKey === 'custom');
+  if (labelGant) labelGant.style.display = _gantAvailable ? '' : 'none';
 
   // ナビタブ：週間（村以上）
   var labelWeekly = document.getElementById('settingsLabelWeekly');
@@ -9475,17 +9489,19 @@ function applySettingsSectionVisibility() {
   // ナビタブ：月間（村以上）
   var labelMonthly = document.getElementById('settingsLabelMonthly');
   if (labelMonthly) labelMonthly.style.display = (!_km || _km.visibleTabs.monthly !== false) ? '' : 'none';
-  // ナビタブ：年間（町以上）
+  // ナビタブ：年間（モードが町・王国なら常に表示。ユーザーがOFFにしても消えない）
   var labelYearly = document.getElementById('settingsLabelYearly');
-  if (labelYearly) labelYearly.style.display = (_km && _km.visibleTabs && _km.visibleTabs.yearly !== false) ? '' : 'none';
+  var _yearlyAvailable = (_modeKey === 'town' || _modeKey === 'kingdom' || _modeKey === 'custom');
+  if (labelYearly) labelYearly.style.display = _yearlyAvailable ? '' : 'none';
 
   // ナビタブ：自由帳（村以上）
   var labelNotebook = document.getElementById('settingsLabelNotebook');
   if (labelNotebook) labelNotebook.style.display = (!_km || _km.visibleTabs.notebook !== false) ? '' : 'none';
 
-  // ナビタブ：コロシアム（町以上）
+  // ナビタブ：コロシアム（王国のみ表示）
   var labelColosseum = document.getElementById('settingsLabelColosseum');
-  if (labelColosseum) labelColosseum.style.display = (_km && _km.visibleTabs && _km.visibleTabs.colosseum !== false) ? '' : 'none';
+  var _colosseumAvailable = (_modeKey === 'kingdom' || _modeKey === 'custom');
+  if (labelColosseum) labelColosseum.style.display = _colosseumAvailable ? '' : 'none';
 }
 
 function toggleVisibleTab(key, checked) {
