@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.518';
+    const APP_VERSION = 'v0.39.528';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -4529,6 +4529,8 @@
             <div style="font-size:1.0em;font-weight:600;color:#555;margin-top:2px;">これが、使命かもしれない。</div><div style="font-size:0.88em;color:#aaa;margin-top:2px;">全機能解放。ナビタブは自由にカスタマイズできる</div>
           </button>
         </div>
+        <!-- カスタムモードラベル（固定DOM） -->
+        <div id="_kingdomCustomLabel" style="display:none;font-size:0.78em;color:#f97316;font-weight:700;margin-top:8px;text-align:center;">⚙️ カスタム中</div>
       </div>
       <!-- カレンダー管理セクション -->
       <div class="settings-section">
@@ -4623,9 +4625,13 @@
             <input type="checkbox" id="visTabColosseum" onchange="toggleVisibleTab('colosseum',this.checked)" style="width:18px;height:18px;accent-color:#4facfe;cursor:pointer;">
             <span style="font-size:0.9em;color:#333;font-weight:600;">⚔️ コロシアム</span>
           </label>
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+          <label id="settingsLabelShop" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
             <input type="checkbox" id="visTabShop" onchange="toggleVisibleTab('shop',this.checked)" style="width:18px;height:18px;accent-color:#4facfe;cursor:pointer;">
             <span style="font-size:0.9em;color:#333;font-weight:600;">🛍️ ショップ</span>
+          </label>
+          <label id="settingsLabelDashboard" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="visTabDashboard" onchange="toggleVisibleTab('dashboard',this.checked)" style="width:18px;height:18px;accent-color:#4facfe;cursor:pointer;">
+            <span style="font-size:0.9em;color:#333;font-weight:600;">📈 ダッシュボード</span>
           </label>
         </div>
       </div>
@@ -4884,6 +4890,14 @@
               style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:1.5px solid #ef5350;border-radius:10px;background:#fff5f5;color:#c62828;font-size:0.88em;font-weight:600;cursor:pointer;width:100%;">
               🗑️ 全データ初期化
             </button>
+            <!-- 自動バックアップ復元 -->
+            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
+              <div>
+                <div style="font-size:0.85em;font-weight:700;color:#16a34a;">🛡️ 自動バックアップ</div>
+                <div id="settingsBackupLabel" style="font-size:0.8em;color:#4ade80;margin-top:2px;">確認中...</div>
+              </div>
+              <button onclick="openRestoreModal()" style="padding:7px 14px;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;border-radius:10px;color:#fff;font-size:0.78em;font-weight:700;cursor:pointer;">🔄 復元</button>
+            </div>
           </div>
         </div>
         <!-- GitHub Gist クラウド同期 -->
@@ -5473,7 +5487,7 @@
         kingdomModeBase:  'kingdom',
         visibleTabs: {
           yearly: true, notebook: true, craft: true,
-          shop: true, colosseum: true
+          shop: true, colosseum: true, dashboard: true
         }
       },
       calendar: {
@@ -9603,27 +9617,20 @@ function updateKingdomModeButtons() {
       btn.style.borderColor = '#e0e0e0';
     }
   });
-  // カスタム中ラベルを表示
+  // カスタム中ラベルを表示（固定DOM）
   var customLabel = document.getElementById('_kingdomCustomLabel');
   if (isCustom) {
-    if (!customLabel) {
-      customLabel = document.createElement('div');
-      customLabel.id = '_kingdomCustomLabel';
-      customLabel.style.cssText = 'font-size:0.78em;color:#f97316;font-weight:700;margin-top:6px;text-align:center;';
-      var _baseLabel = {camp:'野営地',village:'村',town:'町',kingdom:'王国'}[baseMode] || '王国';
-      customLabel.textContent = '⚙️ カスタム中（' + _baseLabel + 'ベース）';
-      var kingdomBtn = document.getElementById('kingdomModeBtn_kingdom');
-      if (kingdomBtn && kingdomBtn.parentNode) kingdomBtn.parentNode.insertBefore(customLabel, kingdomBtn.nextSibling);
-    }
     var _baseLabel2 = {camp:'野営地',village:'村',town:'町',kingdom:'王国'}[baseMode] || '王国';
-    customLabel.textContent = '⚙️ カスタム中（' + _baseLabel2 + 'ベース）';
-    customLabel.style.display = '';
+    if (customLabel) {
+      customLabel.textContent = '⚙️ カスタム中（' + _baseLabel2 + 'ベース）';
+      customLabel.style.display = '';
+    }
   } else {
     if (customLabel) customLabel.style.display = 'none';
   }
   // ナビタブ表示チェックボックスも現在のvisibleTabsに同期
   var vt = (allSettings.ui && allSettings.ui.visibleTabs) || {};
-  var vtMap = { weekly: 'visTabWeekly', monthly: 'visTabMonthly', yearly: 'visTabYearly', notebook: 'visTabNotebook', craft: 'visTabCraft', shop: 'visTabShop', colosseum: 'visTabColosseum', journal: 'visTabJournal', photo: 'visTabPhoto' };
+  var vtMap = { weekly: 'visTabWeekly', monthly: 'visTabMonthly', yearly: 'visTabYearly', notebook: 'visTabNotebook', craft: 'visTabCraft', shop: 'visTabShop', colosseum: 'visTabColosseum', journal: 'visTabJournal', photo: 'visTabPhoto', dashboard: 'visTabDashboard' };
   Object.keys(vtMap).forEach(function(key) {
     var el = document.getElementById(vtMap[key]);
     if (el) el.checked = vt[key] !== false;
@@ -9688,6 +9695,10 @@ function applySettingsSectionVisibility() {
   var labelPhoto = document.getElementById('settingsLabelPhoto');
   var _photoAvailable = (_effectiveModeKey === 'town' || _effectiveModeKey === 'kingdom');
   if (labelPhoto) labelPhoto.style.display = _photoAvailable ? '' : 'none';
+  // ナビタブ：ダッシュボード（町・王国のみ表示）
+  var labelDashboard = document.getElementById('settingsLabelDashboard');
+  var _dashboardAvailable = (_effectiveModeKey === 'town' || _effectiveModeKey === 'kingdom');
+  if (labelDashboard) labelDashboard.style.display = _dashboardAvailable ? '' : 'none';
 }
 
 function toggleVisibleTab(key, checked) {
@@ -14613,7 +14624,7 @@ function reviveBlueprint(id) {
       if (typeof applyVisibleTabsSettings === 'function') applyVisibleTabsSettings();
       // ナビタブ設定のチェックボックスを初期化
       var vt = allSettings.ui.visibleTabs || {};
-      var vtMap = { yearly:'visTabYearly', notebook:'visTabNotebook', craft:'visTabCraft', shop:'visTabShop', colosseum:'visTabColosseum', photo:'visTabPhoto' };
+      var vtMap = { yearly:'visTabYearly', notebook:'visTabNotebook', craft:'visTabCraft', shop:'visTabShop', colosseum:'visTabColosseum', photo:'visTabPhoto', dashboard:'visTabDashboard' };
       Object.keys(vtMap).forEach(function(key) {
         var el = document.getElementById(vtMap[key]);
         if (el) el.checked = vt[key] !== false;
@@ -14784,6 +14795,12 @@ function reviveBlueprint(id) {
         if (typeof updateGuildUI === 'function') updateGuildUI();
         document.getElementById('navSettings').classList.add('active');
         loadSettingsUI();
+        // 設定のバックアップラベルを更新
+        (function(){
+          var _bkKeys = Object.keys(localStorage).filter(function(k){ return k.startsWith('backup_'); }).sort();
+          var _bkEl2 = document.getElementById('settingsBackupLabel');
+          if (_bkEl2) _bkEl2.textContent = _bkKeys.length > 0 ? '今日のデータ保存済み（' + _bkKeys.length + '世代）' : 'バックアップなし';
+        })();
       } else if (view === 'notebook') {
         var _nbKm = (typeof KINGDOM_MODES !== 'undefined' && allSettings.ui && allSettings.ui.kingdomMode) ? KINGDOM_MODES[allSettings.ui.kingdomMode] : null;
         if (_nbKm && _nbKm.visibleTabs && _nbKm.visibleTabs.notebook === false) { switchView('daily'); return; }
@@ -16210,7 +16227,7 @@ function loadSettingsUI() {
       // ナビタブ表示チェックボックスを現在の設定で初期化
       (function() {
         var _vt = allSettings.ui.visibleTabs || {};
-        var _vtMap = { weekly:'visTabWeekly', monthly:'visTabMonthly', yearly:'visTabYearly', notebook:'visTabNotebook', craft:'visTabCraft', shop:'visTabShop', colosseum:'visTabColosseum', journal:'visTabJournal', photo:'visTabPhoto' };
+        var _vtMap = { weekly:'visTabWeekly', monthly:'visTabMonthly', yearly:'visTabYearly', notebook:'visTabNotebook', craft:'visTabCraft', shop:'visTabShop', colosseum:'visTabColosseum', journal:'visTabJournal', photo:'visTabPhoto', dashboard:'visTabDashboard' };
         Object.keys(_vtMap).forEach(function(key) {
           var el = document.getElementById(_vtMap[key]);
           if (el) el.checked = _vt[key] !== false;
@@ -18878,15 +18895,20 @@ function renderDashboardView() {
     }
     var _latestKey = _backupKeys[0];
     var _latestDate = _latestKey.replace('backup_', '');
+    var _bsMsg, _bsColor;
     if (_latestDate === _today) {
-      _bsLabel.textContent = '今日のデータ保存済み（' + _backupKeys.length + '世代）';
-      _bsLabel.style.color = '#22c55e';
+      _bsMsg = '今日のデータ保存済み（' + _backupKeys.length + '世代）';
+      _bsColor = '#22c55e';
     } else {
       var _diffMs = new Date(_today.replace(/-/g,'/')) - new Date(_latestDate.replace(/-/g,'/'));
       var _diffDays = Math.floor(_diffMs / (1000*60*60*24));
-      _bsLabel.textContent = _diffDays + '日前のデータ（' + _backupKeys.length + '世代）';
-      _bsLabel.style.color = '#f59e0b';
+      _bsMsg = _diffDays + '日前のデータ（' + _backupKeys.length + '世代）';
+      _bsColor = '#f59e0b';
     }
+    _bsLabel.textContent = _bsMsg;
+    _bsLabel.style.color = _bsColor;
+    var _bsLabelSettings = document.getElementById('settingsBackupLabel');
+    if (_bsLabelSettings) { _bsLabelSettings.textContent = _bsMsg; _bsLabelSettings.style.color = _bsColor; }
   })();
   // Gist同期ステータス更新
   if (typeof _gistUpdateSyncBadge === 'function') _gistUpdateSyncBadge();
@@ -29385,6 +29407,10 @@ function showDebugLog(_initOnly) {
        _vTabPhoto ? ok('ST-88: visTabPhoto DOM確認') : ng('ST-88: visTabPhoto DOMなし', '');
        var _labelPhoto = document.getElementById('settingsLabelPhoto');
        _labelPhoto ? ok('ST-88: settingsLabelPhoto DOM確認') : ng('ST-88: settingsLabelPhoto DOMなし', '');
+       var _vTabDash = document.getElementById('visTabDashboard');
+       _vTabDash ? ok('ST-88: visTabDashboard DOM確認') : ng('ST-88: visTabDashboard DOMなし', '');
+       var _labelDash = document.getElementById('settingsLabelDashboard');
+       _labelDash ? ok('ST-88: settingsLabelDashboard DOM確認') : ng('ST-88: settingsLabelDashboard DOMなし', '');
        // photo=falseでnavPhotoが非表示になるか
        var _prevPhoto = allSettings.ui.visibleTabs.photo;
        if (typeof toggleVisibleTab === 'function') toggleVisibleTab('photo', false);
@@ -29643,6 +29669,17 @@ function showDebugLog(_initOnly) {
        allSettings.ui.kingdomMode = _prevMode96;
        allSettings.ui.kingdomModeBase = _prevBase96;
        applySettingsSectionVisibility();
+       // ダッシュボードラベル：町・王国のみ
+       allSettings.ui.kingdomMode = 'custom';
+       allSettings.ui.kingdomModeBase = 'camp';
+       applySettingsSectionVisibility();
+       var _ldCamp96 = document.getElementById('settingsLabelDashboard');
+       _ldCamp96 && _ldCamp96.style.display === 'none'
+         ? ok('ST-96: camp-custom → ダッシュボードラベル非表示確認')
+         : ng('ST-96: camp-custom → ダッシュボードラベルが表示された', '');
+       allSettings.ui.kingdomMode = _prevMode96;
+       allSettings.ui.kingdomModeBase = _prevBase96;
+       applySettingsSectionVisibility();
        ok('ST-96: applySettingsSectionVisibility effectiveModeKey 完了');
      } catch(e) { ng('ST-96: 例外', e.message); }
 
@@ -29678,6 +29715,9 @@ function showDebugLog(_initOnly) {
      // ===== ST-98: allSettings.ui デフォルト定義 kingdomMode/kingdomModeBase =====
      try {
        // allSettings.ui.kingdomMode・kingdomModeBase存在確認
+       allSettings.ui.visibleTabs.dashboard !== undefined
+         ? ok('ST-98: allSettings.ui.visibleTabs.dashboard 存在確認')
+         : ng('ST-98: visibleTabs.dashboard 未定義', '');
        allSettings.ui.kingdomMode !== undefined
          ? ok('ST-98: allSettings.ui.kingdomMode 存在確認（' + allSettings.ui.kingdomMode + '）')
          : ng('ST-98: allSettings.ui.kingdomMode 未定義', '');
@@ -29702,6 +29742,112 @@ function showDebugLog(_initOnly) {
          : ng('ST-98: kingdomModeBase保存失敗', '');
        ok('ST-98: allSettings.ui kingdomMode/kingdomModeBase定義 完了');
      } catch(e) { ng('ST-98: 例外', e.message); }
+
+     // ===== ST-99: ダッシュボード visibleTabs・チェックボックス =====
+     try {
+       // DOM確認
+       var _vTabDash99 = document.getElementById('visTabDashboard');
+       _vTabDash99 ? ok('ST-99: visTabDashboard DOM確認') : ng('ST-99: visTabDashboard DOMなし', '');
+       var _labelDash99 = document.getElementById('settingsLabelDashboard');
+       _labelDash99 ? ok('ST-99: settingsLabelDashboard DOM確認') : ng('ST-99: settingsLabelDashboard DOMなし', '');
+       // allSettings.ui.visibleTabs.dashboard存在確認
+       allSettings.ui.visibleTabs.dashboard !== undefined
+         ? ok('ST-99: visibleTabs.dashboard 存在確認（' + allSettings.ui.visibleTabs.dashboard + '）')
+         : ng('ST-99: visibleTabs.dashboard 未定義', '');
+       // toggleVisibleTab dashboard→navDashboard非表示確認
+       var _prevDash99 = allSettings.ui.visibleTabs.dashboard;
+       toggleVisibleTab('dashboard', false);
+       var _navDash99 = document.getElementById('navDashboard');
+       _navDash99 && _navDash99.style.display === 'none'
+         ? ok('ST-99: dashboard=false → navDashboard非表示確認')
+         : ng('ST-99: navDashboard非表示にならなかった', '');
+       toggleVisibleTab('dashboard', true);
+       _navDash99 && _navDash99.style.display !== 'none'
+         ? ok('ST-99: dashboard=true → navDashboard表示確認')
+         : ng('ST-99: navDashboard表示にならなかった', '');
+       // 復元
+       allSettings.ui.visibleTabs.dashboard = _prevDash99;
+       saveAllSettings();
+       // 町・王国モードでラベル表示、野営地で非表示
+       var _prevMode99 = allSettings.ui.kingdomMode;
+       var _prevBase99 = allSettings.ui.kingdomModeBase;
+       allSettings.ui.kingdomMode = 'camp'; allSettings.ui.kingdomModeBase = 'camp';
+       applySettingsSectionVisibility();
+       _labelDash99 && _labelDash99.style.display === 'none'
+         ? ok('ST-99: camp → dashboardラベル非表示確認')
+         : ng('ST-99: camp → dashboardラベルが表示された', '');
+       allSettings.ui.kingdomMode = 'town'; allSettings.ui.kingdomModeBase = 'town';
+       applySettingsSectionVisibility();
+       _labelDash99 && _labelDash99.style.display !== 'none'
+         ? ok('ST-99: town → dashboardラベル表示確認')
+         : ng('ST-99: town → dashboardラベルが非表示', '');
+       // 復元
+       allSettings.ui.kingdomMode = _prevMode99;
+       allSettings.ui.kingdomModeBase = _prevBase99;
+       applySettingsSectionVisibility();
+       ok('ST-99: ダッシュボード visibleTabs・チェックボックス 完了');
+     } catch(e) { ng('ST-99: 例外', e.message); }
+
+     // ===== ST-100: 設定のバックアップ復元セクション =====
+     try {
+       // settingsBackupLabel DOM確認
+       var _sbLabel = document.getElementById('settingsBackupLabel');
+       _sbLabel ? ok('ST-100: settingsBackupLabel DOM確認') : ng('ST-100: settingsBackupLabel DOMなし', '');
+       // openRestoreModal・closeRestoreModal 存在確認
+       typeof openRestoreModal === 'function'
+         ? ok('ST-100: openRestoreModal 存在確認') : ng('ST-100: openRestoreModal なし', '');
+       typeof closeRestoreModal === 'function'
+         ? ok('ST-100: closeRestoreModal 存在確認') : ng('ST-100: closeRestoreModal なし', '');
+       // openRestoreModal → restoreModal表示確認
+       openRestoreModal();
+       var _rm = document.getElementById('restoreModal');
+       _rm && (_rm.style.display === 'flex' || _rm.style.display !== 'none')
+         ? ok('ST-100: openRestoreModal → restoreModal表示確認')
+         : ng('ST-100: restoreModal表示されなかった', _rm ? _rm.style.display : 'null');
+       closeRestoreModal();
+       _rm && _rm.style.display === 'none'
+         ? ok('ST-100: closeRestoreModal → restoreModal非表示確認')
+         : ng('ST-100: restoreModal非表示にならなかった', '');
+       // settingsBackupLabelのテキスト確認
+       _sbLabel && _sbLabel.textContent.length > 0
+         ? ok('ST-100: settingsBackupLabel テキスト確認（' + _sbLabel.textContent + '）')
+         : ng('ST-100: settingsBackupLabel テキスト空', '');
+       ok('ST-100: 設定のバックアップ復元セクション 完了');
+     } catch(e) { ng('ST-100: 例外', e.message); }
+
+     // ===== ST-101: カスタムラベル固定DOM =====
+     try {
+       // _kingdomCustomLabel が固定DOMとして存在すること
+       var _cl101 = document.getElementById('_kingdomCustomLabel');
+       _cl101 ? ok('ST-101: _kingdomCustomLabel 固定DOM確認') : ng('ST-101: _kingdomCustomLabel DOMなし', '');
+       // 通常モードでは非表示
+       var _prevMode101 = allSettings.ui.kingdomMode;
+       var _prevBase101 = allSettings.ui.kingdomModeBase;
+       allSettings.ui.kingdomMode = 'kingdom';
+       allSettings.ui.kingdomModeBase = 'kingdom';
+       updateKingdomModeButtons();
+       _cl101 && _cl101.style.display === 'none'
+         ? ok('ST-101: 通常モード → カスタムラベル非表示確認')
+         : ng('ST-101: 通常モードでカスタムラベルが表示された', '');
+       // カスタムモードで表示・テキスト確認
+       allSettings.ui.kingdomMode = 'custom';
+       allSettings.ui.kingdomModeBase = 'village';
+       updateKingdomModeButtons();
+       _cl101 && _cl101.style.display !== 'none'
+         ? ok('ST-101: custom → カスタムラベル表示確認')
+         : ng('ST-101: custom → カスタムラベルが非表示', '');
+       _cl101 && _cl101.textContent.includes('村ベース')
+         ? ok('ST-101: カスタムラベル「村ベース」テキスト確認')
+         : ng('ST-101: カスタムラベルテキスト不正', _cl101 ? _cl101.textContent : '');
+       // settingsLabelShop DOM確認
+       var _lShop101 = document.getElementById('settingsLabelShop');
+       _lShop101 ? ok('ST-101: settingsLabelShop DOM確認') : ng('ST-101: settingsLabelShop DOMなし', '');
+       // 復元
+       allSettings.ui.kingdomMode = _prevMode101;
+       allSettings.ui.kingdomModeBase = _prevBase101;
+       updateKingdomModeButtons();
+       ok('ST-101: カスタムラベル固定DOM 完了');
+     } catch(e) { ng('ST-101: 例外', e.message); }
 
 
      try {
