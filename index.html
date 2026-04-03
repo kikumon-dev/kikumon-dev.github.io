@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.528';
+    const APP_VERSION = 'v0.39.530';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -12398,6 +12398,22 @@ function reviveBlueprint(id) {
       repeatSel.onchange = function() {
         repeatEndWrap.style.display = this.value !== 'none' ? 'block' : 'none';
       };
+      // カレンダー選択の初期化
+      (function() {
+        var _calList = (allSettings.calendar && allSettings.calendar.list) || [];
+        var _calSection = document.getElementById('taskEditCalendarSection');
+        var _calSel = document.getElementById('taskEditCalendarId');
+        if (!_calSection || !_calSel) return;
+        if (_calList.length <= 1) {
+          _calSection.style.display = 'none';
+          return;
+        }
+        _calSection.style.display = 'block';
+        _calSel.innerHTML = _calList.map(function(cal) {
+          return '<option value="' + cal.id + '">' + cal.name + '</option>';
+        }).join('');
+        _calSel.value = task.calendarId || (_calList[0] ? _calList[0].id : '');
+      })();
       document.getElementById('taskEditModal').classList.add('show');
       // 造営工程紐づけUI初期化
       const gantSection = document.getElementById('taskEditGantSection');
@@ -12520,11 +12536,16 @@ function reviveBlueprint(id) {
       if (!date) { showToast('日付を入力してください', {type:'warn'}); return; }
       // 元タスクを更新
       const baseTask = allTasks.find(t => t.id === taskId);
+      // カレンダーID取得
+      var _calSelEl = document.getElementById('taskEditCalendarId');
+      var _newCalendarId = (_calSelEl && _calSelEl.offsetParent !== null && _calSelEl.value)
+        ? _calSelEl.value : (baseTask ? baseTask.calendarId : null);
       updateTask(taskId, { 
         text, memo: memo || null, date, time, endTime,
         repeat: repeat !== 'none' ? repeat : null,
         repeatEnd: repeatEnd || null,
-        repeatGroupId: baseTask?.repeatGroupId || (repeat !== 'none' ? taskId : null)
+        repeatGroupId: baseTask?.repeatGroupId || (repeat !== 'none' ? taskId : null),
+        calendarId: _newCalendarId
       });
       // 繰り返し処理（共通関数）
       var _repeatContinue = applyRepeatSave(taskId, null, repeat, repeatEnd, date);
@@ -20124,6 +20145,11 @@ window.addEventListener('afterprint', function() {
             </div>
             <button type="button" class="time-clear-btn" onclick="clearTimeSelect('taskEditEnd')" title="終了時間をクリア">✕</button>
           </div>
+      </div>
+      <!-- カレンダー選択 -->
+      <div id="taskEditCalendarSection" style="margin-bottom:18px;display:none;">
+        <label>📅 カレンダー</label>
+        <select id="taskEditCalendarId" style="width:100%;padding:8px 10px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:0.9em;background:#fff;"></select>
       </div>
       <!-- 繰り返し設定 -->
       <div style="margin-bottom: 18px;">
@@ -29848,6 +29874,56 @@ function showDebugLog(_initOnly) {
        updateKingdomModeButtons();
        ok('ST-101: カスタムラベル固定DOM 完了');
      } catch(e) { ng('ST-101: 例外', e.message); }
+
+     // ===== ST-102: タスク編集モーダル カレンダー選択 =====
+     try {
+       // DOM確認
+       var _calSection102 = document.getElementById('taskEditCalendarSection');
+       _calSection102 ? ok('ST-102: taskEditCalendarSection DOM確認') : ng('ST-102: taskEditCalendarSection DOMなし', '');
+       var _calSel102 = document.getElementById('taskEditCalendarId');
+       _calSel102 ? ok('ST-102: taskEditCalendarId DOM確認') : ng('ST-102: taskEditCalendarId DOMなし', '');
+       // openTaskEditModal呼び出し後、select.valueがtask.calendarIdと一致すること
+       var _calList102 = (allSettings.calendar && allSettings.calendar.list) || [];
+       var _calId102 = _calList102.length > 0 ? _calList102[0].id : null;
+       // テスト用タスク作成
+       var _tid102 = generateTaskId();
+       allTasks.push({ id:_tid102, kind:'task', text:'ST-102テスト', date:getLocalDateStr(new Date()),
+         section:1, done:false, completed:false, displayScope:'both',
+         calendarId: _calId102, createdAt:new Date().toISOString() });
+       saveAllTasks();
+       openTaskEditModal(_tid102);
+       if (_calList102.length > 1) {
+         _calSel102 && _calSel102.value === _calId102
+           ? ok('ST-102: openTaskEditModal → calendarId初期値一致確認')
+           : ng('ST-102: calendarId初期値不一致', _calSel102 ? _calSel102.value : 'null');
+         _calSection102 && _calSection102.style.display !== 'none'
+           ? ok('ST-102: カレンダー複数 → sectionが表示確認')
+           : ng('ST-102: カレンダー複数なのにsection非表示', '');
+       } else {
+         _calSection102 && _calSection102.style.display === 'none'
+           ? ok('ST-102: カレンダー1件 → section非表示確認')
+           : ng('ST-102: カレンダー1件なのにsection表示', '');
+       }
+       closeTaskEditModal();
+       // calendarIdが2件以上ある場合、変更してsaveTaskEditでallTasksに反映されることを確認
+       if (_calList102.length > 1) {
+         openTaskEditModal(_tid102);
+         var _newCalId102 = _calList102[1].id;
+         if (_calSel102) _calSel102.value = _newCalId102;
+         saveTaskEdit();
+         var _saved102 = allTasks.find(function(t){ return t.id === _tid102; });
+         _saved102 && _saved102.calendarId === _newCalId102
+           ? ok('ST-102: saveTaskEdit → calendarId更新確認')
+           : ng('ST-102: calendarId更新されなかった', _saved102 ? _saved102.calendarId : 'null');
+       } else {
+         ok('ST-102: カレンダー1件のためsaveTaskEdit変更テストスキップ');
+       }
+       // クリーンアップ
+       allTasks = allTasks.filter(function(t){ return t.id !== _tid102; });
+       saveAllTasks();
+       ok('ST-102: クリーンアップ完了(' + allTasks.length + '件)');
+       ok('ST-102: タスク編集モーダル カレンダー選択 完了');
+     } catch(e) { ng('ST-102: 例外', e.message); }
 
 
      try {
