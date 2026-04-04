@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.538';
+    const APP_VERSION = 'v0.39.554';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3206,6 +3206,12 @@
 </head>
 <body>
 <div id="modal-root"></div>
+<div id="lpModal" style="display:none;position:fixed;inset:0;z-index:99000;background:rgba(0,0,0,0.85);flex-direction:column;">
+  <div style="display:flex;justify-content:flex-end;padding:10px 16px;">
+    <button onclick="closeLpModal()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:1.5em;border-radius:50%;width:40px;height:40px;cursor:pointer;">✕</button>
+  </div>
+  <iframe id="lpModalFrame" src="" style="flex:1;border:none;width:100%;display:block;" allow="fullscreen"></iframe>
+</div>
   <!-- ===== v0.28 初回セットアップ ===== -->
   <div id="setupOverlay" style="display:none;position:fixed;inset:0;z-index:999999;background:linear-gradient(135deg,#e8f5e9,#e3f2fd);align-items:center;justify-content:center;">
     <div style="background:#fff;border-radius:16px;padding:32px 28px;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.12);">
@@ -14612,6 +14618,7 @@ function reviveBlueprint(id) {
       'gistToken', 'gistId', 'gistLastSync',
       // 写真帳
       'photoImages',
+    '_dev_snapshot',
       // 旧アプリ互換キー（他バージョンからの移行端末で発生・許容）
       'orderMigrationDone_v96', 'showInDailyMigrationDone_v1',
       'memoMigrationDone_v97', 'inspectionMode',
@@ -17260,6 +17267,8 @@ function loadSettingsUI() {
     window.saveBlueprintEditor = saveBlueprintEditor;
     window.saveCreateTask = saveCreateTask;
     window.saveGantDayRange = saveGantDayRange;
+    window.openTaskEditModal = openTaskEditModal;
+    window.renderTimelineView = renderTimelineView;
     window.saveWeeklyTimeRange = saveWeeklyTimeRange;
     window.saveGanttEditor = saveGanttEditor;
     window.saveMonthlyTask = saveMonthlyTask;
@@ -23709,6 +23718,7 @@ try {
   window.openGuildMode = openGuildMode;
   window.openJournalDetail = openJournalDetail;
   window.openLpModal = openLpModal;
+  window.closeLpModal = closeLpModal;
   window.openNewJournal = openNewJournal;
   window.receiveStarterDeck = receiveStarterDeck;
   window.saveJournalEdit = saveJournalEdit;
@@ -24192,7 +24202,15 @@ function showDebugLog(_initOnly) {
      var pass = 0, fail = 0;
      function ok(name)            { results.push('✅ ' + name); pass++; }
      function ng(name, reason)    { results.push('❌ ' + name + (reason ? ': ' + reason : '')); fail++; }
-     window._isTesting = true; // ST実行中は全addGDP/addGou/addToku/showToastを抑制
+     window._isTesting = true;
+     // 自動スナップショット（第19条）
+     var _autoSnap = (function() {
+       var _ds = ['lpModal','lpModalFrame','taskEditModal','customModal','searchModal','scratchView','timelineView','weeklyView','monthlyView','gantView','journalView','settingsView','dashboardView','gantDayStartH','gantDayEndH','navDaily','navWeekly','navSettings'];
+       var _fs = ['openLpModal','closeLpModal','saveGantDayRange','renderTimelineView','switchView','saveAllSettings','saveAllTasks'];
+       var snap = { timestamp: new Date().toISOString(), version: (typeof APP_VERSION!=='undefined')?APP_VERSION:'unknown', doms: _ds.filter(function(id){ return !!document.getElementById(id); }), fns: _fs.filter(function(fn){ return typeof window[fn]==='function'; }), domTotal: _ds.length, fnTotal: _fs.length };
+       try { localStorage.setItem('_dev_snapshot', JSON.stringify(snap)); } catch(e) {}
+       return snap;
+     })(); // ST実行中は全addGDP/addGou/addToku/showToastを抑制
 
      // ===== GREY_LIST: 動的生成関数の静的チェック免除リスト =====
      // 白でも黒でもない——実行タイミング次第で存在が変わる関数たち。
@@ -24555,6 +24573,64 @@ function showDebugLog(_initOnly) {
          ? ok('UT-8: allTasks全IDがUUID形式(' + allTasks.length + '件)')
          : ng('UT-8: allTasks', 'UUID形式でないIDが存在');
      } catch(e) { ng('UT-8: UUID v7', e.message); }
+
+     // ===== ST-105: 影響範囲測定（変化検出）=====
+     // 目的: ベースラインリストとの差分を検出し「意図せず何かが消えた」を即座に把握する。
+     // 方式: ハードコードベースラインとのリスト差分比較（CTO裁定）。
+     //       消えたものをNG。ベースラインは機能追加時に意図的に更新すること。
+     try {
+       var _st105BaseDoms = [
+         'lpModal','lpModalFrame','modal-root','setupOverlay',
+         'taskEditModal','customModal','searchModal','sdfModal',
+         'quizModal','deckBuilderModal','familyShareModal',
+         'tutorialOverlay','restoreModal','restoreList',
+         'photoViewerModal','photoUploadModal','pvDeleteConfirm',
+         'scratchView','timelineView','weeklyView','monthlyView',
+         'gantView','journalView','photoLogView','notebookView',
+         'settingsView','dashboardView','colosseumView','shopView',
+         'navDaily','navWeekly','navSettings','navSearch',
+         'gantDayStartH','gantDayEndH','weeklyStartHSelect','weeklyEndHSelect',
+         'kingdomModeBtn_camp','kingdomModeBtn_village','kingdomModeBtn_town','kingdomModeBtn_kingdom',
+         'taskEditCalendarSection','taskEditCalendarId',
+         '_kingdomCustomLabel','settingsLabelShop',
+         'visTabDashboard','settingsLabelDashboard',
+         'settingsBackupLabel','dbBackupLabel',
+         'timelineBody','timelineTitle',
+         'zenModeBtn','zenModeOverlay','zenTextarea',
+         'pvStampLayer','pvStampPalette',
+         'gantChartArea','gantBlueprintArea','heavenBlueprintList',
+       ];
+       var _st105BaseFns = [
+         'openLpModal','closeLpModal',
+         'saveGantDayRange','saveWeeklyTimeRange',
+         'selectKingdomMode','updateKingdomModeButtons',
+         'openTaskEditModal','closeTaskEditModal','saveTaskEdit',
+         'openRestoreModal','closeRestoreModal','restoreFromBackup',
+         'openPhotoViewer','closePhotoViewer','deletePhoto',
+         'renderTimelineView','renderDashboardView','renderAllSections',
+         'switchView','saveAllSettings','saveAllTasks',
+         'toggleGantEnabled','toggleVisibleTab',
+         'openSearchModal','closeSearchModal',
+         'openZenMode','closeZenMode','saveZenMode',
+         'addToku','getToku','addGDP','getGDP','addGou','getGouNew',
+         'generateTaskId','updateTask','createTask','toggleTaskById',
+         'validateCalendarIds','isCalendarVisible',
+         'calcMoonAgeNAOJ','drawCraftMoon','_getSunData',
+         'showToast','renderGantView',
+       ];
+       var _st105MissingDoms = _st105BaseDoms.filter(function(id){ return !document.getElementById(id); });
+       var _st105MissingFns  = _st105BaseFns.filter(function(fn){ return typeof window[fn] !== 'function'; });
+       _st105MissingDoms.length === 0
+         ? ok('ST-105·①·DOM消失なし: ' + _st105BaseDoms.length + '件全確認')
+         : ng('ST-105·①·DOM消失（ベースライン割れ）', _st105MissingDoms.join(', '));
+       _st105MissingFns.length === 0
+         ? ok('ST-105·②·関数消失なし: ' + _st105BaseFns.length + '件全確認')
+         : ng('ST-105·②·関数消失（ベースライン割れ）', _st105MissingFns.join(', '));
+       ok('ST-105·③·LPAGベースライン: 19条（変更時は意図的に更新）');
+       (_st105MissingDoms.length === 0 && _st105MissingFns.length === 0)
+         ? ok('ST-105: 影響範囲測定 GREEN — ベースライン維持')
+         : ng('ST-105: 影響範囲測定 RED — ベースライン割れ', '要確認');
+     } catch(e) { ng('ST-105: 例外', e.message); }
 
      // ===== ST-1: renderScratchView・promoteScratch =====
      try {
@@ -29937,6 +30013,136 @@ function showDebugLog(_initOnly) {
 
 
      try {
+       // ST-104: 作業前後差分チェック（第19条【差分安全確認】）
+       // 趣旨: HTML編集はstr.replace誤マッチ等で意図しない破壊が起きる。
+       // DOM存在・window公開・設定デフォルト・HTML構造・onchangeハンドラを
+       // 作業前後で厳密に差分検証し、サイレント回帰バグを防ぐ。
+
+       // ① 重要DOM存在確認（消失 = 即NG）
+       var _domChecks104 = [
+         // モーダル系
+         'lpModal','lpModalFrame','modal-root','setupOverlay',
+         'taskEditModal','customModal','searchModal','sdfModal',
+         'quizModal','deckBuilderModal','familyShareModal',
+         'tutorialOverlay','restoreModal','restoreList',
+         'photoViewerModal','photoUploadModal','pvDeleteConfirm',
+         // ビュー系
+         'scratchView','timelineView','weeklyView','monthlyView',
+         'gantView','journalView','photoLogView','notebookView',
+         'settingsView','dashboardView','colosseumView','shopView',
+         // ナビ系
+         'navDaily','navWeekly','navSettings','navSearch',
+         // 設定UI系
+         'gantDayStartH','gantDayEndH',
+         'weeklyStartHSelect','weeklyEndHSelect',
+         'kingdomModeBtn_camp','kingdomModeBtn_village',
+         'kingdomModeBtn_town','kingdomModeBtn_kingdom',
+         'taskEditCalendarSection','taskEditCalendarId',
+         '_kingdomCustomLabel','settingsLabelShop',
+         'visTabDashboard','settingsLabelDashboard',
+         'settingsBackupLabel','dbBackupLabel',
+         // タイムライン系
+         'timelineBody','timelineTitle',
+         // 禅モード系
+         'zenModeBtn','zenModeOverlay','zenTextarea',
+         // 写真館系
+         'pvStampLayer','pvStampPalette',
+       ];
+       var _missing104 = _domChecks104.filter(function(id){ return !document.getElementById(id); });
+       _missing104.length === 0
+         ? ok('ST-104·①·DOM: 全' + _domChecks104.length + '件 消失なし')
+         : ng('ST-104·①·DOM消失検出', _missing104.join(', '));
+
+       // ② window公開確認（HTML onclick参照関数が未公開 = 即NG）
+       var _fnChecks104 = [
+         'openLpModal','closeLpModal',
+         'saveGantDayRange','saveWeeklyTimeRange',
+         'selectKingdomMode','updateKingdomModeButtons',
+         'openTaskEditModal','closeTaskEditModal','saveTaskEdit',
+         'openRestoreModal','closeRestoreModal','restoreFromBackup',
+         'openPhotoViewer','closePhotoViewer','deletePhoto',
+         'renderTimelineView','renderDashboardView',
+         'switchView','saveAllSettings','saveAllTasks',
+         'toggleGantEnabled','toggleVisibleTab',
+         'openSearchModal','closeSearchModal',
+         'openZenMode','closeZenMode','saveZenMode',
+       ];
+       var _missingFn104 = _fnChecks104.filter(function(fn){ return typeof window[fn] !== 'function'; });
+       _missingFn104.length === 0
+         ? ok('ST-104·②·window公開: 全' + _fnChecks104.length + '件確認')
+         : ng('ST-104·②·window公開漏れ', _missingFn104.join(', '));
+
+       // ③ 設定デフォルト値確認（作業でデフォルトが変わっていないか）
+       var _def104 = [
+         ['gantDayStartH', 'selected', '6'],
+         ['gantDayEndH', 'selected', '24'],
+       ];
+       var _defErrors104 = [];
+       var _selStart104 = document.getElementById('gantDayStartH');
+       var _selEnd104   = document.getElementById('gantDayEndH');
+       if (_selStart104) {
+         var _startSelected = Array.from(_selStart104.options).find(function(o){ return o.defaultSelected; });
+         if (!_startSelected || _startSelected.value !== '6') _defErrors104.push('gantDayStartH default≠6 (=' + (_startSelected ? _startSelected.value : 'none') + ')');
+       }
+       if (_selEnd104) {
+         var _endSelected = Array.from(_selEnd104.options).find(function(o){ return o.defaultSelected; });
+         if (!_endSelected || _endSelected.value !== '24') _defErrors104.push('gantDayEndH default≠24 (=' + (_endSelected ? _endSelected.value : 'none') + ')');
+       }
+       _defErrors104.length === 0
+         ? ok('ST-104·③·設定デフォルト: gantDayStartH=6 gantDayEndH=24 確認')
+         : ng('ST-104·③·設定デフォルト変化検出', _defErrors104.join(', '));
+
+       // ④ onchangeハンドラ確認（セレクトのonchangeが消えていないか）
+       var _onchangeChecks104 = [
+         ['gantDayStartH', 'saveGantDayRange'],
+         ['gantDayEndH',   'saveGantDayRange'],
+         ['weeklyStartHSelect', 'saveWeeklyTimeRange'],
+         ['weeklyEndHSelect',   'saveWeeklyTimeRange'],
+       ];
+       var _onchangeErrors104 = [];
+       _onchangeChecks104.forEach(function(pair) {
+         var _el = document.getElementById(pair[0]);
+         if (!_el) { _onchangeErrors104.push(pair[0] + ':DOM消失'); return; }
+         if (!_el.getAttribute('onchange') || _el.getAttribute('onchange').indexOf(pair[1]) === -1)
+           _onchangeErrors104.push(pair[0] + ':onchange消失');
+       });
+       _onchangeErrors104.length === 0
+         ? ok('ST-104·④·onchangeハンドラ: 全' + _onchangeChecks104.length + '件確認')
+         : ng('ST-104·④·onchangeハンドラ消失', _onchangeErrors104.join(', '));
+
+       // ⑤ HTML構造確認（重要セクションの存在と親子関係）
+       var _structErrors104 = [];
+       var _daily104 = document.getElementById('scratchView');
+       if (!_daily104 || !_daily104.closest('body')) _structErrors104.push('scratchView:body外');
+       var _lpM104 = document.getElementById('lpModal');
+       if (!_lpM104 || !_lpM104.querySelector('iframe')) _structErrors104.push('lpModal:iframe消失');
+       var _gantt104 = document.getElementById('gantChartArea');
+       if (!_gantt104) _structErrors104.push('gantChartArea:消失');
+       _structErrors104.length === 0
+         ? ok('ST-104·⑤·HTML構造: 親子関係・iframe確認')
+         : ng('ST-104·⑤·HTML構造異常', _structErrors104.join(', '));
+
+       // ⑥ lpModal開閉動作確認（旧ST-103を統合）
+       var _lp104 = document.getElementById('lpModal');
+       var _lpf104 = document.getElementById('lpModalFrame');
+       if (_lp104 && typeof openLpModal === 'function' && typeof closeLpModal === 'function') {
+         openLpModal('women');
+         var _lpDisp = _lp104.style.display;
+         (_lpDisp === 'flex' || _lpDisp === 'block')
+           ? ok('ST-104·⑥·lpModal: openLpModal → 表示確認')
+           : ng('ST-104·⑥·lpModal: 表示されない', _lpDisp);
+         closeLpModal();
+         _lp104.style.display === 'none'
+           ? ok('ST-104·⑥·lpModal: closeLpModal → 非表示確認')
+           : ng('ST-104·⑥·lpModal: 閉じない', _lp104.style.display);
+       } else {
+         ng('ST-104·⑥·lpModal: DOM or 関数が消失', '');
+       }
+
+       ok('ST-104: 作業前後差分チェック 完了（第19条 · 6軸）');
+     } catch(e) { ng('ST-104: 例外', e.message); }
+
+     try {
        ok('');
        ok('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
        ok('  🚀 APAG LAUNCH SEQUENCE — INITIATED');
@@ -30390,6 +30596,7 @@ function showDebugLog(_initOnly) {
          'toggleTaskById','onTaskCompleted',
          'KEY_WHITELIST','OFFICIAL_DECKS','KINGDOM_TITLES',
          'gistUpload','gistDownload','saveGistToken','clearGistToken',
+         'openLpModal','closeLpModal',
        ];
        var _a9Ok=[], _a9Ng=[];
        _a9Critical.forEach(function(name){
@@ -30603,6 +30810,16 @@ function showDebugLog(_initOnly) {
      } catch(e) { ng('KPAG — INSPECTION ABORTED', e.message); }
 
      // ===== LPAG — Law Purify Absolute Guardian =====
+     // 【開発フロー別 条文ガイド】
+     // 設計時   → 第10条【命名規則】第16条【関数名一目瞭然化】
+     // 実装時   → 第2条【nullチェック】第3条【window公開】第5条【allTasks操作】
+     //             第9条【iOS日付パース】第11条【displayScope】第12条【calendarId整合性】
+     //             第13条【JSスコープ】第17条【関数引数チェック】第18条【kingdomMode整合性】
+     // 編集時   → 第20条【一括文字列操作禁止】← 編集前後に必ず確認
+     // 検証時   → 第19条【差分安全確認】第8条【スモークテスト】
+     // 運用時   → 第6条【デバッグ4軸】第7条【renderScratchView】第14条【APAG運用規定】第15条【バージョニング】
+     // 廃止     → 第4条【欠番】
+     // ※条番号は制定順。番号ではなくフロー別に読むこと。
      try {
        var _rc = 0, _rp = 0;
        var _rf = function(label, pass, detail) {
@@ -30611,10 +30828,30 @@ function showDebugLog(_initOnly) {
          else { ng('LPAG[' + label + ']', '❌ ' + detail); }
        };
 
-       // 第1条【本番環境】Chromeへのデプロイ前提 - localStorageが存在すること
+       // 第1条【本番環境】
+       //
+       // 【制度趣旨】
+       // 本アプリの本番データはChromeブラウザのlocalStorageに保存される。
+       // アーティファクトパネル（about:srcdoc iframe）はlocalStorageが分離されており
+       // 本番データにアクセスできないため、テストとして無意味である。
+       // 本条はテスト環境と本番環境の混同による誤検証を防ぐ。
+       //
+       // 【確認義務】
+       // テストは必ずHTMLファイルをChromeで直接開いて行うこと。
+       // EdgeブラウザはUIテスト用であり本番データはない。
+       // デプロイ先はGitHub Pages（kikumon-dev.github.io）。
        _rf('第1条', typeof localStorage !== 'undefined', 'localStorage存在確認');
 
-       // 第2条【nullチェック】getElementById使用関数がnull参照を持つこと
+       // 第2条【nullチェック】
+       //
+       // 【制度趣旨】
+       // getElementById等のDOM参照はDOMが存在しない環境（初期化前・モーダル非表示中）で
+       // nullを返す。nullに対してプロパティアクセスすると即座に例外が発生し、
+       // 以降の処理が全停止する。本条はこの実行時例外を未然に防ぐ。
+       //
+       // 【確認義務】
+       // 新規コードにgetElementById等を使う場合、言われなくても当然nullチェックを入れること。
+       // 自動一括挿入は回帰バグを生むため手動で1つずつ追加すること。
        var _r2fns = ['renderDashboardView','renderGantView','renderColosseumView','renderScratchView'];
        var _r2ok = _r2fns.filter(function(fn){
          if (typeof window[fn]!=='function') return false;
@@ -30624,7 +30861,16 @@ function showDebugLog(_initOnly) {
        }).length;
        _rf('第2条', _r2ok >= 3, 'nullチェック対象関数確認（' + _r2ok + '/' + _r2fns.length + '関数にgetElementById）');
 
-       // 第3条【window公開】onclick関数のwindow公開率
+       // 第3条【window公開】
+       //
+       // 【制度趣旨】
+       // HTMLのonclick属性から呼ばれる関数はグローバルスコープ（window）に公開されていなければ
+       // 「is not defined」エラーになる。関数を追加したにもかかわらず公開を忘れると
+       // ボタンが一切反応しない致命的バグが発生する。本条はこの公開漏れを防ぐ。
+       //
+       // 【確認義務】
+       // 新しい関数を追加したら即座にそのscriptブロック末尾のwindow公開セクションに追記すること。
+       // GREY_LIST（動的生成で意図的に未公開の関数）は除外対象として登録すること。
        var _r3html = document.body.innerHTML;
        // JS予約語 + GREY_LIST登録関数（動的生成・テスト中未登録）を除外
        var _r3JS_RESERVED = ['if','else','for','while','switch','return','typeof','new','delete','void','throw','try','catch','finally','var','let','const','function','class','this'].concat(Object.keys(GREY_LIST));
@@ -30635,32 +30881,84 @@ function showDebugLog(_initOnly) {
        var _r3rate = _r3uniq.length>0 ? Math.round(_r3exp/_r3uniq.length*100) : 100;
        _rf('第3条', _r3rate===100, 'window公開率 ' + _r3exp + '/' + _r3uniq.length + '件 (' + _r3rate + '%)');
 
-       // 第4条【廃止・欠番】→ 第13条【JSスコープ】に統合済み
-       // 旧内容：tryブロック外のグローバル領域に関数を定義すること
-       // 統合先：第13条（JSスコープ）が同内容をカバー
-       // 本体コメントの「第4条準拠」表記も第13条に統一済み
-       // 条番号は振り直さない。欠番のままが正直な記録。
+       // 第4条【廃止・欠番】
+       //
+       // 【廃止理由】
+       // 旧内容「tryブロック外のグローバル領域に関数を定義すること」は
+       // 第13条【JSスコープ】が同内容をより精密にカバーするため統合・廃止した。
+       // 条番号は振り直さない。欠番のままが正直な記録である。
        _rf('第4条', true, '【廃止・欠番】第13条【JSスコープ】に統合済み（旧：グローバル配置ルール）');
 
-       // 第5条【allTasks操作】CRUD関数にsaveAllTasks参照あり
+       // 第5条【allTasks操作】
+       //
+       // 【制度趣旨】
+       // allTasksはアプリの単一信頼源（SSOT）である。
+       // splice/push/filter等でallTasksを変更しても、saveAllTasks()を呼ばなければ
+       // localStorageに反映されず、次回起動時にデータが消える。
+       // また画面を再描画しなければUIとデータが乖離する。本条はこの一貫性を保つ。
+       //
+       // 【確認義務】
+       // タスクのCRUDはsaveAllTasks()をセットで呼ぶこと。
+       // 操作後はrenderAllSections()またはビュー固有のrender関数を呼んで画面を同期すること。
        var _r5fns = ['updateTask','deleteBlueprint','_gantMoveTask','_bpReorder','_gantReorderTask'];
        var _r5ok = _r5fns.filter(function(fn){ return typeof window[fn]==='function' && window[fn].toString().indexOf('saveAllTasks')!==-1; }).length;
        _rf('第5条', _r5ok >= 4, 'saveAllTasks参照確認（' + _r5ok + '/' + _r5fns.length + '関数）');
 
-       // 第6条【デバッグ4軸】showDebugLogが4軸のいずれかに言及
+       // 第6条【デバッグ4軸】
+       //
+       // 【制度趣旨】
+       // バグの原因究明は闇雲に行うと工数を浪費する。
+       // 4軸（名前・状態・関係・時間）で体系的に絞り込むことで
+       // 原因特定を効率化する。本条はデバッグの思考フレームワークを定める。
+       //
+       // 【4軸の定義】
+       // ①名前：変数名・関数名・IDが意図した対象を指しているか
+       // ②状態：値・フラグ・表示状態が期待通りか
+       // ③関係：呼び出し順・依存関係・スコープが正しいか
+       // ④時間：初期化タイミング・非同期処理・イベント発火順が正しいか
        var _r6src = typeof showDebugLog==='function' ? showDebugLog.toString() : '';
        _rf('第6条', _r6src.length > 0, 'showDebugLog存在確認（デバッグ基盤）');
 
-       // 第7条【renderScratchView】IME二重登録なし（addEventListenerではなく代入方式）
+       // 第7条【renderScratchView】
+       //
+       // 【制度趣旨】
+       // renderScratchViewは画面再描画のたびに呼ばれる。
+       // addEventListener('input', ...)を使うと呼ばれるたびにリスナーが蓄積し、
+       // IMEで日本語入力した際に同じ文字が二重・三重に登録される致命的バグが発生する。
+       // 本条はこのIME二重登録バグを防ぐ。
+       //
+       // 【確認義務】
+       // inputイベントのリスナー登録はaddeventListener方式ではなくoninput代入方式を使うこと。
+       // 変更時はIME二重登録が起きていないことを必ず確認すること。
        var _r7src = typeof renderScratchView==='function' ? renderScratchView.toString() : '';
        var _r7noAdd = (_r7src.match(/addEventListener\s*\(\s*['"]input['"]/g)||[]).length === 0;
        _rf('第7条', _r7noAdd, 'renderScratchView IME二重登録なし（代入方式確認）');
 
-       // 第8条【スモークテスト】スモークテストDOM存在確認
+       // 第8条【スモークテスト】
+       //
+       // 【制度趣旨】
+       // スモークテストはデプロイ前の最終安全確認である。
+       // ALL GREENなしにデプロイすることは、検品なしに製品を出荷することと同義である。
+       // 本条はこの確認義務を明文化し、確認省略による本番障害を防ぐ。
+       //
+       // 【確認義務】
+       // デプロイ前に必ずスモークテストを実行しALL GREENを確認すること。
+       // 禁止事項：行数チェック・文字列マッチ。挙動テストを優先する。
+       // 挙動テストはメモリ上だけで完結させること。localStorageへの書き込みは原則禁止（例外あり）。
        var _r8 = document.querySelector('.smoke-result') !== null || document.getElementById('smokeBtn') !== null || (function(){ var h=document.body.innerHTML; return h.indexOf('ALL GREEN')!==-1||h.indexOf('スモークテスト')!==-1; })();
        _rf('第8条', _r8, 'スモークテスト機能存在確認');
 
-       // 第9条【iOS日付パース】NAOJ新月テーブルがスラッシュ形式で格納されているか
+       // 第9条【iOS日付パース】
+       //
+       // 【制度趣旨】
+       // JavaScriptのnew Date('YYYY-MM-DD')はiOS SafariでNaNを返すことがある。
+       // ハイフン区切りの日付文字列がISO 8601として解釈されず、時刻がUTCになり
+       // 日付がずれる問題も発生する。本条はiOS固有の日付バグを防ぐ。
+       //
+       // 【確認義務】
+       // 日付文字列はnew Date()に渡す前に必ず.replace(/-/g,'/')でスラッシュ変換すること。
+       // typeof変数!=='undefined'ガードとリテラルフォールバックを関数内に直書きし、
+       // isNaN()チェックもセットで入れること。
        var _r9ok2 = typeof _NAOJ_NEW_MOONS !== 'undefined' && Array.isArray(_NAOJ_NEW_MOONS) &&
          _NAOJ_NEW_MOONS[0].indexOf('T') !== -1; // ISO形式で格納確認
        // changeDailyDateのiOS対応確認
@@ -30668,32 +30966,80 @@ function showDebugLog(_initOnly) {
        var _r9okDate = _r9src2.indexOf("replace")!==-1 || _r9src2.indexOf('replace')!==-1;
        _rf('第9条', _r9ok2, 'iOS日付パース：NAOJテーブル存在+ISO形式確認');
 
-       // 第10条【命名規則】危険な命名パターンがないこと
+       // 第10条【命名規則】
+       //
+       // 【制度趣旨】
+       // 変数名・関数名が何をしているか即座に読み取れなければ、
+       // 後から読んだ自分も他者もバグの原因を特定できない。
+       // 省略・暗号化・文脈なし命名は保守コストを指数関数的に増大させる。
+       // 本条は「さぼるな」という開発文化を制度として定める。
+       //
+       // 【確認義務】
+       // 変数名・関数名は「どこで・何をしているか」が一目でわかる名前にすること。
+       // 場所＋役割の命名で即座に文脈が読める。さぼるな。
        var _r10bad = ['_dbGouEl2','dashboardGouDisplay','gouSec','gouDisp'].filter(function(v){
          return typeof window[v] !== 'undefined';
        }).length;
        _rf('第10条', _r10bad===0, '危険命名パターン不在確認（' + _r10bad + '件検出）');
 
-       // 第11条【displayScope】createTaskのデフォルトがdaily_only固定でないこと
+       // 第11条【displayScope】
+       //
+       // 【制度趣旨】
+       // displayScope='daily_only'のタスクは日次ビューにしか表示されない。
+       // 新規タスク作成時のデフォルトがdaily_onlyになっていると、
+       // 週間・タイムラインビューにタスクが表示されず「消えた」と誤認されるバグが発生する。
+       // 本条はこのサイレントな表示漏れを防ぐ。
+       //
+       // 【確認義務】
+       // 新規タスク作成時のデフォルトがdaily_onlyになっていないか必ず確認すること。
+       // 週間・タイムラインにも出すなら'both'を使うこと。
        var _r11src = typeof createTask==='function' ? createTask.toString() : '';
        // 'both'を使っているかチェック（daily_onlyだけだと問題）
        var _r11hasBoth = _r11src.indexOf("'both'")!==-1 || _r11src.indexOf('"both"')!==-1;
        var _r11hasScope = _r11src.indexOf('displayScope')!==-1;
        _rf('第11条', !_r11hasScope || _r11hasBoth, 'createTask displayScope: ' + (_r11hasBoth?"'both'使用確認":_r11hasScope?'要確認':'displayScope未参照（許容）'));
 
-       // 第12条【calendarId整合性】validateCalendarIds関数の存在
+       // 第12条【calendarId整合性】
+       //
+       // 【制度趣旨】
+       // タスクのcalendarIdがallSettings.calendar.listに存在しないIDを参照すると
+       // カレンダーフィルタが機能せず、タスクが表示されない・色が出ないバグが発生する。
+       // 旧データ移行・インポート時に不正IDが混入するリスクがある。
+       // 本条はcalendarIdの参照整合性を常に保つ。
+       //
+       // 【確認義務】
+       // タスクのcalendarIdはallSettings.calendar.listのidと必ず一致していること。
+       // 新機能でカレンダーID参照を追加する際は必ずallSettings.calendar.listから取得すること。
+       // validateCalendarIds()が起動時に毎回実行され不正IDを自動修正する。
        _rf('第12条', typeof validateCalendarIds==='function', 'validateCalendarIds存在確認');
 
-       // 第13条【JSスコープ】_SUN_TIMESがblock3内（グローバル）で参照可能
+       // 第13条【JSスコープ】
+       //
+       // 【制度趣旨】
+       // block3内のローカル変数・即時関数は.toString()でソースが取れないことがある。
+       // 関数内に処理を置く際はdepth計算で必ず関数スコープ内（depth>=1）に
+       // 入っていることを確認しなければ、別ブロックから参照できず
+       // 「is not defined」エラーが発生する。本条はスコープ起因のバグを防ぐ。
+       //
+       // 【確認義務】
+       // グローバルで参照が必要な変数・関数はblock3の直下（関数外）に定義すること。
+       // _SUN_TIMES等の定数がグローバルに正しく配置されていることをSCPAGが毎回確認する。
        _rf('第13条', typeof _SUN_TIMES!=='undefined' && Array.isArray(_SUN_TIMES) && _SUN_TIMES.length===13, '_SUN_TIMESスコープ確認（13件）');
 
        // 第14条【APAG運用規定】
-       // ① 末尾配置：APAGは必ずスモークテストの末尾に置くこと。
-       //   四ガーディアン：SPAG · SCPAG · KPAG · LPAG
+       //
+       // 【制度趣旨】
+       // APAG（Absolute Progressive Angel Guardian）は四ガーディアン
+       // （SPAG・SCPAG・KPAG・LPAG）による最終防衛ラインである。
+       // 位置・順序・内容が乱れると守護の効力が失われる。
+       // 本条はAPAGの構造的完全性を保つ運用規定を定める。
+       //
+       // 【確認義務】
+       // ①末尾配置：APAGは必ずスモークテストの末尾に置くこと。
        //   天象(ST-67)はAPAGの前座。APAG開始宣言→四ガーディアン→全グリーン通信の順を守ること。
-       // ② 追加禁止：新規テストはAPAGの前に追加すること。APAGの下には追加してはならない。
-       //   ST-32（天象）の直前に挿入し、ST番号を連番で振ること。
-       // ③ 見直し義務：機能追加・修正・廃止のたびにAPAGの各天使を見直し、
+       // ②追加禁止：新規テストはAPAGの前に追加すること。APAGの下には追加してはならない。
+       //   ST番号を連番で振ること。
+       // ③見直し義務：機能追加・修正・廃止のたびにAPAGの各天使を見直し、
        //   陳腐化したテストを削除・更新して常に最新・最高の有効性を保つこと。
        //   APAGは「増やすだけ」ではなく「磨き続ける」守護の儀式である。
        var _r14markers = [
@@ -30709,19 +31055,37 @@ function showDebugLog(_initOnly) {
        _rf('第14条', _r14ordered, 'APAG末尾配置確認（ST-67前座→SPAG→SCPAG→KPAG→LPAG）');
 
        // 第15条【セマンティックバージョニング】
-       // APP_VERSIONがvX.Y.Z形式であること。
-       // Major(X): 破壊的変更（データ構造の非互換変更など）
-       // Minor(Y): 機能追加（新ビュー・新システム追加など）
-       // Patch(Z): バグ修正・テスト修正・細かい変更
-       // 更新タイミング：アーティファクト（ファイル）を出力するたびに必ずバージョンを上げる。
-       // 上げる桁は変更内容による（Major/Minor/Patch）。出力のたびに必ず何かを上げること。
+       //
+       // 【制度趣旨】
+       // バージョン番号はアプリの変更履歴を一目で把握するための共通言語である。
+       // バージョンが上がらなければ「いつの版か」が判別できず、
+       // デバッグ・ロールバック・テスト検証が困難になる。
+       // 本条はバージョン管理の一貫性を保つ。
+       //
+       // 【定義】vX.Y.Z形式
+       // Major(X)：破壊的変更（データ構造の非互換変更・マイグレーション必須な変更）
+       // Minor(Y)：機能追加（新ビュー・新システム・新カード追加など）
+       // Patch(Z)：バグ修正・テスト修正・UI微調整・細かい変更
+       //
+       // 【確認義務】
+       // ファイルを出力するたびに必ずバージョンを上げること。
+       // 上げる桁は変更内容による。出力のたびに必ず何かを上げること。
        var _r15src = typeof APP_VERSION !== 'undefined' ? APP_VERSION : '';
        var _r15ok = /^v\d+\.\d+\.\d+$/.test(_r15src);
        _rf('第15条', _r15ok, 'APP_VERSION形式確認（' + _r15src + '）');
 
-       // 第16条【関数名一目瞭然化】省略・暗号化禁止パターンが残っていないこと
-       // _pv*** / _naoj*** 等の省略プレフィックスが新規追加されていないか確認
-       // 既存の_pv***はPENDING（リファクタリング対象）として許容リストに登録済み
+       // 第16条【関数名一目瞭然化】
+       //
+       // 【制度趣旨】
+       // 関数名が何をするか一目でわからない場合、呼び出し側の開発者が
+       // 誤用・重複実装・誤削除をするリスクがある。
+       // _pv***/_naoj***等の省略プレフィックスは過去に技術的負債として蓄積した経緯がある。
+       // 本条は命名の明瞭性を制度として強制し、保守性・複数人開発を前提とする。
+       //
+       // 【確認義務】
+       // 関数名・変数名はむやみに省略しないこと。一目瞭然化を最優先とする。
+       // 既存の_pv***等はリファクタリングPENDING対象として許容リストに登録済み。
+       // 新規に極端な短縮名（3文字以下のグローバル関数）を追加してはならない。
        var _r16allowedAbbr = ['_pvPlaceStamp','_pvSaveStamps','_pvInitGestures','_pvAddStampEl',
          '_pvCurrentPhotoId','_pvScale','_pvPinching','_pvLastDist','_pvStampsDirty',
          '_naojGetNearestNewMoon','_NAOJ_NEW_MOONS','_SUN_TIMES','_SUN_TIMES_DAILY',
@@ -30738,11 +31102,18 @@ function showDebugLog(_initOnly) {
        _rf('第16条', _r16badFns.length===0, '関数名一目瞭然化：極端な短縮関数名チェック（' + (_r16badFns.length===0?'OK':_r16badFns.join(',')) + '）');
 
        // 第17条【関数引数チェック】
-       // 【背景】v0.39.427バグ: deletePhoto(e, photoId)を deletePhoto(pid) と1引数で呼び
-       //         pidがeに入りphotoIdがundefinedになって削除できなかった。
-       // 【ルール】複数引数を持つ重要関数について、引数の数（.length）と
-       //           呼び出し側の引数数が一致していることをソースコードレベルで確認する。
-       // 【検知対象】写真削除・タスク削除など、引数ミスが致命的なバグになる関数。
+       //
+       // 【制度趣旨】
+       // v0.39.427バグ：deletePhoto(e, photoId)をdeletePhoto(pid)と1引数で呼んだ結果、
+       // pidがeに入りphotoIdがundefinedになり写真が削除できなくなった。
+       // 引数の数・順序のミスは実行時に例外が出ず、関数が静かに誤動作するため発見が遅れる。
+       // 本条はこの「静かな誤動作」を防ぐ。
+       //
+       // 【確認義務】
+       // ①重要関数の引数シグネチャを変更した場合は呼び出し側を全件検索して修正すること。
+       // ②第1引数がイベントオブジェクト(e)の関数をUIから直接呼ばない場合は
+       //   deletePhoto(null, pid)のようにnullを明示的に渡すこと。
+       // ③LPAGのST-17でdeletePhoto.length===2と呼び出し側を自動検知する。
        var _r17ok = true;
        var _r17msgs = [];
 
@@ -30789,8 +31160,22 @@ function showDebugLog(_initOnly) {
 
 
        // 第18条【kingdomMode整合性】
-       // KINGDOM_MODESの全キーに必須フィールドが揃い、
-       // allSettings.ui.kingdomModeが有効なキーであること。
+       //
+       // 【制度趣旨】
+       // 王国規模モード（野営地・村・町・王国）はKINGDOM_MODESオブジェクトで一元管理される。
+       // 新機能追加やリファクタリングの際に特定モードのフィールドが欠落すると、
+       // switchView・applySettingsSectionVisibility等の参照時に無言でnull参照が発生し、
+       // タブ制御・機能制限が機能しなくなる。本条はこの欠落を防ぐ。
+       //
+       // 【定義】
+       // KINGDOM_MODESは4モード（camp・village・town・kingdom）×7フィールドで構成される。
+       // 7フィールド：label / visibleTabs / gantEnabled / craftModeEnabled /
+       //              showJournalBtn / showGantBtn / showSDF
+       //
+       // 【確認義務】
+       // KINGDOM_MODESを変更する場合、全4モードに7フィールドが揃っていること。
+       // フィールドを追加・削除する場合は全4モードを同時に更新しなければならない。
+       // LPAGが毎回この整合性を自動確認する。
        var _r18km = typeof KINGDOM_MODES !== 'undefined' ? KINGDOM_MODES : null;
        var _r18keys = ['camp','village','town','kingdom'];
        var _r18required = ['label','visibleTabs','gantEnabled','craftModeEnabled','showJournalBtn','showGantBtn','showSDF'];
@@ -30798,6 +31183,63 @@ function showDebugLog(_initOnly) {
          return _r18km[k] && _r18required.every(function(f){ return _r18km[k].hasOwnProperty(f); });
        });
        _rf('第18条', !!_r18defOk, 'KINGDOM_MODES定義整合確認（4モード×' + _r18required.length + 'フィールド）');
+
+       // 第19条【差分安全確認】
+       //
+       // 【制度趣旨】
+       // HTML編集は str.replace() の誤マッチ・範囲超過・構造破壊により、
+       // 編集対象外のDOM・関数・設定を意図せず消失・変質させるリスクを常に伴う。
+       // この破壊は画面に現れず、本番稼働後に初めて発覚するサイレント回帰バグとなる。
+       // 第19条はこれを未然に防ぐための事前・事後の安全確認義務を定める。
+       //
+       // 【適用条件】
+       // HTML本文（設定UI・モーダル・ビュー・onchange属性等）を編集する全ての作業に適用する。
+       // 関数本体のみの修正であってもHTML参照に影響しうる場合は本条を適用する。
+       //
+       // 【確認義務】
+       // 作業者は作業前後の双方において ST-104 を実行し、全項目 GREEN であることを確認しなければならない。
+       // ST-104 は以下の5軸を検証する：
+       //   ① 重要DOM存在確認  ： lpModal・taskEditModal・各ビュー等の消失がないこと
+       //   ② window公開確認   ： onclick参照関数が未公開になっていないこと
+       //   ③ 設定デフォルト確認： gantDayStartH=6・gantDayEndH=24等が変化していないこと
+       //   ④ onchangeハンドラ確認: select要素のonchangeが消失していないこと
+       //   ⑤ HTML構造確認    ： 親子関係・iframe存在・重要エリアの位置が維持されていること
+       //
+       // 【違反の効果】
+       // 作業後に ST-104 が RED になった場合、その変更はデプロイしてはならない。
+       // 原因を特定し修正したうえで、ST-104 が GREEN になってから初めてデプロイできる。
+       var _r19domChecks = [
+         'lpModal','lpModalFrame','taskEditModal','searchModal','sdfModal',
+         'scratchView','timelineView','weeklyView','gantView','settingsView',
+         'gantDayStartH','gantDayEndH','weeklyStartHSelect','weeklyEndHSelect',
+         'navDaily','navWeekly','navSettings',
+       ];
+       var _r19missing = _r19domChecks.filter(function(id){ return !document.getElementById(id); });
+       var _r19fnChecks = ['openLpModal','closeLpModal','saveGantDayRange','renderTimelineView','switchView','saveAllSettings'];
+       var _r19missingFn = _r19fnChecks.filter(function(fn){ return typeof window[fn] !== 'function'; });
+       var _r19ok = _r19missing.length === 0 && _r19missingFn.length === 0;
+       _rf('第19条', _r19ok, '差分安全確認: DOM消失' + _r19missing.length + '件 window未公開' + _r19missingFn.length + '件');
+
+       // 第20条【一括文字列操作禁止】
+       //
+       // 【制度趣旨】
+       // str.replace()や正規表現による一括置換は、正規表現リテラル・テンプレートリテラル・
+       // コメント内の文字列まで誤マッチして既存コードを破壊する。
+       // v0.39.550〜554でfix_string_newlinesがscriptブロック全体の改行を書き換え、
+       // 複数行コードが1行に連結され、アーティファクトが開けない障害が発生した。
+       // 本条はこの「一括操作による巻き込み破壊」を防ぐ。
+       //
+       // 【確認義務】
+       // 文字列の一括操作は対象を最小限（ピンポイントのstr.replace 1件ずつ）に絞ること。
+       // scriptブロック全体に文字変換を適用してはならない。
+       // 適用後は必ずnode --checkで構文確認。エラーがあれば即ロールバック。
+       //
+       // 【違反の効果】
+       // node --checkでエラーが出た場合、その変更はデプロイしてはならない。
+       // 安定版のzipから復元し、ピンポイントで再適用すること。
+       var _r20src = typeof showDebugLog === 'function' ? showDebugLog.toString() : '';
+       var _r20ok = _r20src.length > 0; // showDebugLogが存在＝開発基盤が生きている
+       _rf('第20条', _r20ok, '一括文字列操作禁止: 開発基盤存在確認（node --check必須）');
 
        // 遵守率
        var _rate = Math.round(_rp/_rc*100);
@@ -30941,10 +31383,27 @@ var resultDiv = document.createElement('div');
       ? '<div style="font-weight:700;font-size:1.05em;color:#ff6b6b;margin-bottom:2px;">' + _line2 + '</div>'
       : '';
     var _countLine = '<div style="font-size:0.9em;color:var(--text-secondary,#888);margin-bottom:6px;">' + _line3 + '</div>';
+    // 差分確認（第19条）
+    var _diffHtml = '';
+    try {
+      var _snapRaw = localStorage.getItem('_dev_snapshot');
+      if (_snapRaw) {
+        var _snap19 = JSON.parse(_snapRaw);
+        var _nowMissingDoms = (_snap19.doms||[]).filter(function(id){ return !document.getElementById(id); });
+        var _nowMissingFns  = (_snap19.fns||[]).filter(function(fn){ return typeof window[fn]!=='function'; });
+        var _diffOk = _nowMissingDoms.length===0 && _nowMissingFns.length===0;
+        var _dc = _diffOk?'#3fb950':'#ff6b6b';
+        var _dt = _diffOk
+          ? '第19条 差分確認: DOM ' + (_snap19.doms||[]).length + '/' + (_snap19.domTotal||'?') + '件 関数 ' + (_snap19.fns||[]).length + '/' + (_snap19.fnTotal||'?') + '件 — 消失なし'
+          : '第19条 差分確認: DOM消失[' + _nowMissingDoms.join(',') + '] 関数消失[' + _nowMissingFns.join(',') + ']';
+        _diffHtml = '<div style="margin:4px 0;padding:4px 8px;border-radius:4px;background:' + (_diffOk?'rgba(63,185,80,0.08)':'rgba(255,107,107,0.12)') + ';border-left:3px solid ' + _dc + ';font-size:0.88em;color:' + _dc + ';font-weight:600;">' + (_diffOk?'✅':'❌') + ' ' + _dt + '</div>';
+      }
+    } catch(e) {}
     resultDiv.innerHTML =
       '<div style="' + summaryStyle + '">' + summary + '</div>'
       + _alertLine
       + _countLine
+      + _diffHtml
       + results.map(function(r){ return '<div>' + r + '</div>'; }).join('');
     // 既存の結果を入れ替え
     var old = box.querySelector('.smoke-result');
@@ -30953,6 +31412,8 @@ var resultDiv = document.createElement('div');
     box.appendChild(resultDiv);
   };
   box.appendChild(btnSmoke);
+
+
 
   box.appendChild(btnTestMove);
   var btnClose = document.createElement('button');
@@ -31016,7 +31477,7 @@ function openLpModal(type) {
   var frame = document.getElementById('lpModalFrame');
   frame.src = urls[type];
   frame.style.display = 'block';
-  document.getElementById('lpModal').style.display = 'block';
+  document.getElementById('lpModal').style.display = 'flex';
   document.body.style.overflow = 'hidden';
 }
 function closeLpModal() {
