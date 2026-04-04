@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.530';
+    const APP_VERSION = 'v0.39.538';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -4571,15 +4571,7 @@
           </label>
           <p style="margin:6px 0 0 28px;font-size:0.8em;color:#888;">チェックすると、操作後に現在時刻へ自動スクロールしなくなります。</p>
         </div>
-        <div class="settings-item" style="margin-bottom:16px;">
-          <label style="font-size:0.8em;color:#666;display:block;margin-bottom:8px;font-weight:600;">⏰ 日次ビューの表示時間帯</label>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <select id="gantDayStartH" onchange="saveGantDayRange()" style="padding:6px 10px;border:1px solid #ddd;border-radius:8px;font-size:0.88em;"><option value="0">0時</option><option value="1">1時</option><option value="2">2時</option><option value="3">3時</option><option value="4">4時</option><option value="5">5時</option><option value="6">6時</option><option value="7">7時</option><option value="8">8時</option><option value="9">9時</option><option value="10">10時</option><option value="11">11時</option><option value="12">12時</option><option value="13">13時</option><option value="14">14時</option><option value="15">15時</option><option value="16">16時</option><option value="17">17時</option><option value="18">18時</option><option value="19">19時</option><option value="20">20時</option><option value="21">21時</option></select>
-            <span style="color:#888;font-size:0.9em;">〜</span>
-            <select id="gantDayEndH" onchange="saveGantDayRange()" style="padding:6px 10px;border:1px solid #ddd;border-radius:8px;font-size:0.88em;"><option value="2">2時</option><option value="3">3時</option><option value="4">4時</option><option value="5">5時</option><option value="6">6時</option><option value="7">7時</option><option value="8">8時</option><option value="9">9時</option><option value="10">10時</option><option value="11">11時</option><option value="12">12時</option><option value="13">13時</option><option value="14">14時</option><option value="15">15時</option><option value="16">16時</option><option value="17">17時</option><option value="18">18時</option><option value="19">19時</option><option value="20">20時</option><option value="21">21時</option><option value="22">22時</option><option value="23">23時</option><option value="24">24時</option></select>
-          </div>
-          <p style="margin:6px 0 0 0;font-size:0.8em;color:#888;">この時間帯だけ表示されます。寝てる時間を非表示にできます。</p>
-        </div>
+
       </div>
       <div class="settings-section">
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">📱 ナビタブ表示</h3>
@@ -4718,6 +4710,15 @@
               <span>🚫 非表示</span>
               <span style="font-size:0.75em;color:#8e8e8e;margin-left:8px;">タスク欄を広く使う</span>
             </label>
+          </div>
+        </div>
+        <div style="margin-top:16px;">
+          <label style="display:block;margin-bottom:8px;font-weight:600;color:#262626;font-size:0.9em;">⏰ 表示時間帯</label>
+          <p style="font-size:0.8em;color:#8e8e8e;margin:0 0 10px 0;">タイムラインに表示する時間の範囲</p>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <select id="gantDayStartH" onchange="saveGantDayRange()" style="padding:6px 10px;border:1px solid #ddd;border-radius:8px;font-size:0.88em;"><option value="0">0時</option><option value="1">1時</option><option value="2">2時</option><option value="3">3時</option><option value="4">4時</option><option value="5">5時</option><option value="6" selected>6時</option><option value="7">7時</option><option value="8">8時</option><option value="9">9時</option><option value="10">10時</option><option value="11">11時</option><option value="12">12時</option><option value="13">13時</option><option value="14">14時</option><option value="15">15時</option><option value="16">16時</option><option value="17">17時</option><option value="18">18時</option><option value="19">19時</option><option value="20">20時</option><option value="21">21時</option><option value="22">22時</option><option value="23">23時</option></select>
+            <span style="color:#888;font-size:0.9em;">〜</span>
+            <select id="gantDayEndH" onchange="saveGantDayRange()" style="padding:6px 10px;border:1px solid #ddd;border-radius:8px;font-size:0.88em;"><option value="2">2時</option><option value="3">3時</option><option value="4">4時</option><option value="5">5時</option><option value="6">6時</option><option value="7">7時</option><option value="8">8時</option><option value="9">9時</option><option value="10">10時</option><option value="11">11時</option><option value="12">12時</option><option value="13">13時</option><option value="14">14時</option><option value="15">15時</option><option value="16">16時</option><option value="17">17時</option><option value="18">18時</option><option value="19">19時</option><option value="20">20時</option><option value="21">21時</option><option value="22">22時</option><option value="23">23時</option><option value="24" selected>24時</option></select>
           </div>
         </div>
       <!-- 月間表示モード -->
@@ -8559,10 +8560,8 @@ function myDeckApply(idx) {
             _rbLabel.textContent = String(_rbh).padStart(2,'0') + ':00';
             _tlBarEl.appendChild(_rbLabel);
             // :15 :30 :45
-            if (_rbRowH >= 45) {
+            if (true) {
               [15, 30, 45].forEach(function(min) {
-                if (min !== 30 && _rbRowH < 60) return;
-                if (min === 45 && _rbRowH < 75) return;
                 var _qTop = _rbTopBase + Math.round(min / 60 * _rbRowH) - 7;
                 var _qLabel = document.createElement('div');
                 var _is30 = min === 30;
@@ -8571,7 +8570,7 @@ function myDeckApply(idx) {
                   'font-size:' + (_is30 ? '0.63em' : '0.55em') + ';font-family:monospace;font-weight:' + (_is30 ? '600' : '400') + ';' +
                   'color:rgba(130,130,148,' + (_is30 ? '0.7' : '0.45') + ');' +
                   'pointer-events:none;white-space:nowrap;line-height:1;';
-                _qLabel.textContent = '─' + min;
+                _qLabel.textContent = (min === 30) ? '─30' : '';  // :15/:45非表示
                 _tlBarEl.appendChild(_qLabel);
               });
             }
@@ -8579,18 +8578,16 @@ function myDeckApply(idx) {
         }
         allSettings.ui.tlRowHeights = tlRowHeights.map(function(v, i) {
           return (i < _tlStartH || i >= _tlEndH) ? TL_ROW_H : v;
-        }); saveAllSettings();
+        }); // saveAllSettingsはドラッグ終了時のみ
       }
       // 時間グリッド線（独立div・ドラッグ可能）+ :30/:15/:45補助線
       for (var h = 0; h < 24; h++) {
         // :30/:15/:45 補助線を背景セルに追加
-        if (h >= _tlStartH && h < _tlEndH && tlRowHeights[h] >= 45) {
+        if (h >= _tlStartH && h < _tlEndH) {
           (function(hh) {
             var baseTop = tlTopPx(hh);
             var rowH = tlRowHeights[hh];
             [15, 30, 45].forEach(function(min) {
-              if (min !== 30 && rowH < 60) return;
-              if (min === 45 && rowH < 75) return;
               var subLine = document.createElement('div');
               var is30 = min === 30;
               subLine.style.cssText =
@@ -8712,8 +8709,22 @@ function myDeckApply(idx) {
         if (!tlDraggingLine) return;
         _tlApplyRowDrag(e.touches[0].clientY);
       }, {passive:true});
-      document.addEventListener('mouseup', function() { tlDraggingLine = null; tlDraggingHour = -1; });
-      document.addEventListener('touchend', function() { tlDraggingLine = null; tlDraggingHour = -1; });
+      document.addEventListener('mouseup', function() {
+        if (tlDraggingLine) {
+          allSettings.ui.tlRowHeights = tlRowHeights.map(function(v, i) {
+            return (i < _tlStartH || i >= _tlEndH) ? TL_ROW_H : v;
+          }); saveAllSettings();
+        }
+        tlDraggingLine = null; tlDraggingHour = -1;
+      });
+      document.addEventListener('touchend', function() {
+        if (tlDraggingLine) {
+          allSettings.ui.tlRowHeights = tlRowHeights.map(function(v, i) {
+            return (i < _tlStartH || i >= _tlEndH) ? TL_ROW_H : v;
+          }); saveAllSettings();
+        }
+        tlDraggingLine = null; tlDraggingHour = -1;
+      });
       // D&D: containerへのdrop（時刻変更）
       container.addEventListener('dragover', function(e) {
         e.preventDefault();
@@ -8943,11 +8954,9 @@ function myDeckApply(idx) {
             'pointer-events:none;white-space:nowrap;line-height:1;';
           _tbLabel.textContent = String(_tbh).padStart(2,'0') + ':00';
           tlTimeBarCol.appendChild(_tbLabel);
-          // :15 :30 :45（行高45px以上のとき）
-          if (_tbRowH >= 45) {
+          // :15 :30 :45 グリッド線のみ（ラベルなし）
+          if (true) {
             [15, 30, 45].forEach(function(min) {
-              if (min !== 30 && _tbRowH < 60) return;
-              if (min === 45 && _tbRowH < 75) return;
               var _qTop = _tbTopBase + Math.round(min / 60 * _tbRowH) - 7;
               var _qLabel = document.createElement('div');
               var _is30 = min === 30;
@@ -8956,7 +8965,7 @@ function myDeckApply(idx) {
                 'font-size:' + (_is30 ? '0.63em' : '0.55em') + ';font-family:monospace;font-weight:' + (_is30 ? '600' : '400') + ';' +
                 'color:rgba(130,130,148,' + (_is30 ? '0.7' : '0.45') + ');' +
                 'pointer-events:none;white-space:nowrap;line-height:1;';
-              _qLabel.textContent = '─' + min;
+              _qLabel.textContent = (_is30) ? '─30' : '';  // :15/:45非表示
               tlTimeBarCol.appendChild(_qLabel);
             });
           }
@@ -9990,6 +9999,7 @@ function toggleGantEnabled(checked) {
       allSettings.ui.gantDayEndH   = ev;
       saveAllSettings();
       renderGantChart();
+      if (typeof renderTimelineView === 'function') renderTimelineView();
     }
     function saveWeeklyTimeRange() {
       const s = document.getElementById('weeklyStartHSelect');
