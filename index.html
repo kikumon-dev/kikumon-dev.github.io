@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.554';
+    const APP_VERSION = 'v0.39.555';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -5216,6 +5216,43 @@
      *    - データ構造変更不要
      *    - 既存機能に影響なし
      */
+    // ============================================================
+    // モジュールプレフィックス辞書
+    // ============================================================
+    // 関数名・変数名の先頭に付く略語の意味を定義する。
+    // リネームは不要。このコメントを読めば全て解決する。
+    //
+    // nb    = NoteBook（ノート帳機能）
+    //         例: nbRender(), nbPages(), nbNewPage()
+    //
+    // pv    = PhotoViewer（写真帳機能）
+    //         例: _pvPlaceStamp(), _pvSaveStamps(), _pvInitGestures()
+    //
+    // tl    = TimeLine（タイムラインビュー）
+    //         例: tlTopPx(), tlRebuildBg(), tlMinutesToPx()
+    //
+    // naoj  = 国立天文台（NAOJ: National Astronomical Observatory of Japan）
+    //         月齢・新月計算に国立天文台の観測データテーブルを使用している。
+    //         例: _naojGetNearestNewMoon(), _NAOJ_NEW_MOONS
+    //
+    // gant  = Ganttチャート（造営ビュー）
+    //         例: _gantToggle(), _gantEdit(), _initGantSplitter()
+    //
+    // bp    = Blueprint（設計図・造営の親単位）
+    //         例: _bpReorder(), getBlueprintProgress()
+    //
+    // GDP   = Gross Domestic Product（国内総生産）の転用。
+    //         やることクラフトの「王国」をひとつの国家経済に見立て、
+    //         タスク達成・行動量の積み重ねを王国のGDPとして表現している。
+    //         例: getGDP(), addGDP()
+    //
+    // Gou   = 業（ごう）。仏教用語で「行為の積み重ね」を意味する。
+    //         アプリ内ではタスク完了数・貢献度の蓄積スコアとして使用。
+    //         例: addGou(), getGouNew()
+    //
+    // gist  = GitHub Gist（クラウド同期機能）
+    //         例: gistUpload(), gistDownload()
+    // ============================================================
     // データ保存用
     let purpose = '';
     // 季節アート（日本の風物詩）
