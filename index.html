@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.556';
+    const APP_VERSION = 'v0.39.561';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3198,6 +3198,17 @@
     .photo-empty-icon { font-size:3em;margin-bottom:12px; }
     .photo-empty-main { font-size:0.95em;color:#999;font-weight:600;margin-bottom:6px; }
     .photo-empty-sub { font-size:0.78em;color:#ccc;letter-spacing:0.08em; }
+
+    /* ===== ✨ PLUSのコロ風 フェードイン（ダッシュボードカード） ===== */
+    .yc-fade-in {
+      opacity: 0;
+      transform: translateY(22px);
+      transition: opacity 0.55s ease, transform 0.55s ease;
+    }
+    .yc-fade-in.yc-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
     </style>
   <script>    // 色の切り替えをCSSに反映
     if (typeof USE_COLORS !== 'undefined' && USE_COLORS) {
@@ -3205,6 +3216,188 @@
     }</script>
 </head>
 <body>
+
+<!-- ===== 🌌 起動スプラッシュ v0.39.560 ===== -->
+<div id="ycSplash" style="
+  position:fixed;inset:0;z-index:9999999;overflow:hidden;
+  background:linear-gradient(160deg,#040410 0%,#0a1628 50%,#080e1c 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  opacity:1;transition:opacity 1.0s ease;
+">
+  <!-- 星パーティクル Canvas -->
+  <canvas id="ycSplashCanvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+
+  <!-- 流れ星 Canvas -->
+  <canvas id="ycShootingCanvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;"></canvas>
+
+  <!-- 中央コンテンツ -->
+  <div id="ycSplashBody" style="position:relative;text-align:center;opacity:0;transform:translateY(16px);
+    transition:opacity 0.9s ease, transform 0.9s ease;">
+
+    <!-- 城アイコン（光輪付き） -->
+    <div style="position:relative;display:inline-block;margin-bottom:18px;">
+      <div id="ycSplashRing" style="
+        position:absolute;inset:-18px;border-radius:50%;
+        border:1.5px solid rgba(255,200,60,0.25);
+        animation:ycRingPulse 2.2s ease-in-out infinite;
+      "></div>
+      <div id="ycSplashRing2" style="
+        position:absolute;inset:-32px;border-radius:50%;
+        border:1px solid rgba(255,200,60,0.12);
+        animation:ycRingPulse 2.2s ease-in-out 0.5s infinite;
+      "></div>
+      <div style="font-size:3.8em;
+        filter:drop-shadow(0 0 28px rgba(255,210,60,0.8)) drop-shadow(0 0 10px rgba(255,160,20,0.6));
+        animation:ycCastleFloat 3s ease-in-out infinite;">🏰</div>
+    </div>
+
+    <!-- タイトル -->
+    <div style="font-size:1.08em;font-weight:800;color:#f5e4b8;letter-spacing:0.22em;margin-bottom:7px;
+      text-shadow:0 0 22px rgba(255,210,60,0.5);
+      animation:ycTitleGlow 2.5s ease-in-out infinite;">やることクラフト</div>
+
+    <!-- サブコピー -->
+    <div id="ycSplashSub" style="font-size:0.74em;color:#7a6040;letter-spacing:0.14em;line-height:2.2;
+      opacity:0;transition:opacity 0.8s ease 0.5s;">あなたの王国へ、ようこそ。</div>
+
+    <!-- ドット -->
+    <div style="margin-top:28px;display:flex;justify-content:center;gap:7px;">
+      <span style="width:4px;height:4px;border-radius:50%;background:#7a6040;display:inline-block;
+        animation:ycSplashDot 1.6s ease-in-out infinite;"></span>
+      <span style="width:4px;height:4px;border-radius:50%;background:#7a6040;display:inline-block;
+        animation:ycSplashDot 1.6s ease-in-out 0.3s infinite;"></span>
+      <span style="width:4px;height:4px;border-radius:50%;background:#7a6040;display:inline-block;
+        animation:ycSplashDot 1.6s ease-in-out 0.6s infinite;"></span>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes ycSplashDot {
+  0%,80%,100%{opacity:0.2;transform:scale(0.75);}
+  40%{opacity:1;transform:scale(1.3);}
+}
+@keyframes ycCastleFloat {
+  0%,100%{transform:translateY(0px);}
+  50%{transform:translateY(-7px);}
+}
+@keyframes ycRingPulse {
+  0%,100%{transform:scale(1);opacity:0.6;}
+  50%{transform:scale(1.12);opacity:0.15;}
+}
+@keyframes ycTitleGlow {
+  0%,100%{text-shadow:0 0 22px rgba(255,210,60,0.4);}
+  50%{text-shadow:0 0 36px rgba(255,210,60,0.75), 0 0 8px rgba(255,180,20,0.4);}
+}
+</style>
+
+<script>
+(function(){
+  // テスト中はスキップ
+  if (window._isTesting) {
+    var _s = document.getElementById('ycSplash');
+    if (_s) _s.style.display = 'none';
+    return;
+  }
+
+  // ===== 星パーティクル =====
+  var cv = document.getElementById('ycSplashCanvas');
+  if (!cv) return;
+  var ctx = cv.getContext('2d');
+  var W = cv.width  = window.innerWidth;
+  var H = cv.height = window.innerHeight;
+
+  var stars = Array.from({length: 110}, function() {
+    return {
+      x: Math.random() * W, y: Math.random() * H,
+      r: Math.random() * 1.6 + 0.2,
+      a: Math.random(),
+      da: (Math.random() * 0.006 + 0.001) * (Math.random() < 0.5 ? 1 : -1),
+      vx: (Math.random() - 0.5) * 0.18,
+      vy: (Math.random() - 0.5) * 0.18,
+      gold: Math.random() < 0.3
+    };
+  });
+
+  // ===== 流れ星 =====
+  var cv2 = document.getElementById('ycShootingCanvas');
+  var ctx2 = cv2 ? cv2.getContext('2d') : null;
+  if (cv2) { cv2.width = W; cv2.height = H; }
+  var shooters = [];
+  function spawnShooter() {
+    shooters.push({
+      x: Math.random() * W * 0.6,
+      y: Math.random() * H * 0.4,
+      vx: 5 + Math.random() * 4,
+      vy: 2 + Math.random() * 2,
+      len: 80 + Math.random() * 60,
+      a: 1.0,
+      da: 0.03
+    });
+  }
+  spawnShooter();
+  var shootTimer = setInterval(spawnShooter, 700);
+
+  var raf;
+  function tick() {
+    // 星
+    ctx.clearRect(0, 0, W, H);
+    stars.forEach(function(s) {
+      s.a += s.da;
+      if (s.a > 1){s.a=1;s.da*=-1;} if (s.a < 0){s.a=0;s.da*=-1;}
+      s.x = (s.x + s.vx + W) % W;
+      s.y = (s.y + s.vy + H) % H;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      ctx.fillStyle = s.gold
+        ? 'rgba(255,205,80,'  + s.a.toFixed(2) + ')'
+        : 'rgba(210,228,255,' + s.a.toFixed(2) + ')';
+      ctx.fill();
+    });
+
+    // 流れ星
+    if (ctx2) {
+      ctx2.clearRect(0, 0, W, H);
+      shooters = shooters.filter(function(s){ return s.a > 0; });
+      shooters.forEach(function(s) {
+        var grad = ctx2.createLinearGradient(s.x, s.y, s.x - s.len, s.y - s.len*0.4);
+        grad.addColorStop(0, 'rgba(255,240,180,' + s.a.toFixed(2) + ')');
+        grad.addColorStop(1, 'rgba(255,240,180,0)');
+        ctx2.beginPath();
+        ctx2.moveTo(s.x, s.y);
+        ctx2.lineTo(s.x - s.len, s.y - s.len * 0.4);
+        ctx2.strokeStyle = grad;
+        ctx2.lineWidth = 1.5;
+        ctx2.stroke();
+        s.x += s.vx; s.y += s.vy; s.a -= s.da;
+      });
+    }
+    raf = requestAnimationFrame(tick);
+  }
+  tick();
+
+  // ===== コンテンツ フェードイン =====
+  var body = document.getElementById('ycSplashBody');
+  var sub  = document.getElementById('ycSplashSub');
+  setTimeout(function(){ if (body){ body.style.opacity='1'; body.style.transform='translateY(0)'; } }, 250);
+  setTimeout(function(){ if (sub) sub.style.opacity='1'; }, 800);
+
+  // ===== 2000ms後にフェードアウト（固定タイマー）=====
+  function closeSplash() {
+    clearInterval(shootTimer);
+    var el = document.getElementById('ycSplash');
+    if (!el) return;
+    el.style.opacity = '0';
+    setTimeout(function() {
+      cancelAnimationFrame(raf);
+      if (el.parentNode) el.parentNode.removeChild(el);
+    }, 1020);
+  }
+  setTimeout(closeSplash, 2000);
+})();
+</script>
+<!-- ===== 起動スプラッシュ ここまで ===== -->
+
 <div id="modal-root"></div>
 <div id="lpModal" style="display:none;position:fixed;inset:0;z-index:99000;background:rgba(0,0,0,0.85);flex-direction:column;">
   <div style="display:flex;justify-content:flex-end;padding:10px 16px;">
@@ -4242,7 +4435,7 @@
   <div style="max-width:520px;margin:0 auto;padding:16px 14px 48px;">
 
     <!-- 王国ヘッダー -->
-    <div style="text-align:center;margin-bottom:16px;padding:22px 16px 18px;background:#fff;border-radius:24px;box-shadow:0 4px 24px rgba(99,102,241,0.10);border:1px solid rgba(99,102,241,0.08);">
+    <div class="yc-fade-in" style="text-align:center;margin-bottom:16px;padding:22px 16px 18px;background:#fff;border-radius:24px;box-shadow:0 4px 24px rgba(99,102,241,0.10);border:1px solid rgba(99,102,241,0.08);">
       <div style="font-size:0.82em;font-weight:700;color:#a0aec0;letter-spacing:0.18em;margin-bottom:4px;">MY KINGDOM</div>
       <div id="dbKingdomName" style="font-size:1.25em;font-weight:800;color:#1a1a2e;letter-spacing:0.02em;margin-bottom:4px;">王国</div>
       <div id="dbKingdomTitle" style="display:inline-block;font-size:0.92em;font-weight:700;color:#6366f1;background:#f0f0ff;border-radius:20px;padding:3px 14px;margin-bottom:14px;">🌱 開拓民</div>
@@ -4267,12 +4460,12 @@
     </div>
 
     <!-- 今日の一言メッセージ -->
-    <div id="dbMessage" style="text-align:center;margin-bottom:14px;padding:11px 16px;background:rgba(99,102,241,0.08);border-radius:14px;color:#6366f1;font-size:0.85em;font-weight:600;letter-spacing:0.02em;border:1px solid rgba(99,102,241,0.15);">
+    <div id="dbMessage" class="yc-fade-in" style="text-align:center;margin-bottom:14px;padding:11px 16px;background:rgba(99,102,241,0.08);border-radius:14px;color:#6366f1;font-size:0.85em;font-weight:600;letter-spacing:0.02em;border:1px solid rgba(99,102,241,0.15);">
       ✨ 今日も一歩ずつ、前へ！
     </div>
 
     <!-- 統計グリッド -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+    <div class="yc-fade-in" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
       <div style="background:#fff;border-radius:18px;padding:16px;box-shadow:0 2px 16px rgba(79,172,254,0.10);border:1px solid #e8f0fe;position:relative;overflow:hidden;min-height:110px;">
         <div style="position:absolute;right:-8px;top:-8px;font-size:2.8em;opacity:0.08;">📅</div>
         <div style="font-size:0.78em;color:#93c5fd;font-weight:700;letter-spacing:0.06em;margin-bottom:6px;">今月完了</div>
@@ -4312,7 +4505,7 @@
     </div>
 
     <!-- 円グラフ＋セクション別完了比率 -->
-    <div style="background:#fff;border-radius:20px;padding:18px;box-shadow:0 2px 16px rgba(79,172,254,0.10);border:1px solid #e8f0fe;margin-bottom:10px;">
+    <div class="yc-fade-in" style="background:#fff;border-radius:20px;padding:18px;box-shadow:0 2px 16px rgba(79,172,254,0.10);border:1px solid #e8f0fe;margin-bottom:10px;">
       <div style="font-size:0.82em;font-weight:700;color:#a0aec0;letter-spacing:0.06em;margin-bottom:14px;">📊 セクション別 完了比率</div>
       <div style="display:flex;align-items:center;gap:18px;">
         <canvas id="dbPieChart" width="120" height="120" style="flex-shrink:0;"></canvas>
@@ -4321,14 +4514,14 @@
     </div>
 
     <!-- 称号マイルストーン -->
-    <div style="background:linear-gradient(135deg,#fffbeb,#fff);border-radius:20px;padding:18px;box-shadow:0 2px 16px rgba(245,158,11,0.10);border:1px solid #fde68a;margin-bottom:10px;">
+    <div class="yc-fade-in" style="background:linear-gradient(135deg,#fffbeb,#fff);border-radius:20px;padding:18px;box-shadow:0 2px 16px rgba(245,158,11,0.10);border:1px solid #fde68a;margin-bottom:10px;">
       <div style="font-size:0.85em;font-weight:700;color:#d97706;letter-spacing:0.06em;margin-bottom:12px;">🏆 徳のマイルストーン</div>
       <div id="dbTitleHistory" style="font-size:0.85em;color:#92400e;line-height:2.2;"></div>
       <button onclick="openTitleListModal()" style="width:100%;margin-top:12px;padding:10px;border:1.5px solid #fcd34d;border-radius:12px;background:#fff;color:#d97706;font-size:0.85em;font-weight:700;cursor:pointer;letter-spacing:0.03em;">👑 全99段階の称号を見る</button>
     </div>
 
     <!-- 業スコア -->
-    <div style="background:linear-gradient(135deg,#fff5f5,#fff);border-radius:20px;padding:18px;box-shadow:0 2px 16px rgba(239,68,68,0.08);border:1px solid #fecaca;margin-bottom:10px;">
+    <div class="yc-fade-in" style="background:linear-gradient(135deg,#fff5f5,#fff);border-radius:20px;padding:18px;box-shadow:0 2px 16px rgba(239,68,68,0.08);border:1px solid #fecaca;margin-bottom:10px;">
       <div style="font-size:0.85em;font-weight:700;color:#f87171;letter-spacing:0.06em;margin-bottom:10px;">👹 業の重さ</div>
       <div id="dbGouBar" style="font-family:monospace;font-size:1.3em;letter-spacing:3px;margin-bottom:8px;"></div>
       <div id="dbGouDetail" style="font-size:0.8em;color:#f87171;font-weight:600;"></div>
@@ -4336,7 +4529,7 @@
     </div>
 
     <!-- 提携統計 -->
-    <div style="background:#fff;border-radius:20px;padding:18px;box-shadow:0 2px 16px rgba(99,102,241,0.08);border:1px solid #e0e7ff;margin-bottom:10px;">
+    <div class="yc-fade-in" style="background:#fff;border-radius:20px;padding:18px;box-shadow:0 2px 16px rgba(99,102,241,0.08);border:1px solid #e0e7ff;margin-bottom:10px;">
       <div style="font-size:0.85em;font-weight:700;color:#a0aec0;letter-spacing:0.06em;margin-bottom:14px;">🤝 提携・交流</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
         <div style="text-align:center;background:#f5f3ff;border-radius:14px;padding:12px 6px;">
@@ -4383,7 +4576,7 @@
     <div style="background:#fff;border-radius:20px;padding:18px;box-shadow:0 2px 16px rgba(79,172,254,0.08);border:1px solid #e8f0fe;margin-bottom:10px;">
       <div style="font-size:0.88em;font-weight:700;color:#a0aec0;letter-spacing:0.06em;margin-bottom:12px;">💾 データ</div>
       <!-- 天象カード -->
-      <div id="dbSkyCard" style="background:linear-gradient(135deg,#0a0a1a,#1a1a2e);border:1px solid #333;border-radius:12px;padding:16px;margin-bottom:10px;color:#fff;">
+      <div id="dbSkyCard" class="yc-fade-in" style="background:linear-gradient(135deg,#0a0a1a,#1a1a2e);border:1px solid #333;border-radius:12px;padding:16px;margin-bottom:10px;color:#fff;">
         <div style="font-size:0.72em;color:#a78bfa;font-weight:700;margin-bottom:10px;">🌙 天象 — 東京</div>
         <!-- 空の状態 -->
         <div id="dbSkyBox" style="height:64px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1em;font-weight:700;margin-bottom:12px;transition:background 1s;">--</div>
@@ -13513,7 +13706,73 @@ function reviveBlueprint(id) {
     };
     // ===== 禅モード ここまで =====
     var GIST_TOKEN_KEY = 'gistToken';
+    var GIST_TOKEN_ENC_KEY = 'gistTokenEnc'; // 暗号化トークン保存キー
     var GIST_ID_KEY = 'gistId';
+
+    // ===== トークン暗号化ユーティリティ（AES-GCM / Web Crypto API）=====
+    // 鍵素材：userAgent + スクリーンサイズ + タイムゾーンオフセット
+    // パスフレーズ入力不要・このデバイスでのみ復号可能
+    function _gistGetDeviceFingerprint() {
+      return [
+        navigator.userAgent,
+        screen.width,
+        screen.height,
+        new Date().getTimezoneOffset()
+      ].join('|');
+    }
+
+    async function _gistDeriveKey() {
+      var fingerprint = _gistGetDeviceFingerprint();
+      var enc = new TextEncoder();
+      var keyMaterial = await crypto.subtle.importKey(
+        'raw', enc.encode(fingerprint), 'PBKDF2', false, ['deriveKey']
+      );
+      // saltは固定（アプリ識別子として機能）
+      var salt = enc.encode('yarukotocraft-gist-salt-v1');
+      return crypto.subtle.deriveKey(
+        { name: 'PBKDF2', salt: salt, iterations: 100000, hash: 'SHA-256' },
+        keyMaterial,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['encrypt', 'decrypt']
+      );
+    }
+
+    async function _gistEncryptToken(token) {
+      var key = await _gistDeriveKey();
+      var enc = new TextEncoder();
+      var iv = crypto.getRandomValues(new Uint8Array(12));
+      var encrypted = await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv: iv },
+        key,
+        enc.encode(token)
+      );
+      // iv(12bytes) + encrypted を Base64 で保存
+      var combined = new Uint8Array(iv.byteLength + encrypted.byteLength);
+      combined.set(iv, 0);
+      combined.set(new Uint8Array(encrypted), iv.byteLength);
+      return btoa(String.fromCharCode.apply(null, combined));
+    }
+
+    async function _gistDecryptToken(b64) {
+      try {
+        var binary = atob(b64);
+        var bytes = new Uint8Array(binary.length);
+        for (var i = 0; i < binary.length; i++) { bytes[i] = binary.charCodeAt(i); }
+        var iv = bytes.slice(0, 12);
+        var data = bytes.slice(12);
+        var key = await _gistDeriveKey();
+        var decrypted = await crypto.subtle.decrypt(
+          { name: 'AES-GCM', iv: iv },
+          key,
+          data
+        );
+        return new TextDecoder().decode(decrypted);
+      } catch (e) {
+        return ''; // 復号失敗（別デバイス等）は空文字
+      }
+    }
+    // ===== トークン暗号化ユーティリティ ここまで =====
 
     function _gistSetStatus(msg, color) {
       var el = document.getElementById('gistStatus');
@@ -13525,20 +13784,39 @@ function reviveBlueprint(id) {
       if (!input) return;
       var token = input.value.trim();
       if (!token) { _gistSetStatus('Tokenを入力してください', '#e53935'); return; }
-      localStorage.setItem(GIST_TOKEN_KEY, token);
-      _gistSetStatus('✅ Token保存しました', '#2e7d32');
+      // 旧平文トークンを削除
+      localStorage.removeItem(GIST_TOKEN_KEY);
+      // 暗号化して保存（非同期）
+      _gistEncryptToken(token).then(function(enc) {
+        localStorage.setItem(GIST_TOKEN_ENC_KEY, enc);
+        _gistSetStatus('✅ Token保存しました（🔐 暗号化済み）', '#2e7d32');
+        if (typeof _gistUpdateSyncBadge === 'function') _gistUpdateSyncBadge();
+      }).catch(function() {
+        // 暗号化失敗時は平文フォールバック
+        localStorage.setItem(GIST_TOKEN_KEY, token);
+        _gistSetStatus('✅ Token保存しました', '#2e7d32');
+      });
     }
 
     function clearGistToken() {
       localStorage.removeItem(GIST_TOKEN_KEY);
+      localStorage.removeItem(GIST_TOKEN_ENC_KEY);
       localStorage.removeItem(GIST_ID_KEY);
       var input = document.getElementById('gistTokenInput');
       if (input) input.value = '';
       _gistSetStatus('🗑️ 解除しました', '#888');
+      if (typeof _gistUpdateSyncBadge === 'function') _gistUpdateSyncBadge();
     }
 
+    // 同期処理はPromiseベースに統一
     function _gistGetToken() {
-      return localStorage.getItem(GIST_TOKEN_KEY) || '';
+      // 旧平文トークンが残っていれば即返す（後方互換）
+      var plain = localStorage.getItem(GIST_TOKEN_KEY);
+      if (plain) return Promise.resolve(plain);
+      // 暗号化トークンを復号
+      var enc = localStorage.getItem(GIST_TOKEN_ENC_KEY);
+      if (!enc) return Promise.resolve('');
+      return _gistDecryptToken(enc);
     }
 
     function _gistBuildPayload() {
@@ -13572,124 +13850,128 @@ function reviveBlueprint(id) {
     };
 
     function _gistUpdateSyncBadge() {
-      var token = _gistGetToken();
-      var gistId = localStorage.getItem(GIST_ID_KEY);
-      var lastSync = localStorage.getItem('gistLastSync');
-      // オンボーディングバナー表示制御
-      var banner = document.getElementById('gistOnboardBanner');
-      if (banner) banner.style.display = !token ? 'block' : 'none';
-      // 設定画面のステータスバッジ更新
-      var badge = document.getElementById('gistSyncBadge');
-      if (!badge) return;
-      if (!token) {
-        badge.innerHTML = '❌ 未設定';
-        badge.style.color = '#999';
-      } else if (!gistId || !lastSync) {
-        badge.innerHTML = '⚠️ Token設定済み・未同期';
-        badge.style.color = '#f59e0b';
-      } else {
-        var d = new Date(lastSync);
-        var label = (d.getFullYear()) + '/' + (d.getMonth()+1) + '/' + d.getDate()
-          + ' ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0');
-        badge.innerHTML = '✅ 同期済み — ' + label;
-        badge.style.color = '#16a34a';
-      }
-      // ダッシュボードの同期カード更新
-      var dbBadge = document.getElementById('dbGistSyncStatus');
-      if (!dbBadge) return;
-      if (!token) {
-        dbBadge.innerHTML = '<span style="color:#bbb;">☁️ 未設定</span>';
-      } else if (!gistId || !lastSync) {
-        dbBadge.innerHTML = '<span style="color:#f59e0b;">⚠️ 未同期</span>';
-      } else {
-        var d2 = new Date(lastSync);
-        var label2 = (d2.getMonth()+1) + '/' + d2.getDate()
-          + ' ' + d2.getHours() + ':' + String(d2.getMinutes()).padStart(2,'0');
-        dbBadge.innerHTML = '<span style="color:#16a34a;">✅ ' + label2 + '</span>';
-      }
+      _gistGetToken().then(function(token) {
+        var gistId = localStorage.getItem(GIST_ID_KEY);
+        var lastSync = localStorage.getItem('gistLastSync');
+        // オンボーディングバナー表示制御
+        var banner = document.getElementById('gistOnboardBanner');
+        if (banner) banner.style.display = !token ? 'block' : 'none';
+        // 設定画面のステータスバッジ更新
+        var badge = document.getElementById('gistSyncBadge');
+        if (!badge) return;
+        if (!token) {
+          badge.innerHTML = '❌ 未設定';
+          badge.style.color = '#999';
+        } else if (!gistId || !lastSync) {
+          badge.innerHTML = '⚠️ Token設定済み・未同期';
+          badge.style.color = '#f59e0b';
+        } else {
+          var d = new Date(lastSync);
+          var label = (d.getFullYear()) + '/' + (d.getMonth()+1) + '/' + d.getDate()
+            + ' ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0');
+          badge.innerHTML = '✅ 同期済み — ' + label;
+          badge.style.color = '#16a34a';
+        }
+        // ダッシュボードの同期カード更新
+        var dbBadge = document.getElementById('dbGistSyncStatus');
+        if (!dbBadge) return;
+        if (!token) {
+          dbBadge.innerHTML = '<span style="color:#bbb;">☁️ 未設定</span>';
+        } else if (!gistId || !lastSync) {
+          dbBadge.innerHTML = '<span style="color:#f59e0b;">⚠️ 未同期</span>';
+        } else {
+          var d2 = new Date(lastSync);
+          var label2 = (d2.getMonth()+1) + '/' + d2.getDate()
+            + ' ' + d2.getHours() + ':' + String(d2.getMinutes()).padStart(2,'0');
+          dbBadge.innerHTML = '<span style="color:#16a34a;">✅ ' + label2 + '</span>';
+        }
+      });
     }
     window._gistUpdateSyncBadge = _gistUpdateSyncBadge;
 
     function gistUpload() {
-      var token = _gistGetToken();
-      if (!token) { _gistSetStatus('⚠️ 先にTokenを設定してください', '#e53935'); return; }
       _gistSetStatus('⬆️ 保存中...', '#1976d2');
-      var payload = _gistBuildPayload();
-      var gistId = localStorage.getItem(GIST_ID_KEY);
-      var url = gistId
-        ? 'https://api.github.com/gists/' + gistId
-        : 'https://api.github.com/gists';
-      var method = gistId ? 'PATCH' : 'POST';
-      var body = {
-        description: 'やることクラフト バックアップ ' + APP_VERSION,
-        public: false,
-        files: { 'yarukotocraft_backup.json': { content: payload } }
-      };
-      fetch(url, {
-        method: method,
-        headers: {
-          'Authorization': 'token ' + token,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(body)
-      }).then(function(res) {
-        if (res.status === 401) { throw new Error('TOKEN_EXPIRED'); }
-        if (!res.ok) { throw new Error('HTTP ' + res.status); }
-        return res.json();
-      }).then(function(data) {
-        localStorage.setItem(GIST_ID_KEY, data.id);
-        localStorage.setItem('gistLastSync', new Date().toISOString());
-        _gistSetStatus('✅ Gistへ保存しました（' + new Date().toLocaleTimeString() + '）', '#2e7d32');
-        if (typeof _gistUpdateSyncBadge === 'function') _gistUpdateSyncBadge();
-      }).catch(function(e) {
-        if (e.message === 'TOKEN_EXPIRED') {
-          _gistSetStatus('⚠️ Tokenの期限切れ。設定画面で再発行してください', '#e53935');
-          showToast('☁️ Token期限切れ — 再設定が必要です');
-        } else {
-          _gistSetStatus('❌ 保存失敗: ' + e.message, '#e53935');
-        }
+      _gistGetToken().then(function(token) {
+        if (!token) { _gistSetStatus('⚠️ 先にTokenを設定してください', '#e53935'); return; }
+        var payload = _gistBuildPayload();
+        var gistId = localStorage.getItem(GIST_ID_KEY);
+        var url = gistId
+          ? 'https://api.github.com/gists/' + gistId
+          : 'https://api.github.com/gists';
+        var method = gistId ? 'PATCH' : 'POST';
+        var body = {
+          description: 'やることクラフト バックアップ ' + APP_VERSION,
+          public: false,
+          files: { 'yarukotocraft_backup.json': { content: payload } }
+        };
+        fetch(url, {
+          method: method,
+          headers: {
+            'Authorization': 'token ' + token,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(body)
+        }).then(function(res) {
+          if (res.status === 401) { throw new Error('TOKEN_EXPIRED'); }
+          if (!res.ok) { throw new Error('HTTP ' + res.status); }
+          return res.json();
+        }).then(function(data) {
+          localStorage.setItem(GIST_ID_KEY, data.id);
+          localStorage.setItem('gistLastSync', new Date().toISOString());
+          _gistSetStatus('✅ Gistへ保存しました（' + new Date().toLocaleTimeString() + '）', '#2e7d32');
+          if (typeof _gistUpdateSyncBadge === 'function') _gistUpdateSyncBadge();
+        }).catch(function(e) {
+          if (e.message === 'TOKEN_EXPIRED') {
+            _gistSetStatus('⚠️ Tokenの期限切れ。設定画面で再発行してください', '#e53935');
+            showToast('☁️ Token期限切れ — 再設定が必要です');
+          } else {
+            _gistSetStatus('❌ 保存失敗: ' + e.message, '#e53935');
+          }
+        });
       });
     }
 
     function gistDownload() {
-      var token = _gistGetToken();
-      if (!token) { _gistSetStatus('⚠️ 先にTokenを設定してください', '#e53935'); return; }
-      var gistId = localStorage.getItem(GIST_ID_KEY);
-      if (!gistId) { _gistSetStatus('⚠️ まず「Gistへ保存」を実行してください', '#e53935'); return; }
       _gistSetStatus('⬇️ 復元中...', '#1976d2');
-      fetch('https://api.github.com/gists/' + gistId, {
-        headers: { 'Authorization': 'token ' + token }
-      }).then(function(res) {
-        if (res.status === 401) { throw new Error('TOKEN_EXPIRED'); }
-        if (!res.ok) { throw new Error('HTTP ' + res.status); }
-        return res.json();
-      }).then(function(data) {
-        var content = data.files['yarukotocraft_backup.json'].content;
-        var parsed = JSON.parse(content);
-        if (!parsed.allTasks || !parsed.allSettings) { throw new Error('データ形式が不正です'); }
-        allTasks = parsed.allTasks;
-        allSettings = parsed.allSettings;
-        saveAllTasks();
-        saveAllSettings();
-        renderAllSections();
-        localStorage.setItem('gistLastSync', new Date().toISOString());
-        _gistSetStatus('✅ 復元しました（' + (parsed.exportedAt ? parsed.exportedAt.slice(0,10) : '?') + '）', '#2e7d32');
-        if (typeof _gistUpdateSyncBadge === 'function') _gistUpdateSyncBadge();
-        showToast('☁️ Gistからデータを復元しました');
-      }).catch(function(e) {
-        if (e.message === 'TOKEN_EXPIRED') {
-          _gistSetStatus('⚠️ Tokenの期限切れ。設定画面で再発行してください', '#e53935');
-          showToast('☁️ Token期限切れ — 再設定が必要です');
-        } else {
-          _gistSetStatus('❌ 復元失敗: ' + e.message, '#e53935');
-        }
+      _gistGetToken().then(function(token) {
+        if (!token) { _gistSetStatus('⚠️ 先にTokenを設定してください', '#e53935'); return; }
+        var gistId = localStorage.getItem(GIST_ID_KEY);
+        if (!gistId) { _gistSetStatus('⚠️ まず「Gistへ保存」を実行してください', '#e53935'); return; }
+        fetch('https://api.github.com/gists/' + gistId, {
+          headers: { 'Authorization': 'token ' + token }
+        }).then(function(res) {
+          if (res.status === 401) { throw new Error('TOKEN_EXPIRED'); }
+          if (!res.ok) { throw new Error('HTTP ' + res.status); }
+          return res.json();
+        }).then(function(data) {
+          var content = data.files['yarukotocraft_backup.json'].content;
+          var parsed = JSON.parse(content);
+          if (!parsed.allTasks || !parsed.allSettings) { throw new Error('データ形式が不正です'); }
+          allTasks = parsed.allTasks;
+          allSettings = parsed.allSettings;
+          saveAllTasks();
+          saveAllSettings();
+          renderAllSections();
+          localStorage.setItem('gistLastSync', new Date().toISOString());
+          _gistSetStatus('✅ 復元しました（' + (parsed.exportedAt ? parsed.exportedAt.slice(0,10) : '?') + '）', '#2e7d32');
+          if (typeof _gistUpdateSyncBadge === 'function') _gistUpdateSyncBadge();
+          showToast('☁️ Gistからデータを復元しました');
+        }).catch(function(e) {
+          if (e.message === 'TOKEN_EXPIRED') {
+            _gistSetStatus('⚠️ Tokenの期限切れ。設定画面で再発行してください', '#e53935');
+            showToast('☁️ Token期限切れ — 再設定が必要です');
+          } else {
+            _gistSetStatus('❌ 復元失敗: ' + e.message, '#e53935');
+          }
+        });
       });
     }
 
     function _gistLoadTokenToInput() {
-      var token = _gistGetToken();
-      var input = document.getElementById('gistTokenInput');
-      if (input && token) input.value = token;
+      _gistGetToken().then(function(token) {
+        var input = document.getElementById('gistTokenInput');
+        if (input && token) input.value = token;
+      });
     }
 
     window.saveGistToken = saveGistToken;
@@ -13698,6 +13980,30 @@ function reviveBlueprint(id) {
     window.gistDownload = gistDownload;
     window._gistLoadTokenToInput = _gistLoadTokenToInput;
     // ===== GitHub Gist クラウド同期 ここまで =====
+
+    // ===== ✨ ダッシュボード フェードインアニメーション =====
+    // PLUSのコロ風：カードがスクロールで順番にふわっと出現する
+    var _ycFadeObserver = null;
+    function ycInitFadeIn() {
+      if (_ycFadeObserver) { _ycFadeObserver.disconnect(); }
+      var targets = document.querySelectorAll('#dashboardView .yc-fade-in');
+      if (!targets.length) return;
+      _ycFadeObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('yc-visible');
+            _ycFadeObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.12 });
+      targets.forEach(function(el, i) {
+        // 遅延を順番につけてPLUSのコロ風の「次々現れる」感を演出
+        el.style.transitionDelay = (i * 0.07) + 's';
+        _ycFadeObserver.observe(el);
+      });
+    }
+    window.ycInitFadeIn = ycInitFadeIn;
+    // ===== ダッシュボード フェードイン ここまで =====
 
     function exportData() {
       const deletedIds = JSON.parse(localStorage.getItem('deletedTaskIds') || '[]');
@@ -19158,6 +19464,8 @@ function renderDashboardView() {
   if (gouDetailEl) {
     gouDetailEl.textContent = '業 ' + gouVal + ' / 365　放置タスク ' + gouTasks.length + '件　最長 ' + maxDays + '日';
   }
+  // ✨ PLUSのコロ風フェードイン発動（render後に呼ぶ）
+  if (typeof ycInitFadeIn === 'function') setTimeout(ycInitFadeIn, 30);
 }
 function renderColosseumView() {
   var el = document.getElementById('colosseumContent');
@@ -23248,9 +23556,10 @@ function _ycGoSlide(n) {
               </div>
               <div style="margin-bottom:20px;">
                 <div style="font-size:0.78em;color:#aaa;margin-bottom:10px;">📖 紹介ページを読む</div>
-                <div style="display:flex;gap:10px;">
-                  <button onclick="openLpModal('women')" style="flex:1;padding:10px 8px;background:rgba(248,187,208,0.12);border:1px solid rgba(248,187,208,0.3);border-radius:8px;color:#f8bbd0;font-size:0.82em;font-weight:bold;cursor:pointer;">🌸 女性向けを読む</button>
-                  <button onclick="openLpModal('men')" style="flex:1;padding:10px 8px;background:rgba(129,199,132,0.12);border:1px solid rgba(129,199,132,0.3);border-radius:8px;color:#81c784;font-size:0.82em;font-weight:bold;cursor:pointer;">🌿 男性向けを読む</button>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                  <button onclick="openLpModal('women')" style="flex:1;min-width:120px;padding:10px 8px;background:rgba(248,187,208,0.12);border:1px solid rgba(248,187,208,0.3);border-radius:8px;color:#f8bbd0;font-size:0.82em;font-weight:bold;cursor:pointer;">🌸 女性向けを読む</button>
+                  <button onclick="openLpModal('men')" style="flex:1;min-width:120px;padding:10px 8px;background:rgba(129,199,132,0.12);border:1px solid rgba(129,199,132,0.3);border-radius:8px;color:#81c784;font-size:0.82em;font-weight:bold;cursor:pointer;">🌿 男性向けを読む</button>
+                  <button onclick="openLpModal('story')" style="flex:1;min-width:120px;padding:10px 8px;background:rgba(200,151,58,0.12);border:1px solid rgba(200,151,58,0.3);border-radius:8px;color:#f0c040;font-size:0.82em;font-weight:bold;cursor:pointer;">📖 ストーリーで見る</button>
                 </div>
               </div>
               <div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:16px;margin-bottom:4px;">
@@ -25785,7 +26094,7 @@ function showDebugLog(_initOnly) {
 
        // ===== ST-34C: テストセクション自己存在確認 =====
        // テストセクション自己存在確認：ソースコード上の存在をチェック
-       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75','ST-76','ST-77','ST-78','ST-79','ST-80','ST-81','ST-82'];
+       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75','ST-76','ST-77','ST-78','ST-79','ST-80','ST-81','ST-82','ST-106'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -30179,6 +30488,50 @@ function showDebugLog(_initOnly) {
        ok('ST-104: 作業前後差分チェック 完了（第19条 · 6軸）');
      } catch(e) { ng('ST-104: 例外', e.message); }
 
+     // ===== ST-106: ローディング画面・フェードインアニメーション確認 =====
+     try {
+       // ycLoadingScreenはload後に自動削除されるため、コード存在確認でテスト
+       var _lcSrc = document.documentElement.innerHTML;
+       var _hasStarCanvas = _lcSrc.indexOf('ycStarCanvas') !== -1;
+       var _hasLoadingContent = _lcSrc.indexOf('ycLoadingContent') !== -1 || _lcSrc.indexOf('ycLoadingScreen') !== -1;
+       _hasStarCanvas || _hasLoadingContent
+         ? ok('ST-106·①: ローディング画面コード確認')
+         : ng('ST-106·①: ローディング画面が見つかりません', '');
+       // yc-fade-in CSSクラスが定義されていること
+       var _hasFadeCss = _lcSrc.indexOf('yc-fade-in') !== -1;
+       _hasFadeCss
+         ? ok('ST-106·②: yc-fade-in CSSクラス確認')
+         : ng('ST-106·②: yc-fade-in CSSクラスが見つかりません', '');
+       // ycInitFadeIn関数が存在すること
+       typeof window.ycInitFadeIn === 'function'
+         ? ok('ST-106·③: ycInitFadeIn 関数確認')
+         : ng('ST-106·③: ycInitFadeIn 未定義', '');
+       // dashboardViewにyc-fade-inクラスが付いた要素があること
+       var _fadeEls = document.querySelectorAll('#dashboardView .yc-fade-in');
+       _fadeEls.length >= 5
+         ? ok('ST-106·④: ダッシュボードfade-in要素 ' + _fadeEls.length + '件確認')
+         : ng('ST-106·④: ダッシュボードfade-in要素が少ない', '件数=' + _fadeEls.length);
+       // ⑤ LPボタン3つの存在確認（women/men/story）
+       var _lpWomen = _lcSrc.indexOf("openLpModal('women')") !== -1;
+       var _lpMen   = _lcSrc.indexOf("openLpModal('men')")   !== -1;
+       var _lpStory = _lcSrc.indexOf("openLpModal('story')") !== -1;
+       _lpWomen
+         ? ok('ST-106·⑤: LPボタン women 存在確認')
+         : ng('ST-106·⑤: LPボタン women 未検出', '');
+       _lpMen
+         ? ok('ST-106·⑤: LPボタン men 存在確認')
+         : ng('ST-106·⑤: LPボタン men 未検出', '');
+       _lpStory
+         ? ok('ST-106·⑤: LPボタン story（📖 ストーリーで見る）存在確認')
+         : ng('ST-106·⑤: LPボタン story 未検出', '');
+       // ⑥ openLpModal に story URL が登録されていること
+       var _lpFnSrc = typeof openLpModal === 'function' ? openLpModal.toString() : '';
+       _lpFnSrc.indexOf('story') !== -1 && _lpFnSrc.indexOf('lp/') !== -1
+         ? ok('ST-106·⑥: openLpModal story URL登録確認')
+         : ng('ST-106·⑥: openLpModal story URL未登録', '');
+       ok('ST-106: ローディング・フェードイン・LPボタン確認 完了');
+     } catch(e) { ng('ST-106: 例外', e.message); }
+
      try {
        ok('');
        ok('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -31505,11 +31858,13 @@ document.addEventListener('DOMContentLoaded', function() {
 function openLpModal(type) {
   var urls = {
     women: 'https://kikumon-dev.github.io/lp-women/',
-    men:   'https://kikumon-dev.github.io/lp-men/'
+    men:   'https://kikumon-dev.github.io/lp-men/',
+    story: 'https://kikumon-dev.github.io/lp/'
   };
   var titles = {
     women: '🌸 女性向け — やることクラフト',
-    men:   '🌿 男性向け — やることクラフト'
+    men:   '🌿 男性向け — やることクラフト',
+    story: '📖 ストーリーで見る — やることクラフト'
   };
   var frame = document.getElementById('lpModalFrame');
   frame.src = urls[type];
