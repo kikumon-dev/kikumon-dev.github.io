@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.565';
+    const APP_VERSION = 'v0.39.566';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -23281,6 +23281,7 @@ function _ycWelcomeAnim() {
   if (!layer) return;
   layer.innerHTML = '';
   layer.style.display = 'block';
+  layer.style.pointerEvents = 'none'; // 絶対にクリックを妨げない
 
   function mk(tag){ return document.createElement(tag); }
   function sp(txt, css){ var e=mk('span'); e.textContent=txt; e.style.cssText=css; return e; }
@@ -23441,9 +23442,10 @@ function _ycWelcomeAnim() {
   }, 5400);
   setTimeout(function(){
     layer.style.display='none';
+    layer.style.pointerEvents='none';
     layer.innerHTML='';
     if(h2) h2.style.animation='';
-  }, 9000);
+  }, 5000);
 }
 function _ycGoSlide(n) {
       for(var i=0;i<4;i++){
@@ -23991,6 +23993,9 @@ function showGantOnboarding() {
 function showTutorial() {
   var el = document.getElementById('tutorialOverlay');
   if (!el) return;
+  // 既存の演出レイヤーを確実にリセット（重複防止）
+  var _prevLayer = document.getElementById('_ycWelcomeAnim');
+  if (_prevLayer) { _prevLayer.style.display='none'; _prevLayer.style.pointerEvents='none'; _prevLayer.innerHTML=''; }
   var splash = document.getElementById('tutorialSplash');
   var main   = document.getElementById('tutorialMain');
   if (allSettings.flags.tutorialSeen) {
@@ -34350,7 +34355,7 @@ window.togglePvStampPalette = togglePvStampPalette;
 <!-- 王国入場アニメレイヤー（body直下・stacking context問題回避） -->
 <div id="_ycWelcomeAnim" style="position:fixed;inset:0;pointer-events:none;z-index:99999;display:none;"></div>
 <!-- 王国入場アニメレイヤー（body直下・stacking context問題回避） -->
-<div id="_ycWelcomeAnim" style="position:fixed;inset:0;pointer-events:none;z-index:99999;display:none;"></div>
+
 <button id="zenModeBtn" onclick="window.openZenMode()" style="display:none;position:fixed;bottom:24px;left:20px;width:42px;height:42px;border-radius:50%;background:#fff;border:2px solid #ddd;color:#333;font-size:1.3em;font-weight:400;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.12);z-index:99990;line-height:38px;text-align:center;">⊙</button>
 
 
