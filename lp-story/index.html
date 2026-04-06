@@ -1,1 +1,748 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>やることクラフト — あなただけの王国を、つくろう。</title>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;700&family=Cormorant+Garamond:ital,wght@1,300;1,400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
 
+/* =====================================================
+   ベースカラー — 全セクション統一の黒
+   ===================================================== */
+body {
+  min-height: 100vh;
+  background: #000;           /* 完全な黒 */
+  color: #fff;                /* 完全な白 */
+  font-family: 'Shippori Mincho', serif;
+  overflow-x: hidden;
+}
+
+/* =====================================================
+   星空 Canvas — fixed・薄め
+   ===================================================== */
+#starCanvas {
+  position: fixed;
+  inset: 0;
+  width: 100%; height: 100%;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* =====================================================
+   視差オブジェクト — position:fixed
+   ===================================================== */
+.po {
+  position: fixed;
+  pointer-events: none;
+  will-change: transform;
+  user-select: none;
+  line-height: 1;
+  z-index: 10;
+  left: -300px; top: -300px;   /* 初期は画面外 */
+  transform: translate(-50%, -50%);
+}
+#po0 { font-size: clamp(3em,9vw,6em);   filter: drop-shadow(0 0 20px #e0a020) drop-shadow(0 0 60px rgba(224,160,32,0.4)); }
+#po1 { font-size: clamp(2em,5vw,3.5em); filter: drop-shadow(0 0 12px rgba(100,180,255,0.7)); }
+#po2 { font-size: clamp(2em,5vw,3.2em); filter: drop-shadow(0 0 8px rgba(255,255,255,0.3)); }
+#po3 { font-size: clamp(1.4em,3.5vw,2.4em); filter: drop-shadow(0 0 8px #ffd700); }
+#po4 { font-size: clamp(1.2em,3vw,2em);   filter: drop-shadow(0 0 6px rgba(255,255,200,0.5)); }
+#po5 { font-size: clamp(1.5em,4vw,2.8em); filter: drop-shadow(0 0 10px rgba(255,140,40,0.6)); }
+#po6 { font-size: clamp(3em,8vw,5.5em);   filter: drop-shadow(0 0 24px rgba(60,120,200,0.8)); }
+#po7 { font-size: clamp(1.5em,3.5vw,2.5em); filter: drop-shadow(0 0 12px rgba(255,160,50,0.7)); }
+
+/* =====================================================
+   固定テキストパネル（シーン0〜3）
+   ===================================================== */
+#fixedPanel {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  pointer-events: none;
+}
+.fp {
+  position: absolute;
+  width: min(620px, 92vw);
+  text-align: center;
+  padding: 0 24px;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity .55s ease, transform .55s ease;
+  pointer-events: none;
+}
+.fp.on { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+.fp-eye {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: clamp(.78em,2vw,.95em);
+  color: #f0b030;
+  letter-spacing: .32em;
+  margin-bottom: 16px;
+}
+.fp-h1 {
+  font-size: clamp(1.8em,5.5vw,3.2em);
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.45;
+  letter-spacing: .05em;
+  margin-bottom: 14px;
+}
+.fp-h2 {
+  font-size: clamp(1.6em,5vw,3em);
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.5;
+  letter-spacing: .05em;
+  margin-bottom: 14px;
+}
+.fp-h3 {
+  font-size: clamp(1.2em,4vw,2.2em);
+  font-weight: 700;
+  color: rgba(255,255,255,0.82);
+  line-height: 1.7;
+  letter-spacing: .04em;
+  margin-bottom: 14px;
+}
+.fp-em { font-style: normal; color: #f0c040; }
+.fp-body {
+  font-size: clamp(.88em,2.5vw,1.05em);
+  color: rgba(255,255,255,0.65);
+  line-height: 2.1;
+  margin-bottom: 24px;
+}
+.fp-rule { width:28px; height:1px; background:#f0b030; opacity:.5; margin:14px auto; }
+
+/* =====================================================
+   ボタン
+   ===================================================== */
+.btn {
+  display: inline-block;
+  background: linear-gradient(135deg, #d49020, #7a4800);
+  color: #fff;
+  font-family: 'Shippori Mincho', serif;
+  font-weight: 700;
+  font-size: clamp(.9em,2vw,1.05em);
+  letter-spacing: .16em;
+  padding: 16px 44px;
+  border-radius: 2px;
+  text-decoration: none;
+  border: 1px solid rgba(255,180,40,0.4);
+  box-shadow: 0 4px 24px rgba(212,144,32,0.5), inset 0 1px 0 rgba(255,200,80,0.2);
+  transition: transform .2s, box-shadow .2s;
+}
+.btn:hover { transform: translateY(-3px); box-shadow: 0 10px 36px rgba(212,144,32,0.8); }
+.btn.lg { padding: 20px 60px; font-size: clamp(.95em,2.2vw,1.1em); }
+
+/* =====================================================
+   スクロール用ダミー高さ（JS で body に直接 min-height をセット）
+   + コンテンツエリア
+   ===================================================== */
+#contentArea {
+  position: relative;
+  z-index: 30;
+  /* margin-top は JS でセット */
+}
+
+/* =====================================================
+   セクション — 全部 background: #000（統一）
+   ===================================================== */
+.sec {
+  padding: 110px 0;
+  background: #000;
+  position: relative;
+}
+.sec-inner {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+.sec-label {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: .82em;
+  color: #f0b030;
+  letter-spacing: .3em;
+  text-align: center;
+  margin-bottom: 12px;
+}
+.sec-title {
+  font-size: clamp(1.6em,5vw,2.5em);
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.5;
+  letter-spacing: .05em;
+  text-align: center;
+}
+.sec-title em { font-style: normal; color: #f0c040; }
+.sec-sub {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: clamp(.9em,2.5vw,1.1em);
+  color: rgba(255,255,255,0.55);
+  text-align: center;
+  line-height: 1.9;
+  margin-top: 10px;
+  letter-spacing: .08em;
+}
+.gold-rule { width:28px; height:1px; background:#f0b030; opacity:.45; margin:18px auto; }
+
+/* セクション区切り線 */
+.sec::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 1px; height: 60px;
+  background: linear-gradient(to bottom, transparent, rgba(240,176,48,0.3));
+}
+
+/* ---- P 痛みリスト ---- */
+.pain-list { display:flex; flex-direction:column; margin-top:48px; }
+.pi {
+  display:flex; gap:16px; align-items:flex-start;
+  padding:28px 0;
+  border-bottom:1px solid rgba(255,255,255,0.1);
+  opacity:0; transform:translateX(-24px);
+  transition:opacity .7s ease, transform .7s ease;
+}
+.pi.vis { opacity:1; transform:translateX(0); }
+.pi-dot { flex-shrink:0; width:6px; height:6px; border-radius:50%; background:#f0b030; margin-top:11px; }
+.pi-text { font-size:clamp(.98em,3vw,1.15em); color:rgba(255,255,255,0.88); line-height:1.9; }
+
+/* A アジテーション */
+.agitate {
+  text-align:center; padding:72px 0 0;
+  opacity:0; transform:translateY(24px);
+  transition:opacity .9s ease, transform .9s ease;
+}
+.agitate.vis { opacity:1; transform:translateY(0); }
+.agitate-sub { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:clamp(1.05em,3vw,1.3em); color:rgba(255,255,255,0.55); margin-bottom:14px; letter-spacing:.06em; }
+.agitate-main { font-size:clamp(1.6em,5.5vw,2.8em); font-weight:700; color:#fff; line-height:1.6; letter-spacing:.05em; }
+.agitate-main em { font-style:normal; color:#f0c040; }
+
+/* S 機能 */
+.feature-list { display:flex; flex-direction:column; gap:2px; margin-top:48px; }
+.feat {
+  display:flex;
+  background:rgba(255,255,255,0.04);
+  border-left:2px solid transparent;
+  opacity:0; transform:translateY(18px);
+  transition:opacity .6s ease, transform .6s ease, border-left-color .3s;
+}
+.feat.vis { opacity:1; transform:translateY(0); border-left-color:#f0b030; }
+.feat-num { flex-shrink:0; width:52px; display:flex; align-items:center; justify-content:center; font-family:'Cormorant Garamond',serif; font-size:.78em; color:#f0b030; letter-spacing:.06em; border-right:1px solid rgba(240,176,48,0.2); padding:24px 0; }
+.feat-body { padding:22px 20px; flex:1; }
+.feat-icon { font-size:1.4em; margin-bottom:7px; }
+.feat-name { font-size:.98em; font-weight:700; color:#f0c040; letter-spacing:.08em; margin-bottom:7px; }
+.feat-desc { font-size:.85em; color:rgba(255,255,255,0.68); line-height:2.0; }
+
+/* What You Get */
+.wyg-grid { display:grid; grid-template-columns:1fr 1fr; gap:2px; margin-top:44px; }
+.wyg-item {
+  background:rgba(255,255,255,0.04); padding:20px 16px;
+  display:flex; align-items:flex-start; gap:12px;
+  opacity:0; transform:translateY(14px);
+  transition:opacity .5s ease, transform .5s ease;
+}
+.wyg-item.vis { opacity:1; transform:translateY(0); }
+.wyg-check { flex-shrink:0; width:18px; height:18px; border:1px solid #f0b030; border-radius:2px; display:flex; align-items:center; justify-content:center; font-size:.6em; color:#f0b030; margin-top:2px; }
+.wyg-text { font-size:.83em; color:rgba(255,255,255,0.78); line-height:1.85; }
+
+/* T 証言 */
+.testimony-card {
+  max-width:520px; margin:0 auto; text-align:center;
+  opacity:0; transform:translateY(24px);
+  transition:opacity .9s ease, transform .9s ease;
+}
+.testimony-card.vis { opacity:1; transform:translateY(0); }
+.t-quote { font-size:clamp(1.1em,3.5vw,1.5em); font-weight:600; color:#fff; line-height:2.0; letter-spacing:.05em; margin-bottom:22px; }
+.t-attr { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:.82em; color:#f0b030; letter-spacing:.2em; }
+.quote-mark { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:min(30vw,220px); color:rgba(240,176,48,0.06); position:absolute; top:0; left:50%; transform:translateX(-50%); line-height:1; pointer-events:none; }
+
+/* O 価格 */
+.price-table { max-width:480px; margin:40px auto 0; }
+.pr {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:22px 20px; border-bottom:1px solid rgba(255,255,255,0.1);
+  opacity:0; transform:translateX(-16px);
+  transition:opacity .6s ease, transform .6s ease;
+}
+.pr.vis { opacity:1; transform:translateX(0); }
+.pr.star { border:1px solid rgba(240,176,48,0.5); border-radius:2px; background:rgba(240,176,48,0.07); margin:10px 0; }
+.pr-l { display:flex; align-items:center; gap:12px; }
+.pr-icon { font-size:1.4em; }
+.pr-name { font-size:.9em; font-weight:600; color:#f0c040; letter-spacing:.08em; }
+.pr-amt { font-family:'Cormorant Garamond',serif; font-size:1.6em; color:#fff; }
+.pr-amt small { font-size:.42em; color:rgba(255,255,255,0.38); }
+.offer-note { text-align:center; margin-top:24px; font-family:'Cormorant Garamond',serif; font-style:italic; font-size:.78em; color:rgba(255,255,255,0.32); letter-spacing:.12em; }
+
+/* R 最終CTA */
+.final-sec { padding:140px 0 120px; text-align:center; }
+.final-vis { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:.78em; color:rgba(240,176,48,0.5); letter-spacing:.3em; margin-bottom:24px; opacity:0; transition:opacity .9s ease; }
+.final-vis.vis { opacity:1; }
+.final-h { font-size:clamp(1.7em,5.5vw,3em); font-weight:700; color:#fff; line-height:1.65; letter-spacing:.05em; margin-bottom:48px; opacity:0; transform:translateY(18px); transition:opacity .9s ease .2s, transform .9s ease .2s; }
+.final-h.vis { opacity:1; transform:translateY(0); }
+.final-h em { font-style:normal; color:#f0c040; }
+.final-cta { opacity:0; transition:opacity .9s ease .4s; }
+.final-cta.vis { opacity:1; }
+.cta-note { margin-top:14px; font-family:'Cormorant Garamond',serif; font-style:italic; font-size:.72em; color:rgba(255,255,255,0.28); letter-spacing:.12em; }
+
+/* プログレス・ガイド */
+#dots { position:fixed; right:16px; top:50%; transform:translateY(-50%); display:flex; flex-direction:column; gap:10px; z-index:50; }
+.dot { width:5px; height:5px; border-radius:50%; background:rgba(240,176,48,0.25); transition:background .3s, transform .3s; }
+.dot.on { background:#f0b030; transform:scale(1.8); }
+#guide { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); text-align:center; z-index:50; transition:opacity .5s; }
+#guide em { display:block; font-family:'Cormorant Garamond',serif; font-style:italic; font-size:.62em; color:rgba(240,200,80,0.4); letter-spacing:.24em; margin-bottom:8px; animation:gi 1s ease 2s both; }
+.gbar { width:1px; height:40px; background:linear-gradient(to bottom, rgba(240,176,48,0.6),transparent); margin:0 auto; animation:gi 1s ease 2s both, gf 2.2s ease-in-out infinite; }
+@keyframes gi { from{opacity:0}to{opacity:1} }
+@keyframes gf { 0%,100%{opacity:.25;transform:scaleY(.4) translateY(0)} 55%{opacity:1;transform:scaleY(1) translateY(12px)} }
+
+footer { border-top:1px solid rgba(255,255,255,0.08); padding:36px 24px; text-align:center; background:#000; }
+footer p { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:.7em; color:rgba(255,255,255,0.22); letter-spacing:.14em; }
+</style>
+</head>
+<body>
+
+<canvas id="starCanvas"></canvas>
+
+<!-- 視差オブジェクト -->
+<div class="po" id="po0">🏰</div>
+<div class="po" id="po1">🚀</div>
+<div class="po" id="po2">🧙</div>
+<div class="po" id="po3">⭐</div>
+<div class="po" id="po4">✨</div>
+<div class="po" id="po5">☄️</div>
+<div class="po" id="po6">🌍</div>
+<div class="po" id="po7">🚀</div>
+
+<!-- 固定テキスト -->
+<div id="fixedPanel">
+  <div class="fp" id="fp0">
+    <p class="fp-eye">Your Kingdom. Your Craft.</p>
+    <h1 class="fp-h1"><span class="fp-em">あなただけの王国</span>を、つくろう。</h1>
+    <p class="fp-body">これが、あなたのクラフトだ。</p>
+    <a href="https://kikumon-dev.github.io/" class="btn">🚀 無料ではじめる</a>
+  </div>
+  <div class="fp" id="fp1">
+    <p class="fp-eye">— Problem —</p>
+    <div class="fp-rule"></div>
+    <h2 class="fp-h3">タスクが多すぎて、何から手をつけるかわからない。<br>手帳は続かない。アプリは味気ない。<br>「今日も何もできなかった」に疲れた。</h2>
+  </div>
+  <div class="fp" id="fp2">
+    <h2 class="fp-h2">管理するんじゃない。<br><span class="fp-em">つくる</span>んだ。</h2>
+    <p class="fp-body">自分で決めた、自分による、<br>自分のための創造的な毎日。</p>
+  </div>
+  <div class="fp" id="fp3">
+    <p class="fp-eye">— Solve —</p>
+    <div class="fp-rule"></div>
+    <h2 class="fp-h2">王国を育てる、<br><span class="fp-em">6つのちから。</span></h2>
+  </div>
+</div>
+
+<div id="dots"></div>
+<div id="guide"><em>scroll</em><div class="gbar"></div></div>
+
+<!-- コンテンツエリア（margin-top は JS でセット）-->
+<div id="contentArea">
+
+  <!-- S 機能 -->
+  <section class="sec">
+    <div class="sec-inner">
+      <p class="sec-label">— Solve —</p>
+      <h2 class="sec-title">王国を育てる、<em>6つのちから。</em></h2>
+      <div class="feature-list">
+        <div class="feat"><div class="feat-num">01</div><div class="feat-body"><div class="feat-icon">✏️</div><p class="feat-name">雑記帳 — 今日の作業台</p><p class="feat-desc">毎朝リセットされる白紙の舞台。昨日の自分はもうここにいない。何でも書いていい。強制はない。</p></div></div>
+        <div class="feat"><div class="feat-num">02</div><div class="feat-body"><div class="feat-icon">📖</div><p class="feat-name">日誌 — 思考の中継地点</p><p class="feat-desc">「おしゃれな日記帳みたい」。和紙のような温かみ。昨日の雑記が、今日の日誌になる。</p></div></div>
+        <div class="feat"><div class="feat-num">03</div><div class="feat-body"><div class="feat-icon">🗓️</div><p class="feat-name">週間・月間 — 流れを見渡す</p><p class="feat-desc">日々の積み重ねが線になる。月間スライダーで季節の流れを感じながら自分のペースを確かめる。</p></div></div>
+        <div class="feat"><div class="feat-num">04</div><div class="feat-body"><div class="feat-icon">⚔️</div><p class="feat-name">コロシアム — 完了が戦力になる</p><p class="feat-desc">完了タスクがカードになる。バトルで今日の頑張りが報われる。遊びが、仕事の燃料になる。</p></div></div>
+        <div class="feat"><div class="feat-num">05</div><div class="feat-body"><div class="feat-icon">🌙</div><p class="feat-name">天象カード — 今夜の空</p><p class="feat-desc">月齢・日の出・日没をリアルタイム表示。日々の暮らしに、宇宙のリズムを。</p></div></div>
+        <div class="feat"><div class="feat-num">06</div><div class="feat-body"><div class="feat-icon">☁️</div><p class="feat-name">Gist同期 — どこでも王国へ</p><p class="feat-desc">GitHubと連携してクラウド保存。スマホでもPCでも、あなたの王国は続く。</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- What You Get -->
+  <section class="sec">
+    <div class="sec-inner">
+      <p class="sec-label">— What You Get —</p>
+      <h2 class="sec-title">手に入る、<em>すべて。</em></h2>
+      <div class="gold-rule"></div>
+      <div class="wyg-grid">
+        <div class="wyg-item"><div class="wyg-check">✓</div><p class="wyg-text">雑記帳（毎朝リセット）</p></div>
+        <div class="wyg-item"><div class="wyg-check">✓</div><p class="wyg-text">日誌（和紙テクスチャ）</p></div>
+        <div class="wyg-item"><div class="wyg-check">✓</div><p class="wyg-text">週間・月間・年間ビュー</p></div>
+        <div class="wyg-item"><div class="wyg-check">✓</div><p class="wyg-text">コロシアムバトル</p></div>
+        <div class="wyg-item"><div class="wyg-check">✓</div><p class="wyg-text">月齢・天象カード</p></div>
+        <div class="wyg-item"><div class="wyg-check">✓</div><p class="wyg-text">写真帳（スタンプ付き）</p></div>
+        <div class="wyg-item"><div class="wyg-check">✓</div><p class="wyg-text">自由帳（ノート）</p></div>
+        <div class="wyg-item"><div class="wyg-check">✓</div><p class="wyg-text">Gistクラウド同期</p></div>
+        <div class="wyg-item"><div class="wyg-check">✓</div><p class="wyg-text">王国力・徳・業スコア</p></div>
+        <div class="wyg-item"><div class="wyg-check">✓</div><p class="wyg-text">造営（ガントチャート）</p></div>
+        <div class="wyg-item"><div class="wyg-check">✓</div><p class="wyg-text">深考モード（SDF）</p></div>
+        <div class="wyg-item"><div class="wyg-check">✓</div><p class="wyg-text">禅モード（集中画面）</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- T 証言 -->
+  <section class="sec" style="overflow:hidden;position:relative;">
+    <div class="quote-mark">"</div>
+    <div class="sec-inner" style="position:relative;">
+      <p class="sec-label">— Testimony —</p>
+      <div class="gold-rule"></div>
+      <div class="testimony-card">
+        <blockquote class="t-quote">「おしゃれな日記帳みたい。<br>きり分けたりまとめたりできるのが<br>すごく使いやすかった。」</blockquote>
+        <p class="t-attr">— Mao, 20代 テスター —</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- O 価格 -->
+  <section class="sec">
+    <div class="sec-inner">
+      <p class="sec-label">— Offer —</p>
+      <h2 class="sec-title">手帳1冊分より、<em>安い。</em></h2>
+      <div class="gold-rule"></div>
+      <p class="sec-sub">Notion ¥1,650 / Todoist ¥600 より、ずっと安い。<br>野営地は永久無料。まずは試してみて。</p>
+      <div class="price-table">
+        <div class="pr"><div class="pr-l"><span class="pr-icon">🏕️</span><span class="pr-name">野営地</span></div><div class="pr-amt">¥0<small> / 永久無料</small></div></div>
+        <div class="pr"><div class="pr-l"><span class="pr-icon">🏘️</span><span class="pr-name">村パス</span></div><div class="pr-amt">¥200<small> / 月</small></div></div>
+        <div class="pr"><div class="pr-l"><span class="pr-icon">🏙️</span><span class="pr-name">町パス</span></div><div class="pr-amt">¥400<small> / 月</small></div></div>
+        <div class="pr star"><div class="pr-l"><span class="pr-icon">🏰</span><span class="pr-name">王国パス — 全機能解放</span></div><div class="pr-amt">¥550<small> / 月</small></div></div>
+      </div>
+      <p class="offer-note">月550円 = コンビニコーヒー2杯分。あなたの王国への投資として、これ以上はない。</p>
+    </div>
+  </section>
+
+  <!-- R 最終CTA -->
+  <section class="sec final-sec">
+    <div class="sec-inner">
+      <p class="final-vis">— Vision —</p>
+      <h2 class="final-h">今日の創造が、<br>めぐりめぐって<br><em>誰かの明日を輝かす。</em></h2>
+      <div class="final-cta">
+        <a href="https://kikumon-dev.github.io/" class="btn lg">🏰 王国をはじめる（無料）</a>
+        <p class="cta-note">クレジットカード不要 · 登録30秒</p>
+      </div>
+    </div>
+  </section>
+
+  <footer><p>© 2026 やることクラフト — kikumon-dev.github.io</p></footer>
+</div>
+
+<script>
+/* ============================================================
+   レイアウト設定
+   ============================================================ */
+var N   = 4;       // 固定シーン数
+var VH  = window.innerHeight;
+var VW  = window.innerWidth;
+var SH  = VH * 1.5; // 1シーンのスクロール量
+var FT  = N * SH;   // 固定シーン合計高さ
+
+function layout() {
+  VH = window.innerHeight; VW = window.innerWidth; SH = VH * 1.5; FT = N * SH;
+  document.getElementById('contentArea').style.marginTop = FT + 'px';
+}
+layout();
+window.addEventListener('resize', layout);
+
+/* ドット生成 */
+var dotsEl = document.getElementById('dots');
+for (var i = 0; i < N; i++) {
+  var d = document.createElement('div');
+  d.className = 'dot'; d.id = 'dt' + i;
+  dotsEl.appendChild(d);
+}
+
+/* ============================================================
+   ユーティリティ
+   ============================================================ */
+function cl(v,a,b){ return v<a?a:v>b?b:v; }
+function lp(a,b,t){ return a+(b-a)*t; }
+function eo(t){ return 1-Math.pow(1-t,3); }
+function ei(t){ return t*t; }
+function eo2(t){ return 1-Math.pow(1-t,2); }
+
+/* オブジェクト座標セット（translate(-50%,-50%)済み想定で left/top に中心座標を渡す）*/
+function so(id, x, y, sc, rot, op) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.style.left    = x + 'px';
+  el.style.top     = y + 'px';
+  el.style.opacity = cl(op, 0, 1);
+  el.style.transform = 'translate(-50%,-50%) scale(' + cl(sc,0,10) + ')' + (rot ? ' rotate('+rot+'deg)' : '');
+}
+
+/* ============================================================
+   メイン更新関数
+   ============================================================ */
+function update() {
+  var sy  = window.scrollY || 0;
+  var cur = cl(Math.floor(sy / SH), 0, N - 1);
+
+  /* -- ドット・テキスト -- */
+  for (var i = 0; i < N; i++) {
+    var dt = document.getElementById('dt'+i);
+    if (dt) dt.className = 'dot'+(i===cur?' on':'');
+    var fp = document.getElementById('fp'+i);
+    if (fp) fp.className = 'fp'+(i===cur?' on':'');
+  }
+  /* 固定パネル・ドット：コンテンツエリアに入ったら消す */
+  var inContent = sy > FT + VH * 0.2;
+  var panel = document.getElementById('fixedPanel');
+  if (panel) panel.style.opacity = inContent ? '0' : '1';
+  var dts = document.getElementById('dots');
+  if (dts) dts.style.opacity = inContent ? '0' : '1';
+  var guide = document.getElementById('guide');
+  if (guide) guide.style.opacity = sy < VH * 0.5 ? '1' : '0';
+
+  /* ============================================================
+     視差オブジェクト
+
+     【設計原則】
+     - 固定シーン (sy < FT) と コンテンツエリア (sy >= FT) で別の動きを割り当て
+     - inContent の間も絶対に opacity:0 にしない → 必ず何かが動き続ける
+     ============================================================ */
+
+  /* 固定シーン内進捗 0→1 */
+  var fp_all = cl(sy / FT, 0, 1);
+
+  /* --- 🏰 城 ---
+     固定: 右上に鎮座 → シーン後半で退く
+     コンテンツ: 消える（城はスタートのアイコン）
+  --- */
+  if (!inContent) {
+    var cT = cl(sy / (SH * 0.8), 0, 1);
+    var cX = lp(VW*0.74, VW*0.78, fp_all);
+    var cY = lp(VH*0.22, VH*0.14, fp_all);
+    var cS = lp(0.05, 1.0, eo(cT));
+    var cO = lp(0, 1.0, eo(cT)) * lp(1, 0.15, fp_all * 2 > 1 ? fp_all * 2 - 1 : 0);
+    so('po0', cX, cY, cS, 0, cO);
+  } else {
+    so('po0', -300, -300, 0, 0, 0);
+  }
+
+  /* --- 🚀 ロケット1 ---
+     固定シーン0〜1: 左下→右上 横断
+     コンテンツ全体: 右上→左下 再横断（ループ的に）
+  --- */
+  if (!inContent) {
+    var r1T = cl(sy / (SH * 1.5), 0, 1);
+    so('po1',
+      lp(-VW*0.06, VW*1.06, eo(r1T)),
+      lp(VH*0.82,  VH*0.12, eo(r1T)),
+      1, lp(-38, -148, r1T),
+      cl(r1T < 0.88 ? 1 : (1-r1T)/0.12, 0, 1)
+    );
+  } else {
+    /* コンテンツ内スクロール量 */
+    var cSy = sy - FT;
+    var cTotal = document.getElementById('contentArea').offsetHeight;
+    var r1C = cl(cSy / (cTotal * 0.5), 0, 1);
+    so('po1',
+      lp(VW*1.06, -VW*0.06, eo(r1C)),
+      lp(VH*0.15, VH*0.85, eo(r1C)),
+      1, lp(-148, -38+360, r1C),
+      cl(r1C < 0.88 ? 1 : (1-r1C)/0.12, 0, 1)
+    );
+  }
+
+  /* --- 🧙 騎士 ---
+     固定: 左→右 走る（シーン1〜2）
+     コンテンツ: 画面左端を上昇
+  --- */
+  if (!inContent) {
+    var k1T = cl((sy - SH*0.7) / (SH*1.6), 0, 1);
+    so('po2',
+      lp(-VW*0.06, VW*1.06, eo(k1T)),
+      lp(VH*0.70, VH*0.55, eo(k1T)),
+      1, 0,
+      cl(k1T < 0.85 ? 1 : (1-k1T)/0.15, 0, 1)
+    );
+  } else {
+    var cSy2 = sy - FT;
+    var cTotal2 = document.getElementById('contentArea').offsetHeight;
+    var kC = cl((cSy2 - cTotal2*0.1) / (cTotal2 * 0.6), 0, 1);
+    so('po2',
+      VW * 0.10,
+      lp(VH*1.1, -VH*0.1, ei(kC)),
+      1, 0,
+      cl(kC < 0.88 ? 1 : (1-kC)/0.12, 0, 1)
+    );
+  }
+
+  /* --- ⭐ 星1 ---
+     固定: 上から落下（シーン1〜2）
+     コンテンツ: 右端を上昇
+  --- */
+  if (!inContent) {
+    var s1T = cl((sy - SH*0.5) / (SH*1.8), 0, 1);
+    so('po3',
+      VW*0.14,
+      lp(-VH*0.08, VH*1.05, ei(s1T)),
+      0.9, 0,
+      cl(s1T < 0.78 ? 1 : (1-s1T)/0.22, 0, 1)
+    );
+  } else {
+    var cSy3 = sy - FT;
+    var cTotal3 = document.getElementById('contentArea').offsetHeight;
+    var s1C = cl(cSy3 / (cTotal3 * 0.55), 0, 1);
+    so('po3',
+      VW*0.90,
+      lp(VH*1.1, -VH*0.1, eo(s1C)),
+      0.9, 0,
+      cl(s1C < 0.88 ? 1 : (1-s1C)/0.12, 0, 1)
+    );
+  }
+
+  /* --- ✨ 星2 ---
+     固定: 右→左 水平（シーン1〜3）
+     コンテンツ: 左→右 逆横断
+  --- */
+  if (!inContent) {
+    var s2T = cl((sy - SH*0.8) / (SH*2.0), 0, 1);
+    so('po4',
+      lp(VW*1.05, -VW*0.05, s2T),
+      VH*0.40,
+      0.8, 0,
+      cl(s2T < 0.83 ? 1 : (1-s2T)/0.17, 0, 1)
+    );
+  } else {
+    var cSy4 = sy - FT;
+    var cTotal4 = document.getElementById('contentArea').offsetHeight;
+    var s2C = cl((cSy4 - cTotal4*0.2) / (cTotal4 * 0.6), 0, 1);
+    so('po4',
+      lp(-VW*0.05, VW*1.05, s2C),
+      VH*0.62,
+      0.8, 0,
+      cl(s2C < 0.85 ? 1 : (1-s2C)/0.15, 0, 1)
+    );
+  }
+
+  /* --- ☄️ 流れ星 ---
+     固定: 左上→右下（シーン2〜3）
+     コンテンツ: 右上→左下（中盤）
+  --- */
+  if (!inContent) {
+    var mT = cl((sy - SH*1.6) / (SH*1.4), 0, 1);
+    so('po5',
+      lp(-VW*0.05, VW*1.05, eo(mT)),
+      lp(-VH*0.05, VH*1.05, eo(mT)),
+      0.9, 45,
+      cl(mT < 0.85 ? 1 : (1-mT)/0.15, 0, 1)
+    );
+  } else {
+    var cSy5 = sy - FT;
+    var cTotal5 = document.getElementById('contentArea').offsetHeight;
+    var mC = cl((cSy5 - cTotal5*0.3) / (cTotal5 * 0.5), 0, 1);
+    so('po5',
+      lp(VW*1.05, -VW*0.05, eo(mC)),
+      lp(-VH*0.05, VH*1.05, eo(mC)),
+      0.9, 45,
+      cl(mC < 0.85 ? 1 : (1-mC)/0.15, 0, 1)
+    );
+  }
+
+  /* --- 🌍 地球・🚀打ち上げ ---
+     最終CTAセクションで出現
+  --- */
+  var finalEl = document.querySelector('.final-sec');
+  var fTop    = finalEl ? (finalEl.getBoundingClientRect().top + sy) : 999999;
+  var ep      = cl((sy - (fTop - VH * 1.3)) / (VH * 1.6), 0, 1);
+  so('po6',
+    VW*0.82,
+    lp(VH*1.15, VH*0.30, eo(ep)),
+    lp(0.1, 1.1, eo(ep)), 0, ep
+  );
+  var r2p = cl((ep - 0.4) / 0.6, 0, 1);
+  so('po7',
+    VW*0.82 + 30,
+    lp(VH*0.30, -VH*0.1, ei(r2p)),
+    lp(0.4, 1.0, r2p), -10, r2p
+  );
+}
+
+/* スクロールイベント */
+var raf = false;
+window.addEventListener('scroll', function(){
+  if (!raf) { requestAnimationFrame(function(){ update(); raf=false; }); raf=true; }
+}, {passive:true});
+update();
+
+/* ============================================================
+   IntersectionObserver
+   ============================================================ */
+var io = new IntersectionObserver(function(entries){
+  entries.forEach(function(e){
+    if (e.isIntersecting){ e.target.classList.add('vis'); io.unobserve(e.target); }
+  });
+}, {threshold:0.12});
+['.pi','.agitate','.feat','.wyg-item','.testimony-card','.pr',
+ '.final-vis','.final-h','.final-cta'
+].forEach(function(sel){
+  document.querySelectorAll(sel).forEach(function(el,i){
+    el.style.transitionDelay = (i%5)*0.1+'s';
+    io.observe(el);
+  });
+});
+
+/* ============================================================
+   星 Canvas
+   ============================================================ */
+(function(){
+  var cv = document.getElementById('starCanvas');
+  var ctx = cv.getContext('2d');
+  function rsz(){ cv.width=window.innerWidth; cv.height=window.innerHeight; }
+  rsz(); window.addEventListener('resize', rsz);
+
+  var ST = Array.from({length:180}, function(){
+    return {
+      x:Math.random(), y:Math.random(),
+      r:Math.random()*1.4+0.2,
+      a:Math.random(),
+      da:(Math.random()*0.005+0.001)*(Math.random()<0.5?1:-1),
+      gold:Math.random()<0.3
+    };
+  });
+  var SH2=[];
+  setInterval(function(){
+    SH2.push({sx:Math.random()*0.65,sy:Math.random()*0.4,
+      vx:0.004+Math.random()*0.003,vy:0.0012+Math.random()*0.001,
+      len:0.08+Math.random()*0.08,a:1,da:0.018});
+  },2200);
+
+  (function tick(){
+    var W=cv.width, H=cv.height;
+    ctx.clearRect(0,0,W,H);
+    ST.forEach(function(s){
+      s.a+=s.da;
+      if(s.a>1){s.a=1;s.da*=-1;} if(s.a<0){s.a=0;s.da*=-1;}
+      ctx.beginPath(); ctx.arc(s.x*W,s.y*H,s.r,0,Math.PI*2);
+      ctx.fillStyle = s.gold
+        ? 'rgba(255,210,60,'+s.a.toFixed(2)+')'
+        : 'rgba(220,235,255,'+s.a.toFixed(2)+')';
+      ctx.fill();
+    });
+    SH2=SH2.filter(function(s){return s.a>0;});
+    SH2.forEach(function(s){
+      var x1=s.sx*W, y1=s.sy*H, x0=(s.sx-s.len)*W, y0=(s.sy-s.len*0.4)*H;
+      var g=ctx.createLinearGradient(x1,y1,x0,y0);
+      g.addColorStop(0,'rgba(255,240,160,'+s.a.toFixed(2)+')');
+      g.addColorStop(1,'rgba(255,240,160,0)');
+      ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x0,y0);
+      ctx.strokeStyle=g;ctx.lineWidth=1.3;ctx.stroke();
+      s.sx+=s.vx;s.sy+=s.vy;s.a-=s.da;
+    });
+    requestAnimationFrame(tick);
+  })();
+})();
+</script>
+</body>
+</html>
