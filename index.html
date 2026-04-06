@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.562';
+    const APP_VERSION = 'v0.39.565';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -217,6 +217,7 @@
       height: 100%;
       margin: 0;
       padding: 0;
+      background: #fff;
       font-family: 'Hiragino Sans', 'メイリオ', Meiryo, sans-serif;
       overscroll-behavior: none;
     }
@@ -3225,7 +3226,7 @@
   opacity:1;transition:opacity 1.0s ease;
 ">
   <!-- 星パーティクル Canvas -->
-  <canvas id="ycSplashCanvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+  <canvas id="ycSplashCanvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;"></canvas>
 
   <!-- 流れ星 Canvas -->
   <canvas id="ycShootingCanvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;"></canvas>
@@ -3388,9 +3389,19 @@
     var el = document.getElementById('ycSplash');
     if (!el) return;
     el.style.opacity = '0';
+    el.style.pointerEvents = 'none'; // 操作をブロックしない
     setTimeout(function() {
       cancelAnimationFrame(raf);
+      // Canvas要素を個別に先に削除（残留防止）
+      var sc = document.getElementById('ycSplashCanvas');
+      if (sc && sc.parentNode) sc.parentNode.removeChild(sc);
+      var sh = document.getElementById('ycShootingCanvas');
+      if (sh && sh.parentNode) sh.parentNode.removeChild(sh);
+      // スプラッシュ全体を削除
       if (el.parentNode) el.parentNode.removeChild(el);
+      // body・html の背景を確実にリセット
+      document.body.style.background = '';
+      document.documentElement.style.background = '';
     }, 1020);
   }
   setTimeout(closeSplash, 2000);
@@ -30529,6 +30540,26 @@ function showDebugLog(_initOnly) {
        _lpFnSrc.indexOf('story') !== -1 && _lpFnSrc.indexOf('lp-story/') !== -1
          ? ok('ST-106·⑥: openLpModal story URL登録確認')
          : ng('ST-106·⑥: openLpModal story URL未登録', '');
+       // ⑦ スプラッシュ削除後にbody背景が黒くない（Canvas残留チェック）
+       var _splashEl = document.getElementById('ycSplash');
+       var _splashCanvas = document.getElementById('ycSplashCanvas');
+       var _shootingCanvas = document.getElementById('ycShootingCanvas');
+       // スプラッシュは起動2秒後に削除される → STはその後に実行されるため消えているはず
+       !_splashEl
+         ? ok('ST-106·⑦: ycSplash DOM削除確認（残留なし）')
+         : ng('ST-106·⑦: ycSplash が残留しています', 'body背景が黒くなる原因');
+       !_splashCanvas
+         ? ok('ST-106·⑦: ycSplashCanvas DOM削除確認（残留なし）')
+         : ng('ST-106·⑦: ycSplashCanvas が残留しています', 'Canvas残留=背景黒の原因');
+       !_shootingCanvas
+         ? ok('ST-106·⑦: ycShootingCanvas DOM削除確認（残留なし）')
+         : ng('ST-106·⑦: ycShootingCanvas が残留しています', 'Canvas残留=背景黒の原因');
+       // body/html の background が黒でないこと
+       var _bodyBg = window.getComputedStyle(document.body).backgroundColor;
+       var _htmlBg = window.getComputedStyle(document.documentElement).backgroundColor;
+       _bodyBg !== 'rgb(0, 0, 0)'
+         ? ok('ST-106·⑦: body背景が黒でない（' + _bodyBg + '）')
+         : ng('ST-106·⑦: body背景が黒になっています', _bodyBg);
        ok('ST-106: ローディング・フェードイン・LPボタン確認 完了');
      } catch(e) { ng('ST-106: 例外', e.message); }
 
