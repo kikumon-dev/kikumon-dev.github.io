@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.561';
+    const APP_VERSION = 'v0.39.562';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -30526,7 +30526,7 @@ function showDebugLog(_initOnly) {
          : ng('ST-106·⑤: LPボタン story 未検出', '');
        // ⑥ openLpModal に story URL が登録されていること
        var _lpFnSrc = typeof openLpModal === 'function' ? openLpModal.toString() : '';
-       _lpFnSrc.indexOf('story') !== -1 && _lpFnSrc.indexOf('lp/') !== -1
+       _lpFnSrc.indexOf('story') !== -1 && _lpFnSrc.indexOf('lp-story/') !== -1
          ? ok('ST-106·⑥: openLpModal story URL登録確認')
          : ng('ST-106·⑥: openLpModal story URL未登録', '');
        ok('ST-106: ローディング・フェードイン・LPボタン確認 完了');
@@ -31859,7 +31859,7 @@ function openLpModal(type) {
   var urls = {
     women: 'https://kikumon-dev.github.io/lp-women/',
     men:   'https://kikumon-dev.github.io/lp-men/',
-    story: 'https://kikumon-dev.github.io/lp/'
+    story: 'https://kikumon-dev.github.io/lp-story/'
   };
   var titles = {
     women: '🌸 女性向け — やることクラフト',
