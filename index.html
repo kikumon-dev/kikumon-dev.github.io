@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.566';
+    const APP_VERSION = 'v0.39.568';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -18361,16 +18361,18 @@ function loadSettingsUI() {
       if (isSimple) {
         if (navDaily) navDaily.style.display = '';
         if (navWeekly) navWeekly.style.display = '';
-        if (navYearly) navYearly.style.display = '';
+        // navYearly はvisibleTabs設定に委ねる（強制表示しない）
         if (stampBar) { stampBar.style.display = 'block'; renderStampBar(); }
         if (seasonalArt) { seasonalArt.style.display = 'block'; updateSeasonalArt(); }
       } else {
         if (navDaily) navDaily.style.display = '';
         if (navWeekly) navWeekly.style.display = '';
-        if (navYearly) navYearly.style.display = '';
+        // navYearly はvisibleTabs設定に委ねる（強制表示しない）
         if (stampBar) stampBar.style.display = 'none';
         if (seasonalArt) { seasonalArt.style.display = 'block'; updateSeasonalArt(); }
       }
+      // visibleTabs設定を再適用（simpleMode切替後も個別ON/OFFを維持）
+      if (typeof applyVisibleTabsSettings === 'function') applyVisibleTabsSettings();
     }
     function updateSeasonalArt() {
       const el = document.getElementById('seasonalArt');
@@ -26110,7 +26112,7 @@ function showDebugLog(_initOnly) {
 
        // ===== ST-34C: テストセクション自己存在確認 =====
        // テストセクション自己存在確認：ソースコード上の存在をチェック
-       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75','ST-76','ST-77','ST-78','ST-79','ST-80','ST-81','ST-82','ST-106'];
+       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-103','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75','ST-76','ST-77','ST-78','ST-79','ST-80','ST-81','ST-82','ST-106'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -26122,6 +26124,36 @@ function showDebugLog(_initOnly) {
          ? ok('ST-34: テストセクション自己存在確認(' + _stSections.length + '件全て存在)')
          : ng('ST-34: テストセクション欠落検知', '欠落: ' + _stMissing.join(', '));
      } catch(e) { ng('ST-34: コロシアム＋ナビタブ', e.message); }
+
+     // ===== ST-103: visibleTabs年間ON/OFF永続化テスト =====
+     try {
+       var _origYearly = allSettings.ui.visibleTabs.yearly;
+       // 1. yearly=false に設定して適用
+       allSettings.ui.visibleTabs.yearly = false;
+       saveAllSettings();
+       applyVisibleTabsSettings();
+       var _navY = document.getElementById('navYearly');
+       (_navY && _navY.style.display === 'none')
+         ? ok('ST-103: yearly=false → navYearly非表示確認')
+         : ng('ST-103: yearly=false でも navYearly が表示されている', _navY ? _navY.style.display : 'null');
+       // 2. applySimpleMode呼び出し後も非表示が維持されるか
+       if (typeof applySimpleMode === 'function') applySimpleMode();
+       (_navY && _navY.style.display === 'none')
+         ? ok('ST-103: applySimpleMode後も yearly非表示維持確認')
+         : ng('ST-103: applySimpleMode後に yearly が復活している（バグ）', _navY ? _navY.style.display : '');
+       // 3. yearly=true に戻して表示確認
+       allSettings.ui.visibleTabs.yearly = true;
+       saveAllSettings();
+       applyVisibleTabsSettings();
+       (_navY && _navY.style.display !== 'none')
+         ? ok('ST-103: yearly=true → navYearly表示確認')
+         : ng('ST-103: yearly=true でも navYearly が非表示', _navY ? _navY.style.display : '');
+       // 4. ロールバック
+       allSettings.ui.visibleTabs.yearly = _origYearly;
+       saveAllSettings();
+       applyVisibleTabsSettings();
+       ok('ST-103: visibleTabs年間ON/OFF永続化 完了');
+     } catch(e) { ng('ST-103: 例外', e.message); }
 
      // ST-35: GDP・徳・業 独立管理テスト
      try {
