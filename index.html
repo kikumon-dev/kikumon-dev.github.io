@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.568';
+    const APP_VERSION = 'v0.39.569';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -14969,7 +14969,7 @@ function reviveBlueprint(id) {
       'migration_calendarId_v1', 'extendedvaluekey',
       'dailyScrollInit', 'weeklyScrollInit',
       // GitHub Gist クラウド同期
-      'gistToken', 'gistId', 'gistLastSync',
+      'gistToken', 'gistTokenEnc', 'gistId', 'gistLastSync',
       // 写真帳
       'photoImages',
     '_dev_snapshot',
