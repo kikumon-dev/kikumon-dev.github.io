@@ -82,7 +82,7 @@ body {
   font-family: 'Cormorant Garamond', serif;
   font-style: italic;
   font-size: clamp(.78em,2vw,.95em);
-  color: #f0b030;
+  color: #B8952A;
   letter-spacing: .32em;
   margin-bottom: 16px;
 }
@@ -110,14 +110,14 @@ body {
   letter-spacing: .04em;
   margin-bottom: 14px;
 }
-.fp-em { font-style: normal; color: #f0c040; }
+.fp-em { font-style: normal; color: #C9A84C; }
 .fp-body {
   font-size: clamp(.88em,2.5vw,1.05em);
   color: rgba(255,255,255,0.65);
   line-height: 2.1;
   margin-bottom: 24px;
 }
-.fp-rule { width:28px; height:1px; background:#f0b030; opacity:.5; margin:14px auto; }
+.fp-rule { width:28px; height:1px; background:#B8952A; opacity:.5; margin:14px auto; }
 
 /* =====================================================
    ボタン
@@ -167,7 +167,7 @@ body {
   font-family: 'Cormorant Garamond', serif;
   font-style: italic;
   font-size: .82em;
-  color: #f0b030;
+  color: #B8952A;
   letter-spacing: .3em;
   text-align: center;
   margin-bottom: 12px;
@@ -180,7 +180,7 @@ body {
   letter-spacing: .05em;
   text-align: center;
 }
-.sec-title em { font-style: normal; color: #f0c040; }
+.sec-title em { font-style: normal; color: #C9A84C; }
 .sec-sub {
   font-family: 'Cormorant Garamond', serif;
   font-style: italic;
@@ -191,7 +191,7 @@ body {
   margin-top: 10px;
   letter-spacing: .08em;
 }
-.gold-rule { width:28px; height:1px; background:#f0b030; opacity:.45; margin:18px auto; }
+.gold-rule { width:28px; height:1px; background:#B8952A; opacity:.45; margin:18px auto; }
 
 /* セクション区切り線 */
 .sec::before {
@@ -200,7 +200,7 @@ body {
   top: 0; left: 50%;
   transform: translateX(-50%);
   width: 1px; height: 60px;
-  background: linear-gradient(to bottom, transparent, rgba(240,176,48,0.3));
+  background: linear-gradient(to bottom, transparent, rgba(184,149,42,0.3));
 }
 
 /* ---- P 痛みリスト ---- */
@@ -213,7 +213,7 @@ body {
   transition:opacity .7s ease, transform .7s ease;
 }
 .pi.vis { opacity:1; transform:translateX(0); }
-.pi-dot { flex-shrink:0; width:6px; height:6px; border-radius:50%; background:#f0b030; margin-top:11px; }
+.pi-dot { flex-shrink:0; width:6px; height:6px; border-radius:50%; background:#B8952A; margin-top:11px; }
 .pi-text { font-size:clamp(.98em,3vw,1.15em); color:rgba(255,255,255,0.88); line-height:1.9; }
 
 /* A アジテーション */
@@ -225,7 +225,7 @@ body {
 .agitate.vis { opacity:1; transform:translateY(0); }
 .agitate-sub { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:clamp(1.05em,3vw,1.3em); color:rgba(255,255,255,0.55); margin-bottom:14px; letter-spacing:.06em; }
 .agitate-main { font-size:clamp(1.6em,5.5vw,2.8em); font-weight:700; color:#fff; line-height:1.6; letter-spacing:.05em; }
-.agitate-main em { font-style:normal; color:#f0c040; }
+.agitate-main em { font-style:normal; color:#C9A84C; }
 
 /* S 機能 */
 .feature-list { display:flex; flex-direction:column; gap:2px; margin-top:48px; }
@@ -236,11 +236,11 @@ body {
   opacity:0; transform:translateY(18px);
   transition:opacity .6s ease, transform .6s ease, border-left-color .3s;
 }
-.feat.vis { opacity:1; transform:translateY(0); border-left-color:#f0b030; }
-.feat-num { flex-shrink:0; width:52px; display:flex; align-items:center; justify-content:center; font-family:'Cormorant Garamond',serif; font-size:.78em; color:#f0b030; letter-spacing:.06em; border-right:1px solid rgba(240,176,48,0.2); padding:24px 0; }
+.feat.vis { opacity:1; transform:translateY(0); border-left-color:#B8952A; }
+.feat-num { flex-shrink:0; width:52px; display:flex; align-items:center; justify-content:center; font-family:'Cormorant Garamond',serif; font-size:.78em; color:#B8952A; letter-spacing:.06em; border-right:1px solid rgba(184,149,42,0.2); padding:24px 0; }
 .feat-body { padding:22px 20px; flex:1; }
 .feat-icon { font-size:1.4em; margin-bottom:7px; }
-.feat-name { font-size:.98em; font-weight:700; color:#f0c040; letter-spacing:.08em; margin-bottom:7px; }
+.feat-name { font-size:.98em; font-weight:700; color:#C9A84C; letter-spacing:.08em; margin-bottom:7px; }
 .feat-desc { font-size:.85em; color:rgba(255,255,255,0.68); line-height:2.0; }
 
 /* What You Get */
@@ -252,7 +252,7 @@ body {
   transition:opacity .5s ease, transform .5s ease;
 }
 .wyg-item.vis { opacity:1; transform:translateY(0); }
-.wyg-check { flex-shrink:0; width:18px; height:18px; border:1px solid #f0b030; border-radius:2px; display:flex; align-items:center; justify-content:center; font-size:.6em; color:#f0b030; margin-top:2px; }
+.wyg-check { flex-shrink:0; width:18px; height:18px; border:1px solid #B8952A; border-radius:2px; display:flex; align-items:center; justify-content:center; font-size:.6em; color:#B8952A; margin-top:2px; }
 .wyg-text { font-size:.83em; color:rgba(255,255,255,0.78); line-height:1.85; }
 
 /* T 証言 */
@@ -263,8 +263,8 @@ body {
 }
 .testimony-card.vis { opacity:1; transform:translateY(0); }
 .t-quote { font-size:clamp(1.1em,3.5vw,1.5em); font-weight:600; color:#fff; line-height:2.0; letter-spacing:.05em; margin-bottom:22px; }
-.t-attr { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:.82em; color:#f0b030; letter-spacing:.2em; }
-.quote-mark { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:min(30vw,220px); color:rgba(240,176,48,0.06); position:absolute; top:0; left:50%; transform:translateX(-50%); line-height:1; pointer-events:none; }
+.t-attr { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:.82em; color:#B8952A; letter-spacing:.2em; }
+.quote-mark { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:min(30vw,220px); color:rgba(184,149,42,0.06); position:absolute; top:0; left:50%; transform:translateX(-50%); line-height:1; pointer-events:none; }
 
 /* O 価格 */
 .price-table { max-width:480px; margin:40px auto 0; }
@@ -277,39 +277,39 @@ body {
 }
 .pr.vis { opacity:1; transform:translateX(0); }
 a:has(.pr) { display:block; text-decoration:none; }
-a:has(.pr):hover .pr { background:rgba(240,192,64,0.08); }
+a:has(.pr):hover .pr { background:rgba(201,168,76,0.08); }
 .pr-amt { text-align:right; flex-shrink:0; }
 @media(max-width:400px){
   .pr { padding:18px 14px; }
   .pr-name { font-size:.8em; }
   .pr-amt { font-size:1.3em; }
 }
-.pr.star { border:1px solid rgba(240,176,48,0.5); border-radius:2px; background:rgba(240,176,48,0.07); margin:10px 0; }
+.pr.star { border:1px solid rgba(184,149,42,0.5); border-radius:2px; background:rgba(184,149,42,0.07); margin:10px 0; }
 .pr-l { display:flex; align-items:center; gap:12px; }
 .pr-icon { font-size:1.4em; }
-.pr-name { font-size:.9em; font-weight:600; color:#f0c040; letter-spacing:.08em; }
+.pr-name { font-size:.9em; font-weight:600; color:#C9A84C; letter-spacing:.08em; }
 .pr-amt { font-family:'Cormorant Garamond',serif; font-size:1.6em; color:#fff; }
 .pr-amt small { font-size:.42em; color:rgba(255,255,255,0.38); }
 .offer-note { text-align:center; margin-top:24px; font-family:'Cormorant Garamond',serif; font-style:italic; font-size:.78em; color:rgba(255,255,255,0.32); letter-spacing:.12em; }
 
 /* R 最終CTA */
 .final-sec { padding:140px 0 120px; text-align:center; }
-.final-vis { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:.78em; color:rgba(240,176,48,0.5); letter-spacing:.3em; margin-bottom:24px; opacity:0; transition:opacity .9s ease; }
+.final-vis { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:.78em; color:rgba(184,149,42,0.5); letter-spacing:.3em; margin-bottom:24px; opacity:0; transition:opacity .9s ease; }
 .final-vis.vis { opacity:1; }
 .final-h { font-size:clamp(1.7em,5.5vw,3em); font-weight:700; color:#fff; line-height:1.65; letter-spacing:.05em; margin-bottom:48px; opacity:0; transform:translateY(18px); transition:opacity .9s ease .2s, transform .9s ease .2s; }
 .final-h.vis { opacity:1; transform:translateY(0); }
-.final-h em { font-style:normal; color:#f0c040; }
+.final-h em { font-style:normal; color:#C9A84C; }
 .final-cta { opacity:0; transition:opacity .9s ease .4s; }
 .final-cta.vis { opacity:1; }
 .cta-note { margin-top:14px; font-family:'Cormorant Garamond',serif; font-style:italic; font-size:.72em; color:rgba(255,255,255,0.28); letter-spacing:.12em; }
 
 /* プログレス・ガイド */
 #dots { position:fixed; right:16px; top:50%; transform:translateY(-50%); display:flex; flex-direction:column; gap:10px; z-index:50; }
-.dot { width:5px; height:5px; border-radius:50%; background:rgba(240,176,48,0.25); transition:background .3s, transform .3s; }
-.dot.on { background:#f0b030; transform:scale(1.8); }
+.dot { width:5px; height:5px; border-radius:50%; background:rgba(184,149,42,0.25); transition:background .3s, transform .3s; }
+.dot.on { background:#B8952A; transform:scale(1.8); }
 #guide { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); text-align:center; z-index:50; transition:opacity .5s; }
 #guide em { display:block; font-family:'Cormorant Garamond',serif; font-style:italic; font-size:.62em; color:rgba(240,200,80,0.4); letter-spacing:.24em; margin-bottom:8px; animation:gi 1s ease 2s both; }
-.gbar { width:1px; height:40px; background:linear-gradient(to bottom, rgba(240,176,48,0.6),transparent); margin:0 auto; animation:gi 1s ease 2s both, gf 2.2s ease-in-out infinite; }
+.gbar { width:1px; height:40px; background:linear-gradient(to bottom, rgba(184,149,42,0.6),transparent); margin:0 auto; animation:gi 1s ease 2s both, gf 2.2s ease-in-out infinite; }
 @keyframes gi { from{opacity:0}to{opacity:1} }
 @keyframes gf { 0%,100%{opacity:.25;transform:scaleY(.4) translateY(0)} 55%{opacity:1;transform:scaleY(1) translateY(12px)} }
 
@@ -362,17 +362,286 @@ footer p { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:
 <div id="contentArea">
 
   <!-- S 機能 -->
+  <section class="sec" style="padding:80px 0 100px;background:#050310;">
+    <div class="sec-inner">
+      <p class="sec-label">— From the Developer —</p>
+      <div class="gold-rule"></div>
+      <div style="max-width:560px;margin:0 auto;text-align:left;">
+
+        <!-- 自己紹介 -->
+        <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(1em,3vw,1.3em);color:#C9A84C;line-height:1.8;margin-bottom:28px;">
+          はじめまして。きくモンといいます。
+        </p>
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-bottom:20px;">
+          人間はなぜ動くのか。それをずっと考えています。
+        </p>
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-bottom:20px;">
+          暦を研究しています。二十四節気、七十二候、月齢。こよみのカレンダーで太陽の位置を確認して、今日がどこにいるかを確かめる。それを1年以上、毎日続けています。
+        </p>
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;">
+          種を蒔く季節、収穫の季節、祭りの季節。昔の人が暦に従って動いていたのは、義務じゃなく<em style="font-style:normal;color:#C9A84C;">本能が呼応していたから。</em>その感覚を現代の暮らしに取り戻したくて「季節の風だより」を毎日書いています。
+        </p>
+
+        <div style="width:40px;height:1px;background:rgba(201,168,76,0.3);margin:48px 0;"></div>
+
+        <!-- 3大欲求の正体 -->
+        <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(1em,3vw,1.2em);color:#C9A84C;line-height:1.8;margin-bottom:24px;">
+          「人が動く理由は、4つしかない。」
+        </p>
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-bottom:24px;">
+          食欲、性欲、睡眠欲。学校で習った3大欲求です。でもこれ、言葉が正確じゃありません。
+        </p>
+
+        <!-- 生存欲 -->
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:#C9A84C;line-height:2;letter-spacing:.06em;font-family:'Noto Sans JP',sans-serif;font-weight:700;margin-bottom:12px;">🛡️ 生存欲</p>
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-bottom:12px;">
+          食欲の本質は「生存欲」です。食べたいんじゃなく、生き延びたい。安全でいたい。
+        </p>
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.55);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-bottom:12px;">
+          生物学的には「ホメオスタシス（恒常性維持）」です。体温を保つ、血糖値を維持する、外敵から逃げる。これらはすべて「今の状態を壊されたくない」という衝動から来ています。腹が減ったら仕事が手につかないのは、脳が「このままでは死ぬ」とアラートを出しているからです。
+        </p>
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.55);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-bottom:24px;">
+          哲学的にはスピノザの「コナトゥス（自己保存の努力）」と呼ばれます。あらゆる存在は自己の存在を維持しようとする。石は崩れまいとし、植物は枯れまいとし、人間は死ぬまいとする。生存欲は「今も明日も、壊されずに在り続けたい」という根源的な衝動です。
+        </p>
+
+        <!-- 更新欲 -->
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:#C9A84C;line-height:2;letter-spacing:.06em;font-family:'Noto Sans JP',sans-serif;font-weight:700;margin-bottom:12px;">✨ 更新欲</p>
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-bottom:12px;">
+          性欲の本質は「更新欲」です。子孫を残したいというのもありますが、いずれは誰しも死を迎える訳で、そのなかで、自分を何らかの形でアップデートしたい、アップデートし続けたいというのが本質ではないでしょうか。変わりたい。成長したい。魅力的でいたい。なりたい自分になりたい。露骨な表現を避けるため、このアプリでは「更新欲」と呼ぶことにします。
+        </p>
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.55);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-bottom:12px;">
+          生物学的には、有性生殖とは遺伝子を混ぜ合わせて自分をアップデートするための仕組みです。ウイルスでさえ変異をやめない。遺伝子再集合と組み換えを繰り返し、環境に適応し続ける。生命の根源に「更新したい」という衝動があります。気になる人の前では少しだけ背筋が伸びるのは、更新欲が動いているからです。
+        </p>
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.55);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-bottom:24px;">
+          哲学的にはドゥルーズとガタリの「生命は差異を生み続けるものだ」という概念と共鳴します。同じであり続けることが死であり、変化し続けることが生である。死を前提にしているからこそ、人は変わり続けたいと思う。
+        </p>
+
+        <!-- 睡眠欲 -->
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:#C9A84C;line-height:2;letter-spacing:.06em;font-family:'Noto Sans JP',sans-serif;font-weight:700;margin-bottom:12px;">🌙 睡眠欲</p>
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-bottom:12px;">
+          睡眠欲はそのまま。休みたい。回復したい。疲れを癒したい。
+        </p>
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.55);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-bottom:12px;">
+          生物学的には3つの機能があります。修復（睡眠中に細胞が直される）、洗浄（脳の老廃物をグリンパティック系が洗い流す）、記憶の定着（レム睡眠中にその日の経験が長期記憶として整理される）。どんなに大事な夜でも3時を過ぎると頭が動かなくなるのは、脳が「洗浄させろ」と強制シャットダウンをかけているからです。
+        </p>
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.55);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-bottom:24px;">
+          哲学的にはニーチェの「昼間の偉大さは夜の深さによって決まる」という言葉が本質を突いています。睡眠は死ではなく「より深く生きるための、戦略的撤退」です。深く眠れる人間だけが、深く生きられる。
+        </p>
+
+        <!-- 承認所属欲 -->
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:#C9A84C;line-height:2;letter-spacing:.06em;font-family:'Noto Sans JP',sans-serif;font-weight:700;margin-bottom:12px;">👑 承認所属欲</p>
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-bottom:12px;">
+          そしてもう1つ、人間固有の本能があります。承認所属欲。認められたい。つながりたい。ここにいていい、と感じたい。
+        </p>
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.55);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-bottom:12px;">
+          生物学的には「社会的生存」です。狩猟採集時代、群れから外れた個体は死にました。だから脳は「群れに属していること」を生存と同等に扱うようになりました。孤独は痛みです。物理的な痛みと同じ脳の領域が活性化することが研究で確認されています。いいねが気になって仕事が止まるのは意志が弱いからではありません。脳が「群れから外れていないか」を確認しているからです。誰かに「よかったよ」と言われるとまた頑張れるのは、脳がオキシトシンを分泌しているからです。
+        </p>
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.55);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-bottom:24px;">
+          哲学的にはアリストテレスの「人間はポリス的動物である」、ヘーゲルの「承認をめぐる闘争」が本質を示しています。ただし承認には2種類あります。他者から認められたい欲求と、自分で自分を認めたい欲求。前者だけを追い続けると他者の評価に人生を支配されます。後者が育つと、自分の軸で生きられるようになる。
+        </p>
+
+        <div style="width:40px;height:1px;background:rgba(201,168,76,0.3);margin:48px 0;"></div>
+
+        <!-- 善用と悪用 -->
+        <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(1em,3vw,1.2em);color:#C9A84C;line-height:1.8;margin-bottom:24px;">
+          「本能は、善用も悪用もできる。」
+        </p>
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-bottom:20px;">
+          悪用すれば依存・搾取・支配。広告、ギャンブル、SNSの通知設定は本能の悪用です。人の欲を刺して、抜け出せなくする。
+        </p>
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-bottom:20px;">
+          善用すれば成長・貢献・使命。人の欲を刺して、その人が本当に生きたい方向へ動かす。
+        </p>
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;">
+          <em style="font-style:normal;color:#C9A84C;">わたしは善用する側でありたい。</em><br>
+          世のため、人のため、人々の暮らしのために本能を動かす。使う人が、自分の使命に気づけるように。まごころで作る。
+        </p>
+
+        <div style="width:40px;height:1px;background:rgba(201,168,76,0.3);margin:48px 0;"></div>
+
+        <!-- やることクラフトとの接続 -->
+        <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(1em,3vw,1.2em);color:#C9A84C;line-height:1.8;margin-bottom:24px;">
+          「タスク管理アプリを、10個以上試しました。」
+        </p>
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-bottom:20px;">
+          どれを使っても、同じことが起きました。リストが増えるほど、毎朝が重くなる。気づけば「いつかやる」タスクが50個以上あって、もうリストを開くのが怖かった。
+        </p>
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-bottom:20px;">
+          そのとき気づきました。タスク管理アプリが続かないのは、本能に触れていないからです。
+        </p>
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-bottom:20px;">
+          管理するんじゃなく、育てたい。こなすんじゃなく、積み上げたい。認められたい。変わりたい。つながりたい。
+        </p>
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-bottom:20px;">
+          人は、本能が動いたときだけ、動きます。
+        </p>
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-bottom:20px;">
+          だから作りました。4つの本能を善用して、使う人が自分の使命に気づけるアプリを。自分が一番のヘビーユーザーとして、毎日使いながら育てています。
+        </p>
+        <p style="font-size:clamp(.9em,2.2vw,1.05em);color:#C9A84C;line-height:2.2;letter-spacing:.06em;font-family:'Noto Sans JP',sans-serif;font-weight:500;margin-bottom:8px;">
+          自分で決めた、自分による、自分のための創造的な毎日。<br>
+          その創造物で、みんなで遊ぼう。
+        </p>
+        <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(.8em,2vw,.95em);color:rgba(201,168,76,0.45);letter-spacing:.2em;margin-top:28px;text-align:right;">
+          — きくモン, 開発者
+        </p>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- P 問題提起 -->
+  <section class="sec" style="background:#0a0010;">
+    <div class="sec-inner">
+      <p class="sec-label">— Problem —</p>
+      <div class="gold-rule"></div>
+      <h2 style="font-size:clamp(1.3em,4vw,2em);line-height:1.7;margin-bottom:28px;">
+        タスク管理が続かないのは、<br>あなたのせいじゃない。
+      </h2>
+      <p style="font-size:clamp(.88em,2.2vw,1em);color:#C9A84C;line-height:2;letter-spacing:.06em;margin-bottom:20px;font-family:'Noto Sans JP',sans-serif;font-weight:600;">
+        本能に触れていないからです。
+      </p>
+      <p style="font-size:clamp(.88em,2.2vw,1em);color:rgba(255,255,255,0.6);line-height:2.4;letter-spacing:.04em;margin-bottom:32px;font-family:'Noto Sans JP',sans-serif;">
+        やることを書けば書くほど、増えていく未処理の山。<br>
+        消せないタスクを見るたびに、なんとなく罪悪感。<br>
+        アプリを変えるたびにゼロリセット。積み上げてきたものが消えていく。<br>
+        そんな経験、ありませんか。
+      </p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:8px;">
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px 20px;">
+          <div style="font-size:1.8em;margin-bottom:12px;">📝</div>
+          <p style="font-size:.85em;color:rgba(255,255,255,0.55);line-height:1.9;">アプリを開くたびに「やってない」が目に入って、朝からどっと疲れる</p>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px 20px;">
+          <div style="font-size:1.8em;margin-bottom:12px;">⏳</div>
+          <p style="font-size:.85em;color:rgba(255,255,255,0.55);line-height:1.9;">「いつかやる」タスクが何ヶ月も居座って、見て見ぬふりになってる</p>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px 20px;">
+          <div style="font-size:1.8em;margin-bottom:12px;">😮‍💨</div>
+          <p style="font-size:.85em;color:rgba(255,255,255,0.55);line-height:1.9;">チェックを入れても達成感がない。「で、次は？」ってなる</p>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px 20px;">
+          <div style="font-size:1.8em;margin-bottom:12px;">🔄</div>
+          <p style="font-size:.85em;color:rgba(255,255,255,0.55);line-height:1.9;">アプリを変えるたびにゼロリセット。積み上げてきたものが消えていく</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- A 悪化・共感 -->
+  <section class="sec" style="background:#080015;">
+    <div class="sec-inner">
+      <p class="sec-label">— Agitate —</p>
+      <div class="gold-rule"></div>
+      <h2 style="font-size:clamp(1.3em,4vw,2em);line-height:1.7;margin-bottom:28px;">
+        これ、ほうっておくと<br>どうなるか。
+      </h2>
+      <p style="font-size:clamp(.88em,2.2vw,1em);color:rgba(255,255,255,0.6);line-height:2.4;letter-spacing:.04em;margin-bottom:40px;font-family:'Noto Sans JP',sans-serif;">
+        本能に触れないツールは、使われなくなります。<br>
+        問題はツールではなく、設計思想です。
+      </p>
+      <div style="display:flex;flex-direction:column;gap:0;position:relative;">
+        <div style="position:absolute;left:27px;top:0;bottom:0;width:2px;background:linear-gradient(to bottom,#C9A84C,rgba(201,168,76,0));"></div>
+        <div style="display:grid;grid-template-columns:56px 1fr;gap:20px;align-items:start;padding-bottom:36px;">
+          <div style="width:54px;height:54px;border-radius:50%;background:#0a0010;border:2px solid #C9A84C;display:flex;align-items:center;justify-content:center;font-size:1.3em;position:relative;z-index:1;">📝</div>
+          <div style="padding-top:12px;">
+            <h3 style="font-size:.95em;font-weight:700;color:#fff;margin-bottom:8px;">最初は「ちょっとした先送り」</h3>
+            <p style="font-size:.85em;color:rgba(255,255,255,0.5);line-height:1.9;">「明日やろう」が3日になり、1週間になる。タスクはリストに残ったまま、毎朝目に入り続ける。</p>
+            <div style="margin-top:8px;padding:6px 14px;background:rgba(201,168,76,0.08);border-left:3px solid #C9A84C;border-radius:0 8px 8px 0;font-size:.82em;color:#C9A84C;font-weight:600;">→ 開くたびに小さな罪悪感が積み重なる<br><span style="opacity:.7;font-weight:400;">🛡️ 生存欲が動いていない状態</span></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:56px 1fr;gap:20px;align-items:start;padding-bottom:36px;">
+          <div style="width:54px;height:54px;border-radius:50%;background:#0a0010;border:2px solid rgba(201,168,76,0.5);display:flex;align-items:center;justify-content:center;font-size:1.3em;position:relative;z-index:1;">😶</div>
+          <div style="padding-top:12px;">
+            <h3 style="font-size:.95em;font-weight:700;color:#fff;margin-bottom:8px;">「見て見ぬふり」が習慣になる</h3>
+            <p style="font-size:.85em;color:rgba(255,255,255,0.5);line-height:1.9;">リストが多すぎて、何から手をつければいいかわからなくなる。結果、アプリそのものを開かなくなる。</p>
+            <div style="margin-top:8px;padding:6px 14px;background:rgba(201,168,76,0.08);border-left:3px solid rgba(201,168,76,0.5);border-radius:0 8px 8px 0;font-size:.82em;color:#C9A84C;font-weight:600;">→ タスク管理ツールが「ストレス発生装置」になる<br><span style="opacity:.7;font-weight:400;">🌙 睡眠欲が叫んでいる。疲れている</span></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:56px 1fr;gap:20px;align-items:start;padding-bottom:36px;">
+          <div style="width:54px;height:54px;border-radius:50%;background:#0a0010;border:2px solid rgba(201,168,76,0.3);display:flex;align-items:center;justify-content:center;font-size:1.3em;position:relative;z-index:1;">🔄</div>
+          <div style="padding-top:12px;">
+            <h3 style="font-size:.95em;font-weight:700;color:#fff;margin-bottom:8px;">「新しいアプリ探し」が始まる</h3>
+            <p style="font-size:.85em;color:rgba(255,255,255,0.5);line-height:1.9;">「このアプリが合わないせいだ」と思って乗り換える。でも根本が変わらないから同じことが繰り返される。</p>
+            <div style="margin-top:8px;padding:6px 14px;background:rgba(201,168,76,0.08);border-left:3px solid rgba(201,168,76,0.3);border-radius:0 8px 8px 0;font-size:.82em;color:#C9A84C;font-weight:600;">→ アプリジプシーのループに入る<br><span style="opacity:.7;font-weight:400;">✨ 更新欲が暴走している状態</span></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:56px 1fr;gap:20px;align-items:start;">
+          <div style="width:54px;height:54px;border-radius:50%;background:#0a0010;border:2px solid rgba(201,168,76,0.15);display:flex;align-items:center;justify-content:center;font-size:1.3em;position:relative;z-index:1;">💭</div>
+          <div style="padding-top:12px;">
+            <h3 style="font-size:.95em;font-weight:700;color:#fff;margin-bottom:8px;">「どうせ自分には続かない」が増えていく</h3>
+            <p style="font-size:.85em;color:rgba(255,255,255,0.5);line-height:1.9;">タスクが終わらないことへの自己否定が積み重なり、「どうせ続かない」という思い込みになる。</p>
+            <div style="margin-top:8px;padding:6px 14px;background:rgba(201,168,76,0.08);border-left:3px solid rgba(201,168,76,0.15);border-radius:0 8px 8px 0;font-size:.82em;color:#C9A84C;font-weight:600;">→ 本当の問題は、ツールじゃなく設計思想<br><span style="opacity:.7;font-weight:400;">👑 承認所属欲が傷ついている状態</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+
   <section class="sec">
     <div class="sec-inner">
       <p class="sec-label">— Solve —</p>
-      <h2 class="sec-title">王国を育てる、<em>6つのちから。</em></h2>
+      <h2 class="sec-title">本能を動かす、<em>6つのちから。</em></h2>
+      <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.5);line-height:2.2;letter-spacing:.04em;margin-bottom:40px;font-family:'Noto Sans JP',sans-serif;">
+        やることクラフトの機能はすべて、4大本能のどれかを動かすために設計されています。
+      </p>
       <div class="feature-list">
-        <div class="feat"><div class="feat-num">01</div><div class="feat-body"><div class="feat-icon">✏️</div><p class="feat-name">雑記帳 — 今日の作業台</p><p class="feat-desc">毎朝リセットされる白紙の舞台。昨日の自分はもうここにいない。何でも書いていい。強制はない。</p></div></div>
-        <div class="feat"><div class="feat-num">02</div><div class="feat-body"><div class="feat-icon">📖</div><p class="feat-name">日誌 — 思考の中継地点</p><p class="feat-desc">「おしゃれな日記帳みたい」。和紙のような温かみ。昨日の雑記が、今日の日誌になる。</p></div></div>
-        <div class="feat"><div class="feat-num">03</div><div class="feat-body"><div class="feat-icon">🗓️</div><p class="feat-name">週間・月間 — 流れを見渡す</p><p class="feat-desc">日々の積み重ねが線になる。月間スライダーで季節の流れを感じながら自分のペースを確かめる。</p></div></div>
-        <div class="feat"><div class="feat-num">04</div><div class="feat-body"><div class="feat-icon">⚔️</div><p class="feat-name">コロシアム — 完了が戦力になる</p><p class="feat-desc">完了タスクがカードになる。バトルで今日の頑張りが報われる。遊びが、仕事の燃料になる。</p></div></div>
-        <div class="feat"><div class="feat-num">05</div><div class="feat-body"><div class="feat-icon">🌙</div><p class="feat-name">天象カード — 今夜の空</p><p class="feat-desc">月齢・日の出・日没をリアルタイム表示。日々の暮らしに、宇宙のリズムを。</p></div></div>
-        <div class="feat"><div class="feat-num">06</div><div class="feat-body"><div class="feat-icon">☁️</div><p class="feat-name">Gist同期 — どこでも王国へ</p><p class="feat-desc">GitHubと連携してクラウド保存。スマホでもPCでも、あなたの王国は続く。</p></div></div>
+        <div class="feat">
+          <div class="feat-num">01</div>
+          <div class="feat-body">
+            <div class="feat-icon">✏️</div>
+            <p class="feat-title">雑記帳 — 今日の作業台</p>
+            <p class="feat-desc">毎朝リセットされる白紙の舞台。昨日の自分はもうここにいない。何でも書いていい。強制はない。</p>
+            <p style="font-size:.75em;color:#C9A84C;margin-top:8px;letter-spacing:.08em;">🌙 睡眠欲 → 昨日をリセットして、今日また戦える状態に戻す</p>
+          </div>
+        </div>
+        <div class="feat">
+          <div class="feat-num">02</div>
+          <div class="feat-body">
+            <div class="feat-icon">📖</div>
+            <p class="feat-title">日誌 — 思考の中継地点</p>
+            <p class="feat-desc">「おしゃれな日記帳みたい」。和紙のような温かみ。昨日の雑記が、今日の日誌になる。</p>
+            <p style="font-size:.75em;color:#C9A84C;margin-top:8px;letter-spacing:.08em;">👑 承認所属欲 → 自分で自分を認める。積み上げた記録が自分の居場所になる</p>
+          </div>
+        </div>
+        <div class="feat">
+          <div class="feat-num">03</div>
+          <div class="feat-body">
+            <div class="feat-icon">🗓️</div>
+            <p class="feat-title">週間・月間 — 流れを見渡す</p>
+            <p class="feat-desc">日々の積み重ねが線になる。月間スライダーで季節の流れを感じながら自分のペースを確かめる。</p>
+            <p style="font-size:.75em;color:#C9A84C;margin-top:8px;letter-spacing:.08em;">🛡️ 生存欲 → 全体を把握することで、今日も安全に動ける</p>
+          </div>
+        </div>
+        <div class="feat">
+          <div class="feat-num">04</div>
+          <div class="feat-body">
+            <div class="feat-icon">⚔️</div>
+            <p class="feat-title">コロシアム — 完了が戦力になる</p>
+            <p class="feat-desc">完了タスクがカードになる。バトルで今日の頑張りが報われる。遊びが、仕事の燃料になる。</p>
+            <p style="font-size:.75em;color:#C9A84C;margin-top:8px;letter-spacing:.08em;">✨ 更新欲 → 完了するたびに自分がアップデートされていく感覚</p>
+          </div>
+        </div>
+        <div class="feat">
+          <div class="feat-num">05</div>
+          <div class="feat-body">
+            <div class="feat-icon">🌙</div>
+            <p class="feat-title">天象カード — 今日の空</p>
+            <p class="feat-desc">月齢・日の出・日没をリアルタイム表示。日々の暮らしに、宇宙のリズムを。</p>
+            <p style="font-size:.75em;color:#C9A84C;margin-top:8px;letter-spacing:.08em;">🛡️ 生存欲 → 太陽と月のリズムに自分を合わせる。本能が呼応する</p>
+          </div>
+        </div>
+        <div class="feat">
+          <div class="feat-num">06</div>
+          <div class="feat-body">
+            <div class="feat-icon">🏰</div>
+            <p class="feat-title">王国 — 積み上げた創造物</p>
+            <p class="feat-desc">徳・GDP・称号。タスクを完了するたびに王国が育つ。自分の手で作り上げた、世界にひとつの王国。</p>
+            <p style="font-size:.75em;color:#C9A84C;margin-top:8px;letter-spacing:.08em;">👑 承認所属欲 → 他者ではなく、自分で自分の使命を認める場所</p>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -381,21 +650,51 @@ footer p { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:
   <section class="sec">
     <div class="sec-inner">
       <p class="sec-label">— What You Get —</p>
-      <h2 class="sec-title">手に入る、<em>すべて。</em></h2>
-      <div class="gold-rule"></div>
-      <div class="wyg-grid">
-        <div class="wyg-item"><div class="wyg-check">✓</div><p class="wyg-text">雑記帳（毎朝リセット）</p></div>
-        <div class="wyg-item"><div class="wyg-check">✓</div><p class="wyg-text">日誌（和紙テクスチャ）</p></div>
-        <div class="wyg-item"><div class="wyg-check">✓</div><p class="wyg-text">週間・月間・年間ビュー</p></div>
-        <div class="wyg-item"><div class="wyg-check">✓</div><p class="wyg-text">コロシアムバトル</p></div>
-        <div class="wyg-item"><div class="wyg-check">✓</div><p class="wyg-text">月齢・天象カード</p></div>
-        <div class="wyg-item"><div class="wyg-check">✓</div><p class="wyg-text">写真帳（スタンプ付き）</p></div>
-        <div class="wyg-item"><div class="wyg-check">✓</div><p class="wyg-text">自由帳（ノート）</p></div>
-        <div class="wyg-item"><div class="wyg-check">✓</div><p class="wyg-text">Gistクラウド同期</p></div>
-        <div class="wyg-item"><div class="wyg-check">✓</div><p class="wyg-text">王国力・徳・業スコア</p></div>
-        <div class="wyg-item"><div class="wyg-check">✓</div><p class="wyg-text">造営（ガントチャート）</p></div>
-        <div class="wyg-item"><div class="wyg-check">✓</div><p class="wyg-text">深考モード（SDF）</p></div>
-        <div class="wyg-item"><div class="wyg-check">✓</div><p class="wyg-text">禅モード（集中画面）</p></div>
+      <h2 class="sec-title">4つの本能を、<em>全部動かす。</em></h2>
+      <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.5);line-height:2.2;letter-spacing:.04em;margin-bottom:40px;font-family:'Noto Sans JP',sans-serif;">
+        やることクラフトに入っているもの、すべてです。
+      </p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;">
+
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(201,168,76,0.15);border-radius:16px;padding:24px 20px;">
+          <p style="font-size:.75em;color:#C9A84C;letter-spacing:.12em;font-weight:700;margin-bottom:16px;">🛡️ 生存欲を動かす</p>
+          <ul style="list-style:none;display:flex;flex-direction:column;gap:10px;">
+            <li style="font-size:.85em;color:rgba(255,255,255,0.6);line-height:1.8;">✓ 週間・月間・年間ビュー</li>
+            <li style="font-size:.85em;color:rgba(255,255,255,0.6);line-height:1.8;">✓ 天象カード（日の出・日没・月齢）</li>
+            <li style="font-size:.85em;color:rgba(255,255,255,0.6);line-height:1.8;">✓ Gistクラウド同期</li>
+            <li style="font-size:.85em;color:rgba(255,255,255,0.6);line-height:1.8;">✓ バックアップ・復元</li>
+          </ul>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(201,168,76,0.15);border-radius:16px;padding:24px 20px;">
+          <p style="font-size:.75em;color:#C9A84C;letter-spacing:.12em;font-weight:700;margin-bottom:16px;">✨ 更新欲を動かす</p>
+          <ul style="list-style:none;display:flex;flex-direction:column;gap:10px;">
+            <li style="font-size:.85em;color:rgba(255,255,255,0.6);line-height:1.8;">✓ コロシアムバトル</li>
+            <li style="font-size:.85em;color:rgba(255,255,255,0.6);line-height:1.8;">✓ 造営（ガントチャート）</li>
+            <li style="font-size:.85em;color:rgba(255,255,255,0.6);line-height:1.8;">✓ 深考モード（SDF）</li>
+            <li style="font-size:.85em;color:rgba(255,255,255,0.6);line-height:1.8;">✓ 写真帳（スタンプ付き）</li>
+          </ul>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(201,168,76,0.15);border-radius:16px;padding:24px 20px;">
+          <p style="font-size:.75em;color:#C9A84C;letter-spacing:.12em;font-weight:700;margin-bottom:16px;">🌙 睡眠欲を動かす</p>
+          <ul style="list-style:none;display:flex;flex-direction:column;gap:10px;">
+            <li style="font-size:.85em;color:rgba(255,255,255,0.6);line-height:1.8;">✓ 雑記帳（毎朝リセット）</li>
+            <li style="font-size:.85em;color:rgba(255,255,255,0.6);line-height:1.8;">✓ 禅モード（集中画面）</li>
+            <li style="font-size:.85em;color:rgba(255,255,255,0.6);line-height:1.8;">✓ 業の管理（手放す仕組み）</li>
+          </ul>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(201,168,76,0.15);border-radius:16px;padding:24px 20px;">
+          <p style="font-size:.75em;color:#C9A84C;letter-spacing:.12em;font-weight:700;margin-bottom:16px;">👑 承認所属欲を動かす</p>
+          <ul style="list-style:none;display:flex;flex-direction:column;gap:10px;">
+            <li style="font-size:.85em;color:rgba(255,255,255,0.6);line-height:1.8;">✓ 日誌（和紙テクスチャ）</li>
+            <li style="font-size:.85em;color:rgba(255,255,255,0.6);line-height:1.8;">✓ 王国力・徳・業スコア</li>
+            <li style="font-size:.85em;color:rgba(255,255,255,0.6);line-height:1.8;">✓ 称号（99段階）</li>
+            <li style="font-size:.85em;color:rgba(255,255,255,0.6);line-height:1.8;">✓ 自由帳（ノート）</li>
+          </ul>
+        </div>
+
       </div>
     </div>
   </section>
@@ -408,7 +707,7 @@ footer p { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:
       <div class="gold-rule"></div>
       <div class="testimony-card">
         <blockquote class="t-quote">「おしゃれな日記帳みたい。<br>きり分けたりまとめたりできるのが<br>すごく使いやすかった。」</blockquote>
-        <p class="t-attr">— さなえ, 28歳 —</p>
+        <p class="t-attr">— さなえ, 28歳 —<br><span style="font-size:.75em;color:#C9A84C;letter-spacing:.08em;font-style:normal;">👑 承認所属欲 → 自分だけの場所ができた感覚</span></p>
       </div>
     </div>
   </section>
@@ -422,10 +721,10 @@ footer p { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:
       <p class="sec-sub">毎日使えるアプリです。作った本人が一番のヘビーユーザーです。<br>有料プランはすべて開発支援です。気に入ったら、一緒に育ててください。</p>
       <div class="price-table">
         <div class="pr"><div class="pr-l"><span class="pr-icon">🏕️</span><span class="pr-name">野営地</span></div><div class="pr-amt">¥0<small> / 無料で使える</small></div></div>
-        <a href="https://ofuse.me/b9ca4c85" target="_blank" rel="noopener" style="text-decoration:none;"><div class="pr" style="cursor:pointer;transition:opacity .2s;" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'"><div class="pr-l"><span class="pr-icon">🏘️</span><span class="pr-name">村パス + 開発支援</span></div><div class="pr-amt">¥200<small> / 月</small><small style="display:block;font-size:.7em;color:#f0c040;">→ OFUSEで応援</small></div></div></a>
-        <a href="https://ofuse.me/b9ca4c85" target="_blank" rel="noopener" style="text-decoration:none;"><div class="pr" style="cursor:pointer;transition:opacity .2s;" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'"><div class="pr-l"><span class="pr-icon">🏙️</span><span class="pr-name">町パス + 開発支援</span></div><div class="pr-amt">¥400<small> / 月</small><small style="display:block;font-size:.7em;color:#f0c040;">→ OFUSEで応援</small></div></div></a>
-        <a href="https://ofuse.me/b9ca4c85" target="_blank" rel="noopener" style="text-decoration:none;"><div class="pr star" style="cursor:pointer;transition:opacity .2s;" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'"><div class="pr-l"><span class="pr-icon">🏰</span><span class="pr-name">王国パス + 開発支援</span></div><div class="pr-amt">¥550<small> / 月</small><small style="display:block;font-size:.7em;color:#f0c040;">→ OFUSEで応援</small></div></div></a>
-        <div class="pr" style="background:linear-gradient(135deg,rgba(240,192,64,0.08),rgba(240,192,64,0.03));border:1px solid rgba(240,192,64,0.25);"><div class="pr-l"><span class="pr-icon">💝</span><span class="pr-name">投げ銭・好きな金額で応援</span></div><div class="pr-amt" style="font-size:.85em;"><a href="https://ofuse.me/b9ca4c85" target="_blank" rel="noopener" style="color:#f0c040;text-decoration:none;font-weight:700;">OFUSE で応援する →</a></div></div>
+        <a href="https://ofuse.me/b9ca4c85" target="_blank" rel="noopener" style="text-decoration:none;"><div class="pr" style="cursor:pointer;transition:opacity .2s;" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'"><div class="pr-l"><span class="pr-icon">🏘️</span><span class="pr-name">村パス + 開発支援</span></div><div class="pr-amt">¥200<small> / 月</small><small style="display:block;font-size:.7em;color:#C9A84C;">→ OFUSEで応援</small></div></div></a>
+        <a href="https://ofuse.me/b9ca4c85" target="_blank" rel="noopener" style="text-decoration:none;"><div class="pr" style="cursor:pointer;transition:opacity .2s;" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'"><div class="pr-l"><span class="pr-icon">🏙️</span><span class="pr-name">町パス + 開発支援</span></div><div class="pr-amt">¥400<small> / 月</small><small style="display:block;font-size:.7em;color:#C9A84C;">→ OFUSEで応援</small></div></div></a>
+        <a href="https://ofuse.me/b9ca4c85" target="_blank" rel="noopener" style="text-decoration:none;"><div class="pr star" style="cursor:pointer;transition:opacity .2s;" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'"><div class="pr-l"><span class="pr-icon">🏰</span><span class="pr-name">王国パス + 開発支援</span></div><div class="pr-amt">¥550<small> / 月</small><small style="display:block;font-size:.7em;color:#C9A84C;">→ OFUSEで応援</small></div></div></a>
+        <div class="pr" style="background:linear-gradient(135deg,rgba(201,168,76,0.08),rgba(201,168,76,0.03));border:1px solid rgba(201,168,76,0.25);"><div class="pr-l"><span class="pr-icon">💝</span><span class="pr-name">投げ銭・好きな金額で応援</span></div><div class="pr-amt" style="font-size:.85em;"><a href="https://ofuse.me/b9ca4c85" target="_blank" rel="noopener" style="color:#C9A84C;text-decoration:none;font-weight:700;">OFUSE で応援する →</a></div></div>
       </div>
       <p class="offer-note" style="margin-top:16px;">
         気に入ったら、一緒に育ててください。<br>
@@ -446,49 +745,7 @@ footer p { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:
     </div>
   </section>
 
-    <section class="sec" style="padding:80px 0 60px;background:#050310;">
-    <div class="sec-inner">
-      <p class="sec-label">— From the Developer —</p>
-      <div class="gold-rule"></div>
-      <div style="max-width:540px;margin:0 auto;text-align:left;">
-        <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(1em,3vw,1.3em);color:#f0c040;line-height:1.8;margin-bottom:28px;">
-          「タスク管理アプリを、10個以上試しました。」
-        </p>
-        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;">
-          どれを使っても、同じことが起きた。<br>
-          リストが増えるほど、毎朝が重くなる。<br>
-          気づけば「いつかやる」タスクが50個以上あって、<br>
-          もうリストを開くのが怖かった。
-        </p>
-        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-top:20px;padding:16px 20px;border-left:2px solid #f0c040;background:rgba(240,192,64,0.06);">
-          「これ、ツールの問題じゃないな。<br>
-          　王国に、幽霊が住みすぎてるんだ。」
-        </p>
-        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-top:20px;">
-          問題は「タスクを管理する」ことじゃなくて、<br>
-          <em style="font-style:normal;color:#f0c040;">「手放すべきものを、手放せていない」</em>ことだった。<br><br>
-          既存のリストは、人に言われたことを書いて、やったら消す。<br>
-          それだけのもの。そこに、<em style="font-style:normal;color:#f0c040;">自分</em>はいない。<br><br>
-          タスクを「こなす」んじゃなく、<br>
-          自分の手で、手触り感を持って、<em style="font-style:normal;color:#f0c040;">作っていく。</em><br>
-          そういうアプリを、ずっと使い続けたかった。
-        </p>
-        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-top:20px;">
-          だから作った。自分が一番のヘビーユーザーとして、<br>
-          毎日使いながら育てています。<br><br>
-          <em style="font-style:normal;color:#f0c040;">自分が主役になれる感覚。</em><br>
-          それを届けたくて、やることクラフトを作りました。
-        </p>
-        <p style="font-size:clamp(.78em,2vw,.9em);color:rgba(255,255,255,0.3);line-height:2.2;letter-spacing:.04em;margin-top:24px;">
-          データはあなたの端末に保存されます。バックエンドはありません。<br>
-          気に入ったら、一緒に育ててください。
-        </p>
-        <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(.8em,2vw,.95em);color:rgba(240,176,48,0.45);letter-spacing:.2em;margin-top:20px;text-align:right;">
-          — きくモン, 開発者
-        </p>
-      </div>
-    </div>
-  </section>
+    
   <footer><p>© 2026 やることクラフト — kikumon-dev.github.io</p></footer>
 </div>
 
