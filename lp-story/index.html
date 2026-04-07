@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>やることクラフト — あなただけの王国を、つくろう。</title>
-<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;700&family=Cormorant+Garamond:ital,wght@1,300;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;700&family=Cormorant+Garamond:ital,wght@1,300;1,400&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
@@ -272,9 +272,18 @@ body {
   display:flex; align-items:center; justify-content:space-between;
   padding:22px 20px; border-bottom:1px solid rgba(255,255,255,0.1);
   opacity:0; transform:translateX(-16px);
-  transition:opacity .6s ease, transform .6s ease;
+  transition:opacity .6s ease, transform .6s ease, background .2s;
+  gap:12px; flex-wrap:wrap;
 }
 .pr.vis { opacity:1; transform:translateX(0); }
+a:has(.pr) { display:block; text-decoration:none; }
+a:has(.pr):hover .pr { background:rgba(240,192,64,0.08); }
+.pr-amt { text-align:right; flex-shrink:0; }
+@media(max-width:400px){
+  .pr { padding:18px 14px; }
+  .pr-name { font-size:.8em; }
+  .pr-amt { font-size:1.3em; }
+}
 .pr.star { border:1px solid rgba(240,176,48,0.5); border-radius:2px; background:rgba(240,176,48,0.07); margin:10px 0; }
 .pr-l { display:flex; align-items:center; gap:12px; }
 .pr-icon { font-size:1.4em; }
@@ -413,9 +422,9 @@ footer p { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:
       <p class="sec-sub">毎日使えるアプリです。作った本人が一番のヘビーユーザーです。<br>有料プランはすべて開発支援です。気に入ったら、一緒に育ててください。</p>
       <div class="price-table">
         <div class="pr"><div class="pr-l"><span class="pr-icon">🏕️</span><span class="pr-name">野営地</span></div><div class="pr-amt">¥0<small> / 無料で使える</small></div></div>
-        <div class="pr"><div class="pr-l"><span class="pr-icon">🏘️</span><span class="pr-name">村パス + 開発支援</span></div><div class="pr-amt">¥200<small> / 月</small></div></div>
-        <div class="pr"><div class="pr-l"><span class="pr-icon">🏙️</span><span class="pr-name">町パス + 開発支援</span></div><div class="pr-amt">¥400<small> / 月</small></div></div>
-        <div class="pr star"><div class="pr-l"><span class="pr-icon">🏰</span><span class="pr-name">王国パス + 開発支援</span></div><div class="pr-amt">¥550<small> / 月</small></div></div>
+        <a href="https://ofuse.me/b9ca4c85" target="_blank" rel="noopener" style="text-decoration:none;"><div class="pr" style="cursor:pointer;transition:opacity .2s;" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'"><div class="pr-l"><span class="pr-icon">🏘️</span><span class="pr-name">村パス + 開発支援</span></div><div class="pr-amt">¥200<small> / 月</small><small style="display:block;font-size:.7em;color:#f0c040;">→ OFUSEで応援</small></div></div></a>
+        <a href="https://ofuse.me/b9ca4c85" target="_blank" rel="noopener" style="text-decoration:none;"><div class="pr" style="cursor:pointer;transition:opacity .2s;" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'"><div class="pr-l"><span class="pr-icon">🏙️</span><span class="pr-name">町パス + 開発支援</span></div><div class="pr-amt">¥400<small> / 月</small><small style="display:block;font-size:.7em;color:#f0c040;">→ OFUSEで応援</small></div></div></a>
+        <a href="https://ofuse.me/b9ca4c85" target="_blank" rel="noopener" style="text-decoration:none;"><div class="pr star" style="cursor:pointer;transition:opacity .2s;" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'"><div class="pr-l"><span class="pr-icon">🏰</span><span class="pr-name">王国パス + 開発支援</span></div><div class="pr-amt">¥550<small> / 月</small><small style="display:block;font-size:.7em;color:#f0c040;">→ OFUSEで応援</small></div></div></a>
         <div class="pr" style="background:linear-gradient(135deg,rgba(240,192,64,0.08),rgba(240,192,64,0.03));border:1px solid rgba(240,192,64,0.25);"><div class="pr-l"><span class="pr-icon">💝</span><span class="pr-name">投げ銭・好きな金額で応援</span></div><div class="pr-amt" style="font-size:.85em;"><a href="https://ofuse.me/b9ca4c85" target="_blank" rel="noopener" style="color:#f0c040;text-decoration:none;font-weight:700;">OFUSE で応援する →</a></div></div>
       </div>
       <p class="offer-note" style="margin-top:16px;">
@@ -445,17 +454,17 @@ footer p { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:
         <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(1em,3vw,1.3em);color:#f0c040;line-height:1.8;margin-bottom:28px;">
           「タスク管理アプリを、10個以上試しました。」
         </p>
-        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;">
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;">
           どれを使っても、同じことが起きた。<br>
           リストが増えるほど、毎朝が重くなる。<br>
           気づけば「いつかやる」タスクが50個以上あって、<br>
           もうリストを開くのが怖かった。
         </p>
-        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;margin-top:20px;padding:16px 20px;border-left:2px solid #f0c040;background:rgba(240,192,64,0.06);">
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-top:20px;padding:16px 20px;border-left:2px solid #f0c040;background:rgba(240,192,64,0.06);">
           「これ、ツールの問題じゃないな。<br>
           　王国に、幽霊が住みすぎてるんだ。」
         </p>
-        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;margin-top:20px;">
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-top:20px;">
           問題は「タスクを管理する」ことじゃなくて、<br>
           <em style="font-style:normal;color:#f0c040;">「手放すべきものを、手放せていない」</em>ことだった。<br><br>
           既存のリストは、人に言われたことを書いて、やったら消す。<br>
@@ -464,7 +473,7 @@ footer p { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:
           自分の手で、手触り感を持って、<em style="font-style:normal;color:#f0c040;">作っていく。</em><br>
           そういうアプリを、ずっと使い続けたかった。
         </p>
-        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;margin-top:20px;">
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-top:20px;">
           だから作った。自分が一番のヘビーユーザーとして、<br>
           毎日使いながら育てています。<br><br>
           <em style="font-style:normal;color:#f0c040;">自分が主役になれる感覚。</em><br>
