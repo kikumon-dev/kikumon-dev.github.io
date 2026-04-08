@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.569';
+    const APP_VERSION = 'v0.39.570';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3761,7 +3761,7 @@
       <input type="hidden" id="editTaskId">
       <div style="margin: 15px 0;">
         <label style="display: block; margin-bottom: 8px; font-weight: bold;">タスク名</label>
-        <input type="text" id="editTaskText" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 1em; box-sizing: border-box;" onkeydown="if(event.key==='Enter') saveWeeklyEdit();">
+        <input type="text" id="editTaskText" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 1em; box-sizing: border-box;" onkeydown="if(event.key==='Enter' && !event.isComposing && event.keyCode!==229) saveWeeklyEdit();">
       </div>
       <div style="margin: 15px 0;">
         <label style="display: block; margin-bottom: 8px; font-weight: bold;">メモ（任意）</label>
@@ -6439,7 +6439,7 @@ function switchSearchTab(tab) {
           renderGouTaskList();
         };
         input.onkeydown = function(e) {
-          if (e.key === 'Enter') { e.preventDefault(); doSave(); }
+          if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); doSave(); }
           if (e.key === 'Escape') { e.preventDefault(); doCancel(); }
         };
         input.focus();
@@ -13016,7 +13016,7 @@ function reviveBlueprint(id) {
       };
       ta.oninput = adjustHeight;
       ta.onkeydown = (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
+        if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
           e.preventDefault();
           saveInlineEdit(div, item, ta.value);
         }
@@ -13125,7 +13125,7 @@ function reviveBlueprint(id) {
           this.style.height = this.scrollHeight + 'px';
         };
         input.onkeydown = function(e) {
-          if (e.key === 'Enter' && !e.shiftKey) {
+          if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
             e.preventDefault();
             commitScratchEdit();
           }
