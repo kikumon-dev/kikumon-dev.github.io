@@ -26114,7 +26114,7 @@ function showDebugLog(_initOnly) {
 
        // ===== ST-34C: テストセクション自己存在確認 =====
        // テストセクション自己存在確認：ソースコード上の存在をチェック
-       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-103','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75','ST-76','ST-77','ST-78','ST-79','ST-80','ST-81','ST-82','ST-106'];
+       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-103','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75','ST-76','ST-77','ST-78','ST-79','ST-80','ST-81','ST-82','ST-106','ST-107','ST-108'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -30629,6 +30629,59 @@ function showDebugLog(_initOnly) {
        ok('ST-107: craftビュー禅ボタン非表示 完了');
      } catch(e) { ng('ST-107: 例外', e.message); }
 
+     // ===== ST-108: 日次入力Enterキー二重登録防止 =====
+     try {
+       // ① onkeydown代入方式（累積しない）であること
+       var _st108Src = (typeof addTask === 'function') ? addTask.toString() : '';
+       var _st108InputSrc = document.documentElement.innerHTML;
+
+       // addEventListener('keydown')でinput1-4を登録していないこと
+       var _st108NoAddEv = !/input\.addEventListener\(['"]keydown/.test(_st108InputSrc.replace(/\/\/.*/g,''));
+       _st108NoAddEv
+         ? ok('ST-108: addEventListener keydown 累積登録なし確認')
+         : ng('ST-108: addEventListener keydown 累積登録が残存している');
+
+       // onkeydown代入方式が存在すること
+       var _st108HasOnkey = /input\.onkeydown\s*=\s*\(function\(sectionNum\)/.test(_st108InputSrc);
+       _st108HasOnkey
+         ? ok('ST-108: onkeydown代入方式（累積防止）確認')
+         : ng('ST-108: onkeydown代入方式が存在しない');
+
+       // isComposingチェックが入っていること（IME確定時の誤発火防止）
+       var _st108HasCompose = /isComposing/.test(_st108InputSrc) && /keyCode.*229/.test(_st108InputSrc);
+       _st108HasCompose
+         ? ok('ST-108: isComposing/keyCode229 IMEガード確認')
+         : ng('ST-108: isComposing/keyCode229 IMEガードなし');
+
+       // ② addTask関数がinput.value.trimで空チェックしていること（空タスク防止）
+       var _st108AddTaskSrc = (typeof addTask === 'function') ? addTask.toString() : '';
+       var _st108EmptyGuard = /value\.trim\(\)/.test(_st108AddTaskSrc) && /if\s*\(!\s*text\s*\)/.test(_st108AddTaskSrc);
+       _st108EmptyGuard
+         ? ok('ST-108: addTask 空文字ガード確認')
+         : ng('ST-108: addTask 空文字ガードなし');
+
+       // ③ 実挙動テスト：addTask呼び出し後にタスクが1件だけ増えること
+       var _st108Before = allTasks.filter(function(t){ return t.kind === 'task'; }).length;
+       var _st108Input = document.getElementById('input1');
+       if (_st108Input) {
+         _st108Input.value = '_st108_test_掃除';
+         addTask(1);
+         var _st108After = allTasks.filter(function(t){ return t.kind === 'task'; }).length;
+         var _st108Diff = _st108After - _st108Before;
+         _st108Diff === 1
+           ? ok('ST-108: addTask 1回呼び出し→1件増加確認（diff=' + _st108Diff + '）')
+           : ng('ST-108: addTask 1回呼び出しで' + _st108Diff + '件増加（二重登録の疑い）');
+         // クリーンアップ
+         allTasks = allTasks.filter(function(t){ return t.text !== '_st108_test_掃除'; });
+         saveAllTasks();
+         ok('ST-108: クリーンアップ完了（' + allTasks.length + '件）');
+       } else {
+         ok('ST-108: input1 DOM非表示（daily以外）→ 実挙動テストスキップ');
+       }
+
+       ok('ST-108: 日次入力Enterキー二重登録防止 完了');
+     } catch(e) { ng('ST-108: 例外', e.message); }
+
      try {
        ok('');
        ok('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -30680,7 +30733,7 @@ function showDebugLog(_initOnly) {
        var _st39FlagKeys = ['tutorialSeen','gantTourSeen','journalTourSeen','scratchTourSeen','adminMode','inspectionMode','purpose','purposeConfirmed','stopCondition','stopConditionSaved'];
        var _st39FlagMissing = _st39FlagKeys.filter(function(k){ return !(k in allSettings.flags); });
        // flags許容フィールド（動的追加される既知フラグも含む）
-       var _st39FlagAllowed = _st39FlagKeys.concat(['searchOnboardSeen','nbGouTokuPageAdded','zenOnboardSeen','nbZenPageAdded']);
+       var _st39FlagAllowed = _st39FlagKeys.concat(['searchOnboardSeen','nbGouTokuPageAdded','zenOnboardSeen','nbZenPageAdded','nbTitlesPageAdded']);
        var _st39FlagUnknown = Object.keys(allSettings.flags).filter(function(k){ return _st39FlagAllowed.indexOf(k) === -1; });
        _st39FlagMissing.length === 0
          ? ok('SPAG[·A1·SETTINGS INTEGRITY] allSettings.flags必須フィールド全確認')
