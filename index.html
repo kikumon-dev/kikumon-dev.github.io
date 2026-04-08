@@ -14392,19 +14392,18 @@ function reviveBlueprint(id) {
           USE_COLORS ? SECTION_COLORS[i - 1] : 'white';
       }
     }
-    // 入力欄でEnterキー押下時の処理
+    // 入力欄でEnterキー押下時の処理（onkeydown代入方式で累積登録防止）
     for (let i = 1; i <= 4; i++) {
       const input = document.getElementById('input' + i);
       if (!input) continue;
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          addTask(i);
-        }
-      });
-      // ボタンも追加（タップで追加できるように）
-      const btn = input.nextElementSibling && input.nextElementSibling.tagName !== 'UL'
-        ? null : null;
+      input.onkeydown = (function(sectionNum) {
+        return function(e) {
+          if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) {
+            e.preventDefault();
+            addTask(sectionNum);
+          }
+        };
+      })(i);
     }
     // 目的入力でEnterキー
     document.getElementById('purposeInput').addEventListener('keypress', (e) => {
