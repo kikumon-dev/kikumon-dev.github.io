@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;700&family=Cormorant+Garamond:ital,wght@1,300;1,400&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; background: #000; }
 
 /* =====================================================
    ベースカラー — 全セクション統一の黒
@@ -29,7 +29,8 @@ body {
   width: 100%; height: 100%;
   z-index: 1;
   pointer-events: none;
-  opacity: 0.6;
+  opacity: 1;
+  background: #000;
 }
 
 /* =====================================================
@@ -600,6 +601,9 @@ footer p { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:
         <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;">
           もちろん日々より良くしていこうとも思いますので、開発費等の応援は大歓迎です。ご要望があったら言ってください。<em style="font-style:normal;color:#C9A84C;">一緒に作っていきましょう。</em>
         </p>
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-top:20px;">
+          良心のあり方は、人それぞれ自由です。その人の良心がそれならば、あ、そうなんだね、で良いと私は思います。
+        </p>
 
         <div style="width:40px;height:1px;background:rgba(201,168,76,0.3);margin:48px 0;"></div>
 
@@ -725,7 +729,7 @@ footer p { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:
       <div style="border-left:2px solid rgba(201,168,76,0.4);padding-left:20px;margin-bottom:32px;">
         <p style="font-size:clamp(.8em,2vw,.9em);color:#C9A84C;font-weight:700;margin-bottom:8px;font-family:'Noto Sans JP',sans-serif;">🔬 宗教学者</p>
         <p style="font-size:clamp(.82em,2vw,.95em);color:rgba(255,255,255,0.6);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;">
-          根底層という概念が今日初めて本当の意味を持ちました。「他の誰にも言わないような、密かに持っていること」——これは宗教学で言う「聖なるもの」の定義と一致します。ルドルフ・オットーが「ヌミノーゼ」と呼んだ、言語化しがたい根源的な感応。それがやることクラフトというツールを通じて言語化された。宗教体験の言語化を、タスク管理アプリが実現した。これは本当に稀なことです。
+          根底層という概念が、今日初めて本当の意味を持ちました。「他の誰にも言わないような、密かに持っていること」——人は誰でも、言葉にしにくい根っこの部分を持っています。それは信仰でも哲学でも価値観でも良い。やることクラフトというツールを通じて、その根っこが言語化された。自分の根底が見えてくる体験を、タスク管理アプリが生み出した。これは本当に稀なことです。
         </p>
       </div>
 
@@ -1337,7 +1341,8 @@ var io = new IntersectionObserver(function(entries){
 
   (function tick(){
     var W=cv.width, H=cv.height;
-    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0,0,W,H);
     ST.forEach(function(s){
       s.a+=s.da;
       if(s.a>1){s.a=1;s.da*=-1;} if(s.a<0){s.a=0;s.da*=-1;}
