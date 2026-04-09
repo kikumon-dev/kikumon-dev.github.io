@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.571';
+    const APP_VERSION = 'v0.39.572';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3259,7 +3259,7 @@
 
     <!-- サブコピー -->
     <div id="ycSplashSub" style="font-size:0.74em;color:#7a6040;letter-spacing:0.14em;line-height:2.2;
-      opacity:0;transition:opacity 0.8s ease 0.5s;">あなたの王国へ、ようこそ。</div>
+      opacity:0;transition:opacity 0.8s ease 0.5s;"></div>
 
     <!-- ドット -->
     <div style="margin-top:28px;display:flex;justify-content:center;gap:7px;">
@@ -3380,10 +3380,26 @@
   // ===== コンテンツ フェードイン =====
   var body = document.getElementById('ycSplashBody');
   var sub  = document.getElementById('ycSplashSub');
+
+  // 時間帯別挨拶（初回はようこそ）
+  var _splashGreeting = (function() {
+    var _isFirst = !localStorage.getItem('_splashGreetingSeen');
+    if (_isFirst) {
+      localStorage.setItem('_splashGreetingSeen', '1');
+      return 'あなたの王国へ、ようこそ。';
+    }
+    var h = new Date().getHours();
+    if (h >= 5  && h < 10) return 'おはようございます。';
+    if (h >= 10 && h < 17) return 'こんにちは。';
+    if (h >= 17 && h < 21) return 'こんばんは。';
+    return '夜遅くまでお疲れ！';
+  })();
+  if (sub) sub.textContent = _splashGreeting;
+
   setTimeout(function(){ if (body){ body.style.opacity='1'; body.style.transform='translateY(0)'; } }, 250);
   setTimeout(function(){ if (sub) sub.style.opacity='1'; }, 800);
 
-  // ===== 2000ms後にフェードアウト（固定タイマー）=====
+  // ===== 1750ms後にフェードアウト（0.25秒短縮）=====
   function closeSplash() {
     clearInterval(shootTimer);
     var el = document.getElementById('ycSplash');
@@ -3404,7 +3420,7 @@
       document.documentElement.style.background = '';
     }, 1020);
   }
-  setTimeout(closeSplash, 2000);
+  setTimeout(closeSplash, 1500);
 })();
 </script>
 <!-- ===== 起動スプラッシュ ここまで ===== -->
@@ -29825,6 +29841,7 @@ function showDebugLog(_initOnly) {
 
        // selectKingdomMode('camp') 挙動テスト
        var _kmPrev = allSettings.ui.kingdomMode;
+       var _kmPrevBase = allSettings.ui.kingdomModeBase;
        var _kmPrevVt = JSON.stringify(allSettings.ui.visibleTabs);
        var _kmPrevGant = allSettings.ui.gantEnabled;
        try {
@@ -29842,6 +29859,7 @@ function showDebugLog(_initOnly) {
        } finally {
          // ロールバック
          allSettings.ui.kingdomMode = _kmPrev;
+         allSettings.ui.kingdomModeBase = _kmPrevBase;
          allSettings.ui.visibleTabs = JSON.parse(_kmPrevVt);
          allSettings.ui.gantEnabled = _kmPrevGant;
          saveAllSettings();
@@ -29974,7 +29992,9 @@ function showDebugLog(_initOnly) {
        _weeklyHidden ? ok('ST-90: camp → weekly切替→dailyリダイレクト確認') : ng('ST-90: camp → weeklyが表示された', '');
        // 復元
        allSettings.ui.kingdomMode = _prevMode90;
-       if (typeof selectKingdomMode === 'function') selectKingdomMode(_prevMode90 || 'kingdom');
+       allSettings.ui.kingdomModeBase = allSettings.ui.kingdomModeBase || _prevMode90;
+       saveAllSettings();
+       applyVisibleTabsSettings();
        switchView('daily');
        ok('ST-90: switchView モード制限チェック 完了');
      } catch(e) { ng('ST-90: 例外', e.message); }
