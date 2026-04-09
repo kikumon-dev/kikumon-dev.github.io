@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.572';
+    const APP_VERSION = 'v0.39.574';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -14992,6 +14992,7 @@ function reviveBlueprint(id) {
       'orderMigrationDone_v96', 'showInDailyMigrationDone_v1',
       'memoMigrationDone_v97', 'inspectionMode',
       'autoMainCalendar', 'nbLastPageId',
+      '_splashGreetingSeen',
     ]);
     window.KEY_WHITELIST = KEY_WHITELIST;
     const KNOWN_KEYS = KEY_WHITELIST; // 後方互換エイリアス
@@ -26130,7 +26131,7 @@ function showDebugLog(_initOnly) {
 
        // ===== ST-34C: テストセクション自己存在確認 =====
        // テストセクション自己存在確認：ソースコード上の存在をチェック
-       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-103','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75','ST-76','ST-77','ST-78','ST-79','ST-80','ST-81','ST-82','ST-106','ST-107','ST-108','ST-109'];
+       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-103','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75','ST-76','ST-77','ST-78','ST-79','ST-80','ST-81','ST-82','ST-106','ST-107','ST-108','ST-109','ST-110'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -30701,6 +30702,48 @@ function showDebugLog(_initOnly) {
 
        ok('ST-108: 日次入力Enterキー二重登録防止 完了');
      } catch(e) { ng('ST-108: 例外', e.message); }
+
+     // ===== ST-110: スプラッシュ時間帯挨拶テスト =====
+     try {
+       // ① _splashGreetingSeen フラグ存在確認
+       typeof localStorage.getItem('_splashGreetingSeen') !== 'undefined'
+         ? ok('ST-110: _splashGreetingSeen フラグ確認')
+         : ng('ST-110: _splashGreetingSeen フラグなし');
+
+       // ② ソースに4パターンの挨拶が存在すること
+       var _st110Src = document.documentElement.innerHTML;
+       _st110Src.indexOf('おはようございます。') !== -1
+         ? ok('ST-110: 朝の挨拶 存在確認')
+         : ng('ST-110: 朝の挨拶 存在せず');
+       _st110Src.indexOf('こんにちは。') !== -1
+         ? ok('ST-110: 昼の挨拶 存在確認')
+         : ng('ST-110: 昼の挨拶 存在せず');
+       _st110Src.indexOf('こんばんは。') !== -1
+         ? ok('ST-110: 夕の挨拶 存在確認')
+         : ng('ST-110: 夕の挨拶 存在せず');
+       _st110Src.indexOf('夜遅くまでお疲れ！') !== -1
+         ? ok('ST-110: 夜の挨拶 存在確認')
+         : ng('ST-110: 夜の挨拶 存在せず');
+       _st110Src.indexOf('あなたの王国へ、ようこそ。') !== -1
+         ? ok('ST-110: 初回ようこそ 存在確認')
+         : ng('ST-110: 初回ようこそ 存在せず');
+
+       // ③ closeSplashのタイマーが1500ms以上であること
+       var _st110TimerOk = /setTimeout\(closeSplash,\s*1[0-9]{3}\)/.test(_st110Src);
+       _st110TimerOk
+         ? ok('ST-110: closeSplashタイマー 1000ms以上確認')
+         : ng('ST-110: closeSplashタイマー 短すぎる可能性');
+
+       // ④ kingdomMode復元テスト（ST-85・ST-90のロールバック確認）
+       var _st110PrevMode = allSettings.ui.kingdomMode;
+       var _st110PrevBase = allSettings.ui.kingdomModeBase;
+       // スモークテスト後にkingdomModeが元に戻っているか
+       (_st110PrevMode !== 'camp' || _st110PrevBase !== 'camp')
+         ? ok('ST-110: スモークテスト後 kingdomMode復元確認（mode=' + _st110PrevMode + ' base=' + _st110PrevBase + '）')
+         : ng('ST-110: kingdomModeがcampのまま復元されていない');
+
+       ok('ST-110: スプラッシュ挨拶・kingdomMode復元テスト 完了');
+     } catch(e) { ng('ST-110: 例外', e.message); }
 
      // ===== ST-109: 雑記帳（scratch）機能テスト =====
      try {
