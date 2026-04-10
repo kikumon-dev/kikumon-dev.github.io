@@ -29,8 +29,7 @@ body {
   width: 100%; height: 100%;
   z-index: 1;
   pointer-events: none;
-  opacity: 1;
-  background: #000;
+  opacity: 0.6;
 }
 
 /* =====================================================
@@ -524,6 +523,21 @@ footer p { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:
         <p style="font-size:clamp(.85em,2.2vw,1em);color:#C9A84C;font-weight:700;margin-bottom:8px;font-family:'Noto Sans JP',sans-serif;">推譲（すいじょう）— 誰かのために譲る</p>
         <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.55);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-bottom:20px;">
           余ったものを他者・社会のために譲る心。尊徳はこう言いました。「奪うに益なく、譲るに益あり。これが天理だ」と。
+        </p>
+
+        <!-- 報酬系・問題提起 -->
+        <div style="width:40px;height:1px;background:rgba(201,168,76,0.3);margin:40px 0;"></div>
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-bottom:20px;">
+          いまの社会では、報酬系がお金・承認・刺激・依存物質に最適化されすぎています。
+        </p>
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-bottom:20px;">
+          人は「得になること」しか動けなくなっている。純粋な助け合いが「損」に見える。公徳心が、育たない。
+        </p>
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-bottom:20px;">
+          これが、わたしが感じている問題です。
+        </p>
+        <p style="font-size:clamp(.85em,2.2vw,1em);color:rgba(255,255,255,0.68);line-height:2.4;letter-spacing:.04em;font-family:'Noto Sans JP',sans-serif;margin-bottom:20px;">
+          純粋な助け合いの世界を、自己了解をもとに再構築していきたい。やることクラフトは、その一歩です。
         </p>
 
         <!-- 公徳心 独立セクション -->
@@ -1341,8 +1355,7 @@ var io = new IntersectionObserver(function(entries){
 
   (function tick(){
     var W=cv.width, H=cv.height;
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0,0,W,H);
+    ctx.clearRect(0,0,W,H);
     ST.forEach(function(s){
       s.a+=s.da;
       if(s.a>1){s.a=1;s.da*=-1;} if(s.a<0){s.a=0;s.da*=-1;}
