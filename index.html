@@ -7,7 +7,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.574';
+    const APP_VERSION = 'v0.39.577';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3426,6 +3426,33 @@
 <!-- ===== 起動スプラッシュ ここまで ===== -->
 
 <div id="modal-root"></div>
+
+<!-- 北極星モード 開発予告モーダル -->
+<div id="polestarModal" style="display:none;position:fixed;inset:0;z-index:99000;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:28px 24px;max-width:340px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,0.2);text-align:center;">
+    <div style="font-size:2em;margin-bottom:8px;">⭐</div>
+    <div style="font-size:1.1em;font-weight:700;color:#333;margin-bottom:6px;">北極星モードへようこそ</div>
+    <div style="font-size:0.82em;color:#888;margin-bottom:18px;">動かない軸で、誰かの道を照らす。</div>
+    <div style="text-align:left;background:#fafafa;border-radius:10px;padding:14px 16px;margin-bottom:18px;">
+      <div style="font-size:0.78em;font-weight:700;color:#555;margin-bottom:8px;">🚧 近日実装予定</div>
+      <div style="font-size:0.82em;color:#666;line-height:2;">
+        ✦ 朝の儀式（本能選択）<br>
+        ✦ 本能マトリクス<br>
+        ✦ 使命マトリクス<br>
+        ✦ 根底マトリクス<br>
+        ✦ 最高倫理マトリクス<br>
+        ✦ 他者への貢献記録
+      </div>
+    </div>
+    <a href="https://ofuse.me/b9ca4c85" target="_blank" rel="noopener"
+      style="display:block;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-weight:700;font-size:0.9em;padding:12px;border-radius:10px;text-decoration:none;margin-bottom:10px;">
+      ⭐ OFUSEで開発を応援する
+    </a>
+    <button onclick="closePolestarModal()" style="width:100%;padding:10px;border:1.5px solid #e0e0e0;border-radius:10px;background:#fff;color:#888;font-size:0.85em;cursor:pointer;">
+      閉じる
+    </button>
+  </div>
+</div>
 <div id="lpModal" style="display:none;position:fixed;inset:0;z-index:99000;background:rgba(0,0,0,0.85);flex-direction:column;">
   <div style="display:flex;justify-content:flex-end;padding:10px 16px;">
     <button onclick="closeLpModal()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:1.5em;border-radius:50%;width:40px;height:40px;cursor:pointer;">✕</button>
@@ -4752,7 +4779,11 @@
           </button>
           <button onclick="selectKingdomMode('kingdom')" id="kingdomModeBtn_kingdom" style="width:100%;padding:14px 16px;background:#f8f8f8;border:2px solid #e0e0e0;border-radius:12px;text-align:left;cursor:pointer;transition:all 0.15s;">
             <div style="font-size:1.05em;font-weight:700;color:#333;">🏰 王国</div>
-            <div style="font-size:1.0em;font-weight:600;color:#555;margin-top:2px;">これが、使命かもしれない。</div><div style="font-size:0.88em;color:#aaa;margin-top:2px;">全機能解放。ナビタブは自由にカスタマイズできる</div>
+            <div style="font-size:1.0em;font-weight:600;color:#555;margin-top:2px;">これが、使命かもしれない。</div><div style="font-size:0.88em;color:#aaa;margin-top:2px;">造営・写真館・深考が解放。全機能解放。ナビタブは自由にカスタマイズできる</div>
+          </button>
+          <button onclick="selectKingdomMode('polestar')" id="kingdomModeBtn_polestar" style="width:100%;padding:14px 16px;background:#f8f8f8;border:2px dashed #e0c84c;border-radius:12px;text-align:left;cursor:pointer;transition:all 0.15s;">
+            <div style="font-size:1.05em;font-weight:700;color:#333;">⭐ 北極星</div>
+            <div style="font-size:1.0em;font-weight:600;color:#555;margin-top:2px;">動かない軸で、誰かの道を照らす。</div><div style="font-size:0.88em;color:#aaa;margin-top:2px;">🚧 開発中 — 王国の先の世界</div>
           </button>
         </div>
         <!-- カスタムモードラベル（固定DOM） -->
@@ -5092,6 +5123,28 @@
           style="width:100%;margin-top:10px;padding:10px;border:1.5px dashed #c5cae9;border-radius:8px;background:transparent;color:#3949ab;font-size:0.85em;font-weight:600;cursor:pointer;">
           ＋ カレンダーを追加する
         </button>
+      </div>
+      <!-- 本能マトリクス設定 -->
+      <div style="background:#fff;border-radius:12px;padding:16px 18px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+        <div style="font-size:0.8em;color:#888;font-weight:700;letter-spacing:.08em;margin-bottom:10px;">🧬 本能マトリクス</div>
+        <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;cursor:pointer;">
+          <input type="checkbox" id="instinctModeCheck"
+            onchange="allSettings.ui.instinctMode=this.checked;saveAllSettings();renderAllSections();"
+            style="width:16px;height:16px;accent-color:#e57373;cursor:pointer;">
+          <span style="font-size:0.85em;color:#555;font-weight:600;">🧬 本能モードをONにする</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;cursor:pointer;">
+          <input type="checkbox" id="showInstinctIconCheck"
+            onchange="allSettings.ui.showInstinctIcon=this.checked;saveAllSettings();renderAllSections();"
+            style="width:16px;height:16px;accent-color:#e57373;cursor:pointer;">
+          <span style="font-size:0.85em;color:#555;">本能アイコンを表示する</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="checkbox" id="showInstinctColorCheck"
+            onchange="allSettings.ui.showInstinctColor=this.checked;saveAllSettings();renderAllSections();"
+            style="width:16px;height:16px;accent-color:#e57373;cursor:pointer;">
+          <span style="font-size:0.85em;color:#555;">本能カラーを表示する</span>
+        </label>
       </div>
 <div class="settings-section">
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">👨‍👩‍👧 家族と共有</h3>
@@ -5749,6 +5802,9 @@
         gantShowCompleted: true,
         kingdomMode:      'kingdom',
         kingdomModeBase:  'kingdom',
+        instinctMode:     false,
+        showInstinctIcon:  true,
+        showInstinctColor: true,
         visibleTabs: {
           yearly: true, notebook: true, craft: true,
           shop: true, colosseum: true, dashboard: true
@@ -6296,6 +6352,7 @@
         completed: false,
         displayScope: _scope,
         calendarId: calendarId,          // どのカレンダーに属するか
+        instinct:   null,                   // 本能マトリクス（null|survival|renewal|sleep|recognition）
         owner: allSettings.profile.name || null,
         ownerId: getOrCreateDeviceId(),  // 端末固有ID（識別用）
         createdAt: new Date().toISOString(),
@@ -9801,6 +9858,31 @@ function applyVisibleTabsSettings() {
 }
 
 // 王国規模モード定義
+
+// ===== 本能マトリクス定義 =====
+var INSTINCT_DEF = {
+  survival:    { icon: '🛡️', color: '#e57373', label: '生存欲' },
+  renewal:     { icon: '✨',  color: '#81c784', label: '更新欲' },
+  sleep:       { icon: '🌙',  color: '#7986cb', label: '睡眠欲' },
+  recognition: { icon: '👑',  color: '#ffd54f', label: '承認所属欲' },
+};
+window.INSTINCT_DEF = INSTINCT_DEF;
+
+function getInstinctIcon(instinct) {
+  if (!instinct || !INSTINCT_DEF[instinct]) return '';
+  if (!allSettings.ui.instinctMode) return '';
+  if (allSettings.ui.showInstinctIcon === false) return '';
+  return INSTINCT_DEF[instinct].icon;
+}
+function getInstinctColor(instinct) {
+  if (!instinct || !INSTINCT_DEF[instinct]) return '';
+  if (!allSettings.ui.instinctMode) return '';
+  if (allSettings.ui.showInstinctColor === false) return '';
+  return INSTINCT_DEF[instinct].color;
+}
+window.getInstinctIcon  = getInstinctIcon;
+window.getInstinctColor = getInstinctColor;
+
 var KINGDOM_MODES = {
   camp: {
     label: '🏕️ 野営地',
@@ -9814,8 +9896,8 @@ var KINGDOM_MODES = {
   },
   village: {
     label: '🏘️ 村',
-    // +週間・月間・自由帳・ダッシュボード
-    visibleTabs: { weekly: true, monthly: true, yearly: false, notebook: false, craft: true, shop: true, colosseum: false, dashboard: false, photo: false },
+    // +週間のみ
+    visibleTabs: { weekly: true, monthly: false, yearly: false, notebook: false, craft: true, shop: true, colosseum: false, dashboard: false, photo: false },
     gantEnabled: false,
     craftModeEnabled: true,
     showJournalBtn: true,
@@ -9841,6 +9923,16 @@ var KINGDOM_MODES = {
     showJournalBtn: true,
     showGantBtn: true,
     showSDF: true
+  },
+  polestar: {
+    label: '⭐ 北極星',
+    // 王国と同じ・未来実装の枠
+    visibleTabs: { weekly: true, monthly: true, yearly: true, notebook: true, craft: true, shop: true, colosseum: true, dashboard: true, photo: true },
+    gantEnabled: true,
+    craftModeEnabled: true,
+    showJournalBtn: true,
+    showGantBtn: true,
+    showSDF: true
   }
 };
 
@@ -9853,6 +9945,10 @@ function selectKingdomMode(mode) {
   allSettings.ui.kingdomMode = mode;
   allSettings.ui.kingdomModeBase = mode; // カスタム時のベースモードを記録
   saveAllSettings();
+  // 北極星モード：開発予告モーダル
+  if (mode === 'polestar') {
+    setTimeout(function() { openPolestarModal(); }, 300);
+  }
   applyVisibleTabsSettings();
   // 造営タブも反映
   var gantEl = document.getElementById('navGant');
@@ -9878,7 +9974,7 @@ function updateKingdomModeButtons() {
   var isCustom = (current === 'custom');
   var baseMode = (allSettings.ui && allSettings.ui.kingdomModeBase) || 'kingdom';
   var highlightMode = isCustom ? baseMode : current;
-  ['camp', 'village', 'town', 'kingdom'].forEach(function(mode) {
+  ['camp', 'village', 'town', 'kingdom', 'polestar'].forEach(function(mode) {
     var btn = document.getElementById('kingdomModeBtn_' + mode);
     if (!btn) return;
     if (mode === highlightMode) {
@@ -9892,7 +9988,7 @@ function updateKingdomModeButtons() {
   // カスタム中ラベルを表示（固定DOM）
   var customLabel = document.getElementById('_kingdomCustomLabel');
   if (isCustom) {
-    var _baseLabel2 = {camp:'野営地',village:'村',town:'町',kingdom:'王国'}[baseMode] || '王国';
+    var _baseLabel2 = {camp:'野営地',village:'村',town:'町',kingdom:'王国',polestar:'北極星'}[baseMode] || '王国';
     if (customLabel) {
       customLabel.textContent = '⚙️ カスタム中（' + _baseLabel2 + 'ベース）';
       customLabel.style.display = '';
@@ -9916,7 +10012,10 @@ function updateKingdomModeButtons() {
   if (visTabGantCheck) visTabGantCheck.checked = allSettings.ui.gantEnabled === true;
   // SDFボタン表示も同期
   var _curMode = allSettings.ui.kingdomMode;
-  var _curDef = (typeof KINGDOM_MODES !== 'undefined' && _curMode) ? KINGDOM_MODES[_curMode] : null;
+  var _effectiveSdfMode = (_curMode === 'custom')
+    ? ((allSettings.ui && allSettings.ui.kingdomModeBase) || 'kingdom')
+    : _curMode;
+  var _curDef = (typeof KINGDOM_MODES !== 'undefined' && _effectiveSdfMode) ? KINGDOM_MODES[_effectiveSdfMode] : null;
   var sdfBtn = document.getElementById('scratchSdfBtn');
   if (sdfBtn) sdfBtn.style.display = (!_curDef || _curDef.showSDF !== false) ? '' : 'none';
   // 設定画面セクション表示も同期
@@ -9981,7 +10080,7 @@ function toggleVisibleTab(key, checked) {
       ? KINGDOM_MODES[allSettings.ui.kingdomMode] : null;
     if (_km && _km.visibleTabs && _km.visibleTabs[key] === false) {
       var _modeLabel = {
-        camp: '野営地', village: '村', town: '町', kingdom: '王国'
+        camp: '野営地', village: '村', town: '町', kingdom: '王国', polestar: '北極星'
       };
       var _required = { yearly:'町', notebook:'村', colosseum:'町', photo:'町', dashboard:'村' };
       var _req = _required[key] || '上位';
@@ -12687,6 +12786,14 @@ function reviveBlueprint(id) {
         }).join('');
         _calSel.value = task.calendarId || (_calList[0] ? _calList[0].id : '');
       })();
+      // 本能選択の初期化
+      (function() {
+        var _instSection = document.getElementById('taskEditInstinctSection');
+        var _instSel = document.getElementById('taskEditInstinct');
+        if (!_instSection || !_instSel) return;
+        _instSection.style.display = allSettings.ui.instinctMode ? 'block' : 'none';
+        _instSel.value = task.instinct || '';
+      })();
       document.getElementById('taskEditModal').classList.add('show');
       // 造営工程紐づけUI初期化
       const gantSection = document.getElementById('taskEditGantSection');
@@ -12813,12 +12920,16 @@ function reviveBlueprint(id) {
       var _calSelEl = document.getElementById('taskEditCalendarId');
       var _newCalendarId = (_calSelEl && _calSelEl.offsetParent !== null && _calSelEl.value)
         ? _calSelEl.value : (baseTask ? baseTask.calendarId : null);
+      // 本能取得
+      var _instSelEl = document.getElementById('taskEditInstinct');
+      var _newInstinct = (_instSelEl && _instSelEl.value) ? _instSelEl.value : null;
       updateTask(taskId, { 
         text, memo: memo || null, date, time, endTime,
         repeat: repeat !== 'none' ? repeat : null,
         repeatEnd: repeatEnd || null,
         repeatGroupId: baseTask?.repeatGroupId || (repeat !== 'none' ? taskId : null),
-        calendarId: _newCalendarId
+        calendarId: _newCalendarId,
+        instinct: _newInstinct
       });
       // 繰り返し処理（共通関数）
       var _repeatContinue = applyRepeatSave(taskId, null, repeat, repeatEnd, date);
@@ -13311,8 +13422,18 @@ function reviveBlueprint(id) {
         textSpan.className = 'task-text';
         // 時間があれば表示
         var _sym4 = (typeof getCalendarSymbol==='function') ? getCalendarSymbol(task.calendarId) : '';
-        const displayText = (_sym4 ? _sym4+' ' : '') + (task.time ? `${task.time} ${task.text}` : task.text);
+        var _instIcon4 = (typeof getInstinctIcon==='function') ? getInstinctIcon(task.instinct) : '';
+        const displayText = (_sym4 ? _sym4+' ' : '') + (_instIcon4 ? _instIcon4+' ' : '') + (task.time ? `${task.time} ${task.text}` : task.text);
         textSpan.textContent = displayText;
+        // 本能カラーをborder-leftに適用
+        var _instColor4 = (typeof getInstinctColor==='function') ? getInstinctColor(task.instinct) : '';
+        if (_instColor4) {
+          li.style.borderLeft = '3px solid ' + _instColor4;
+          li.style.paddingLeft = '8px';
+        } else {
+          li.style.borderLeft = '';
+          li.style.paddingLeft = '';
+        }
         textSpan.onclick = () => {
           if (timerState === 'selecting') {
             // 選択モード：タスクを選択
@@ -16765,6 +16886,13 @@ function loadSettingsUI() {
       // 記号表示チェック
       var symCheck = document.getElementById('showCalendarSymbolCheck');
       if (symCheck) symCheck.checked = allSettings.ui.showCalendarSymbol !== false;
+      // 本能マトリクス設定
+      var _instModeCheck = document.getElementById('instinctModeCheck');
+      if (_instModeCheck) _instModeCheck.checked = allSettings.ui.instinctMode === true;
+      var _instIconCheck = document.getElementById('showInstinctIconCheck');
+      if (_instIconCheck) _instIconCheck.checked = allSettings.ui.showInstinctIcon !== false;
+      var _instColorCheck = document.getElementById('showInstinctColorCheck');
+      if (_instColorCheck) _instColorCheck.checked = allSettings.ui.showInstinctColor !== false;
     }
     // アバター画像変更
     function handleAvatarChange(event) {
@@ -17593,6 +17721,17 @@ function loadSettingsUI() {
     window.switchShopTab = switchShopTab;
     window.applyVisibleTabsSettings = applyVisibleTabsSettings;
     window.selectKingdomMode = selectKingdomMode;
+
+    function openPolestarModal() {
+      var el = document.getElementById('polestarModal');
+      if (el) el.style.display = 'flex';
+    }
+    function closePolestarModal() {
+      var el = document.getElementById('polestarModal');
+      if (el) el.style.display = 'none';
+    }
+    window.openPolestarModal  = openPolestarModal;
+    window.closePolestarModal = closePolestarModal;
     window.updateKingdomModeButtons = updateKingdomModeButtons;
     window.openGouLogModal = openGouLogModal;
     window.switchSearchTab = switchSearchTab;
@@ -20546,6 +20685,17 @@ window.addEventListener('afterprint', function() {
       <div id="taskEditCalendarSection" style="margin-bottom:18px;display:none;">
         <label>📅 カレンダー</label>
         <select id="taskEditCalendarId" style="width:100%;padding:8px 10px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:0.9em;background:#fff;"></select>
+      </div>
+      <!-- 本能マトリクス -->
+      <div id="taskEditInstinctSection" style="margin-bottom:18px;display:none;">
+        <label>🧬 本能</label>
+        <select id="taskEditInstinct" style="width:100%;padding:8px 10px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:0.9em;background:#fff;">
+          <option value="">— なし —</option>
+          <option value="survival">🛡️ 生存欲</option>
+          <option value="renewal">✨ 更新欲</option>
+          <option value="sleep">🌙 睡眠欲</option>
+          <option value="recognition">👑 承認所属欲</option>
+        </select>
       </div>
       <!-- 繰り返し設定 -->
       <div style="margin-bottom: 18px;">
@@ -26131,7 +26281,7 @@ function showDebugLog(_initOnly) {
 
        // ===== ST-34C: テストセクション自己存在確認 =====
        // テストセクション自己存在確認：ソースコード上の存在をチェック
-       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-103','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75','ST-76','ST-77','ST-78','ST-79','ST-80','ST-81','ST-82','ST-106','ST-107','ST-108','ST-109','ST-110'];
+       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-103','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75','ST-76','ST-77','ST-78','ST-79','ST-80','ST-81','ST-82','ST-106','ST-107','ST-108','ST-109','ST-110','ST-111'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -29836,7 +29986,7 @@ function showDebugLog(_initOnly) {
        }
 
        // DOM: 4ボタン存在確認
-       var _kmBtns = ['camp','village','town','kingdom'].map(function(m){ return document.getElementById('kingdomModeBtn_' + m); });
+       var _kmBtns = ['camp','village','town','kingdom','polestar'].map(function(m){ return document.getElementById('kingdomModeBtn_' + m); });
        var _kmBtnOk = _kmBtns.every(function(b){ return b !== null; });
        _kmBtnOk ? ok('ST-85: kingdomModeBtn 4件DOM確認（camp/village/town/kingdom）') : ng('ST-85: kingdomModeBtn DOM不足', _kmBtns.map(function(b,i){ return b?'ok':'NG:'+['camp','village','town','kingdom'][i]; }).join(','));
 
@@ -30254,7 +30404,7 @@ function showDebugLog(_initOnly) {
          ? ok('ST-98: allSettings.ui.kingdomModeBase 存在確認（' + allSettings.ui.kingdomModeBase + '）')
          : ng('ST-98: allSettings.ui.kingdomModeBase 未定義', '');
        // KINGDOM_MODES 4モード確認
-       var _validModes = ['camp', 'village', 'town', 'kingdom', 'custom'];
+       var _validModes = ['camp', 'village', 'town', 'kingdom', 'polestar', 'custom'];
        _validModes.indexOf(allSettings.ui.kingdomMode) !== -1
          ? ok('ST-98: kingdomMode値が有効（' + allSettings.ui.kingdomMode + '）')
          : ng('ST-98: kingdomMode無効値', allSettings.ui.kingdomMode);
@@ -30840,6 +30990,122 @@ function showDebugLog(_initOnly) {
        ok('ST-109: クリーンアップ完了（' + allTasks.length + '件）');
        ok('ST-109: 雑記帳（scratch）機能テスト 完了');
      } catch(e) { ng('ST-109: 例外', e.message); }
+
+     // ===== ST-111: 本能マトリクステスト =====
+     try {
+       // ① INSTINCT_DEF 4件確認
+       typeof INSTINCT_DEF === 'object' && INSTINCT_DEF !== null
+         ? ok('ST-111: INSTINCT_DEF 存在確認')
+         : ng('ST-111: INSTINCT_DEF 未定義');
+       var _instKeys = ['survival','renewal','sleep','recognition'];
+       var _instOk = _instKeys.every(function(k){ return INSTINCT_DEF[k] && INSTINCT_DEF[k].icon && INSTINCT_DEF[k].color && INSTINCT_DEF[k].label; });
+       _instOk
+         ? ok('ST-111: INSTINCT_DEF 4件・icon/color/label 全確認')
+         : ng('ST-111: INSTINCT_DEF フィールド不足');
+       // ② アイコン確認
+       INSTINCT_DEF.survival.icon === '🛡️'
+         ? ok('ST-111: survival icon=🛡️ 確認')
+         : ng('ST-111: survival icon異常（' + INSTINCT_DEF.survival.icon + '）');
+       INSTINCT_DEF.renewal.icon === '✨'
+         ? ok('ST-111: renewal icon=✨ 確認')
+         : ng('ST-111: renewal icon異常');
+       INSTINCT_DEF.sleep.icon === '🌙'
+         ? ok('ST-111: sleep icon=🌙 確認')
+         : ng('ST-111: sleep icon異常');
+       INSTINCT_DEF.recognition.icon === '👑'
+         ? ok('ST-111: recognition icon=👑 確認')
+         : ng('ST-111: recognition icon異常');
+       // ③ createTask instinct:null初期値確認
+       var _instTask = createTask('ST-111テスト', null, null, 1, 'daily_only');
+       _instTask && _instTask.instinct === null
+         ? ok('ST-111: createTask instinct:null初期値確認')
+         : ng('ST-111: createTask instinct初期値異常（' + (_instTask ? _instTask.instinct : 'null task') + '）');
+       // ④ instinctMode boolean型確認（デフォルトはfalseだがユーザー設定で変わる）
+       var _prevInstMode = allSettings.ui.instinctMode;
+       typeof _prevInstMode === 'boolean'
+         ? ok('ST-111: instinctMode boolean型確認（現在=' + _prevInstMode + '）')
+         : ng('ST-111: instinctMode 型異常（' + typeof _prevInstMode + '）');
+       // ⑤ showInstinctIcon・showInstinctColor デフォルト確認
+       allSettings.ui.showInstinctIcon === true
+         ? ok('ST-111: showInstinctIcon デフォルトtrue確認')
+         : ng('ST-111: showInstinctIcon デフォルト異常');
+       allSettings.ui.showInstinctColor === true
+         ? ok('ST-111: showInstinctColor デフォルトtrue確認')
+         : ng('ST-111: showInstinctColor デフォルト異常');
+       // ⑥ task.instinct 保存確認
+       var _instTaskId = _instTask ? _instTask.id : null;
+       if (_instTaskId) {
+         updateTask(_instTaskId, { instinct: 'survival' });
+         var _instSaved = allTasks.find(function(t){ return t.id === _instTaskId; });
+         _instSaved && _instSaved.instinct === 'survival'
+           ? ok('ST-111: task.instinct 保存確認（survival）')
+           : ng('ST-111: task.instinct 保存異常');
+         saveAllTasks();
+         var _instLS = JSON.parse(localStorage.getItem('allTasks') || '[]');
+         var _instLSTask = _instLS.find(function(t){ return t.id === _instTaskId; });
+         _instLSTask && _instLSTask.instinct === 'survival'
+           ? ok('ST-111: task.instinct localStorage往復確認')
+           : ng('ST-111: task.instinct localStorage往復異常');
+       }
+       // ⑦ getInstinctIcon関数確認
+       typeof getInstinctIcon === 'function'
+         ? ok('ST-111: getInstinctIcon 関数存在確認')
+         : ng('ST-111: getInstinctIcon 未定義');
+       if (typeof getInstinctIcon === 'function') {
+         getInstinctIcon('survival') === '🛡️'
+           ? ok('ST-111: getInstinctIcon(survival)=🛡️ 確認')
+           : ng('ST-111: getInstinctIcon(survival)異常');
+         getInstinctIcon(null) === ''
+           ? ok('ST-111: getInstinctIcon(null)=空文字 確認')
+           : ng('ST-111: getInstinctIcon(null)異常');
+       }
+       // ⑧ getInstinctColor関数確認
+       typeof getInstinctColor === 'function'
+         ? ok('ST-111: getInstinctColor 関数存在確認')
+         : ng('ST-111: getInstinctColor 未定義');
+       if (typeof getInstinctColor === 'function') {
+         getInstinctColor('sleep') === '#7986cb'
+           ? ok('ST-111: getInstinctColor(sleep)=#7986cb 確認')
+           : ng('ST-111: getInstinctColor(sleep)異常');
+         getInstinctColor(null) === ''
+           ? ok('ST-111: getInstinctColor(null)=空文字 確認')
+           : ng('ST-111: getInstinctColor(null)異常');
+       }
+       // ⑨ instinctMode OFF時アイコン非表示確認
+       allSettings.ui.instinctMode = false;
+       var _instIconShown = allSettings.ui.instinctMode && (typeof getInstinctIcon === 'function' ? getInstinctIcon('survival') : '');
+       !_instIconShown
+         ? ok('ST-111: instinctMode OFF → アイコン非表示確認')
+         : ng('ST-111: instinctMode OFF でもアイコンが表示される');
+       // ⑩ saveAllSettings往復確認
+       var _prevShowIcon = allSettings.ui.showInstinctIcon;
+       var _prevShowColor = allSettings.ui.showInstinctColor;
+       allSettings.ui.instinctMode = true;
+       allSettings.ui.showInstinctIcon = false;
+       allSettings.ui.showInstinctColor = false;
+       saveAllSettings();
+       loadAllSettings();
+       allSettings.ui.instinctMode === true &&
+       allSettings.ui.showInstinctIcon === false &&
+       allSettings.ui.showInstinctColor === false
+         ? ok('ST-111: allSettings instinct設定 往復確認')
+         : ng('ST-111: allSettings instinct設定 往復異常');
+       // 復元
+       allSettings.ui.instinctMode = _prevInstMode;
+       allSettings.ui.showInstinctIcon = _prevShowIcon;
+       allSettings.ui.showInstinctColor = _prevShowColor;
+       saveAllSettings();
+       // ⑪ クリーンアップ
+       if (_instTaskId) {
+         var _instIdx = allTasks.findIndex(function(t){ return t.id === _instTaskId; });
+         if (_instIdx !== -1) allTasks.splice(_instIdx, 1);
+         saveAllTasks();
+       }
+       allTasks.filter(function(t){ return t.text === 'ST-111テスト'; }).length === 0
+         ? ok('ST-111: クリーンアップ完了（' + allTasks.length + '件）')
+         : ng('ST-111: クリーンアップ失敗');
+       ok('ST-111: 本能マトリクステスト 完了');
+     } catch(e) { ng('ST-111: 例外', e.message); }
 
      try {
        ok('');
