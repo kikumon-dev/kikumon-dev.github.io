@@ -148,7 +148,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.40.1';
+    const APP_VERSION = 'v0.40.4';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -4217,7 +4217,7 @@ END OF 開発ルール
       </div>
     </div>
     <!-- グランドビジョンがない場合の追加ボタン -->
-    <div id="grandVisionEmpty" style="display:none;flex-shrink:0;padding:6px 12px;background:#f8f6ff;border-bottom:1px solid #ede9fe;text-align:right;">
+    <div id="grandVisionEmpty" style="display:none;flex-shrink:0;padding:6px 12px;background:#f8f6ff;border-bottom:1px solid #ede9fe;text-align:left;">
       <button onclick="openGrandVisionEditor(null)" style="background:none;border:1px dashed #c4b5fd;border-radius:8px;color:#a78bfa;font-size:0.75em;padding:4px 10px;cursor:pointer;">🎖️ グランドビジョンを作る</button>
     </div>
     <!-- 上部：blueprintカード一覧 -->
@@ -10125,11 +10125,26 @@ function getKingdomEraLabel(targetDate) {
     }
   }
   if (!startDate) startDate = new Date();
+  // ===== JST正規化 =====
+  // startDate/nowを両方「JST日付の0時0分0秒」に揃えてからdiff計算する
+  // （createdAtがUTC ISO文字列の場合、new Date()との比較で最大9時間ズレが生じるため）
+  function _toJSTMidnight(d) {
+    // JST = UTC+9
+    var jstMs = d.getTime() + 9 * 60 * 60 * 1000;
+    var jstD  = new Date(jstMs);
+    // JSTの年月日を取得してUTC 00:00:00のDateを作る（差分計算用）
+    return new Date(Date.UTC(jstD.getUTCFullYear(), jstD.getUTCMonth(), jstD.getUTCDate()));
+  }
+  startDate = _toJSTMidnight(startDate);
   // 表示対象の日（引数 or 今日）
   var now = targetDate ? new Date(String(targetDate).replace(/-/g, '/')) : new Date();
   if (isNaN(now.getTime())) now = new Date();
-  var month = now.getMonth() + 1;
-  var day = now.getDate();
+  now = _toJSTMidnight(now);
+  // nowのJST月日を取得（表示用）
+  var _nowJstMs = now.getTime() + 0; // すでにJST midnight (UTC表現)
+  var _nowJst   = new Date(_nowJstMs);
+  var month = _nowJst.getUTCMonth() + 1;
+  var day   = _nowJst.getUTCDate();
   var diffDays = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
   if (isNaN(diffDays)) diffDays = 0;
   var year, yearStr, totalDays;
@@ -26572,7 +26587,7 @@ function showDebugLog(_initOnly) {
 
        // ===== ST-34C: テストセクション自己存在確認 =====
        // テストセクション自己存在確認：ソースコード上の存在をチェック
-       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-103','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75','ST-76','ST-77','ST-78','ST-79','ST-80','ST-81','ST-82','ST-106','ST-107','ST-108','ST-109','ST-110','ST-111'];
+       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-103','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75','ST-76','ST-77','ST-78','ST-79','ST-80','ST-81','ST-82','ST-106','ST-107','ST-108','ST-109','ST-110','ST-111','ST-112'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -31185,6 +31200,31 @@ function showDebugLog(_initOnly) {
          : ng('ST-110: kingdomModeがcampのまま復元されていない');
 
        ok('ST-110: スプラッシュ挨拶・kingdomMode復元テスト 完了');
+
+     // ===== ST-112: 王国暦JST正規化確認 =====
+     try {
+       // _toJSTMidnight がgetKingdomEraLabel内で定義されているのでソース確認
+       var _eraFnSrc = typeof getKingdomEraLabel === 'function' ? getKingdomEraLabel.toString() : '';
+       _eraFnSrc.indexOf('_toJSTMidnight') !== -1
+         ? ok('ST-112·①: _toJSTMidnight 定義確認')
+         : ng('ST-112·①: _toJSTMidnight 未定義', '');
+       _eraFnSrc.indexOf('9 * 60 * 60 * 1000') !== -1
+         ? ok('ST-112·②: JST +9h 補正確認')
+         : ng('ST-112·②: JST補正コードなし', '');
+       // 深夜0時問題の再現テスト
+       // startDate を「今日のUTC 00:00:00（= JSTの前日09:00）」に設定したとき
+       // diffDays が -1 にならないことを確認
+       var _utcMidnight = new Date(Date.UTC(2026, 3, 11, 0, 0, 0)); // UTC 4/11 00:00 = JST 4/11 09:00
+       var _era = getKingdomEraLabel('2026-04-11');
+       _era.indexOf('-') === -1
+         ? ok('ST-112·③: マイナス日目にならない確認（' + _era + '）')
+         : ng('ST-112·③: マイナス日目が出た', _era);
+       // 今日の結果が「元年」または「N年」で始まることを確認
+       _era.indexOf('歴') !== -1 && _era.indexOf('日目') !== -1
+         ? ok('ST-112·④: 王国暦フォーマット正常（' + _era + '）')
+         : ng('ST-112·④: フォーマット異常', _era);
+       ok('ST-112: 王国暦JST正規化テスト 完了');
+     } catch(e) { ng('ST-112: 例外', e.message); }
      } catch(e) { ng('ST-110: 例外', e.message); }
 
      // ===== ST-109: 雑記帳（scratch）機能テスト =====
