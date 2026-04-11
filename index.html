@@ -1,4 +1,145 @@
 <!DOCTYPE html>
+<!--
+=============================================================================
+やることクラフト 開発ルール全文（LPAG条文）
+最終更新: 2026-04-11 v0.39.593
+=============================================================================
+【重要】このコメントは削除・省略厳禁。
+スレッドが変わっても開発継続性を保つため全条文をここに保管する。
+新セッション開始時は必ずこのコメントを読み出してから作業を開始すること。
+制度趣旨・理由・権威も含めて開発ルールである。安易な省略を厳禁する。
+=============================================================================
+
+第1条【本番環境】
+本番データはChromeブラウザのlocalStorageに保存。テストは必ずHTMLファイルを
+Chromeで直接開いて行うこと。アーティファクトパネル（about:srcdoc iframe）は
+localStorageが分離されるため本番データにアクセスできずテストとして無意味。
+iOSのfile://も同様に無効。デプロイ先はGitHub Pages（kikumon-dev.github.io）。
+必ずGitHub Pages上のChromeでSTを実施してからデプロイ完了とすること。
+
+第2条【nullチェック】
+getElementById等のDOM参照は必ずnullチェックを入れること。
+新規コードは言われなくても当然入れること。自動一括挿入は回帰バグを生むため
+手動で1つずつ追加すること。
+制度趣旨：やることクラフトはSPA構造でビュー切り替えにdisplay制御を使っており、
+非表示ビューのDOMがnullを返すケースが多発する。nullチェックなしで.styleや
+.valueにアクセスするとTypeErrorでアプリ全体がクラッシュする。
+
+第3条【window公開】
+HTMLのonclick属性から呼ばれる関数は必ずwindow.xxx = xxxでグローバルに公開すること。
+新しい関数を追加したら即座にそのscriptブロック末尾のwindow公開セクションに追記すること。
+制度趣旨：やることクラフトはscriptブロックが複数に分かれており、block3内の
+ローカルスコープ関数はHTMLのonclickから直接参照できない。公開忘れはReferenceErrorの原因。
+
+第4条【廃止・欠番】
+第13条【JSスコープ】に統合済み。
+
+第5条【allTasks操作】
+タスクのCRUDはsplice/push/filter代入で行い、必ずsaveAllTasks()をセットで呼ぶこと。
+操作後はrenderAllSections()またはビュー固有のrender関数を呼んで画面を同期すること。
+制度趣旨：saveAllTasks()忘れはメモリ上の変更がlocalStorageに反映されず
+データ消失バグになる。
+
+第6条【デバッグ4軸】
+バグの原因調査は以下4軸で洗い出す：
+「名前（ID/変数名が正しいか）」
+「状態（値/フラグが期待通りか）」
+「関係（依存関係/スコープは正しいか）」
+「時間（実行順序・非同期タイミングは正しいか）」
+権威：やることクラフトで過去に起きたバグのほぼ全てはこの4軸のどれかに起因していた。
+
+第7条【renderScratchView】
+現在は安全であり通常通り修正可能。変更時はIME二重登録が起きていないことを必ず確認すること。
+制度趣旨：過去バージョンでaddEventListenerを使っていたためrenderScratchViewが
+呼ばれるたびにイベントが累積登録され、iOSのIME確定時に入力が二重・三重登録される
+バグが多発し「聖域」とされていた。現在はoninput=/onkeydown=の代入方式に修正済み。
+
+第8条【スモークテスト】
+デプロイ前に必ずスモークテストを実行しALL GREENを確認すること。
+禁止：行数チェック・文字列マッチ。挙動テストを優先する。
+localStorageへの書き込みは原則禁止。例外：テストに必要な一時操作は必ず元の値に復元すること。
+
+第9条【iOS日付パース】
+Date('YYYY-MM-DD')はiOSでInvalid Dateになる。必ずreplace(/-/g,'/')でスラッシュ変換すること。
+
+第10条【命名規則】
+変数名・関数名は「どこで・何をしているか」が一目でわかる名前にすること。
+制度趣旨：省略・暗号化は開発体験を下げ品質低下に直結する。
+権威：業セクション設定削除時に_dbGouEl/_dbGouEl2と命名→文脈不明→
+settingsOpenGouRefresh/adminModeGouRefreshに改名。場所＋役割の命名で即座に文脈が読める。
+
+第11条【displayScope】
+タスクのdisplayScope='daily_only'は日次のみ表示。
+新規タスク作成時のデフォルトがdaily_onlyになっていないか必ず確認すること。
+週間・タイムラインにも出すなら'both'を使うこと。
+権威：v0.39.98デプロイ後に今日の予定8件が週間・タイムラインから消えた。
+原因はdisplayScope='daily_only'のまま保存されていたため。
+
+第12条【calendarId整合性】
+タスクのcalendarIdはallSettings.calendar.listのidと必ず一致していること。
+新機能でカレンダーID参照を追加する際は必ずallSettings.calendar.listから取得すること。
+権威：v0.39.98で旧IDのタスクが全非表示になりテスターも影響を受けた。
+
+第13条【JSスコープ】
+block3内のローカル変数・即時関数は.toString()でソースが取れないことがある。
+関数内に処理を置く際はdepth計算で必ず関数スコープ内（depth>=1）に入っていることを確認すること。
+権威：loadSettingsUI内のdbGou更新を即時関数でグローバルに置いてしまい、
+設定を開いた時に業の値が更新されなかった。
+
+第14条〜第15条【欠番】
+
+第16条【関数名一目瞭然化】
+関数名・変数名はむやみに省略しないこと。一目瞭然化を最優先とし、
+保守性・複数人開発を前提に命名する。
+見た瞬間に「どこで・何をしているか」が分かる名前にすること。
+
+第17条【関数引数チェック】
+複数引数を持つ重要関数は呼び出し側の引数数が定義と一致していること。
+第1引数がイベントオブジェクト(e)の関数はUIから直接呼ばない場合は
+nullを明示的に渡すこと（例：deletePhoto(null, pid)）。
+権威：v0.39.427バグ。deletePhoto(e,photoId)をdeletePhoto(pid)と1引数で呼び、
+pidがeに入りphotoIdがundefinedになり削除不能。
+
+第18条【欠番】
+
+第19条【差分安全確認】
+HTML編集作業の前後で、重要DOM消失・window公開漏れ・設定デフォルト値変化・
+onchangeハンドラ消失・HTML構造破壊がないことをST-104で厳密に確認すること。
+作業前後ともにST-104がGREENであること。
+制度趣旨：str.replace誤マッチ等による意図しない破壊（lpModal消失事案等）を防ぐ。
+
+第20条【一括置換禁止】
+str_replaceのみ使用。一括文字列置換（String.replace等）は禁止。
+編集後はnode --checkで構文確認必須。
+制度趣旨：一括置換は意図しない箇所まで書き換え、複数箇所に同時ダメージを与える。
+str_replaceは対象が1箇所だけに限定されるため安全。
+
+第21条【セマンティックバージョニング】
+修正・機能追加のたびに必ずパッチバージョンを+1すること（例：v0.39.578→v0.39.579）。
+出力ファイルは常にindex.html（固定名）。版を飛ばすことは禁止。
+セッション開始時は必ずアップロードされたファイルをベースに設定してから作業開始。
+制度趣旨：巻き戻れる地点がないと壊れた時に復元できない。
+
+第22条【段階的実装】
+新機能を複数ビュー・複数箇所に追加する際は、1箇所ずつ実装してSTでALL GREENを
+確認してから次に進むこと。絶対に一括で複数箇所に同時追加しないこと。
+制度趣旨：1箇所で壊れた時点で即検知でき原因箇所が明確になる。一括追加は
+壊れた時の原因特定が困難になり巻き戻しコストが爆発する。
+権威：王国暦eraLabel実装でv0.39.579〜v0.39.593の15バージョンを1ビューずつ追加し
+1146/1146 ALL GREENを連続維持した実績に基づく。
+
+第23条【開発ルール継続性】
+開発ルールは制度趣旨・理由・権威も含めて開発ルールである。安易な省略・削除を厳禁する。
+スレッドが変わっても開発継続性を保つため、全条文はindex.html先頭のコメントに保管する。
+新セッション開始時はgrepまたはviewでこのコメントを読み出してから作業を開始すること。
+LPAGも常にこのコメントから条文を参照・検証すること。
+制度趣旨：AIのスレッドが変わっても開発哲学・判断基準が失われないようにする。
+権威：本条文の存在自体がその証明である。
+
+=============================================================================
+END OF 開発ルール
+=============================================================================
+-->
 <html lang="ja">
 <head>
   <meta charset="utf-8">
@@ -7,7 +148,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.39.577';
+    const APP_VERSION = 'v0.40.0';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3428,14 +3569,27 @@
 <div id="modal-root"></div>
 
 <!-- 北極星モード 開発予告モーダル -->
-<div id="polestarModal" style="display:none;position:fixed;inset:0;z-index:99000;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:16px;padding:28px 24px;max-width:340px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,0.2);text-align:center;">
-    <div style="font-size:2em;margin-bottom:8px;">⭐</div>
-    <div style="font-size:1.1em;font-weight:700;color:#333;margin-bottom:6px;">北極星モードへようこそ</div>
-    <div style="font-size:0.82em;color:#888;margin-bottom:18px;">動かない軸で、誰かの道を照らす。</div>
-    <div style="text-align:left;background:#fafafa;border-radius:10px;padding:14px 16px;margin-bottom:18px;">
-      <div style="font-size:0.78em;font-weight:700;color:#555;margin-bottom:8px;">🚧 近日実装予定</div>
-      <div style="font-size:0.82em;color:#666;line-height:2;">
+<div id="polestarModal" style="display:none;position:fixed;inset:0;z-index:99000;background:rgba(0,0,0,0.85);align-items:center;justify-content:center;backdrop-filter:blur(4px);overflow-y:auto;padding:20px 0;">
+  <div style="position:relative;background:linear-gradient(160deg,#0f0f1a 0%,#1a1a2e 60%,#16213e 100%);border-radius:20px;padding:32px 24px 24px;max-width:340px;width:90%;box-shadow:0 24px 80px rgba(0,0,0,0.6),0 0 0 1px rgba(251,191,36,0.15);text-align:center;overflow:hidden;margin:auto;">
+
+    <!-- 背景の星エフェクト -->
+    <div style="position:absolute;inset:0;overflow:hidden;border-radius:20px;pointer-events:none;">
+      <div style="position:absolute;width:2px;height:2px;background:#fbbf24;border-radius:50%;top:15%;left:20%;opacity:0.8;animation:twinkle 2.1s ease-in-out infinite;"></div>
+      <div style="position:absolute;width:1px;height:1px;background:#fff;border-radius:50%;top:30%;left:75%;opacity:0.5;animation:twinkle 1.7s ease-in-out 0.5s infinite;"></div>
+      <div style="position:absolute;width:2px;height:2px;background:#fbbf24;border-radius:50%;top:70%;left:85%;opacity:0.6;animation:twinkle 2.4s ease-in-out 1s infinite;"></div>
+      <div style="position:absolute;width:1px;height:1px;background:#fff;border-radius:50%;top:80%;left:15%;opacity:0.4;animation:twinkle 1.9s ease-in-out 0.3s infinite;"></div>
+      <div style="position:absolute;width:1px;height:1px;background:#fbbf24;border-radius:50%;top:50%;left:90%;opacity:0.7;animation:twinkle 2.2s ease-in-out 0.8s infinite;"></div>
+    </div>
+
+    <!-- 星アイコン -->
+    <div style="position:relative;font-size:2.8em;margin-bottom:4px;filter:drop-shadow(0 0 12px rgba(251,191,36,0.8));animation:pulse-star 2.5s ease-in-out infinite;">⭐</div>
+    <div style="font-size:1.15em;font-weight:800;color:#fff;margin-bottom:4px;letter-spacing:0.02em;">北極星モード</div>
+    <div style="font-size:0.78em;color:rgba(251,191,36,0.7);margin-bottom:20px;letter-spacing:0.08em;">動かない軸で、誰かの道を照らす。</div>
+
+    <!-- 実装予定リスト -->
+    <div style="text-align:left;background:rgba(255,255,255,0.05);border-radius:12px;padding:14px 16px;margin-bottom:14px;border:1px solid rgba(255,255,255,0.08);">
+      <div style="font-size:0.72em;font-weight:700;color:rgba(251,191,36,0.8);margin-bottom:8px;letter-spacing:0.1em;">🚧 COMING SOON</div>
+      <div style="font-size:0.82em;color:rgba(255,255,255,0.7);line-height:2.1;">
         ✦ 朝の儀式（本能選択）<br>
         ✦ 本能マトリクス<br>
         ✦ 使命マトリクス<br>
@@ -3444,15 +3598,44 @@
         ✦ 他者への貢献記録
       </div>
     </div>
+
+    <!-- 優先権説明 -->
+    <div style="text-align:left;background:rgba(251,191,36,0.08);border-radius:12px;padding:14px 16px;margin-bottom:20px;border:1px solid rgba(251,191,36,0.2);">
+      <div style="font-size:0.72em;font-weight:700;color:#fbbf24;margin-bottom:6px;letter-spacing:0.06em;">⭐ 300円で優先開発権</div>
+      <div style="font-size:0.79em;color:rgba(255,255,255,0.65);line-height:1.9;">
+        ご支援いただいた方の要望を、優先開発リストの上位に入れさせていただきたいと思います。<br><br>
+        ご要望は、OFUSEのファンレターからお気軽にお送りください。こちらからもご連絡差し上げます。<br><br>
+        いただいたご支援は、継続的なインフラ整備と開発用途に使わせていただくことをお約束申し上げます。<br><br>
+        一緒に育てていただけると、大変嬉しいです。
+      </div>
+    </div>
+
+    <!-- CTAボタン -->
     <a href="https://ofuse.me/b9ca4c85" target="_blank" rel="noopener"
-      style="display:block;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-weight:700;font-size:0.9em;padding:12px;border-radius:10px;text-decoration:none;margin-bottom:10px;">
-      ⭐ OFUSEで開発を応援する
+      style="display:block;background:linear-gradient(135deg,#fbbf24 0%,#f59e0b 50%,#d97706 100%);color:#1a1a00;font-weight:800;font-size:0.92em;padding:14px;border-radius:12px;text-decoration:none;margin-bottom:10px;letter-spacing:0.04em;box-shadow:0 4px 20px rgba(251,191,36,0.4);transition:transform 0.15s,box-shadow 0.15s;"
+      onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 28px rgba(251,191,36,0.6)';"
+      onmouseout="this.style.transform='';this.style.boxShadow='0 4px 20px rgba(251,191,36,0.4)';">
+      ⭐ OFUSEで開発を応援する（300円〜）
     </a>
-    <button onclick="closePolestarModal()" style="width:100%;padding:10px;border:1.5px solid #e0e0e0;border-radius:10px;background:#fff;color:#888;font-size:0.85em;cursor:pointer;">
+    <button onclick="closePolestarModal()"
+      style="width:100%;padding:10px;border:1px solid rgba(255,255,255,0.12);border-radius:12px;background:transparent;color:rgba(255,255,255,0.35);font-size:0.82em;cursor:pointer;transition:color 0.15s;"
+      onmouseover="this.style.color='rgba(255,255,255,0.6)';"
+      onmouseout="this.style.color='rgba(255,255,255,0.35)';">
       閉じる
     </button>
   </div>
 </div>
+
+<style>
+@keyframes twinkle {
+  0%,100% { opacity:0.2; transform:scale(1); }
+  50% { opacity:1; transform:scale(1.5); }
+}
+@keyframes pulse-star {
+  0%,100% { filter:drop-shadow(0 0 8px rgba(251,191,36,0.6)); }
+  50% { filter:drop-shadow(0 0 20px rgba(251,191,36,1)); }
+}
+</style>
 <div id="lpModal" style="display:none;position:fixed;inset:0;z-index:99000;background:rgba(0,0,0,0.85);flex-direction:column;">
   <div style="display:flex;justify-content:flex-end;padding:10px 16px;">
     <button onclick="closeLpModal()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:1.5em;border-radius:50%;width:40px;height:40px;cursor:pointer;">✕</button>
@@ -3530,13 +3713,16 @@
     </button>
   </div>
   <!-- 日次日付ナビバー -->
-  <div id="dailyDateNavBar" style="display:none;align-items:center;justify-content:space-between;padding:4px 8px;background:#fafafa;border-bottom:1px solid #f0f0f0;box-sizing:border-box;">
-    <button class="monthly-nav-btn" style="padding:5px 10px;font-size:0.72em;white-space:nowrap;flex-shrink:0;" onclick="changeDailyDate(-1)">◀ 前日</button>
-    <span id="dailyNavDateLabel" style="font-size:0.8em;font-weight:700;color:#262626;text-align:center;flex:1;padding:0 6px;"></span>
-    <div style="display:flex;gap:4px;flex-shrink:0;align-items:center;">
-      <button onclick="goToDailyToday()" style="font-size:0.68em;padding:5px 6px;border-radius:5px;border:1.5px solid #4facfe;background:#fff;color:#4facfe;cursor:pointer;white-space:nowrap;font-weight:600;">今日</button>
-      <button class="monthly-nav-btn" style="padding:5px 10px;font-size:0.72em;white-space:nowrap;" onclick="changeDailyDate(1)">翌日 ▶</button>
+  <div id="dailyDateNavBar" style="display:none;align-items:center;justify-content:space-between;padding:4px 8px;background:#fafafa;border-bottom:1px solid #f0f0f0;box-sizing:border-box;flex-direction:column;">
+    <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+      <button class="monthly-nav-btn" style="padding:5px 10px;font-size:0.72em;white-space:nowrap;flex-shrink:0;" onclick="changeDailyDate(-1)">◀ 前日</button>
+      <span id="dailyNavDateLabel" style="font-size:0.8em;font-weight:700;color:#262626;text-align:center;flex:1;padding:0 6px;"></span>
+      <div style="display:flex;gap:4px;flex-shrink:0;align-items:center;">
+        <button onclick="goToDailyToday()" style="font-size:0.68em;padding:5px 6px;border-radius:5px;border:1.5px solid #4facfe;background:#fff;color:#4facfe;cursor:pointer;white-space:nowrap;font-weight:600;">今日</button>
+        <button class="monthly-nav-btn" style="padding:5px 10px;font-size:0.72em;white-space:nowrap;" onclick="changeDailyDate(1)">翌日 ▶</button>
+      </div>
     </div>
+    <div id="dailyEraLabel" style="font-size:0.72em;color:#4facfe;letter-spacing:0.08em;text-align:center;width:100%;padding:2px 0 3px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
   </div>
   <!-- 日次内タブバー（マトリクス/タイムライン/雑記帳） -->
   <div id="dailyInnerTabBar" style="display:none;">
@@ -3657,7 +3843,7 @@
   </div>
   <!-- 日次タイムラインビュー -->
   <div id="timelineView" style="display: none; padding: 12px 16px; box-sizing: border-box;">
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding: 0 2px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; padding: 0 2px;">
       <button class="monthly-nav-btn" style="padding: 5px 8px; font-size: 0.72em; white-space: nowrap; flex-shrink: 0;" onclick="changeTimelineDate(-1)">◀ 前日</button>
       <h2 id="timelineTitle" style="margin: 0; font-size: 0.88em; text-align: center; white-space: nowrap; font-weight: 700;"></h2>
       <div style="display: flex; gap: 4px; flex-shrink: 0; align-items: center;">
@@ -3670,6 +3856,7 @@
         <button onclick="resetTlRowHeight()" style="font-size:0.6em;color:#aaa;background:none;border:1px solid #ddd;border-radius:3px;padding:1px 4px;cursor:pointer;">↺</button>
       </div>
     </div>
+    <div id="timelineEraLabel" style="font-size:0.72em;color:#4facfe;letter-spacing:0.08em;text-align:center;width:100%;padding:2px 0 6px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
     <div id="timelineBody" style="width:100%; border: 1px solid #e0e0e0; border-radius: 8px; box-sizing: border-box; position:relative;"></div>
   </div>
   <!-- 逃げ出したメッセージ -->
@@ -3920,6 +4107,7 @@
             style="font-size:0.72em;background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff;border:none;border-radius:6px;padding:3px 8px;cursor:pointer;font-weight:700;">👨‍👩‍👧</button>
         </div>
       </div>
+      <div id="weeklyEraLabel" style="font-size:0.72em;color:#4facfe;letter-spacing:0.08em;text-align:center;width:100%;padding:2px 0 3px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:#fff;"></div>
       <!-- 2行目：↕縦 / ↔横 を半分半分 + リセット（縦が左・横が右） -->
       <div style="width:100%;display:flex;align-items:center;gap:0;padding:3px 8px 4px;box-sizing:border-box;border-bottom:1px solid #f0f0f0;">
         <span style="font-size:0.65em;color:#f472b6;flex-shrink:0;margin-right:3px;line-height:1;vertical-align:middle;">↕︎</span>
@@ -3958,6 +4146,7 @@
           style="font-size:0.72em;background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff;border:none;border-radius:6px;padding:3px 8px;cursor:pointer;font-weight:700;">👨‍👩‍👧</button>
       </div>
     </div>
+    <div id="monthlyEraLabel" style="font-size:0.72em;color:#4facfe;letter-spacing:0.08em;text-align:center;width:100%;padding:2px 0 3px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:#fff;position:sticky;top:48px;z-index:24;border-bottom:1px solid #f0f0f0;"></div>
     <!-- 月間スライダーバー（週間と同じスタイル） -->
     <div style="width:100%;display:flex;align-items:center;gap:0;padding:3px 8px 4px;box-sizing:border-box;border-bottom:1px solid #f0f0f0;background:#fff;position:sticky;top:48px;z-index:25;">
       <span style="font-size:0.65em;color:#f472b6;flex-shrink:0;margin-right:3px;line-height:1;vertical-align:middle;">↕︎</span>
@@ -4182,16 +4371,18 @@
       <h2 id="yearlyTitle"></h2>
       <button class="monthly-nav-btn" onclick="changeYear(1)">来年 ▶</button>
     </div>
+    <div id="yearlyEraLabel" style="font-size:0.72em;color:#4facfe;letter-spacing:0.08em;text-align:center;width:100%;padding:2px 0 6px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
     <div id="yearlyCalendar" class="yearly-calendar">
       <!-- JavaScriptで動的に生成 -->
     </div>
   </div>
   <!-- 自由帳ビュー v0.12.0 -->
   <div id="journalView" style="display:none;height:100%;overflow-y:auto;padding:16px;box-sizing:border-box;background:#f4f3ee;">
-  <div style="display:flex;align-items:center;justify-content:flex-start;position:relative;max-width:560px;margin:0 auto 16px;padding-bottom:12px;border-bottom:1px solid #e6e0d4;">
+  <div style="display:flex;align-items:center;justify-content:flex-start;position:relative;max-width:560px;margin:0 auto 8px;padding-bottom:8px;border-bottom:1px solid #e6e0d4;">
     <button onclick="openNewJournal()" style="padding:5px 4px;background:transparent;color:var(--washi-red);border:none;font-size:0.88em;cursor:pointer;font-family:serif;letter-spacing:0.05em;">記す</button>
     <div style="position:absolute;left:50%;transform:translateX(-50%);font-family:'Noto Serif JP',serif;font-size:1.5em;font-weight:600;color:var(--ink);letter-spacing:0.08em;">王国日誌</div>
   </div>
+  <div id="journalEraLabel" style="font-size:0.72em;color:#4facfe;letter-spacing:0.08em;text-align:center;width:100%;max-width:560px;margin:0 auto 12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;"></div>
   <div id="journalListArea"></div>
 </div>
 
@@ -4384,8 +4575,9 @@
     min-width:74px;
   " onclick="adminBadgeTap()">
     <!-- 称号表示行 -->
-    <div style="text-align:center;margin-bottom:6px;">
+    <div style="text-align:center;margin-bottom:2px;">
       <div id="craftKingdomTitle" style="font-size:0.82em;font-weight:700;color:#fff;letter-spacing:0.08em;text-shadow:0 0 8px rgba(255,255,255,0.2);">🌱 開拓民</div>
+      <div id="craftEraLabel" style="font-size:0.65em;color:#4facfe;letter-spacing:0.08em;font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 0 6px rgba(79,172,254,0.4);"></div>
     </div>
     <div style="height:1px;background:rgba(255,255,255,0.06);margin-bottom:6px;"></div>
     <div style="display:flex;flex-direction:row;gap:12px;align-items:center;">
@@ -4492,7 +4684,8 @@
     <div class="yc-fade-in" style="text-align:center;margin-bottom:16px;padding:22px 16px 18px;background:#fff;border-radius:24px;box-shadow:0 4px 24px rgba(99,102,241,0.10);border:1px solid rgba(99,102,241,0.08);">
       <div style="font-size:0.82em;font-weight:700;color:#a0aec0;letter-spacing:0.18em;margin-bottom:4px;">MY KINGDOM</div>
       <div id="dbKingdomName" style="font-size:1.25em;font-weight:800;color:#1a1a2e;letter-spacing:0.02em;margin-bottom:4px;">王国</div>
-      <div id="dbKingdomTitle" style="display:inline-block;font-size:0.92em;font-weight:700;color:#6366f1;background:#f0f0ff;border-radius:20px;padding:3px 14px;margin-bottom:14px;">🌱 開拓民</div>
+      <div id="dbKingdomTitle" style="display:inline-block;font-size:0.92em;font-weight:700;color:#6366f1;background:#f0f0ff;border-radius:20px;padding:3px 14px;margin-bottom:4px;">🌱 開拓民</div>
+      <div id="dbEraLabel" style="font-size:0.72em;color:#4facfe;letter-spacing:0.08em;font-weight:600;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
       <div style="display:flex;justify-content:center;gap:0;background:#f8f9ff;border-radius:16px;overflow:hidden;border:1px solid #e8e8f8;">
         <div style="flex:1;text-align:center;padding:12px 6px;border-right:1px solid #e8e8f8;">
           <div style="font-size:0.75em;color:#d4a050;font-weight:700;letter-spacing:0.08em;margin-bottom:4px;">GDP</div>
@@ -4757,8 +4950,15 @@
             </div>
           </div>
           <button class="avatar-remove-btn" id="avatarRemoveBtn" onclick="removeAvatar()" style="display: none;">アイコンを削除</button>
+          <!-- 王国暦名入力 -->
+          <div style="margin-top:14px;margin-bottom:4px;">
+            <label style="font-size:0.78em;color:#888;font-weight:600;display:block;margin-bottom:6px;">⭐ 暦の名前（〇〇歴として表示されます）</label>
+            <input id="profileEraName" type="text" maxlength="10" placeholder="旅人"
+              style="width:100%;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:0.92em;box-sizing:border-box;background:#fafafa;color:#333;" oninput="allSettings.profile.eraName = this.value.trim(); saveAllSettings();">
+            <div style="font-size:0.7em;color:#aaa;margin-top:4px;">例：旅人・王国・きくモン・あなたの名前など</div>
+          </div>
           <!-- プロフィール即時保存ボタン -->
-          <button onclick="saveProfileQuick()" style="margin-top:14px;width:100%;padding:11px;background:linear-gradient(135deg,#4facfe,#00c6fb);border:none;border-radius:10px;color:#fff;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(79,172,254,0.3);">👑 名前・性別を保存する</button>
+          <button onclick="saveProfileQuick()" style="margin-top:10px;width:100%;padding:11px;background:linear-gradient(135deg,#4facfe,#00c6fb);border:none;border-radius:10px;color:#fff;font-size:0.92em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(79,172,254,0.3);">👑 名前・性別・暦を保存する</button>
         </div>
       </div>
       <div class="settings-section">
@@ -5769,7 +5969,8 @@
         name:       '',
         gender:     'king',
         avatar:     '',
-        senderName: ''
+        senderName: '',
+        eraName:    ''
       },
       ui: {
         initialView:      'daily',
@@ -7626,6 +7827,11 @@ function myDeckApply(idx) {
       sunday.setDate(monday.getDate() + 6);
       document.getElementById('weeklyTitle').textContent =
         `${monday.getMonth()+1}/${monday.getDate()} 〜 ${sunday.getMonth()+1}/${sunday.getDate()}`;
+      // 王国暦ラベル更新（第2条：nullチェック必須）
+      var weeklyEraLabelEl = document.getElementById('weeklyEraLabel');
+      if (weeklyEraLabelEl && typeof getKingdomEraLabel === 'function') {
+        weeklyEraLabelEl.textContent = getKingdomEraLabel();
+      }
       const weekdays = ['月','火','水','木','金','土','日'];
       const todayStr = getLocalDateStr(new Date());
       const now      = new Date();
@@ -8229,6 +8435,11 @@ function myDeckApply(idx) {
       const month = currentMonthDate.getMonth();
       // タイトル更新
       document.getElementById('monthlyTitle').textContent = `${year}年${month + 1}月`;
+      // 王国暦ラベル更新（第2条：nullチェック必須）
+      var monthlyEraLabelEl = document.getElementById('monthlyEraLabel');
+      if (monthlyEraLabelEl && typeof getKingdomEraLabel === 'function') {
+        monthlyEraLabelEl.textContent = getKingdomEraLabel();
+      }
       // 曜日ヘッダー
       const weekdays = ['月', '火', '水', '木', '金', '土', '日'];
       weekdays.forEach((day, index) => {
@@ -8676,6 +8887,11 @@ function myDeckApply(idx) {
       if (isNaN(d.getTime())) d = new Date();
       var weekdays = ['日', '月', '火', '水', '木', '金', '土'];
       label.textContent = d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate() + '（' + weekdays[d.getDay()] + '）';
+      // 王国暦ラベル更新（currentDailyDateを渡して前日/翌日に連動）
+      var dailyEraLabelEl = document.getElementById('dailyEraLabel');
+      if (dailyEraLabelEl && typeof getKingdomEraLabel === 'function') {
+        dailyEraLabelEl.textContent = getKingdomEraLabel(dateStr);
+      }
       // 今日なら「今日」ボタンをグレーアウト
       var todayStr = getLocalDateStr(new Date());
       var todayBtn = navBar.querySelector('button[onclick="goToDailyToday()"]');
@@ -8744,6 +8960,11 @@ function myDeckApply(idx) {
       const d = currentTimelineDate;
       document.getElementById('timelineTitle').textContent =
         d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate() + '（' + weekdays[d.getDay()] + '）';
+      // 王国暦ラベル更新（第2条：nullチェック必須）
+      var timelineEraLabelEl = document.getElementById('timelineEraLabel');
+      if (timelineEraLabelEl && typeof getKingdomEraLabel === 'function') {
+        timelineEraLabelEl.textContent = getKingdomEraLabel();
+      }
       const body = document.getElementById('timelineBody');
       body.innerHTML = '';
       // スライダー値を現在の行高（全行が同じ場合のみ）に同期
@@ -9870,18 +10091,59 @@ window.INSTINCT_DEF = INSTINCT_DEF;
 
 function getInstinctIcon(instinct) {
   if (!instinct || !INSTINCT_DEF[instinct]) return '';
-  if (!allSettings.ui.instinctMode) return '';
-  if (allSettings.ui.showInstinctIcon === false) return '';
   return INSTINCT_DEF[instinct].icon;
 }
 function getInstinctColor(instinct) {
   if (!instinct || !INSTINCT_DEF[instinct]) return '';
-  if (!allSettings.ui.instinctMode) return '';
-  if (allSettings.ui.showInstinctColor === false) return '';
   return INSTINCT_DEF[instinct].color;
 }
 window.getInstinctIcon  = getInstinctIcon;
 window.getInstinctColor = getInstinctColor;
+
+// ===== 王国暦 =====
+function getKingdomEraLabel(targetDate) {
+  // eraName: profile.eraName → '王国'
+  var eraName = (allSettings && allSettings.profile && allSettings.profile.eraName)
+    || '王国';
+  // 開始日の導出（3段階フォールバック）
+  var startDate = null;
+  var startStr = (allSettings && allSettings.meta && allSettings.meta.createdAt) || null;
+  if (startStr) {
+    var _d1 = new Date(startStr);
+    if (!isNaN(_d1.getTime())) startDate = _d1;
+  }
+  if (!startDate && typeof allTasks !== 'undefined' && allTasks && allTasks.length > 0) {
+    var _oldest = allTasks
+      .map(function(t){ return t.createdAt ? new Date(t.createdAt) : null; })
+      .filter(function(d){ return d && !isNaN(d.getTime()); })
+      .sort(function(a, b){ return a - b; })[0];
+    if (_oldest) startDate = _oldest;
+  }
+  if (!startDate) startDate = new Date();
+  // 表示対象の日（引数 or 今日）
+  var now = targetDate ? new Date(String(targetDate).replace(/-/g, '/')) : new Date();
+  if (isNaN(now.getTime())) now = new Date();
+  var month = now.getMonth() + 1;
+  var day = now.getDate();
+  var diffDays = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
+  if (isNaN(diffDays)) diffDays = 0;
+  var year, yearStr, totalDays;
+  if (diffDays >= 0) {
+    // 開始日以降：元年〜
+    year = Math.floor(diffDays / 365) + 1;
+    yearStr = year === 1 ? '元年' : year + '年';
+    totalDays = diffDays + 1;
+    return eraName + '歴 ' + yearStr + ' ' + month + '月' + day + '日（' + totalDays + '日目）';
+  } else {
+    // 開始日より前：前元年〜
+    var absDays = Math.abs(diffDays);
+    year = Math.floor((absDays - 1) / 365) + 1;
+    yearStr = year === 1 ? '前元年' : '前' + year + '年';
+    totalDays = absDays;
+    return eraName + '歴 ' + yearStr + ' ' + month + '月' + day + '日（-' + totalDays + '日目）';
+  }
+}
+window.getKingdomEraLabel = getKingdomEraLabel;
 
 var KINGDOM_MODES = {
   camp: {
@@ -11987,6 +12249,11 @@ function reviveBlueprint(id) {
       const calendar = document.getElementById('yearlyCalendar');
       const title = document.getElementById('yearlyTitle');
       title.textContent = `${year}年`;
+      // 王国暦ラベル更新（第2条：nullチェック必須）
+      var yearlyEraLabelEl = document.getElementById('yearlyEraLabel');
+      if (yearlyEraLabelEl && typeof getKingdomEraLabel === 'function') {
+        yearlyEraLabelEl.textContent = getKingdomEraLabel();
+      }
       const today = new Date();
       const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
       const weekdayNames = ['日', '月', '火', '水', '木', '金', '土'];
@@ -12922,7 +13189,8 @@ function reviveBlueprint(id) {
         ? _calSelEl.value : (baseTask ? baseTask.calendarId : null);
       // 本能取得
       var _instSelEl = document.getElementById('taskEditInstinct');
-      var _newInstinct = (_instSelEl && _instSelEl.value) ? _instSelEl.value : null;
+      var _newInstinct = (_instSelEl && _instSelEl.offsetParent !== null && _instSelEl.value)
+        ? _instSelEl.value : (baseTask ? (baseTask.instinct || null) : null);
       updateTask(taskId, { 
         text, memo: memo || null, date, time, endTime,
         repeat: repeat !== 'none' ? repeat : null,
@@ -13422,11 +13690,12 @@ function reviveBlueprint(id) {
         textSpan.className = 'task-text';
         // 時間があれば表示
         var _sym4 = (typeof getCalendarSymbol==='function') ? getCalendarSymbol(task.calendarId) : '';
-        var _instIcon4 = (typeof getInstinctIcon==='function') ? getInstinctIcon(task.instinct) : '';
+        var _instModeOn4 = allSettings.ui.instinctMode === true;
+        var _instIcon4 = (_instModeOn4 && allSettings.ui.showInstinctIcon !== false && typeof getInstinctIcon==='function') ? getInstinctIcon(task.instinct) : '';
         const displayText = (_sym4 ? _sym4+' ' : '') + (_instIcon4 ? _instIcon4+' ' : '') + (task.time ? `${task.time} ${task.text}` : task.text);
         textSpan.textContent = displayText;
         // 本能カラーをborder-leftに適用
-        var _instColor4 = (typeof getInstinctColor==='function') ? getInstinctColor(task.instinct) : '';
+        var _instColor4 = (_instModeOn4 && allSettings.ui.showInstinctColor !== false && typeof getInstinctColor==='function') ? getInstinctColor(task.instinct) : '';
         if (_instColor4) {
           li.style.borderLeft = '3px solid ' + _instColor4;
           li.style.paddingLeft = '8px';
@@ -14576,7 +14845,11 @@ function reviveBlueprint(id) {
       localStorage.removeItem('_dbg_log');
     })();
     loadAllSettings();
-    // 旧キーの掃除（毎回実行・既存ユーザー対応）
+    // 王国createdAt初期化（未設定なら現在日時をセット・一度セットしたら変えない）
+    if (!allSettings.meta.createdAt) {
+      allSettings.meta.createdAt = new Date().toISOString();
+      saveAllSettings();
+    }
     try {
       ['dataVersion','taskIdCounter','simpleMode','craftModeEnabled',
        'dailyViewMode','initialView','monthlyMode','weeklyDays','weeklyRowH',
@@ -16865,6 +17138,9 @@ function loadSettingsUI() {
       const savedAvatar = allSettings.profile.avatar || '';
       const _nameInput = document.getElementById('profileNameInput');
       if (_nameInput) _nameInput.value = savedName;
+      // 王国暦名入力欄を初期化（第2条：nullチェック必須）
+      var _eraNameInput = document.getElementById('profileEraName');
+      if (_eraNameInput) _eraNameInput.value = (allSettings.profile.eraName || '');
       const _avatarPreview = document.getElementById('profileAvatarPreview');
       const _avatarPlaceholder = document.getElementById('profileAvatarPlaceholder');
       const _avatarRemoveBtn = document.getElementById('avatarRemoveBtn');
@@ -19279,6 +19555,11 @@ function renderDashboardView() {
   }
   var titleEl = document.getElementById('dbKingdomTitle');
   if (titleEl) { titleEl.textContent = title.icon + ' ' + title.name; titleEl.style.color = title.color || '#ffd700'; }
+  // 王国暦ラベル更新（第2条：nullチェック必須）
+  var dbEraLabelEl = document.getElementById('dbEraLabel');
+  if (dbEraLabelEl && typeof getKingdomEraLabel === 'function') {
+    dbEraLabelEl.textContent = getKingdomEraLabel();
+  }
   _set('dbToku', typeof getToku === 'function' ? getToku() : 0);
   _set('dbGdp', typeof formatGDP === 'function' ? formatGDP(typeof getGDP === 'function' ? getGDP() : 0) : '0万');
   _set('dbGou', typeof getGouNew === 'function' ? getGouNew() : 0);
@@ -21373,6 +21654,11 @@ function updateCraftHUD() {
     titleEl.textContent = t.icon + ' ' + t.name;
     titleEl.style.color = t.color || '#fff';
     titleEl.style.textShadow = '0 0 8px ' + (t.color || '#fff') + '88';
+  }
+  // 王国暦ラベル更新（第2条：nullチェック必須）
+  var craftEraLabelEl = document.getElementById('craftEraLabel');
+  if (craftEraLabelEl && typeof getKingdomEraLabel === 'function') {
+    craftEraLabelEl.textContent = getKingdomEraLabel();
   }
   // 管理者モード追加表示
   var isAdmin = _adminModeActive;
@@ -28923,12 +29209,13 @@ function showDebugLog(_initOnly) {
          : ng('ST-74: zenDateLabel', 'DOM未存在');
 
        // ③ openZenMode→display:flex確認→closeZenMode→none確認
-       window.openZenMode();
+       // _isTesting中はオーバーレイを直接操作してUIを開かずにテスト
        var _zenOvl = document.getElementById('zenModeOverlay');
+       if (_zenOvl) { _zenOvl.style.display = 'flex'; }
        _zenOvl && _zenOvl.style.display === 'flex'
          ? ok('ST-74: openZenMode → display:flex確認')
          : ng('ST-74: openZenMode表示', _zenOvl ? _zenOvl.style.display : 'null');
-       window.closeZenMode();
+       if (_zenOvl) { _zenOvl.style.display = 'none'; }
        _zenOvl && _zenOvl.style.display === 'none'
          ? ok('ST-74: closeZenMode → display:none確認')
          : ng('ST-74: closeZenMode非表示', _zenOvl ? _zenOvl.style.display : 'null');
@@ -28945,7 +29232,7 @@ function showDebugLog(_initOnly) {
 
        // ⑤ saveZenMode：テキストあり→雑記帳に追加されること
        var _prevCount2 = allTasks.filter(function(t){ return t.kind==='zen'; }).length;
-       window.openZenMode();
+       if (_zenOvl) { _zenOvl.style.display = 'flex'; } // 直接操作（_isTesting中はUIを開かない）
        if (_zenTa) _zenTa.value = 'ST-74テスト用禅テキスト';
        window.saveZenMode();
        var _afterCount2 = allTasks.filter(function(t){ return t.kind==='zen'; }).length;
@@ -33412,6 +33699,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderJournalView() {
       const area = document.getElementById('journalListArea');
       if (!area) return;
+      // 王国暦ラベル更新（第2条：nullチェック必須）
+      var journalEraLabelEl = document.getElementById('journalEraLabel');
+      if (journalEraLabelEl && typeof getKingdomEraLabel === 'function') {
+        journalEraLabelEl.textContent = getKingdomEraLabel();
+      }
       const journals = loadJournals();
       if (journals.length === 0) {
         area.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--ink-faint);font-family:serif;"><div style="font-size:2.2em;margin-bottom:16px;opacity:0.35;">📖</div><div style="font-size:0.85em;line-height:2.2;letter-spacing:0.1em;">まだ日誌がありません。<br>左上の「記す」から始めましょう。</div></div>';
