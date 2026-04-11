@@ -148,7 +148,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.40.0';
+    const APP_VERSION = 'v0.40.1';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -10106,18 +10106,23 @@ function getKingdomEraLabel(targetDate) {
   var eraName = (allSettings && allSettings.profile && allSettings.profile.eraName)
     || '王国';
   // 開始日の導出（3段階フォールバック）
+  // ①allTasksの最古createdAt（最も信頼できる実績値）
+  // ②allSettings.meta.createdAt（初回起動時刻）
+  // ③今日
   var startDate = null;
-  var startStr = (allSettings && allSettings.meta && allSettings.meta.createdAt) || null;
-  if (startStr) {
-    var _d1 = new Date(startStr);
-    if (!isNaN(_d1.getTime())) startDate = _d1;
-  }
-  if (!startDate && typeof allTasks !== 'undefined' && allTasks && allTasks.length > 0) {
+  if (typeof allTasks !== 'undefined' && allTasks && allTasks.length > 0) {
     var _oldest = allTasks
       .map(function(t){ return t.createdAt ? new Date(t.createdAt) : null; })
       .filter(function(d){ return d && !isNaN(d.getTime()); })
       .sort(function(a, b){ return a - b; })[0];
     if (_oldest) startDate = _oldest;
+  }
+  if (!startDate) {
+    var startStr = (allSettings && allSettings.meta && allSettings.meta.createdAt) || null;
+    if (startStr) {
+      var _d1 = new Date(startStr);
+      if (!isNaN(_d1.getTime())) startDate = _d1;
+    }
   }
   if (!startDate) startDate = new Date();
   // 表示対象の日（引数 or 今日）
