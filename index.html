@@ -161,7 +161,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.26';
+    const APP_VERSION = 'v0.44.27';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3781,30 +3781,6 @@ END OF 開発ルール
     </div>
   </div>
   <div class="container" style="position:relative;">
-    <!-- 多層マトリクス中心円 -->
-    <div id="matrixCenterCircle" style="
-      position:fixed; top:50%; left:50%;
-      transform:translate(-50%,-50%);
-      width:76px; height:76px;
-      border-radius:50%;
-      background:#1976d2;
-      color:#fff;
-      font-size:0.6em;
-      font-weight:700;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      text-align:center;
-      line-height:1.2;
-      z-index:200;
-      box-shadow:0 2px 12px rgba(0,0,0,0.32);
-      padding:4px;
-      cursor:pointer;
-      border:2px solid rgba(255,255,255,0.8);
-      word-break:break-all;
-      overflow-wrap:break-word;
-      hyphens:auto;
-    " onclick="switchMatrixLayer()" title="タップでレイヤー切り替え">今ここで</div>
     <!-- 左上: 緊急かつ重要 -->
     <div class="section" id="section1">
       <div class="header-row">
