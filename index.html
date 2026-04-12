@@ -161,7 +161,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.109';
+    const APP_VERSION = 'v0.44.110';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -19880,7 +19880,7 @@ function loadSettingsUI() {
               if (_m) { _m.style.display = 'none'; _m.style.opacity = '1'; _m.style.transition = ''; }
             }, 1000);
           }
-        }, 35000);
+        }, 32000);
       } catch(e) { console.error('kazedayori:', e); }
     }
 
@@ -23026,7 +23026,7 @@ window.addEventListener('afterprint', function() {
     #kazedayoriScroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 99px; }
   </style>
   <div id="kazedayoriModal" style="display:none;position:fixed;inset:0;z-index:99990;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;padding:20px;box-sizing:border-box;" onclick="if(event.target.id==='kazedayoriModal')closeKazedayoriModal()">
-    <div id="kazedayoriCard" style="width:100%;max-width:400px;border-radius:28px;box-shadow:0 16px 48px rgba(0,0,0,0.22);position:relative;display:flex;flex-direction:column;max-height:86vh;">
+    <div id="kazedayoriCard" style="width:100%;max-width:400px;border-radius:28px;box-shadow:0 16px 48px rgba(0,0,0,0.22);position:relative;display:flex;flex-direction:column;max-height:92vh;">
       <!-- スクロール可能なコンテンツ -->
       <div id="kazedayoriScroll" style="padding:28px 24px 16px;overflow-y:auto;flex:1;border-radius:28px 28px 0 0;">
         <div style="font-size:1.35em;font-weight:800;letter-spacing:0.06em;margin-bottom:6px;" id="kazedayoriLabel">🌸 季節の風だより</div>
