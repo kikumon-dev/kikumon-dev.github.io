@@ -161,7 +161,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.50';
+    const APP_VERSION = 'v0.44.51';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3802,7 +3802,7 @@ END OF 開発ルール
       <ul class="task-list" id="list1"></ul>
     </div>
     <!-- 多層マトリクス中心円: containerグリッドの中心にabsoluteで配置 -->
-    <div id="matrixCenterCircle" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);-webkit-transform:translate(-50%,-50%);width:76px;height:76px;border-radius:50%;background:#1976d2;color:#fff;font-size:0.6em;font-weight:700;display:none;align-items:center;justify-content:center;text-align:center;line-height:1.2;z-index:100;box-shadow:0 4px 16px rgba(0,0,0,0.35);padding:4px;cursor:pointer;border:3px solid rgba(255,255,255,0.9);word-break:break-all;opacity:0.82;" onclick="switchMatrixLayer()" title="タップでレイヤー切り替え">今ここで</div>
+    <div id="matrixCenterCircle" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);-webkit-transform:translate(-50%,-50%);width:76px;height:76px;border-radius:50%;background:#1976d2;color:#fff;font-size:0.8em;font-weight:700;display:none;align-items:center;justify-content:center;text-align:center;line-height:1.2;z-index:100;box-shadow:0 4px 16px rgba(0,0,0,0.35);padding:4px;cursor:pointer;border:3px solid rgba(255,255,255,0.9);word-break:break-all;opacity:0.82;text-shadow:0 1px 3px rgba(0,0,0,0.5);overflow:hidden;" onclick="switchMatrixLayer()" title="タップでレイヤー切り替え">今ここで</div>
     <!-- 右上: 緊急でないが重要 -->
     <div class="section" id="section2">
       <div class="simple-header">
