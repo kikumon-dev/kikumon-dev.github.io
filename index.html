@@ -148,7 +148,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.41.0';
+    const APP_VERSION = 'v0.41.3';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -6674,6 +6674,11 @@ function switchSearchTab(tab) {
       } else if (mode === 'today') {
         var todayStr = getLocalDateStr(new Date());
         task.date = todayStr;
+        // displayScopeが未設定・heaven・nullの場合のみ補完（sectionは元の値を尊重）
+        // displayScope未設定だとgetDailyTasksのフィルタで弾かれてマトリクスに出ない
+        if (!task.displayScope || task.displayScope === 'heaven') {
+          task.displayScope = 'daily_only';
+        }
         task.updatedAt = new Date().toISOString();
         saveAllTasks();
         showToast('今日に移しました', { type: 'success', duration: 2000 });
@@ -25569,11 +25574,15 @@ function showDebugLog(_initOnly) {
 
      // ===== ST-4: switchView挙動テスト =====
      try {
-       var _origView = allSettings.ui && allSettings.ui.lastView;
+       // 月間が非表示設定の場合は一時的にONにしてテスト
+       var _st4MonthlyOrig = allSettings.ui.visibleTabs && allSettings.ui.visibleTabs.monthly;
+       if (allSettings.ui.visibleTabs) allSettings.ui.visibleTabs.monthly = true;
        switchView('monthly');
        var _monthlyEl = document.getElementById('monthlyView');
        var _ok = _monthlyEl && _monthlyEl.style.display !== 'none';
        switchView('daily');
+       // 設定を復元
+       if (allSettings.ui.visibleTabs) allSettings.ui.visibleTabs.monthly = _st4MonthlyOrig;
        _ok ? ok('ST-4: switchView挙動: monthly切替→表示確認→復帰OK') : ng('ST-4: switchView挙動', 'monthlyView非表示');
      } catch(e) { ng('ST-4: switchView挙動', e.message); }
 
