@@ -161,7 +161,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.106';
+    const APP_VERSION = 'v0.44.108';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -35334,6 +35334,13 @@ document.addEventListener('DOMContentLoaded', function() {
   if (overlay) overlay.addEventListener('click', function(e){ if(e.target===overlay) hideTutorial(); });
   if (!allSettings.flags.tutorialSeen) {
     setTimeout(showTutorial, 800);
+  }
+
+  // URLハッシュ #polestar で北極星モーダルを自動起動（バックエンドと衝突しないハッシュ設計）
+  if (window.location.hash === '#polestar') {
+    setTimeout(function() {
+      if (typeof openPolestarModal === 'function') openPolestarModal();
+    }, 1200);
   }
 });
 function openLpModal(type) {
