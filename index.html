@@ -161,7 +161,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.25';
+    const APP_VERSION = 'v0.44.26';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3783,7 +3783,7 @@ END OF 開発ルール
   <div class="container" style="position:relative;">
     <!-- 多層マトリクス中心円 -->
     <div id="matrixCenterCircle" style="
-      position:absolute; top:50%; left:50%;
+      position:fixed; top:50%; left:50%;
       transform:translate(-50%,-50%);
       width:76px; height:76px;
       border-radius:50%;
@@ -3791,13 +3791,13 @@ END OF 開発ルール
       color:#fff;
       font-size:0.6em;
       font-weight:700;
-      display:flex;
+      display:none;
       align-items:center;
       justify-content:center;
       text-align:center;
       line-height:1.2;
-      z-index:10;
-      box-shadow:0 2px 8px rgba(0,0,0,0.18);
+      z-index:200;
+      box-shadow:0 2px 12px rgba(0,0,0,0.32);
       padding:4px;
       cursor:pointer;
       border:2px solid rgba(255,255,255,0.8);
@@ -11025,6 +11025,7 @@ function renderMatrixLayer() {
     var _centerText = layer.center || '';
     circle.textContent = _centerText;
     circle.style.background = layer.centerColor || '#1976d2';
+    circle.style.display = 'flex';
     // 文字数に応じてフォントサイズを動的調整（はみ出し防止）
     var _len = _centerText.length;
     var _fs = _len <= 2  ? '0.82em'
