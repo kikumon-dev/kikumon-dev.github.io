@@ -161,7 +161,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.0';
+    const APP_VERSION = 'v0.44.24';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3575,6 +3575,19 @@ END OF 開発ルール
     }, 1020);
   }
   setTimeout(closeSplash, 1500);
+
+  // 初回起動時（_splashGreetingSeen未設定 = まだ1回も起動していない）にマトリクス紹介を表示
+  // _splashGreetingSeen は closeSplash前の挨拶生成時に設定済みなので
+  // mig_matrix_intro_v1 フラグで「紹介済みか」を管理
+  setTimeout(function() {
+    if (!localStorage.getItem('mig_matrix_intro_v2')) {
+      localStorage.setItem('mig_matrix_intro_v2', '1');
+      var modal = document.getElementById('matrixIntroModal');
+      if (modal) {
+        modal.style.display = 'flex';
+      }
+    }
+  }, 2200); // スプラッシュが消えた後に表示
 })();
 </script>
 <!-- ===== 起動スプラッシュ ここまで ===== -->
@@ -3772,11 +3785,11 @@ END OF 開発ルール
     <div id="matrixCenterCircle" style="
       position:absolute; top:50%; left:50%;
       transform:translate(-50%,-50%);
-      width:56px; height:56px;
+      width:76px; height:76px;
       border-radius:50%;
       background:#1976d2;
       color:#fff;
-      font-size:0.58em;
+      font-size:0.6em;
       font-weight:700;
       display:flex;
       align-items:center;
@@ -3788,8 +3801,10 @@ END OF 開発ルール
       padding:4px;
       cursor:pointer;
       border:2px solid rgba(255,255,255,0.8);
-      word-break:keep-all;
-    " onclick="switchMatrixLayer()" title="タップでレイヤー切り替え">今日ここで何を成し遂げるか</div>
+      word-break:break-all;
+      overflow-wrap:break-word;
+      hyphens:auto;
+    " onclick="switchMatrixLayer()" title="タップでレイヤー切り替え">今ここで</div>
     <!-- 左上: 緊急かつ重要 -->
     <div class="section" id="section1">
       <div class="header-row">
@@ -4931,6 +4946,41 @@ END OF 開発ルール
     <button onclick="closeRestoreModal()" style="width:100%;padding:11px;border:1.5px solid #e2e8f0;border-radius:12px;background:#fff;color:#888;font-size:0.88em;font-weight:700;cursor:pointer;">キャンセル</button>
   </div>
 </div>
+<!-- ===== マトリクス紹介モーダル（初回起動） ===== -->
+<div id="matrixIntroModal" style="display:none;position:fixed;inset:0;z-index:9800;background:rgba(20,15,8,0.85);align-items:center;justify-content:center;">
+  <div style="background:#fffdf7;border-radius:20px;padding:28px 24px;max-width:340px;width:92%;margin:auto;box-shadow:0 8px 40px rgba(0,0,0,0.25);">
+    <div style="text-align:center;font-size:1.5em;margin-bottom:4px;">🗂️</div>
+    <div style="text-align:center;font-weight:800;font-size:1.05em;color:#3e2c10;margin-bottom:6px;">マトリクスには40の視点があります</div>
+    <div style="font-size:0.78em;color:#7a6040;line-height:1.7;margin-bottom:16px;text-align:center;">毎日同じ画面でも、見方を変えれば<br>タスクの意味が変わります。</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px;">
+      <div style="background:#f0f4ff;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;">
+        <span style="font-size:1.2em;">⚔️</span>
+        <div><div style="font-size:0.8em;font-weight:700;color:#1a237e;">アイゼンハワー</div><div style="font-size:0.72em;color:#5c6bc0;">重要度×緊急度で今日を整理</div></div>
+      </div>
+      <div style="background:#fff3e0;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;">
+        <span style="font-size:1.2em;">🧬</span>
+        <div><div style="font-size:0.8em;font-weight:700;color:#e65100;">本能マトリクス</div><div style="font-size:0.72em;color:#ef6c00;">欲で動く。だから続く。</div></div>
+      </div>
+      <div style="background:#e8f5e9;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;">
+        <span style="font-size:1.2em;">💪</span>
+        <div><div style="font-size:0.8em;font-weight:700;color:#1b5e20;">アドラー</div><div style="font-size:0.72em;color:#388e3c;">課題の分離・共同体感覚</div></div>
+      </div>
+    </div>
+    <div style="font-size:0.75em;color:#7a6040;line-height:1.9;margin-bottom:16px;background:#fffbe8;border-radius:10px;padding:10px 14px;">
+      📊 日次の <b>「マトリクス」タブをタップ</b> するたびに<br>
+      視点が切り替わります。<br>
+      <span style="color:#aaa;font-size:0.9em;">※ 中央の円をタップしても切り替わります</span><br><br>
+      <b>設定 → マトリクス層の表示設定</b> で<br>
+      使いたい層だけに絞れます。<br>
+      <span style="color:#aaa;font-size:0.92em;">まずは3〜5層に絞るのがおすすめ。</span>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="closeMatrixIntroModal();switchView('daily');setTimeout(function(){switchDailyTab('matrix');},200);" style="flex:1;padding:13px;background:linear-gradient(135deg,#d4a843,#b8860b);border:none;border-radius:12px;color:#fff;font-size:0.88em;font-weight:700;cursor:pointer;">✨ 日次で試してみる</button>
+      <button onclick="closeMatrixIntroModal();switchView('settings');" style="padding:13px 14px;background:rgba(212,168,67,0.12);border:1px solid rgba(212,168,67,0.4);border-radius:12px;color:#b8860b;font-size:0.88em;font-weight:700;cursor:pointer;">⚙️ 設定で絞る</button>
+    </div>
+  </div>
+</div>
+<!-- ===== マトリクス紹介モーダル ここまで ===== -->
 <div id="settingsView"  class="settings-view" style="display: none; background:#f5f5f5; position:relative; z-index:1;">
     <div class="settings-container">
       <h2 style="margin: 0 0 30px 0; color: #262626; font-size: 1.4em; font-weight: 700; letter-spacing: -0.01em;">設定</h2>
@@ -4948,9 +4998,9 @@ END OF 開発ルール
         <!-- 多層マトリクス 解放コントロール -->
         <div style="margin-top:14px;border-top:1px solid #333;padding-top:14px;">
           <div style="font-size:0.82em;font-weight:700;color:#ffd700;margin-bottom:8px;">🏛️ 秘匿マトリクス解放</div>
-          <p style="font-size:0.72em;color:#888;margin:0 0 10px 0;">最高倫理・天命マトリクスの表示を制御します</p>
+          <p style="font-size:0.72em;color:#888;margin:0 0 10px 0;">最高倫理マトリクスの表示を制御します</p>
           <button onclick="toggleLockedMatrixLayer('ethics')" id="adminEthicsBtn" style="width:100%;padding:9px;background:transparent;border:1px solid #880e4f;border-radius:8px;color:#f48fb1;font-size:0.82em;cursor:pointer;margin-bottom:6px;">🏛️ 最高倫理マトリクス: <span id="adminEthicsStatus">非表示</span></button>
-          <button onclick="toggleLockedMatrixLayer('destiny')" id="adminDestinyBtn" style="width:100%;padding:9px;background:transparent;border:1px solid #212121;border-radius:8px;color:#9e9e9e;font-size:0.82em;cursor:pointer;margin-bottom:6px;">🏛️ 天命マトリクス: <span id="adminDestinyStatus">非表示</span></button>
+          <button onclick="toggleLockedMatrixLayer('destiny')" id="adminDestinyBtn" style="width:100%;padding:9px;background:transparent;border:1px solid #212121;border-radius:8px;color:#9e9e9e;font-size:0.82em;cursor:pointer;margin-bottom:6px;">🏛️ 天命マトリクス: <span id="adminDestinyStatus">（kingdom tier）</span></button>
         </div>
         <button onclick="toggleAdminMode()" style="width:100%;padding:9px;background:transparent;border:1px solid #555;border-radius:8px;color:#888;font-size:0.82em;cursor:pointer;">🔒 管理者モードを解除する</button>
         <!-- 申請承認パネル -->
@@ -5387,6 +5437,12 @@ END OF 開発ルール
             style="width:16px;height:16px;accent-color:#e57373;cursor:pointer;">
           <span style="font-size:0.85em;color:#555;">本能カラーを表示する</span>
         </label>
+      </div>
+      <!-- マトリクス層表示設定 -->
+      <div style="background:#fff;border-radius:12px;padding:16px 18px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+        <div style="font-size:0.8em;color:#888;font-weight:700;letter-spacing:.08em;margin-bottom:4px;">🗂️ マトリクス層の表示設定</div>
+        <div style="font-size:0.75em;color:#aaa;margin-bottom:12px;">チェックした層だけが中央円タップで切り替えられます</div>
+        <div id="matrixLayerCheckList" style="display:flex;flex-direction:column;gap:8px;"></div>
       </div>
 <div class="settings-section">
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">👨‍👩‍👧 家族と共有</h3>
@@ -6046,8 +6102,9 @@ END OF 開発ルール
         kingdomMode:      'kingdom',
         kingdomModeBase:  'kingdom',
         matrixLayer:      0,  // 多層マトリクスの現在レイヤー（0=アイゼンハワー）
+        pinnedMatrixLayers: null, // ピン留め層のid配列（nullは全層表示）
         unlockedSecretLayers: [],  // 管理者解放済みの秘匿レイヤーID配列
-        instinctMode:     false,
+        instinctMode:     true,
         showInstinctIcon:  true,
         showInstinctColor: true,
         visibleTabs: {
@@ -10234,7 +10291,7 @@ var MATRIX_LAYERS = [
     id: 'eisenhower',
     icon: '🗺️',
     label: 'マトリクス',
-    center: '今日ここで何を成し遂げるか',
+    center: '今ここで',
     centerColor: '#1976d2',
     tier: 'free',
     sections: [
@@ -10569,7 +10626,7 @@ var MATRIX_LAYERS = [
   ,{
     id: 'highest_ethics',
     icon: '🕊️',
-    label: '最高倫理マトリクス',
+    label: '深愛公徳マトリクス',
     center: '信仰心',
     centerColor: '#880e4f',
     tier: 'kingdom',
@@ -10581,17 +10638,227 @@ var MATRIX_LAYERS = [
     ]
   },
   {
+    id: 'adler',
+    icon: '💪',
+    label: 'アドラーマトリクス',
+    center: '勇気',
+    centerColor: '#1565c0',
+    tier: 'kingdom',
+    sections: [
+      { label: '課題の分離（自分の課題に集中する）',   color: '#e3f2fd', ph: '今日、他者の課題を手放し自分の課題に向かう行動は？' },
+      { label: '共同体感覚（貢献・つながりを感じる）', color: '#e8f5e9', ph: '今日、誰かの役に立ち所属感を感じる行動は？' },
+      { label: '劣等感の克服（比較でなく成長を選ぶ）', color: '#fff8e1', ph: '今日、他者比較をやめ昨日の自分より成長する行動は？' },
+      { label: '勇気づけ（自他を励ます）',             color: '#fce4ec', ph: '今日、自分や誰かを勇気づける行動は？' },
+    ]
+  },
+  {
+    id: 'keitenaijin',
+    icon: '🌅',
+    label: '敬天愛人マトリクス',
+    center: '敬天愛人',
+    centerColor: '#b71c1c',
+    tier: 'kingdom',
+    sections: [
+      { label: '敬天（天理・道理を敬う）',       color: '#fff8e1', ph: '今日、道理・自然の摂理に従う行動は？' },
+      { label: '愛人（人を愛し尽くす）',         color: '#fce4ec', ph: '今日、目の前の人を誠実に愛する行動は？' },
+      { label: '克己（私欲に勝つ）',             color: '#e8f5e9', ph: '今日、私欲・怠惰に打ち勝つ行動は？' },
+      { label: '誠実（偽りなく行動する）',       color: '#e8eaf6', ph: '今日、名誉・利益より誠実さを選ぶ行動は？' },
+    ]
+  },
+  {
+    id: 'buddhism',
+    icon: '☸️',
+    label: '仏教マトリクス',
+    center: '空',
+    centerColor: '#4a148c',
+    tier: 'kingdom',
+    sections: [
+      { label: '縁起（すべては関係の中にある）', color: '#ede7f6', ph: '今日、他者・環境とのつながりに気づき感謝する行動は？' },
+      { label: '無常（変化を受け入れる）',       color: '#f3e5f5', ph: '今日、執着を手放し変化の流れに乗る行動は？' },
+      { label: '無我（自己へのこだわりを解く）', color: '#e8eaf6', ph: '今日、「自分」という固定観念を緩め他者に開く行動は？' },
+      { label: '中道（極端を避ける）',           color: '#e1f5fe', ph: '今日、過剰・不足を避けちょうどよいバランスを保つ行動は？' },
+    ]
+  },
+  {
+    id: 'three_poisons',
+    icon: '🐍',
+    label: '三毒マトリクス（仏教）',
+    center: '三毒の滅',
+    centerColor: '#6a1b9a',
+    tier: 'kingdom',
+    sections: [
+      { label: '貪（とん）—欲望・執着を観る', color: '#fce4ec', ph: '今日、「もっと欲しい」という執着を手放す行動は？' },
+      { label: '瞋（じん）—怒り・嫌悪を観る', color: '#fff3e0', ph: '今日、怒りや嫌悪を静め穏やかに対処する行動は？' },
+      { label: '痴（ち）—無明・無知を観る',   color: '#f3e5f5', ph: '今日、思い込みや無知に気づき正しく見る行動は？' },
+      { label: '解脱—三毒を超える',           color: '#e8f5e9', ph: '今日、貪瞋痴に縛られず自由に行動できることは？' },
+    ]
+  },
+  {
+    id: 'eightfold_path',
+    icon: '⚙️',
+    label: '八正道マトリクス（仏教）',
+    center: '正道',
+    centerColor: '#1a237e',
+    tier: 'kingdom',
+    sections: [
+      { label: '正見・正思（智慧）',   color: '#e8eaf6', ph: '今日、物事をありのままに見て正しく考える行動は？' },
+      { label: '正語・正業（戒律①）', color: '#e1f5fe', ph: '今日、正しい言葉と行動で人と関わる行動は？' },
+      { label: '正命・正精進（戒律②）',color: '#e8f5e9', ph: '今日、正しい生計を立て継続的に努力する行動は？' },
+      { label: '正念・正定（禅定）',   color: '#ede7f6', ph: '今日、今ここに意識を向け心を静める行動は？' },
+    ]
+  },
+  {
+    id: 'christianity',
+    icon: '✝️',
+    label: 'キリスト教マトリクス',
+    center: '愛',
+    centerColor: '#b71c1c',
+    tier: 'kingdom',
+    sections: [
+      { label: '信仰（神への信頼）', color: '#fce4ec', ph: '今日、見えないものを信じ委ねる行動は？' },
+      { label: '希望（未来への期待）', color: '#fff8e1', ph: '今日、希望を持ち続けるために心がける行動は？' },
+      { label: '愛（隣人への奉仕）',   color: '#ffebee', ph: '今日、隣人を自分のように愛する具体的な行動は？' },
+      { label: '悔い改め（刷新）',     color: '#e8f5e9', ph: '今日、誤りを認め新たに出発する行動は？' },
+    ]
+  },
+  {
+    id: 'islam',
+    icon: '☪️',
+    label: 'イスラム教マトリクス',
+    center: '五行',
+    centerColor: '#1a237e',
+    tier: 'kingdom',
+    sections: [
+      { label: 'シャハーダ（信仰告白・誠実）', color: '#e3f2fd', ph: '今日、誠実さと一貫性を貫く行動は？' },
+      { label: 'サラート（礼拝・規律）',       color: '#e8f5e9', ph: '今日、一日に立ち止まり感謝する習慣の行動は？' },
+      { label: 'ザカート（喜捨・貢献）',       color: '#fff3e0', ph: '今日、持てるものを他者と分かち合う行動は？' },
+      { label: 'サウム（断食・節制）',         color: '#fce4ec', ph: '今日、欲を抑制し精神を鍛える行動は？' },
+    ]
+  },
+  {
+    id: 'judaism',
+    icon: '✡️',
+    label: 'ユダヤ教マトリクス',
+    center: 'ティクン',
+    centerColor: '#0d47a1',
+    tier: 'kingdom',
+    sections: [
+      { label: 'トーラー学習（学びの継続）', color: '#e3f2fd', ph: '今日、学び知恵を深める行動は？' },
+      { label: 'ツェダカー（正義・公正）',   color: '#e8f5e9', ph: '今日、正義を実践し弱者を助ける行動は？' },
+      { label: 'ティクン・オラム（世界の修復）', color: '#fff8e1', ph: '今日、世界をより良くするための小さな行動は？' },
+      { label: 'ハカラット・ハトーブ（感謝）', color: '#fce4ec', ph: '今日、与えられたことへの感謝を表す行動は？' },
+    ]
+  },
+  {
+    id: 'shinto',
+    icon: '⛩️',
+    label: '神道マトリクス',
+    center: '清明心',
+    centerColor: '#1b5e20',
+    tier: 'kingdom',
+    sections: [
+      { label: '清（清潔・清浄）',   color: '#e8f5e9', ph: '今日、心と環境を清める行動は？' },
+      { label: '明（誠実・明朗）',   color: '#fff8e1', ph: '今日、明るく誠実に人と向き合う行動は？' },
+      { label: '正（公正・正直）',   color: '#e3f2fd', ph: '今日、曲がらず正しく行動することは？' },
+      { label: '直（素直・感謝）',   color: '#fce4ec', ph: '今日、自然の恵みと縁に感謝し素直に生きる行動は？' },
+    ]
+  },
+  {
+    id: 'six_roots',
+    icon: '🌿',
+    label: '六根清浄マトリクス（神道）',
+    center: '清浄',
+    centerColor: '#2e7d32',
+    tier: 'kingdom',
+    sections: [
+      { label: '眼・耳・鼻を清める（感覚の浄化）', color: '#e8f5e9', ph: '今日、見るもの・聞くものを意識して選び心を清める行動は？' },
+      { label: '舌・身を清める（言動の浄化）',     color: '#f1f8e9', ph: '今日、言葉と身体の使い方を慎み清める行動は？' },
+      { label: '意を清める（心の浄化）',           color: '#e0f2f1', ph: '今日、心の中の濁りや雑念を祓い澄ませる行動は？' },
+      { label: '六根一体（全体の統合）',           color: '#e8f5e9', ph: '今日、感覚・言動・心が一致している状態をつくる行動は？' },
+    ]
+  },
+  {
+    id: 'oharae',
+    icon: '🌊',
+    label: '大祓マトリクス（神道）',
+    center: '祓',
+    centerColor: '#0277bd',
+    tier: 'kingdom',
+    sections: [
+      { label: '祓（はらえ）—罪穢れを祓う', color: '#e1f5fe', ph: '今日、心に溜まった罪悪感・後悔・雑念を手放す行動は？' },
+      { label: '禊（みそぎ）—身を清める',   color: '#e3f2fd', ph: '今日、身体と環境を清め新鮮な状態に整える行動は？' },
+      { label: '感謝—神恩に感謝する',       color: '#fff8e1', ph: '今日、生かされていることへの感謝を表す行動は？' },
+      { label: '奉仕—社会・共同体への貢献', color: '#e8f5e9', ph: '今日、自分より大きなものに奉仕する行動は？' },
+    ]
+  },
+  {
+    id: 'musubi',
+    icon: '🌀',
+    label: '産霊マトリクス（神道）',
+    center: 'むすひ',
+    centerColor: '#6a1b9a',
+    tier: 'kingdom',
+    sections: [
+      { label: '天地（あめつち）—大いなる流れに乗る', color: '#f3e5f5', ph: '今日、天地自然の流れに逆らわず乗る行動は？' },
+      { label: '結び—縁をつなぐ・関係を育てる',     color: '#fce4ec', ph: '今日、人・もの・ことの縁を結ぶ行動は？' },
+      { label: '生成（なりなり）—創造・生み出す',   color: '#fff8e1', ph: '今日、新しいものを生み出し世界に加える行動は？' },
+      { label: '霊（たま）—魂を磨く',               color: '#e8eaf6', ph: '今日、自分の魂・本質を磨き高める行動は？' },
+    ]
+  },
+  {
+    id: 'zoroaster',
+    icon: '🔥',
+    label: 'ゾロアスター教マトリクス',
+    center: '善思善言善行',
+    centerColor: '#e65100',
+    tier: 'kingdom',
+    sections: [
+      { label: '善思（フマタ）', color: '#fff3e0', ph: '今日、善い思考・正しい動機から始める行動は？' },
+      { label: '善言（フフタ）', color: '#e8f5e9', ph: '今日、真実の言葉・建設的な言葉を使う行動は？' },
+      { label: '善行（フヴァルシュタ）', color: '#fce4ec', ph: '今日、光の側に立ち善い行いを実践する行動は？' },
+      { label: '悪の克服（ドゥルジの否定）', color: '#e3f2fd', ph: '今日、嘘・怠惰・不正を断ち切る行動は？' },
+    ]
+  },
+  {
+    id: 'taoism',
+    icon: '☯️',
+    label: '道教マトリクス',
+    center: '道',
+    centerColor: '#37474f',
+    tier: 'kingdom',
+    sections: [
+      { label: '無為（作為しない自然な行動）', color: '#eceff1', ph: '今日、力まず自然な流れに乗る行動は？' },
+      { label: '柔弱（しなやかな強さ）',       color: '#e8f5e9', ph: '今日、柔軟に対応し流れに逆らわない行動は？' },
+      { label: '虚心（先入観を手放す）',       color: '#e3f2fd', ph: '今日、固定観念を手放し空白を作る行動は？' },
+      { label: '知足（足るを知る）',           color: '#fff8e1', ph: '今日、今あるものに満足し感謝する行動は？' },
+    ]
+  },
+  {
+    id: 'manichaeism',
+    icon: '💫',
+    label: 'マニ教マトリクス',
+    center: '光',
+    centerColor: '#f57f17',
+    tier: 'kingdom',
+    sections: [
+      { label: '光の探求（真理の追求）', color: '#fffde7', ph: '今日、真理・本質を追い求める行動は？' },
+      { label: '闇の克服（欲望の制御）', color: '#f3e5f5', ph: '今日、物質的欲望や執着を手放す行動は？' },
+      { label: '節制（身体・行動の純化）', color: '#e8f5e9', ph: '今日、言葉・食・行動を慎む行動は？' },
+      { label: '光の解放（他者への貢献）', color: '#e3f2fd', ph: '今日、他者の中の光を引き出す行動は？' },
+    ]
+  },
+  {
     id: 'tenmei',
     icon: '✨',
     label: '天命マトリクス',
-    center: '神約束',
-    centerColor: '#212121',
-    tier: 'locked',
+    center: '今世の天命',
+    centerColor: '#1a1a2e',
+    tier: 'kingdom',
     sections: [
-      { label: '', color: '#f9f9f9', ph: '' },
-      { label: '', color: '#f9f9f9', ph: '' },
-      { label: '', color: '#f9f9f9', ph: '' },
-      { label: '', color: '#f9f9f9', ph: '' },
+      { label: '', color: '#fafafa', ph: 'あなたが今世に与えられた使命は何ですか？（召命）' },
+      { label: '', color: '#fafafa', ph: 'その天命に、あなたはどう応えますか？（応答）' },
+      { label: '', color: '#fafafa', ph: ' 今日、天命に沿った具体的な行動は？（実践）' },
+      { label: '', color: '#fafafa', ph: 'あなたが次の世代に継ぎたいものは何ですか？（継承）' },
     ]
   },
 ];
@@ -10657,9 +10924,13 @@ function getUnlockedMatrixLayers() {
   var kmTier = { camp: 0, village: 1, town: 2, kingdom: 3, custom: 3 };
   var userTier = kmTier[km] !== undefined ? kmTier[km] : 0;
   var secretUnlocked = (allSettings.ui && allSettings.ui.unlockedSecretLayers) || [];
+  var pinnedLayers = (allSettings.ui && allSettings.ui.pinnedMatrixLayers) || null;
   return (typeof MATRIX_LAYERS !== 'undefined' ? MATRIX_LAYERS : []).filter(function(layer) {
     if (layer.tier === 'locked') return secretUnlocked.indexOf(layer.id) !== -1;
-    return (tierOrder[layer.tier] || 0) <= userTier;
+    if ((tierOrder[layer.tier] || 0) > userTier) return false;
+    // ピン留めが設定されていれば絞り込み（nullは全層表示）
+    if (pinnedLayers && pinnedLayers.length > 0) return pinnedLayers.indexOf(layer.id) !== -1;
+    return true;
   });
 }
 
@@ -10705,6 +10976,17 @@ function switchMatrixLayer() {
 }
 window.switchMatrixLayer = switchMatrixLayer;
 
+function openMatrixIntroModal() {
+  var modal = document.getElementById('matrixIntroModal');
+  if (modal) modal.style.display = 'flex';
+}
+function closeMatrixIntroModal() {
+  var modal = document.getElementById('matrixIntroModal');
+  if (modal) modal.style.display = 'none';
+}
+window.openMatrixIntroModal = openMatrixIntroModal;
+window.closeMatrixIntroModal = closeMatrixIntroModal;
+
 function renderMatrixLayer() {
   var unlocked = getUnlockedMatrixLayers();
   if (!unlocked.length) return;
@@ -10740,8 +11022,20 @@ function renderMatrixLayer() {
   // ③ 中心円更新
   var circle = document.getElementById('matrixCenterCircle');
   if (circle) {
-    circle.textContent = layer.center || '';
+    var _centerText = layer.center || '';
+    circle.textContent = _centerText;
     circle.style.background = layer.centerColor || '#1976d2';
+    // 文字数に応じてフォントサイズを動的調整（はみ出し防止）
+    var _len = _centerText.length;
+    var _fs = _len <= 2  ? '0.82em'
+            : _len <= 4  ? '0.72em'
+            : _len <= 6  ? '0.60em'
+            : _len <= 8  ? '0.50em'
+            : _len <= 10 ? '0.43em'
+            :               '0.38em';
+    // 折り返し時のline-heightも調整
+    circle.style.lineHeight = _len >= 5 ? '1.15' : '1.3';
+    circle.style.fontSize = _fs;
   }
 }
 window.renderMatrixLayer = renderMatrixLayer;
@@ -15935,7 +16229,8 @@ function reviveBlueprint(id) {
     window._dbgLog('【昇格完了】UUID ENGINE v7 --- 識別子体系、最新世代 / 時は刻まれました');
     window._dbgLog('migrateToUUIDv7 done');
     // mig_*フラグの値を'1'に正規化（'true'が残っている場合）
-    ['mig_ids_to_uuid_v7','mig_show_in_daily_to_display_scope_v1', 'mig_display_scope_empty_v1', 'mig_toku_retroactive_v1','mig_category_to_calendar_v170','mig_death_ghost_flags_v0_24_59'].forEach(k => {
+    ['mig_ids_to_uuid_v7','mig_show_in_daily_to_display_scope_v1', 'mig_display_scope_empty_v1', 'mig_toku_retroactive_v1',
+  'mig_matrix_intro_v2','mig_category_to_calendar_v170','mig_death_ghost_flags_v0_24_59'].forEach(k => {
       if (localStorage.getItem(k)) localStorage.setItem(k, '1');
     });
     // deviceIdがv4またはd-prefix形式ならv7に更新
@@ -15976,6 +16271,7 @@ function reviveBlueprint(id) {
       'mig_gdp_to_oku_v1', 'mig_orphan_taskids_v1', 'mig_done_completed_sync_v1',
       'mig_dedup_tasks_v1', 'mig_dedup_tasks_v2', 'mig_calid_to_settings_v1',
       'mig_toku_retroactive_v1', 'mig_journal_ids_to_uuid_v7',
+      'mig_matrix_intro_v1', 'mig_matrix_intro_v2',
       // 旧バージョン互換（旧ユーザーのデバイスに残存する場合あり・削除不可）
       'journals', 'notebooks', 'nbLastPageId',
       'craftMode', 'gantEnabled',
@@ -16225,6 +16521,60 @@ function reviveBlueprint(id) {
         }
         // 初回のみObserver起動（以降は自動追従）
         if (!nbSpreadMode) { nbInitSpreadObserver(); } else { nbRender(); }
+        // マトリクス紹介ページを自動追加
+        if (!allSettings.flags.nbMatrixIntroPageAdded) {
+          allSettings.flags.nbMatrixIntroPageAdded = true;
+          saveAllSettings();
+          var _mxId = generateTaskId();
+          var _mxNow = new Date().toISOString();
+          var _mxPage = {
+            id: _mxId, kind: 'note',
+            title: '🗂️ マトリクス層ガイド（全40層）',
+            textL:
+              '【マトリクスとは】\n' +
+              '日次タスクを「どの視点で見るか」\nを切り替えるレンズ機能。\n\n' +
+              '◀ ▶ で層を切り替える\n設定→マトリクス層の表示設定\nで使う層だけ絞り込める\n\n' +
+              '---哲学・思想系---\n' +
+              '⚔️ アイゼンハワー（重要度×緊急度）\n' +
+              '🧬 本能マトリクス（4大本能）\n' +
+              '🎓 教育マトリクス\n' +
+              '🎯 使命マトリクス\n' +
+              '☯️ 道教（無為・柔弱・虚心・知足）\n\n' +
+              '---東洋哲学系---\n' +
+              '⚔️ 孫子 / 👼 孟子 / 📖 大学\n' +
+              '🛡️ 墨子 / 📐 管子 / 🏛️ 曾国藩\n' +
+              '📿 陰騭録 / 🔱 王陽明 / ⚖️ 中庸\n' +
+              '🌀 荀子 / 🌊 老子 / ⚖️ 韓非子\n' +
+              '🔮 陸象山 / 📚 朱子学',
+            textR:
+              '---西洋哲学系---\n' +
+              '🏛️ プラトン / ⚖️ アリストテレス\n' +
+              '🌿 ストア派 / ✝️ アクィナス\n' +
+              '💪 アドラー（課題の分離・勇気）\n' +
+              '🌍 普遍的価値 / 📜 五箇条の御誓文\n' +
+              '💝 深愛公徳 / 🌸 敬天愛人\n\n' +
+              '---宗教系---\n' +
+              '☸️ 仏教（空・縁起・無常・無我）\n' +
+              '🐍 三毒（貪・瞋・痴・解脱）\n' +
+              '⚙️ 八正道（智慧・戒律・禅定）\n' +
+              '✝️ キリスト教 / ☪️ イスラム教\n' +
+              '✡️ ユダヤ教 / 🔥 ゾロアスター教\n' +
+              '💫 マニ教\n\n' +
+              '---神道系---\n' +
+              '⛩️ 清明心 / 🌿 六根清浄\n' +
+              '🌊 大祓 / 🌀 産霊（むすひ）\n\n' +
+              '✨ 天命マトリクス（使命の四問）',
+            dateL: '', dateR: '',
+            text: '', margin: '',
+            order: 998,
+            createdAt: _mxNow, updatedAt: _mxNow
+          };
+          var _mxPages = nbPages();
+          _mxPages.push(_mxPage);
+          nbPagesSet(_mxPages);
+          setTimeout(function(){ nbRender(); }, 100);
+        }
+
         // 初回：業と徳の定義ページを自動追加
         if (!allSettings.flags.nbGouTokuPageAdded) {
           allSettings.flags.nbGouTokuPageAdded = true;
@@ -17784,6 +18134,32 @@ function loadSettingsUI() {
       if (_instIconCheck) _instIconCheck.checked = allSettings.ui.showInstinctIcon !== false;
       var _instColorCheck = document.getElementById('showInstinctColorCheck');
       if (_instColorCheck) _instColorCheck.checked = allSettings.ui.showInstinctColor !== false;
+
+      // マトリクス層チェックボックス一覧を動的生成
+      var _mlCheckList = document.getElementById('matrixLayerCheckList');
+      if (_mlCheckList && typeof MATRIX_LAYERS !== 'undefined') {
+        var _pinned = allSettings.ui.pinnedMatrixLayers;
+        _mlCheckList.innerHTML = '';
+        MATRIX_LAYERS.forEach(function(layer, idx) {
+          if (layer.tier === 'locked') return; // locked層は非表示
+          var _isChecked = !_pinned || _pinned.indexOf(layer.id) !== -1;
+          var _label = document.createElement('label');
+          _label.style.cssText = 'display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 0;';
+          _label.innerHTML = '<input type="checkbox" data-layer-id="' + layer.id + '" '
+            + (_isChecked ? 'checked' : '') + ' style="width:16px;height:16px;accent-color:#1976d2;cursor:pointer;">'
+            + '<span style="font-size:0.83em;color:#444;">' + layer.icon + ' ' + layer.label + '</span>';
+          _label.querySelector('input').addEventListener('change', function() {
+            var _allInputs = _mlCheckList.querySelectorAll('input[data-layer-id]');
+            var _checkedIds = [];
+            _allInputs.forEach(function(inp) { if (inp.checked) _checkedIds.push(inp.dataset.layerId); });
+            // 全チェックならnull（全層表示）、一部なら配列
+            var _allLayers = MATRIX_LAYERS.filter(function(l){ return l.tier !== 'locked'; });
+            allSettings.ui.pinnedMatrixLayers = (_checkedIds.length === _allLayers.length) ? null : _checkedIds;
+            saveAllSettings();
+          });
+          _mlCheckList.appendChild(_label);
+        });
+      }
     }
     // アバター画像変更
     function handleAvatarChange(event) {
@@ -24690,6 +25066,9 @@ function _ycGoSlide(n) {
             <button onclick="hideTutorial();allSettings.flags.journalTourSeen=true;saveAllSettings();setTimeout(function(){switchView('journal');setTimeout(showJournalOnboarding,300);},200);" style="width:100%;text-align:left;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.25);border-radius:8px;padding:8px 12px;color:#a78bfa;font-size:0.85em;font-weight:bold;cursor:pointer;">📖 日誌の使い方</button>
           </div>
           <div style="margin-bottom:6px;">
+            <button onclick="hideTutorial();openMatrixIntroModal();" style="width:100%;text-align:left;background:rgba(212,168,67,0.1);border:1px solid rgba(212,168,67,0.3);border-radius:8px;padding:8px 12px;color:#d4a843;font-size:0.85em;font-weight:bold;cursor:pointer;">🗂️ マトリクスの使い方（全40層）</button>
+          </div>
+          <div style="margin-bottom:6px;">
             <button onclick="toggleAbout('aboutPhilosophy')" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#81c784;font-size:0.85em;font-weight:bold;cursor:pointer;">🌿 やることクラフトが大切にしていること</button>
             <div id="aboutPhilosophy" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:0 0 8px 8px;padding:14px 12px;font-size:0.82em;color:#ccc;line-height:1.7;">
               <div style="color:#ffd700;font-weight:bold;margin-bottom:10px;font-size:0.9em;">🏰 王国の心得</div>
@@ -27210,7 +27589,7 @@ function showDebugLog(_initOnly) {
 
        // ===== ST-34C: テストセクション自己存在確認 =====
        // テストセクション自己存在確認：ソースコード上の存在をチェック
-       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-103','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75','ST-76','ST-77','ST-78','ST-79','ST-80','ST-81','ST-82','ST-106','ST-107','ST-108','ST-109','ST-110','ST-111','ST-112','ST-113'];
+       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-103','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75','ST-76','ST-77','ST-78','ST-79','ST-80','ST-81','ST-82','ST-106','ST-107','ST-108','ST-109','ST-110','ST-111','ST-112','ST-113','ST-114','ST-115'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -31954,6 +32333,142 @@ function showDebugLog(_initOnly) {
 
        ok('ST-113: 多層マトリクステスト 完了');
      } catch(e) { ng('ST-113: 例外', e.message); }
+
+     // ===== ST-114: ピン留め機能テスト =====
+     try {
+       // ① pinnedMatrixLayers設定フィールド存在確認
+       typeof allSettings.ui.pinnedMatrixLayers !== 'undefined'
+         ? ok('ST-114·①: pinnedMatrixLayers フィールド存在確認（値=' + (allSettings.ui.pinnedMatrixLayers === null ? 'null（全層）' : JSON.stringify(allSettings.ui.pinnedMatrixLayers)) + '）')
+         : ng('ST-114·①: pinnedMatrixLayers 未定義');
+
+       // ② matrixLayerCheckList DOM存在確認
+       var _mlCheckList = document.getElementById('matrixLayerCheckList');
+       _mlCheckList
+         ? ok('ST-114·②: #matrixLayerCheckList DOM存在確認')
+         : ng('ST-114·②: #matrixLayerCheckList DOMなし');
+
+       // ③ getUnlockedMatrixLayersがpinnedMatrixLayersを考慮するか
+       var _prevPinned = allSettings.ui.pinnedMatrixLayers;
+       // eisenhowerのみピン留め → 1層のみ返す
+       allSettings.ui.pinnedMatrixLayers = ['eisenhower'];
+       var _filtered = getUnlockedMatrixLayers();
+       var _filteredIds = _filtered.map(function(l){ return l.id; });
+       (_filteredIds.length === 1 && _filteredIds[0] === 'eisenhower')
+         ? ok('ST-114·③: pinnedMatrixLayers=[eisenhower] → 1層のみ返す確認')
+         : ng('ST-114·③: ピン留めフィルタ不正', JSON.stringify(_filteredIds));
+
+       // ④ null（全層）でフィルタなし
+       allSettings.ui.pinnedMatrixLayers = null;
+       var _all = getUnlockedMatrixLayers();
+       (_all.length >= 26)
+         ? ok('ST-114·④: pinnedMatrixLayers=null → 全層返す確認（' + _all.length + '層）')
+         : ng('ST-114·④: 全層返却失敗', _all.length + '層');
+
+       // ⑤ 設定画面に26層チェックボックスが生成されるか（loadSettingsUI後）
+       if (typeof loadSettingsUI === 'function') loadSettingsUI();
+       var _checks = _mlCheckList ? _mlCheckList.querySelectorAll('input[data-layer-id]') : [];
+       (_checks.length >= 26)
+         ? ok('ST-114·⑤: マトリクス層チェックボックス生成確認（' + _checks.length + '件）')
+         : ng('ST-114·⑤: チェックボックス生成失敗', _checks.length + '件');
+
+       // ⑥ ロールバック
+       allSettings.ui.pinnedMatrixLayers = _prevPinned;
+       saveAllSettings();
+       ok('ST-114·⑥: ロールバック完了');
+       ok('ST-114: ピン留め機能テスト 完了');
+     } catch(e) { ng('ST-114: 例外', e.message); }
+
+     // ===== ST-115: 本能モードデフォルトON・層テスト =====
+     try {
+       // ① instinctModeデフォルトtrue確認（SETTINGS_DEFAULT）
+       var _instDef = (typeof SETTINGS_DEFAULT !== 'undefined') ? null : null;
+       allSettings.ui.instinctMode === true
+         ? ok('ST-115·①: instinctMode=true（ONデフォルト確認）')
+         : ng('ST-115·①: instinctMode=true未設定', String(allSettings.ui.instinctMode));
+
+       // ② 28層全て必須フィールド確認（今日追加した層を含む）
+       var _newLayers = ['sunzi','mencius','daxue','mozi','guanzi','zengguofan','liaofen','yangming',
+         'zhongyong','xunzi','laozi','hanfeizi','luxiangshan','zhuxi',
+         'plato','aristotle','stoic','aquinas','adler',
+         'ethics','destiny','highest_ethics','keitenaijin',
+         'buddhism','three_poisons','eightfold_path','christianity','islam','judaism','shinto','six_roots','oharae','musubi','zoroaster','taoism','manichaeism'];
+       var _missing = _newLayers.filter(function(id){
+         return !MATRIX_LAYERS.some(function(l){ return l.id === id; });
+       });
+       _missing.length === 0
+         ? ok('ST-115·②: 追加層 全存在確認（' + _newLayers.length + '層）')
+         : ng('ST-115·②: 層が見つからない', _missing.join(','));
+
+       // ③ 各新規層のsections 4件かつlabel存在確認（防御的実装）
+       var _layerErrors = [];
+       _newLayers.forEach(function(id) {
+         var layer = null;
+         for (var _li = 0; _li < MATRIX_LAYERS.length; _li++) {
+           if (MATRIX_LAYERS[_li] && MATRIX_LAYERS[_li].id === id) { layer = MATRIX_LAYERS[_li]; break; }
+         }
+         if (!layer) { _layerErrors.push(id + ':notfound'); return; }
+         if (!layer.sections || layer.sections.length !== 4) { _layerErrors.push(id + ':sec=' + (layer.sections ? layer.sections.length : 0)); return; }
+         for (var _si = 0; _si < layer.sections.length; _si++) {
+           var s = layer.sections[_si];
+           if (id !== 'tenmei' && s && !s.label) _layerErrors.push(id + ':section' + (_si+1) + ':nolabel');
+         }
+       });
+       _layerErrors.length === 0
+         ? ok('ST-115·③: 全新規層 sections 4件・label存在確認')
+         : ng('ST-115·③: sections不正', _layerErrors.join(' / '));
+
+       // ④ 深愛公徳マトリクス 命名確認（forループで安全に取得）
+       var _shiai = null;
+       for (var _si4 = 0; _si4 < MATRIX_LAYERS.length; _si4++) {
+         if (MATRIX_LAYERS[_si4] && MATRIX_LAYERS[_si4].id === 'highest_ethics') { _shiai = MATRIX_LAYERS[_si4]; break; }
+       }
+       (_shiai && _shiai.label === '深愛公徳マトリクス')
+         ? ok('ST-115·④: 深愛公徳マトリクス 命名確認')
+         : ng('ST-115·④: 深愛公徳マトリクス 命名不正', _shiai ? _shiai.label : 'notfound');
+
+       // ⑤ 敬天愛人マトリクス 命名・center確認
+       var _keiten = null;
+       for (var _ki5 = 0; _ki5 < MATRIX_LAYERS.length; _ki5++) {
+         if (MATRIX_LAYERS[_ki5] && MATRIX_LAYERS[_ki5].id === 'keitenaijin') { _keiten = MATRIX_LAYERS[_ki5]; break; }
+       }
+       (_keiten && _keiten.label === '敬天愛人マトリクス' && _keiten.center.indexOf('天') !== -1)
+         ? ok('ST-115·⑤: 敬天愛人マトリクス 命名・center確認（' + _keiten.center + '）')
+         : ng('ST-115·⑤: 敬天愛人マトリクス 不正');
+
+       // ⑥ 天命マトリクス tier=locked確認
+       var _tenmei115 = null;
+       for (var _ti6 = 0; _ti6 < MATRIX_LAYERS.length; _ti6++) {
+         if (MATRIX_LAYERS[_ti6] && MATRIX_LAYERS[_ti6].id === 'tenmei') { _tenmei115 = MATRIX_LAYERS[_ti6]; break; }
+       }
+       (_tenmei115 && _tenmei115.tier === 'kingdom')
+         ? ok('ST-115·⑥: 天命マトリクス tier=kingdom確認')
+         : ng('ST-115·⑥: 天命マトリクス tier不正', _tenmei115 ? _tenmei115.tier : 'notfound');
+
+       // ⑦ 五箇条の御誓文マトリクス 確認
+       var _gokajo = null;
+       for (var _gi7 = 0; _gi7 < MATRIX_LAYERS.length; _gi7++) {
+         if (MATRIX_LAYERS[_gi7] && MATRIX_LAYERS[_gi7].id === 'destiny') { _gokajo = MATRIX_LAYERS[_gi7]; break; }
+       }
+       (_gokajo && _gokajo.label.indexOf('五箇条') !== -1)
+         ? ok('ST-115·⑦: 五箇条の御誓文マトリクス 確認（' + _gokajo.label + '）')
+         : ng('ST-115·⑦: 五箇条の御誓文マトリクス 不正');
+
+       // ⑧ アドラーマトリクス確認
+       var _adler = null;
+       for (var _ai = 0; _ai < MATRIX_LAYERS.length; _ai++) {
+         if (MATRIX_LAYERS[_ai] && MATRIX_LAYERS[_ai].id === 'adler') { _adler = MATRIX_LAYERS[_ai]; break; }
+       }
+       (_adler && _adler.label === 'アドラーマトリクス' && _adler.center === '勇気')
+         ? ok('ST-115·⑧: アドラーマトリクス 命名・center確認（' + _adler.center + '）')
+         : ng('ST-115·⑧: アドラーマトリクス 不正');
+
+       // ⑨ 全29層の総数確認
+       (MATRIX_LAYERS.length === 41)
+         ? ok('ST-115·⑨: MATRIX_LAYERS 41層確認')
+         : ng('ST-115·⑨: 層数不正 期待41', MATRIX_LAYERS.length + '層');
+
+       ok('ST-115: 本能モードデフォルト・全層テスト 完了');
+     } catch(e) { ng('ST-115: 例外', e.message); }
 
      // ===== ST-109: 雑記帳（scratch）機能テスト =====
      try {
