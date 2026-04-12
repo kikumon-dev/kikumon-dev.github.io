@@ -161,7 +161,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.27';
+    const APP_VERSION = 'v0.44.28';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -14187,6 +14187,9 @@ function reviveBlueprint(id) {
       dailyView.style.display = 'none';
       timelineView.style.display = 'none';
       scratchView.style.display = 'none';
+      // マトリクス以外のタブでは中央円を非表示
+      var _mcc = document.getElementById('matrixCenterCircle');
+      if (_mcc) _mcc.style.display = (mode === 'matrix') ? 'flex' : 'none';
       // タブのactive更新
       document.querySelectorAll('.daily-inner-tab').forEach(t => t.classList.remove('active'));
       var helpBtn = document.getElementById('tutorialHelpBtn');
