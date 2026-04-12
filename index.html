@@ -148,7 +148,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.41.3';
+    const APP_VERSION = 'v0.41.4';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -7537,7 +7537,7 @@ function myDeckApply(idx) {
         // migration完了（ログ削除済み）;
       }
       localStorage.setItem('mig_show_in_daily_to_display_scope_v1', '1');
-      localStorage.setItem('mig_display_scope_empty_v1', '1');
+      localStorage.setItem('mig_display_scope_empty_v1', 'mig_display_scope_empty_v2', '1');
     }
     function loadAllTasks() {
       loadCalendars();
@@ -14953,6 +14953,21 @@ function reviveBlueprint(id) {
       if (_fixCount > 0) saveAllTasks();
       localStorage.setItem(_migKey2, '1');
       window._dbgLog && window._dbgLog('mig_display_scope_empty_v1 done. fixed=' + _fixCount + '件');
+    })();
+    // displayScope空タスク補完v2（バニッシュ今日移動等でdisplayScopeがnullのまま残ったタスクを修正）
+    (function() {
+      var _migKey3 = 'mig_display_scope_empty_v2';
+      if (localStorage.getItem(_migKey3)) return;
+      var _fixCount3 = 0;
+      allTasks.forEach(function(t) {
+        if (t.kind === 'task' && !t.displayScope) {
+          t.displayScope = 'daily_only';
+          _fixCount3++;
+        }
+      });
+      if (_fixCount3 > 0) saveAllTasks();
+      localStorage.setItem(_migKey3, '1');
+      window._dbgLog && window._dbgLog('mig_display_scope_empty_v2 done. fixed=' + _fixCount3 + '件');
     })();
     window._dbgLog('【照準確認】SCOPE PROTOCOL OK --- 表示制御、正常稼働 / ロックオン');
     window._dbgLog('migrateToDisplayScope done');
