@@ -161,7 +161,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.28';
+    const APP_VERSION = 'v0.44.44';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3801,6 +3801,8 @@ END OF 開発ルール
       <input type="text" class="task-input" id="input1" placeholder="本質的で今すぐ必要な行動は？...">
       <ul class="task-list" id="list1"></ul>
     </div>
+    <!-- 多層マトリクス中心円: containerグリッドの中心にabsoluteで配置 -->
+    <div id="matrixCenterCircle" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);-webkit-transform:translate(-50%,-50%);width:76px;height:76px;border-radius:50%;background:#1976d2;color:#fff;font-size:0.6em;font-weight:700;display:none;align-items:center;justify-content:center;text-align:center;line-height:1.2;z-index:100;box-shadow:0 4px 16px rgba(0,0,0,0.35);padding:4px;cursor:pointer;border:3px solid rgba(255,255,255,0.9);word-break:break-all;opacity:0.82;" onclick="switchMatrixLayer()" title="タップでレイヤー切り替え">今ここで</div>
     <!-- 右上: 緊急でないが重要 -->
     <div class="section" id="section2">
       <div class="simple-header">
@@ -11000,7 +11002,10 @@ function renderMatrixLayer() {
   if (circle) {
     var _centerText = layer.center || '';
     circle.textContent = _centerText;
-    circle.style.background = layer.centerColor || '#1976d2';
+    // 背景色に透明度を付与（後ろのテキストが透けて見えるように）
+    var _baseColor = layer.centerColor || '#1976d2';
+    circle.style.background = _baseColor;
+    circle.style.opacity = '0.82';
     circle.style.display = 'flex';
     // 文字数に応じてフォントサイズを動的調整（はみ出し防止）
     var _len = _centerText.length;
@@ -16298,8 +16303,12 @@ function reviveBlueprint(id) {
     renderAllSections((typeof currentDailyDate !== 'undefined' && currentDailyDate) || null);
     window._dbgLog('【王国描画】RENDER COMPLETE --- 全象限、描画完了 / 王国は今——動いています');
     window._dbgLog('renderAllSections done');
-    // 多層マトリクスの初期レイヤー適用
-    if (typeof renderMatrixLayer === 'function') renderMatrixLayer();
+    // 多層マトリクスの初期レイヤー適用（起動時はmatrixタブ非表示なので円も隠す）
+    if (typeof renderMatrixLayer === 'function') {
+      renderMatrixLayer();
+      var _mccInit = document.getElementById('matrixCenterCircle');
+      if (_mccInit) _mccInit.style.display = 'none';
+    }
     // 起動時ナビタブ同期（DOMContentLoadedタイミング依存を排除）
     (function() {
       var _craftBtn = document.getElementById('navCraft');
@@ -16341,6 +16350,9 @@ function reviveBlueprint(id) {
     var _switchViewLast = '';
     var _switchViewTimer = null;
     function switchView(view) {
+      // ビュー切替時は中央円を必ず非表示（matrixタブでのみ再表示）
+      var _mccSv = document.getElementById('matrixCenterCircle');
+      if (_mccSv) _mccSv.style.display = 'none';
       // ビュー切替時は常にmoonOverlayを削除（craft復帰時は後で再生成）
       var _moSv = document.getElementById('_moonOverlay'); if (_moSv) _moSv.remove();
       // 同一ビューへの連続呼び出しを300ms以内に防止（iOSタップ多重発火対策）
@@ -32450,6 +32462,89 @@ function showDebugLog(_initOnly) {
        ok('ST-115: 本能モードデフォルト・全層テスト 完了');
      } catch(e) { ng('ST-115: 例外', e.message); }
 
+     // ===== ST-116: 中央円（matrixCenterCircle）配置・表示制御テスト =====
+     try {
+       // ① DOM存在確認
+       var _mcc116 = document.getElementById('matrixCenterCircle');
+       _mcc116 ? ok('ST-116·①: #matrixCenterCircle DOM存在確認') : ng('ST-116·①: #matrixCenterCircle DOM未存在');
+
+       // ② 初期状態 display:none確認
+       var _mccDisp = _mcc116 ? _mcc116.style.display : '';
+       _mccDisp === 'none' || _mccDisp === ''
+         ? ok('ST-116·②: 初期状態 非表示確認（' + (_mccDisp||'none') + '）')
+         : ng('ST-116·②: 初期状態で表示されている（' + _mccDisp + '）');
+
+       // ③ position:absolute確認（containerグリッド内固定）
+       if (_mcc116) {
+         var _mccPos = _mcc116.style.position;
+         _mccPos === 'absolute'
+           ? ok('ST-116·③: position:absolute確認（containerグリッド中心固定）')
+           : ng('ST-116·③: position異常（' + _mccPos + '）— absoluteであること');
+       }
+
+       // ④ top:50% left:50% transform確認
+       if (_mcc116) {
+         var _mccTop = _mcc116.style.top;
+         var _mccLeft = _mcc116.style.left;
+         _mccTop === '50%' && _mccLeft === '50%'
+           ? ok('ST-116·④: top:50% left:50% 確認')
+           : ng('ST-116·④: 位置異常 top=' + _mccTop + ' left=' + _mccLeft);
+       }
+
+       // ⑤ opacity:0.82確認（半透明）
+       if (_mcc116) {
+         var _mccOp = _mcc116.style.opacity;
+         _mccOp === '0.82'
+           ? ok('ST-116·⑤: opacity:0.82 半透明確認')
+           : ng('ST-116·⑤: opacity異常（' + _mccOp + '）');
+       }
+
+       // ⑥ renderMatrixLayer呼び出しで display:flex になることを確認
+       if (typeof renderMatrixLayer === 'function' && _mcc116) {
+         renderMatrixLayer();
+         var _mccAfter = _mcc116.style.display;
+         _mccAfter === 'flex'
+           ? ok('ST-116·⑥: renderMatrixLayer後 display:flex確認')
+           : ng('ST-116·⑥: renderMatrixLayer後 display異常（' + _mccAfter + '）');
+         // テスト後は非表示に戻す
+         _mcc116.style.display = 'none';
+       }
+
+       // ⑦ switchDailyTab(scratch)で非表示になることを確認
+       if (typeof switchDailyTab === 'function' && _mcc116) {
+         _mcc116.style.display = 'flex'; // 一旦表示
+         switchDailyTab('scratch');
+         var _mccScratch = _mcc116.style.display;
+         _mccScratch === 'none'
+           ? ok('ST-116·⑦: switchDailyTab(scratch)で非表示確認')
+           : ng('ST-116·⑦: scratch切替後も表示されている（' + _mccScratch + '）');
+         switchDailyTab('matrix'); // 戻す
+         _mcc116.style.display = 'none'; // テスト後非表示
+       }
+
+       // ⑧ switchView後に非表示になることを確認
+       if (typeof switchView === 'function' && _mcc116) {
+         _mcc116.style.display = 'flex'; // 一旦表示
+         switchView('monthly');
+         var _mccMonth = _mcc116.style.display;
+         _mccMonth === 'none'
+           ? ok('ST-116·⑧: switchView(monthly)で非表示確認')
+           : ng('ST-116·⑧: monthly切替後も表示されている（' + _mccMonth + '）');
+         switchView('daily');
+         _mcc116.style.display = 'none';
+       }
+
+       // ⑨ z-index確認（他要素より前面）
+       if (_mcc116) {
+         var _mccZ = parseInt(_mcc116.style.zIndex || 0);
+         _mccZ >= 100
+           ? ok('ST-116·⑨: z-index≥100確認（' + _mccZ + '）')
+           : ng('ST-116·⑨: z-index不足（' + _mccZ + '）');
+       }
+
+       ok('ST-116: 中央円配置・表示制御テスト 完了');
+     } catch(e) { ng('ST-116: 例外', e.message); }
+
      // ===== ST-109: 雑記帳（scratch）機能テスト =====
      try {
        // ① 関数存在確認
@@ -32713,7 +32808,7 @@ function showDebugLog(_initOnly) {
        var _st39FlagKeys = ['tutorialSeen','gantTourSeen','journalTourSeen','scratchTourSeen','adminMode','inspectionMode','purpose','purposeConfirmed','stopCondition','stopConditionSaved'];
        var _st39FlagMissing = _st39FlagKeys.filter(function(k){ return !(k in allSettings.flags); });
        // flags許容フィールド（動的追加される既知フラグも含む）
-       var _st39FlagAllowed = _st39FlagKeys.concat(['searchOnboardSeen','nbGouTokuPageAdded','zenOnboardSeen','nbZenPageAdded','nbTitlesPageAdded']);
+       var _st39FlagAllowed = _st39FlagKeys.concat(['searchOnboardSeen','nbGouTokuPageAdded','zenOnboardSeen','nbZenPageAdded','nbTitlesPageAdded','nbMatrixIntroPageAdded']);
        var _st39FlagUnknown = Object.keys(allSettings.flags).filter(function(k){ return _st39FlagAllowed.indexOf(k) === -1; });
        _st39FlagMissing.length === 0
          ? ok('SPAG[·A1·SETTINGS INTEGRITY] allSettings.flags必須フィールド全確認')
