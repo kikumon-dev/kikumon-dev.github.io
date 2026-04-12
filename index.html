@@ -161,7 +161,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.24';
+    const APP_VERSION = 'v0.44.25';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -32463,9 +32463,9 @@ function showDebugLog(_initOnly) {
          : ng('ST-115·⑧: アドラーマトリクス 不正');
 
        // ⑨ 全29層の総数確認
-       (MATRIX_LAYERS.length === 41)
-         ? ok('ST-115·⑨: MATRIX_LAYERS 41層確認')
-         : ng('ST-115·⑨: 層数不正 期待41', MATRIX_LAYERS.length + '層');
+       (MATRIX_LAYERS.length === 42)
+         ? ok('ST-115·⑨: MATRIX_LAYERS 42層確認')
+         : ng('ST-115·⑨: 層数不正 期待42', MATRIX_LAYERS.length + '層');
 
        ok('ST-115: 本能モードデフォルト・全層テスト 完了');
      } catch(e) { ng('ST-115: 例外', e.message); }
