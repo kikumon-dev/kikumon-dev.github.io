@@ -148,7 +148,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.41.4';
+    const APP_VERSION = 'v0.41.5';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -7537,7 +7537,7 @@ function myDeckApply(idx) {
         // migration完了（ログ削除済み）;
       }
       localStorage.setItem('mig_show_in_daily_to_display_scope_v1', '1');
-      localStorage.setItem('mig_display_scope_empty_v1', 'mig_display_scope_empty_v2', '1');
+      localStorage.setItem('mig_display_scope_empty_v1', '1');
     }
     function loadAllTasks() {
       loadCalendars();
@@ -15427,7 +15427,7 @@ function reviveBlueprint(id) {
       // 雑記帳
       '_lastScratchMoveDate', '_importLog',
       // マイグレーション済みキー
-      'mig_ids_to_uuid_v7', 'mig_show_in_daily_to_display_scope_v1', 'mig_display_scope_empty_v1',
+      'mig_ids_to_uuid_v7', 'mig_show_in_daily_to_display_scope_v1', 'mig_display_scope_empty_v1', 'mig_display_scope_empty_v2',
       'mig_category_to_calendar_v170', 'mig_death_ghost_flags_v0_24_59',
       'mig_gant_enabled_default_v0_32', 'mig_journals_to_alltasks_v1', 'mig_kingdom_mode_default_v1',
       'mig_gdp_to_oku_v1', 'mig_orphan_taskids_v1', 'mig_done_completed_sync_v1',
