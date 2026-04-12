@@ -161,7 +161,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.44';
+    const APP_VERSION = 'v0.44.50';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -4735,6 +4735,11 @@ END OF 開発ルール
     </div>
 
     <!-- 今日の一言メッセージ -->
+    <!-- 天命降臨エリア -->
+    <div id="dbTenmeiArea" style="display:none;margin-bottom:14px;padding:14px 16px;background:linear-gradient(135deg,rgba(251,191,36,0.12),rgba(245,158,11,0.08));border-radius:14px;border:1px solid rgba(245,158,11,0.3);text-align:center;">
+      <div id="dbTenmeiMsg" style="font-size:0.85em;font-weight:600;color:#d97706;margin-bottom:10px;">🌟 天命の兆し…</div>
+      <button id="dbTenmeiBtn" onclick="openTenmeiModal()" style="display:none;padding:10px 24px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;border-radius:10px;color:#fff;font-size:0.88em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(245,158,11,0.4);">☯️ 天命を更新する</button>
+    </div>
     <div id="dbMessage" class="yc-fade-in" style="text-align:center;margin-bottom:14px;padding:11px 16px;background:rgba(99,102,241,0.08);border-radius:14px;color:#6366f1;font-size:0.85em;font-weight:600;letter-spacing:0.02em;border:1px solid rgba(99,102,241,0.15);">
       ✨ 今日も一歩ずつ、前へ！
     </div>
@@ -6112,6 +6117,12 @@ END OF 開発ルール
         cycle: 'daily',
         cycleStart: '',
         scores: {}
+      },
+      tenmei: {
+        level: 0,                // 天命レベル（転生回数）
+        kanstDay: null,          // 王国力カンスト到達日（ISO文字列）
+        activated: false,        // 天命降臨ボタン解放済みか
+        history: []              // 前世殿堂：[{level,power,toku,gdp,date,title}]
       },
       flags: {
         tutorialSeen:       false,
@@ -9881,111 +9892,111 @@ function getKingdomPower() {
   var gou  = typeof getGouNew === 'function' ? getGouNew() : 0;
   // 個人の努力（徳）60% + 他者交流（GDP）40% ÷ 業ペナルティ
   // GDP内部単位は「万」→ 徳スケールに合わせて×1000
-  var power = (toku * 0.6 + gdp * 0.4 * 1000) / (gou + 1);
+  var power = (toku * 0.6 + gdp * 0.4 * 10) / (gou + 1);
   return Math.floor(power);
 }
 
 // ===== 99段階称号テーブル =====
 var KINGDOM_TITLES = [
-  { min:      0, icon:'🌱', name:'開拓民', color:'#bbb' },
-  { min:     52, icon:'🪨', name:'石を拾った者', color:'#a0a0a0' },
-  { min:    181, icon:'🌾', name:'種まき人', color:'#b5c96a' },
-  { min:    376, icon:'🏕️', name:'野営者', color:'#8bc34a' },
-  { min:    631, icon:'🐾', name:'旅人', color:'#7cb9e8' },
-  { min:    943, icon:'🪓', name:'開墾者', color:'#9e8060' },
-  { min:   1310, icon:'🧑‍🌾', name:'農夫', color:'#8d6e63' },
-  { min:   1729, icon:'🔨', name:'職人見習い', color:'#a07040' },
-  { min:   2199, icon:'🪚', name:'職人', color:'#8d6e63' },
-  { min:   2719, icon:'⚒️', name:'親方', color:'#7a6050' },
-  { min:   3287, icon:'🏪', name:'商人', color:'#ff9800' },
-  { min:   3902, icon:'🪶', name:'村の書記', color:'#8090a0' },
-  { min:   4564, icon:'🏡', name:'村人', color:'#9e9e9e' },
-  { min:   5271, icon:'🗡️', name:'衛兵', color:'#78909c' },
-  { min:   6023, icon:'⚔️', name:'兵士', color:'#607d8b' },
-  { min:   6820, icon:'🛡️', name:'盾持ち', color:'#5c6bc0' },
-  { min:   7660, icon:'🗡️', name:'騎士', color:'#ff9800' },
-  { min:   8543, icon:'🏇', name:'騎馬隊員', color:'#f57c00' },
-  { min:   9469, icon:'🎖️', name:'男爵', color:'#a0856a' },
-  { min:  10437, icon:'🎗️', name:'子爵', color:'#90a4ae' },
-  { min:  11446, icon:'⚜️', name:'伯爵', color:'#7986cb' },
-  { min:  12497, icon:'🏅', name:'侯爵', color:'#5c6bc0' },
-  { min:  13588, icon:'👒', name:'公爵', color:'#4527a0' },
-  { min:  14720, icon:'👑', name:'大公', color:'#7b1fa2' },
-  { min:  15892, icon:'🏰', name:'城主', color:'#4caf50' },
-  { min:  17104, icon:'🏯', name:'城将', color:'#388e3c' },
-  { min:  18355, icon:'🏯', name:'大名', color:'#1976d2' },
-  { min:  19646, icon:'⚔️', name:'藩主', color:'#0277bd' },
-  { min:  20975, icon:'🎌', name:'将軍', color:'#c62828' },
-  { min:  22342, icon:'📜', name:'摂政', color:'#6a1b9a' },
-  { min:  23748, icon:'📜', name:'関白', color:'#4a148c' },
-  { min:  25192, icon:'📜', name:'太政大臣', color:'#1a237e' },
-  { min:  26674, icon:'🔱', name:'軍師', color:'#1976d2' },
-  { min:  28193, icon:'⚖️', name:'宰相', color:'#6a1b9a' },
-  { min:  29749, icon:'🏛️', name:'議員', color:'#7b1fa2' },
-  { min:  31343, icon:'📋', name:'首相', color:'#1565c0' },
-  { min:  32973, icon:'🦅', name:'大統領', color:'#bf360c' },
-  { min:  34640, icon:'🌐', name:'総督', color:'#0288d1' },
-  { min:  36344, icon:'⚖️', name:'統領', color:'#4527a0' },
-  { min:  38083, icon:'🔭', name:'探求者', color:'#00838f' },
-  { min:  39859, icon:'📡', name:'知の番人', color:'#00695c' },
-  { min:  41671, icon:'📜', name:'法学者', color:'#5c6bc0' },
-  { min:  43518, icon:'🌐', name:'外交官', color:'#0288d1' },
-  { min:  45401, icon:'🏹', name:'将帥', color:'#e65100' },
-  { min:  47319, icon:'🦅', name:'鷹将', color:'#bf360c' },
-  { min:  49272, icon:'🌿', name:'君子', color:'#2e7d32' },
-  { min:  51261, icon:'☯️', name:'賢人', color:'#00695c' },
-  { min:  53284, icon:'📿', name:'聖職者', color:'#7986cb' },
-  { min:  55342, icon:'🕊️', name:'聖人', color:'#00acc1' },
-  { min:  57434, icon:'✨', name:'聖人君子', color:'#0288d1' },
-  { min:  59561, icon:'🧘', name:'仙人', color:'#00796b' },
-  { min:  61723, icon:'🦁', name:'百獣の王', color:'#e65100' },
-  { min:  63918, icon:'🌊', name:'提督', color:'#0277bd' },
-  { min:  66148, icon:'👑', name:'覇者', color:'#9c27b0' },
-  { min:  68411, icon:'🐉', name:'竜の盟友', color:'#c62828' },
-  { min:  70709, icon:'🏆', name:'英雄王', color:'#ff8f00' },
-  { min:  73040, icon:'⚡', name:'伝説の勇者', color:'#f57f17' },
-  { min:  75404, icon:'🌟', name:'伝説の王', color:'#ff8800' },
-  { min:  77802, icon:'🔮', name:'魔導の賢者', color:'#7b1fa2' },
-  { min:  80233, icon:'🌌', name:'天文の達人', color:'#283593' },
-  { min:  82698, icon:'👁️', name:'大僧正', color:'#4a148c' },
-  { min:  85195, icon:'⛩️', name:'神官長', color:'#880e4f' },
-  { min:  87725, icon:'🔥', name:'魔王', color:'#b71c1c' },
-  { min:  90289, icon:'🌙', name:'月の賢者', color:'#7986cb' },
-  { min:  92885, icon:'🌠', name:'流星の騎士', color:'#1565c0' },
-  { min:  95514, icon:'🦋', name:'転生の王', color:'#ad1457' },
-  { min:  98175, icon:'🌞', name:'太陽の使者', color:'#f57f17' },
-  { min: 100868, icon:'💎', name:'宝石の王', color:'#00bcd4' },
-  { min: 103595, icon:'🌈', name:'虹の支配者', color:'#7c4dff' },
-  { min: 106353, icon:'🌍', name:'世界の王', color:'#1b5e20' },
-  { min: 109143, icon:'🛸', name:'宇宙の探求者', color:'#311b92' },
-  { min: 111966, icon:'🌀', name:'次元の旅人', color:'#4a148c' },
-  { min: 114821, icon:'🔥', name:'炎帝', color:'#b71c1c' },
-  { min: 117707, icon:'❄️', name:'氷の女王', color:'#006064' },
-  { min: 120625, icon:'⚡', name:'嵐の神', color:'#0d47a1' },
-  { min: 123575, icon:'🌑', name:'闇の君主', color:'#212121' },
-  { min: 126557, icon:'☀️', name:'光の神', color:'#ff6f00' },
-  { min: 129570, icon:'🌊', name:'海の神', color:'#01579b' },
-  { min: 132615, icon:'🌙', name:'月の神', color:'#4527a0' },
-  { min: 135691, icon:'⭐', name:'星の神', color:'#f57f17' },
-  { min: 138798, icon:'🌌', name:'宇宙の神', color:'#1a237e' },
-  { min: 141937, icon:'👁️', name:'全知の眼', color:'#880e4f' },
-  { min: 145106, icon:'∞', name:'無限の存在', color:'#4a148c' },
-  { min: 148307, icon:'🌐', name:'世界の魂', color:'#0d47a1' },
-  { min: 151539, icon:'🔱', name:'三位一体', color:'#1b5e20' },
-  { min: 154802, icon:'🐉', name:'古龍の盟主', color:'#b71c1c' },
-  { min: 158095, icon:'👑', name:'全世界の王', color:'#ff8f00' },
-  { min: 161420, icon:'🌌', name:'銀河の創造者', color:'#1a237e' },
-  { min: 164775, icon:'∞', name:'宇宙そのもの', color:'#4a148c' },
-  { min: 168160, icon:'🌟', name:'時間の外の者', color:'#880e4f' },
-  { min: 171577, icon:'💡', name:'概念の具現者', color:'#e65100' },
-  { min: 175023, icon:'🔥', name:'すべての始まり', color:'#b71c1c' },
-  { min: 178501, icon:'🌊', name:'原初の奔流', color:'#0277bd' },
-  { min: 182008, icon:'🌌', name:'宇宙の記憶', color:'#1a237e' },
-  { min: 185546, icon:'💫', name:'光速の旅人', color:'#f57f17' },
-  { min: 189114, icon:'🔱', name:'神々の末裔', color:'#4a148c' },
-  { min: 192713, icon:'🌠', name:'超新星の申し子', color:'#283593' },
-  { min: 196341, icon:'🌟', name:'創造神', color:'#ff8f00' },
-  { min: 200000, icon:'✨', name:'やることクラフトの伝説', color:'#ff8800' },
+  { min:       0, icon:'🌱', name:'開拓民', color:'#bbb' },
+  { min:     520, icon:'🪨', name:'石を拾った者', color:'#a0a0a0' },
+  { min:    1810, icon:'🌾', name:'種まき人', color:'#b5c96a' },
+  { min:    3760, icon:'🏕️', name:'野営者', color:'#8bc34a' },
+  { min:    6310, icon:'🐾', name:'旅人', color:'#7cb9e8' },
+  { min:    9430, icon:'🪓', name:'開墾者', color:'#9e8060' },
+  { min:   13100, icon:'🧑‍🌾', name:'農夫', color:'#8d6e63' },
+  { min:   17290, icon:'🔨', name:'職人見習い', color:'#a07040' },
+  { min:   21990, icon:'🪚', name:'職人', color:'#8d6e63' },
+  { min:   27190, icon:'⚒️', name:'親方', color:'#7a6050' },
+  { min:   32870, icon:'🏪', name:'商人', color:'#ff9800' },
+  { min:   39020, icon:'🪶', name:'村の書記', color:'#8090a0' },
+  { min:   45640, icon:'🏡', name:'村人', color:'#9e9e9e' },
+  { min:   52710, icon:'🗡️', name:'衛兵', color:'#78909c' },
+  { min:   60230, icon:'⚔️', name:'兵士', color:'#607d8b' },
+  { min:   68200, icon:'🛡️', name:'盾持ち', color:'#5c6bc0' },
+  { min:   76600, icon:'🗡️', name:'騎士', color:'#ff9800' },
+  { min:   85430, icon:'🏇', name:'騎馬隊員', color:'#f57c00' },
+  { min:   94690, icon:'🎖️', name:'男爵', color:'#a0856a' },
+  { min:  104370, icon:'🎗️', name:'子爵', color:'#90a4ae' },
+  { min:  114460, icon:'⚜️', name:'伯爵', color:'#7986cb' },
+  { min:  124970, icon:'🏅', name:'侯爵', color:'#5c6bc0' },
+  { min:  135880, icon:'👒', name:'公爵', color:'#4527a0' },
+  { min:  147200, icon:'👑', name:'大公', color:'#7b1fa2' },
+  { min:  158920, icon:'🏰', name:'城主', color:'#4caf50' },
+  { min:  171040, icon:'🏯', name:'城将', color:'#388e3c' },
+  { min:  183550, icon:'🏯', name:'大名', color:'#1976d2' },
+  { min:  196460, icon:'⚔️', name:'藩主', color:'#0277bd' },
+  { min:  209750, icon:'🎌', name:'将軍', color:'#c62828' },
+  { min:  223420, icon:'📜', name:'摂政', color:'#6a1b9a' },
+  { min:  237480, icon:'📜', name:'関白', color:'#4a148c' },
+  { min:  251920, icon:'📜', name:'太政大臣', color:'#1a237e' },
+  { min:  266740, icon:'🔱', name:'軍師', color:'#1976d2' },
+  { min:  281930, icon:'⚖️', name:'宰相', color:'#6a1b9a' },
+  { min:  297490, icon:'🏛️', name:'議員', color:'#7b1fa2' },
+  { min:  313430, icon:'📋', name:'首相', color:'#1565c0' },
+  { min:  329730, icon:'🦅', name:'大統領', color:'#bf360c' },
+  { min:  346400, icon:'🌐', name:'総督', color:'#0288d1' },
+  { min:  363440, icon:'⚖️', name:'統領', color:'#4527a0' },
+  { min:  380830, icon:'🔭', name:'探求者', color:'#00838f' },
+  { min:  398590, icon:'📡', name:'知の番人', color:'#00695c' },
+  { min:  416710, icon:'📜', name:'法学者', color:'#5c6bc0' },
+  { min:  435180, icon:'🌐', name:'外交官', color:'#0288d1' },
+  { min:  454010, icon:'🏹', name:'将帥', color:'#e65100' },
+  { min:  473190, icon:'🦅', name:'鷹将', color:'#bf360c' },
+  { min:  492720, icon:'🌿', name:'君子', color:'#2e7d32' },
+  { min:  512610, icon:'☯️', name:'賢人', color:'#00695c' },
+  { min:  532840, icon:'📿', name:'聖職者', color:'#7986cb' },
+  { min:  553420, icon:'🕊️', name:'聖人', color:'#00acc1' },
+  { min:  574340, icon:'✨', name:'聖人君子', color:'#0288d1' },
+  { min:  595610, icon:'🧘', name:'仙人', color:'#00796b' },
+  { min:  617230, icon:'🦁', name:'百獣の王', color:'#e65100' },
+  { min:  639180, icon:'🌊', name:'提督', color:'#0277bd' },
+  { min:  661480, icon:'👑', name:'覇者', color:'#9c27b0' },
+  { min:  684110, icon:'🐉', name:'竜の盟友', color:'#c62828' },
+  { min:  707090, icon:'🏆', name:'英雄王', color:'#ff8f00' },
+  { min:  730400, icon:'⚡', name:'伝説の勇者', color:'#f57f17' },
+  { min:  754040, icon:'🌟', name:'伝説の王', color:'#ff8800' },
+  { min:  778020, icon:'🔮', name:'魔導の賢者', color:'#7b1fa2' },
+  { min:  802330, icon:'🌌', name:'天文の達人', color:'#283593' },
+  { min:  826980, icon:'👁️', name:'大僧正', color:'#4a148c' },
+  { min:  851950, icon:'⛩️', name:'神官長', color:'#880e4f' },
+  { min:  877250, icon:'🔥', name:'魔王', color:'#b71c1c' },
+  { min:  902890, icon:'🌙', name:'月の賢者', color:'#7986cb' },
+  { min:  928850, icon:'🌠', name:'流星の騎士', color:'#1565c0' },
+  { min:  955140, icon:'🦋', name:'転生の王', color:'#ad1457' },
+  { min:  981750, icon:'🌞', name:'太陽の使者', color:'#f57f17' },
+  { min: 1008680, icon:'💎', name:'宝石の王', color:'#00bcd4' },
+  { min: 1035950, icon:'🌈', name:'虹の支配者', color:'#7c4dff' },
+  { min: 1063530, icon:'🌍', name:'世界の王', color:'#1b5e20' },
+  { min: 1091430, icon:'🛸', name:'宇宙の探求者', color:'#311b92' },
+  { min: 1119660, icon:'🌀', name:'次元の旅人', color:'#4a148c' },
+  { min: 1148210, icon:'🔥', name:'炎帝', color:'#b71c1c' },
+  { min: 1177070, icon:'❄️', name:'氷の女王', color:'#006064' },
+  { min: 1206250, icon:'⚡', name:'嵐の神', color:'#0d47a1' },
+  { min: 1235750, icon:'🌑', name:'闇の君主', color:'#212121' },
+  { min: 1265570, icon:'☀️', name:'光の神', color:'#ff6f00' },
+  { min: 1295700, icon:'🌊', name:'海の神', color:'#01579b' },
+  { min: 1326150, icon:'🌙', name:'月の神', color:'#4527a0' },
+  { min: 1356910, icon:'⭐', name:'星の神', color:'#f57f17' },
+  { min: 1387980, icon:'🌌', name:'宇宙の神', color:'#1a237e' },
+  { min: 1419370, icon:'👁️', name:'全知の眼', color:'#880e4f' },
+  { min: 1451060, icon:'∞', name:'無限の存在', color:'#4a148c' },
+  { min: 1483070, icon:'🌐', name:'世界の魂', color:'#0d47a1' },
+  { min: 1515390, icon:'🔱', name:'三位一体', color:'#1b5e20' },
+  { min: 1548020, icon:'🐉', name:'古龍の盟主', color:'#b71c1c' },
+  { min: 1580950, icon:'👑', name:'全世界の王', color:'#ff8f00' },
+  { min: 1614200, icon:'🌌', name:'銀河の創造者', color:'#1a237e' },
+  { min: 1647750, icon:'∞', name:'宇宙そのもの', color:'#4a148c' },
+  { min: 1681600, icon:'🌟', name:'時間の外の者', color:'#880e4f' },
+  { min: 1715770, icon:'💡', name:'概念の具現者', color:'#e65100' },
+  { min: 1750230, icon:'🔥', name:'すべての始まり', color:'#b71c1c' },
+  { min: 1785010, icon:'🌊', name:'原初の奔流', color:'#0277bd' },
+  { min: 1820080, icon:'🌌', name:'宇宙の記憶', color:'#1a237e' },
+  { min: 1855460, icon:'💫', name:'光速の旅人', color:'#f57f17' },
+  { min: 1891140, icon:'🔱', name:'神々の末裔', color:'#4a148c' },
+  { min: 1927130, icon:'🌠', name:'超新星の申し子', color:'#283593' },
+  { min: 1963410, icon:'🌟', name:'創造神', color:'#ff8f00' },
+  { min: 2000000, icon:'✨', name:'やることクラフトの伝説', color:'#ff8800' },
 ];
 
 
@@ -16591,7 +16602,7 @@ function reviveBlueprint(id) {
               '● タスク完了 → 徳+1\n' +
               '● 日誌を書く → 徳+1\n' +
               '● 月末に先月の完了件数分ボーナス\n\n' +
-              '【王国力の計算式】\n徳×0.6 + GDP×0.4×1000 ÷ (業+1)\n個人の努力60%+他者交流40%\n\n' +
+              '【王国力の計算式】\n徳×0.6 + GDP×0.4×10 ÷ (業+1)\n個人の努力60%+他者交流40%\n\n' +
               '業が多いと王国力が下がる。\n業を祓い、徳を積め。\n\n' +
               '【心得】\n不作為は業。\n具体的行動は徳。\n今日できることを今日やる。',
             dateL: '', dateR: '',
@@ -16613,7 +16624,7 @@ function reviveBlueprint(id) {
             textL:
               'でっかい志を立てよう！！\n小さきまとまるな。\n\n' +
               '【称号は全99段階】\n王国力を高めるほど\n新しい称号が解放される。\n\n' +
-              '王国力 = 徳×0.6 + GDP×0.4×1000 ÷ (業+1)\n\n' +
+              '王国力 = 徳×0.6 + GDP×0.4×10 ÷ (業+1)\n\n' +
               '---前半（1〜49）---\n' +
               _titlesText.split('\n').slice(0, 49).join('\n'),
             textR:
@@ -19012,6 +19023,70 @@ function loadSettingsUI() {
   window.toggleVisibleTab = toggleVisibleTab;
     window.openDeckDetailModal = openDeckDetailModal;
     window.renderColosseumView = renderColosseumView;
+    // ===== 天命降臨システム =====
+    function openTenmeiModal() {
+      var _lv = (allSettings.tenmei && allSettings.tenmei.level) || 0;
+      var _power = typeof getKingdomPower === 'function' ? getKingdomPower() : 0;
+      var _toku = typeof getToku === 'function' ? getToku() : 0;
+      var _gdp = typeof getGDP === 'function' ? getGDP() : 0;
+      var _title = typeof getKingdomTitle === 'function' ? getKingdomTitle() : {icon:'🌱',name:'開拓民'};
+      showCustomModal(
+        '☯️ 天命降臨',
+        '現在の王国の記録を前世の功績として永久に刻み、天命を更新します。\n\n' +
+        '【前世の記録】\n' +
+        '称号：' + _title.icon + ' ' + _title.name + '\n' +
+        '王国力：' + _power.toLocaleString() + '\n' +
+        '徳：' + _toku.toLocaleString() + ' / GDP：' + _gdp.toLocaleString() + '万\n\n' +
+        '天命更新後：\n' +
+        '・王国力・称号がリセットされます\n' +
+        '・GDPはリセットされます\n' +
+        '・徳は引き継がれます\n' +
+        '・天命Lv.' + (_lv + 1) + 'バッジを獲得します\n' +
+        '・前世殿堂に記録が残ります\n\n' +
+        '本当に天命を更新しますか？',
+        [
+          { label:'✅ 天命を更新する', action: function() { executeTenmeiUpdate(); } },
+          { label:'キャンセル', action: function() {} }
+        ]
+      );
+    }
+
+    function executeTenmeiUpdate() {
+      if (window._isTesting) return;
+      if (!allSettings.tenmei) return;
+      var _power = typeof getKingdomPower === 'function' ? getKingdomPower() : 0;
+      var _toku = typeof getToku === 'function' ? getToku() : 0;
+      var _gdp = typeof getGDP === 'function' ? getGDP() : 0;
+      var _title = typeof getKingdomTitle === 'function' ? getKingdomTitle() : {icon:'🌱',name:'開拓民'};
+      // 前世記録を保存
+      var _record = {
+        level: (allSettings.tenmei.level || 0) + 1,
+        power: _power,
+        toku: _toku,
+        gdp: _gdp,
+        title: _title.icon + ' ' + _title.name,
+        date: new Date().toISOString()
+      };
+      if (!allSettings.tenmei.history) allSettings.tenmei.history = [];
+      allSettings.tenmei.history.push(_record);
+      // 天命レベルを上げる
+      allSettings.tenmei.level = (_record.level);
+      allSettings.tenmei.kanstDay = null;
+      allSettings.tenmei.activated = false;
+      saveAllSettings();
+      // GDPをリセット
+      var _gdpLog = JSON.parse(localStorage.getItem('gdpLog') || '[]');
+      _gdpLog.push({ type:'tenmei_reset', amount: -_gdp * 10000, reason:'天命更新', date: new Date().toISOString() });
+      localStorage.setItem('gdpPoints', '0');
+      localStorage.setItem('gdpLog', JSON.stringify(_gdpLog));
+      // 徳はそのまま（引き継ぎ）
+      showToast('☯️ 天命Lv.' + _record.level + ' に更新されました！前世の功績は永久に刻まれました。', 5000);
+      if (typeof renderDashboardView === 'function') renderDashboardView();
+      if (typeof updateCraftHUD === 'function') updateCraftHUD();
+    }
+
+    window.openTenmeiModal = openTenmeiModal;
+    window.executeTenmeiUpdate = executeTenmeiUpdate;
     window.renderDashboardView = renderDashboardView;
     window.generateAndCopyColosseumReport = generateAndCopyColosseumReport;
     window.getColosseumPool = getColosseumPool;
@@ -20536,6 +20611,23 @@ function renderDashboardView() {
     }
     _msgEl.textContent = _msg;
   }
+  // 天命降臨ボタン表示制御
+  (function _renderTenmeiButton() {
+    var _tenmei = allSettings.tenmei || {};
+    var _btnArea = document.getElementById('dbTenmeiArea');
+    if (!_btnArea) return;
+    if (_tenmei.activated) {
+      _btnArea.style.display = 'block';
+    } else {
+      _btnArea.style.display = 'none';
+    }
+    if (_tenmei.activated) {
+      var _msgEl3 = document.getElementById('dbTenmeiMsg');
+      if (_msgEl3) _msgEl3.textContent = '🌟 天命が降りています。新たな使命へ踏み出しますか？';
+      var _btn2 = document.getElementById('dbTenmeiBtn');
+      if (_btn2) _btn2.style.display = '';
+    }
+  })();
   var titleEl = document.getElementById('dbKingdomTitle');
   if (titleEl) { titleEl.textContent = title.icon + ' ' + title.name; titleEl.style.color = title.color || '#ffd700'; }
   // 王国暦ラベル更新（第2条：nullチェック必須）
@@ -22642,6 +22734,32 @@ function updateCraftHUD() {
     titleEl.style.color = t.color || '#fff';
     titleEl.style.textShadow = '0 0 8px ' + (t.color || '#fff') + '88';
   }
+  // 天命降臨：王国力カンスト検知（伝説到達で天命カウント開始）
+  (function _checkTenmeiKanst() {
+    if (window._isTesting) return;
+    if (!allSettings.tenmei) return;
+    var _maxTitle = KINGDOM_TITLES[KINGDOM_TITLES.length - 1];
+    var _power = typeof getKingdomPower === 'function' ? getKingdomPower() : 0;
+    var _isKanst = _power >= _maxTitle.min;
+    if (_isKanst && !allSettings.tenmei.kanstDay) {
+      // カンスト到達日を記録
+      allSettings.tenmei.kanstDay = new Date().toISOString();
+      if (typeof saveAllSettings === 'function') saveAllSettings();
+    }
+    // カンスト到達と同時に天命降臨ボタン即解放
+    if (_isKanst && !allSettings.tenmei.activated) {
+      allSettings.tenmei.activated = true;
+      if (typeof saveAllSettings === 'function') saveAllSettings();
+      if (typeof showToast === 'function') showToast('🌟 天命降臨の時が来ました。ダッシュボードを確認してください。', 4000);
+    }
+    // HUDに天命レベル表示
+    var _tenmeiEl = document.getElementById('craftTenmeiLevel');
+    if (_tenmeiEl) {
+      var _lv = allSettings.tenmei.level || 0;
+      _tenmeiEl.style.display = _lv > 0 ? '' : 'none';
+      _tenmeiEl.textContent = _lv > 0 ? ('☯️ 天命Lv.' + _lv) : '';
+    }
+  })();
   // 王国暦ラベル更新（第2条：nullチェック必須）
   var craftEraLabelEl = document.getElementById('craftEraLabel');
   if (craftEraLabelEl && typeof getKingdomEraLabel === 'function') {
@@ -27766,9 +27884,9 @@ function showDebugLog(_initOnly) {
        // 業=0の時は徳×GDP
        var _stT = getToku(); var _stG = getGDP(); var _stGou = getGouNew();
        var _stPower2 = typeof getKingdomPower === 'function' ? getKingdomPower() : -1;
-       var _stExpected = Math.floor((_stT * 0.6 + _stG * 0.4 * 1000) / (_stGou + 1));
+       var _stExpected = Math.floor((_stT * 0.6 + _stG * 0.4 * 10) / (_stGou + 1));
        _stPower2 === _stExpected
-         ? ok('ST-36: 王国力計算式確認（徳×0.6+GDP×0.4×1000÷(業+1)）')
+         ? ok('ST-36: 王国力計算式確認（徳×0.6+GDP×0.4×10÷(業+1)）')
          : ng('ST-36: 王国力計算', '期待' + _stExpected + ' 実際' + _stPower2 + ' 徳=' + _stT + ' GDP=' + _stG + ' 業=' + _stGou);
 
        // ===== A2: 業ペナルティUI =====
@@ -28111,7 +28229,7 @@ function showDebugLog(_initOnly) {
        if (_hudEl && typeof updateCraftHUD === 'function' && _kt.length > 0) {
          var _savedPower = window.getKingdomPower;
          // KINGDOM_TITLESのLv25（城主相当）のminを使って挙動確認
-         var _st31CheckTitle = _kt99.length >= 25 ? _kt99[24] : { min: 10000, name: '城主' };
+         var _st31CheckTitle = _kt99.length >= 25 ? _kt99[24] : { min:  100000, name: '城主' };
          window.getKingdomPower = function(){ return _st31CheckTitle.min; };
          updateCraftHUD();
          var _hudText = _hudEl.textContent || '';
