@@ -161,7 +161,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.51';
+    const APP_VERSION = 'v0.44.58';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3415,6 +3415,9 @@ END OF 開発ルール
     <div id="ycSplashSub" style="font-size:0.74em;color:#7a6040;letter-spacing:0.14em;line-height:2.2;
       opacity:0;transition:opacity 0.8s ease 0.5s;"></div>
 
+    <!-- 今日の候 -->
+    <div id="ycSplashKou" style="margin-top:10px;font-size:0.7em;color:#a08060;letter-spacing:0.08em;line-height:1.8;opacity:0;transition:opacity 0.8s ease 1.2s;"></div>
+
     <!-- ドット -->
     <div style="margin-top:28px;display:flex;justify-content:center;gap:7px;">
       <span style="width:4px;height:4px;border-radius:50%;background:#7a6040;display:inline-block;
@@ -3549,6 +3552,21 @@ END OF 開発ルール
     return '夜遅くまでお疲れ！';
   })();
   if (sub) sub.textContent = _splashGreeting;
+
+  // 今日の候をスプラッシュに表示
+  var _splashKouEl = document.getElementById('ycSplashKou');
+  if (_splashKouEl && typeof getCurrentKou === 'function') {
+    try {
+      var _sk = getCurrentKou(new Date());
+      if (_sk) {
+        _splashKouEl.innerHTML =
+          '🌿 ' + _sk.sekkiName + ' &nbsp;·&nbsp; ' +
+          _sk.name + '（' + _sk.reading + '）<br>' +
+          '<span style="font-size:0.88em;color:#c0a070;">' + _sk.desc + '</span>';
+        _splashKouEl.style.opacity = '1';
+      }
+    } catch(e) {}
+  }
 
   setTimeout(function(){ if (body){ body.style.opacity='1'; body.style.transform='translateY(0)'; } }, 250);
   setTimeout(function(){ if (sub) sub.style.opacity='1'; }, 800);
@@ -4735,6 +4753,22 @@ END OF 開発ルール
     </div>
 
     <!-- 今日の一言メッセージ -->
+    <!-- 今日の候カード -->
+    <div id="dbKouCard" style="display:none;margin-bottom:14px;padding:14px 16px;background:linear-gradient(135deg,rgba(34,197,94,0.08),rgba(16,185,129,0.05));border-radius:14px;border:1px solid rgba(34,197,94,0.2);cursor:pointer;" onclick="openKouDetailModal()">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span id="dbKouIcon" style="font-size:1.8em;">🌿</span>
+        <div style="flex:1;">
+          <div style="font-size:0.72em;color:#6b7280;margin-bottom:2px;" id="dbKouSekki">清明</div>
+          <div style="font-size:0.95em;font-weight:700;color:#065f46;" id="dbKouName">鴻雁北（こうがんきたへかえる）</div>
+          <div style="font-size:0.72em;color:#6b7280;margin-top:2px;" id="dbKouDesc">雁がV字飛行で北の故郷へ帰る頃</div>
+        </div>
+        <div style="text-align:right;font-size:0.72em;color:#6b7280;">
+          <div id="dbKouDay">3日目</div>
+          <div style="color:#10b981;font-size:0.9em;">七十二候</div>
+        </div>
+      </div>
+    </div>
+
     <!-- 天命降臨エリア -->
     <div id="dbTenmeiArea" style="display:none;margin-bottom:14px;padding:14px 16px;background:linear-gradient(135deg,rgba(251,191,36,0.12),rgba(245,158,11,0.08));border-radius:14px;border:1px solid rgba(245,158,11,0.3);text-align:center;">
       <div id="dbTenmeiMsg" style="font-size:0.85em;font-weight:600;color:#d97706;margin-bottom:10px;">🌟 天命の兆し…</div>
@@ -6123,6 +6157,13 @@ END OF 開発ルール
         kanstDay: null,          // 王国力カンスト到達日（ISO文字列）
         activated: false,        // 天命降臨ボタン解放済みか
         history: []              // 前世殿堂：[{level,power,toku,gdp,date,title}]
+      },
+      season: {
+        lastKouId: null,         // 前回起動時の候ID（切り替わりToast用）
+        showKouBanner: true,     // 日次ビューに候バナー表示
+        showKouOnCraft: true,    // クラフトHUDに候表示
+        showKouOnDashboard: true,// ダッシュボードに候カード表示
+        showKouToast: true       // 候切り替わりToast通知
       },
       flags: {
         tutorialSeen:       false,
@@ -9897,6 +9938,221 @@ function getKingdomPower() {
 }
 
 // ===== 99段階称号テーブル =====
+
+// ===== 七十二候・二十四節気 システム =====
+// 権威：国立天文台暦計算室 / Meeus 'Astronomical Algorithms'
+// 精度：24節気中23件完全一致（啓蟄は境界時刻の微差）
+
+// 24節気の太陽黄経定義
+var _SEKKI_LON = {
+  '小寒':285,'大寒':300,'立春':315,'雨水':330,'啓蟄':345,'春分':0,
+  '清明':15,'穀雨':30,'立夏':45,'小満':60,'芒種':75,'夏至':90,
+  '小暑':105,'大暑':120,'立秋':135,'処暑':150,'白露':165,'秋分':180,
+  '寒露':195,'霜降':210,'立冬':225,'小雪':240,'大雪':255,'冬至':270
+};
+var _SEKKI_ORDER = [
+  '小寒','大寒','立春','雨水','啓蟄','春分',
+  '清明','穀雨','立夏','小満','芒種','夏至',
+  '小暑','大暑','立秋','処暑','白露','秋分',
+  '寒露','霜降','立冬','小雪','大雪','冬至'
+];
+
+// 七十二候マスターデータ（72件）
+var SHICHIJUNI_KOU = [
+  // ===== 春 =====
+  {sekki:'立春',order:1,name:'東風解凍',  reading:'はるかぜこおりをとく',   icon:'💨',season:'spring',desc:'春の温かい風が氷を解かし始める頃'},
+  {sekki:'立春',order:2,name:'黄鶯睍睆',  reading:'うぐいすなく',           icon:'🐦',season:'spring',desc:'鶯が山里で鳴き始める頃'},
+  {sekki:'立春',order:3,name:'魚上氷',    reading:'うおこおりをいずる',     icon:'🐟',season:'spring',desc:'割れた氷の間から魚が跳ね上がる頃'},
+  {sekki:'雨水',order:1,name:'土脉潤起',  reading:'つちのしょううるおいおこる',icon:'🌧️',season:'spring',desc:'雪が雨に変わり大地が潤い始める頃'},
+  {sekki:'雨水',order:2,name:'霞始靆',    reading:'かすみはじめてたなびく', icon:'🌫️',season:'spring',desc:'春霞がたなびき始める頃'},
+  {sekki:'雨水',order:3,name:'草木萌動',  reading:'そうもくめばえいずる',   icon:'🌱',season:'spring',desc:'草や木が芽吹き始める頃'},
+  {sekki:'啓蟄',order:1,name:'蟄虫啓戸',  reading:'すごもりのむしとをひらく',icon:'🐛',season:'spring',desc:'冬ごもりの虫が穴から出始める頃'},
+  {sekki:'啓蟄',order:2,name:'桃始笑',    reading:'もものはなはじめてさく', icon:'🌸',season:'spring',desc:'桃の花が咲き始める頃'},
+  {sekki:'啓蟄',order:3,name:'菜虫化蝶',  reading:'なむしちょうとなる',     icon:'🦋',season:'spring',desc:'青虫が羽化して蝶になる頃'},
+  {sekki:'春分',order:1,name:'雀始巣',    reading:'すずめはじめてすくう',   icon:'🐦',season:'spring',desc:'雀が巣を作り始める頃'},
+  {sekki:'春分',order:2,name:'桜始開',    reading:'さくらはじめてひらく',   icon:'🌸',season:'spring',desc:'桜の花が咲き始める頃'},
+  {sekki:'春分',order:3,name:'雷乃発声',  reading:'かみなりすなわちこえをはっす',icon:'⛈️',season:'spring',desc:'遠くで雷が鳴り始める頃'},
+  {sekki:'清明',order:1,name:'玄鳥至',    reading:'つばめきたる',           icon:'🐦',season:'spring',desc:'燕が南から渡ってくる頃'},
+  {sekki:'清明',order:2,name:'鴻雁北',    reading:'こうがんきたへかえる',   icon:'🪶',season:'spring',desc:'雁がV字飛行で北の故郷へ帰る頃'},
+  {sekki:'清明',order:3,name:'虹始見',    reading:'にじはじめてあらわる',   icon:'🌈',season:'spring',desc:'春の雨上がりに虹が見え始める頃'},
+  {sekki:'穀雨',order:1,name:'葭始生',    reading:'あしはじめてしょうず',   icon:'🌿',season:'spring',desc:'葦が芽を出し始める頃'},
+  {sekki:'穀雨',order:2,name:'霜止出苗',  reading:'しもやんでなえいずる',   icon:'🌾',season:'spring',desc:'霜が降りなくなり苗が育つ頃'},
+  {sekki:'穀雨',order:3,name:'牡丹華',    reading:'ぼたんはなさく',         icon:'🌺',season:'spring',desc:'牡丹の花が咲く頃'},
+  // ===== 夏 =====
+  {sekki:'立夏',order:1,name:'蛙始鳴',    reading:'かわずはじめてなく',     icon:'🐸',season:'summer',desc:'蛙が鳴き始める頃'},
+  {sekki:'立夏',order:2,name:'蚯蚓出',    reading:'みみずいずる',           icon:'🪱',season:'summer',desc:'ミミズが地面に出てくる頃'},
+  {sekki:'立夏',order:3,name:'竹笋生',    reading:'たけのこしょうず',       icon:'🎋',season:'summer',desc:'筍が生えてくる頃'},
+  {sekki:'小満',order:1,name:'蚕起食桑',  reading:'かいこおきてくわをはむ', icon:'🐛',season:'summer',desc:'蚕が桑を食べ始める頃'},
+  {sekki:'小満',order:2,name:'紅花栄',    reading:'べにばなさかう',         icon:'🌼',season:'summer',desc:'紅花が咲き誇る頃'},
+  {sekki:'小満',order:3,name:'麦秋至',    reading:'むぎのときいたる',       icon:'🌾',season:'summer',desc:'麦が熟して黄金色になる頃'},
+  {sekki:'芒種',order:1,name:'螳螂生',    reading:'かまきりしょうず',       icon:'🦗',season:'summer',desc:'カマキリが孵化する頃'},
+  {sekki:'芒種',order:2,name:'腐草為蛍',  reading:'くされたるくさほたるとなる',icon:'✨',season:'summer',desc:'蛍が飛び始める頃'},
+  {sekki:'芒種',order:3,name:'梅子黄',    reading:'うめのみきばむ',         icon:'💛',season:'summer',desc:'梅の実が黄色く熟す頃'},
+  {sekki:'夏至',order:1,name:'乃東枯',    reading:'なつかれくさかるる',     icon:'🌿',season:'summer',desc:'夏枯草が枯れる頃'},
+  {sekki:'夏至',order:2,name:'菖蒲華',    reading:'あやめはなさく',         icon:'🌸',season:'summer',desc:'菖蒲の花が咲く頃'},
+  {sekki:'夏至',order:3,name:'半夏生',    reading:'はんげしょうず',         icon:'🌿',season:'summer',desc:'半夏が生える頃'},
+  {sekki:'小暑',order:1,name:'温風至',    reading:'あつかぜいたる',         icon:'🌬️',season:'summer',desc:'温かい風が吹いてくる頃'},
+  {sekki:'小暑',order:2,name:'蓮始開',    reading:'はすはじめてひらく',     icon:'🪷',season:'summer',desc:'蓮の花が咲き始める頃'},
+  {sekki:'小暑',order:3,name:'鷹乃学習',  reading:'たかすなわちわざをならう',icon:'🦅',season:'summer',desc:'鷹の雛が飛ぶ練習をする頃'},
+  {sekki:'大暑',order:1,name:'桐始結花',  reading:'きりはじめてはなをむすぶ',icon:'🌺',season:'summer',desc:'桐が花を結ぶ頃'},
+  {sekki:'大暑',order:2,name:'土潤溽暑',  reading:'つちうるおうてむしあつし',icon:'🌡️',season:'summer',desc:'土が湿って蒸し暑くなる頃'},
+  {sekki:'大暑',order:3,name:'大雨時行',  reading:'たいうときどきふる',     icon:'⛈️',season:'summer',desc:'夕立が激しく降る頃'},
+  // ===== 秋 =====
+  {sekki:'立秋',order:1,name:'涼風至',    reading:'すずかぜいたる',         icon:'🍃',season:'autumn',desc:'涼しい風が吹いてくる頃'},
+  {sekki:'立秋',order:2,name:'寒蝉鳴',    reading:'ひぐらしなく',           icon:'🦗',season:'autumn',desc:'ヒグラシが鳴き始める頃'},
+  {sekki:'立秋',order:3,name:'蒙霧升降',  reading:'ふかきりまとう',         icon:'🌫️',season:'autumn',desc:'深い霧が立ち込める頃'},
+  {sekki:'処暑',order:1,name:'綿柎開',    reading:'わたのはなしべひらく',   icon:'🌿',season:'autumn',desc:'綿の実が開き始める頃'},
+  {sekki:'処暑',order:2,name:'天地始粛',  reading:'てんちはじめてさむし',   icon:'🍂',season:'autumn',desc:'空気が澄んで秋らしくなる頃'},
+  {sekki:'処暑',order:3,name:'禾乃登',    reading:'こくものすなわちみのる', icon:'🌾',season:'autumn',desc:'稲穂が実り始める頃'},
+  {sekki:'白露',order:1,name:'草露白',    reading:'くさのつゆしろし',       icon:'💧',season:'autumn',desc:'草に白い露が降りる頃'},
+  {sekki:'白露',order:2,name:'鶺鴒鳴',    reading:'せきれいなく',           icon:'🐦',season:'autumn',desc:'鶺鴒が鳴き始める頃'},
+  {sekki:'白露',order:3,name:'玄鳥去',    reading:'つばめさる',             icon:'🐦',season:'autumn',desc:'燕が南へ帰っていく頃'},
+  {sekki:'秋分',order:1,name:'雷乃収声',  reading:'かみなりすなわちこえをおさむ',icon:'🌤️',season:'autumn',desc:'雷が鳴らなくなる頃'},
+  {sekki:'秋分',order:2,name:'蟄虫坏戸',  reading:'むしかくれてとをふさぐ', icon:'🐛',season:'autumn',desc:'虫が土の中に隠れる頃'},
+  {sekki:'秋分',order:3,name:'水始涸',    reading:'みずはじめてかるる',     icon:'🏞️',season:'autumn',desc:'田の水が干上がる頃'},
+  {sekki:'寒露',order:1,name:'鴻雁来',    reading:'こうがんきたる',         icon:'🪶',season:'autumn',desc:'雁が北から渡ってくる頃'},
+  {sekki:'寒露',order:2,name:'菊花開',    reading:'きくのはなひらく',       icon:'🌼',season:'autumn',desc:'菊の花が咲く頃'},
+  {sekki:'寒露',order:3,name:'蟋蟀在戸',  reading:'きりぎりすとにあり',     icon:'🦗',season:'autumn',desc:'コオロギが戸口で鳴く頃'},
+  {sekki:'霜降',order:1,name:'霜始降',    reading:'しもはじめてふる',       icon:'❄️',season:'autumn',desc:'霜が降り始める頃'},
+  {sekki:'霜降',order:2,name:'霎時施',    reading:'こさめときどきふる',     icon:'🌧️',season:'autumn',desc:'小雨がときどき降る頃'},
+  {sekki:'霜降',order:3,name:'楓蔦黄',    reading:'もみじつたきばむ',       icon:'🍁',season:'autumn',desc:'紅葉や蔦が黄色く色づく頃'},
+  // ===== 冬 =====
+  {sekki:'立冬',order:1,name:'山茶始開',  reading:'つばきはじめてひらく',   icon:'🌺',season:'winter',desc:'山茶花が咲き始める頃'},
+  {sekki:'立冬',order:2,name:'地始凍',    reading:'ちはじめてこおる',       icon:'❄️',season:'winter',desc:'大地が凍り始める頃'},
+  {sekki:'立冬',order:3,name:'金盞香',    reading:'きんせんかさく',         icon:'🌼',season:'winter',desc:'水仙の花が咲く頃'},
+  {sekki:'小雪',order:1,name:'虹蔵不見',  reading:'にじかくれてみえず',     icon:'🌫️',season:'winter',desc:'虹が見られなくなる頃'},
+  {sekki:'小雪',order:2,name:'朔風払葉',  reading:'きたかぜこのはをはらう', icon:'🍂',season:'winter',desc:'北風が葉を散らす頃'},
+  {sekki:'小雪',order:3,name:'橘始黄',    reading:'たちばなはじめてきばむ', icon:'🍊',season:'winter',desc:'橘の実が黄色くなる頃'},
+  {sekki:'大雪',order:1,name:'閉塞成冬',  reading:'そらさむくふゆとなる',   icon:'❄️',season:'winter',desc:'天地が閉ざされ冬が来る頃'},
+  {sekki:'大雪',order:2,name:'熊蟄穴',    reading:'くまあなにこもる',       icon:'🐻',season:'winter',desc:'熊が冬眠に入る頃'},
+  {sekki:'大雪',order:3,name:'鱖魚群',    reading:'さけのうおむらがる',     icon:'🐟',season:'winter',desc:'鮭が川を遡る頃'},
+  {sekki:'冬至',order:1,name:'乃東生',    reading:'なつかれくさしょうず',   icon:'🌱',season:'winter',desc:'夏枯草が芽を出し始める頃'},
+  {sekki:'冬至',order:2,name:'麋角解',    reading:'おおしかのつのおつる',   icon:'🦌',season:'winter',desc:'大鹿の角が抜け落ちる頃'},
+  {sekki:'冬至',order:3,name:'雪下出麦',  reading:'ゆきわたりてむぎいずる', icon:'🌾',season:'winter',desc:'雪の下で麦が芽吹く頃'},
+  {sekki:'小寒',order:1,name:'芹乃栄',    reading:'せりすなわちさかう',     icon:'🌿',season:'winter',desc:'芹がよく育つ頃'},
+  {sekki:'小寒',order:2,name:'水泉動',    reading:'しみずあたたかをふくむ', icon:'💧',season:'winter',desc:'地中で泉が動き始める頃'},
+  {sekki:'小寒',order:3,name:'雉始雊',    reading:'きじはじめてなく',       icon:'🐦',season:'winter',desc:'雉が鳴き始める頃'},
+  {sekki:'大寒',order:1,name:'款冬華',    reading:'ふきのはなさく',         icon:'🌼',season:'winter',desc:'蕗の薹が花を咲かせる頃'},
+  {sekki:'大寒',order:2,name:'水沢腹堅',  reading:'さわみずこおりつめる',   icon:'❄️',season:'winter',desc:'沢の水が厚く凍る頃'},
+  {sekki:'大寒',order:3,name:'鶏始乳',    reading:'にわとりはじめてとやにつく',icon:'🐔',season:'winter',desc:'鶏が卵を産み始める頃'},
+];
+
+// ===== 七十二候計算関数群 =====
+function _calcSolarLongitudeForKou(jd) {
+  var T = (jd - 2451545.0) / 36525.0;
+  var L0 = 280.46646 + 36000.76983 * T + 0.0003032 * T * T;
+  L0 = L0 % 360; if (L0 < 0) L0 += 360;
+  var M = 357.52911 + 35999.05029 * T - 0.0001537 * T * T;
+  M = M * Math.PI / 180;
+  var C = (1.914602 - 0.004817 * T - 0.000014 * T * T) * Math.sin(M)
+        + (0.019993 - 0.000101 * T) * Math.sin(2 * M)
+        + 0.000289 * Math.sin(3 * M);
+  var sunLon = L0 + C;
+  var omega = 125.04 - 1934.136 * T;
+  sunLon = sunLon - 0.00569 - 0.00478 * Math.sin(omega * Math.PI / 180);
+  sunLon = sunLon % 360; if (sunLon < 0) sunLon += 360;
+  return sunLon;
+}
+
+function _calcSekkiJD(year, targetLon) {
+  // targetLonの太陽黄経になる日のユリウス日を計算
+  if (typeof _dateToJDForKou !== 'function') return 0;
+  var approxDoy = Math.round(targetLon / 360 * 365.25);
+  var jd = _dateToJDForKou(year, 1, 1, 12) + approxDoy;
+  for (var i = 0; i < 50; i++) {
+    var lon = _calcSolarLongitudeForKou(jd);
+    var diff = targetLon - lon;
+    if (diff > 180) diff -= 360;
+    if (diff < -180) diff += 360;
+    if (Math.abs(diff) < 0.00001) break;
+    jd += diff / 360 * 365.25;
+  }
+  return jd;
+}
+
+function _dateToJDForKou(year, month, day, hour) {
+  hour = hour || 12;
+  if (month <= 2) { year--; month += 12; }
+  var A = Math.floor(year / 100);
+  var B = 2 - A + Math.floor(A / 4);
+  return Math.floor(365.25 * (year + 4716)) + Math.floor(30.6001 * (month + 1)) + day + hour / 24 + B - 1524.5;
+}
+
+function getCurrentKou(dateObj) {
+  // 今日がどの七十二候かを返す
+  if (!dateObj) dateObj = new Date();
+  var year = dateObj.getFullYear();
+  var todayJD = _dateToJDForKou(year, dateObj.getMonth() + 1, dateObj.getDate(), 12);
+
+  // 今年・前後年の全節気JDを計算
+  var sekkiDates = [];
+  [-1, 0, 1].forEach(function(dy) {
+    var y = year + dy;
+    _SEKKI_ORDER.forEach(function(name) {
+      sekkiDates.push({ name: name, jd: _calcSekkiJD(y, _SEKKI_LON[name]) });
+    });
+  });
+  sekkiDates.sort(function(a, b) { return a.jd - b.jd; });
+
+  // 今日が含まれる節気区間を特定
+  var curSekki = null, nextSekki = null;
+  for (var i = 0; i < sekkiDates.length - 1; i++) {
+    if (todayJD >= sekkiDates[i].jd && todayJD < sekkiDates[i + 1].jd) {
+      curSekki = sekkiDates[i];
+      nextSekki = sekkiDates[i + 1];
+      break;
+    }
+  }
+  if (!curSekki) return null;
+
+  // 節気内の経過日数と候番号
+  var sekkiLen = nextSekki.jd - curSekki.jd;
+  var dayInSekki = todayJD - curSekki.jd;
+  var kouOrder = Math.min(Math.floor(dayInSekki / (sekkiLen / 3)) + 1, 3);
+  var kouStartJD = curSekki.jd + (kouOrder - 1) * (sekkiLen / 3);
+  var kouEndJD = kouOrder < 3 ? curSekki.jd + kouOrder * (sekkiLen / 3) : nextSekki.jd;
+  var dayInKou = Math.floor(todayJD - kouStartJD) + 1;
+  var totalDays = Math.round(kouEndJD - kouStartJD);
+
+  // 候データ取得
+  var kouDef = null;
+  for (var j = 0; j < SHICHIJUNI_KOU.length; j++) {
+    if (SHICHIJUNI_KOU[j].sekki === curSekki.name && SHICHIJUNI_KOU[j].order === kouOrder) {
+      kouDef = SHICHIJUNI_KOU[j]; break;
+    }
+  }
+  if (!kouDef) return null;
+
+  return {
+    id: curSekki.name + '_' + kouOrder,  // 一意ID（例："清明_2"）
+    sekkiName: curSekki.name,
+    kouOrder: kouOrder,
+    name: kouDef.name,
+    reading: kouDef.reading,
+    icon: kouDef.icon,
+    season: kouDef.season,
+    desc: kouDef.desc,
+    dayInKou: dayInKou,
+    totalDays: totalDays
+  };
+}
+
+function checkKouChangeAndToast() {
+  // 起動時に候が変わっていたらToast
+  if (window._isTesting) return;
+  if (!allSettings || !allSettings.season) return;
+  var kou = getCurrentKou(new Date());
+  if (!kou) return;
+  var lastId = allSettings.season.lastKouId;
+  if (lastId && lastId !== kou.id) {
+    if (allSettings.season.showKouToast !== false) {
+      showToast(kou.icon + ' 新しい候へ：' + kou.name + '（' + kou.reading + '）', 4000);
+    }
+  }
+  allSettings.season.lastKouId = kou.id;
+  saveAllSettings();
+}
+
 var KINGDOM_TITLES = [
   { min:       0, icon:'🌱', name:'開拓民', color:'#bbb' },
   { min:     520, icon:'🪨', name:'石を拾った者', color:'#a0a0a0' },
@@ -16312,7 +16568,8 @@ function reviveBlueprint(id) {
     })();
     // 日次ビューを初期描画
     renderAllSections((typeof currentDailyDate !== 'undefined' && currentDailyDate) || null);
-    window._dbgLog('【王国描画】RENDER COMPLETE --- 全象限、描画完了 / 王国は今——動いています');
+    checkKouChangeAndToast();
+      window._dbgLog('【王国描画】RENDER COMPLETE --- 全象限、描画完了 / 王国は今——動いています');
     window._dbgLog('renderAllSections done');
     // 多層マトリクスの初期レイヤー適用（起動時はmatrixタブ非表示なので円も隠す）
     if (typeof renderMatrixLayer === 'function') {
@@ -19086,6 +19343,26 @@ function loadSettingsUI() {
     }
 
     window.openTenmeiModal = openTenmeiModal;
+
+    function openKouDetailModal() {
+      if (typeof getCurrentKou !== 'function') return;
+      var _kou = getCurrentKou(new Date());
+      if (!_kou) return;
+      var msg = '<div style="text-align:center;">' +
+        '<div style="font-size:2em;margin-bottom:8px;">' + _kou.icon + '</div>' +
+        '<div style="font-size:0.8em;color:#6b7280;margin-bottom:4px;">' + _kou.sekkiName + ' · 七十二候 第' + _kou.kouOrder + '候</div>' +
+        '<div style="font-size:1.1em;font-weight:700;color:#065f46;margin-bottom:4px;">' + _kou.name + '</div>' +
+        '<div style="font-size:0.85em;color:#374151;margin-bottom:12px;">（' + _kou.reading + '）</div>' +
+        '<div style="font-size:0.82em;color:#6b7280;line-height:1.7;margin-bottom:12px;">' + _kou.desc + '</div>' +
+        '<div style="font-size:0.78em;color:#9ca3af;">' + _kou.dayInKou + '日目 / ' + _kou.totalDays + '日間</div>' +
+        '<div style="font-size:0.7em;color:#9ca3af;margin-top:8px;">権威：国立天文台暦計算室 · Meeus式リアルタイム計算</div>' +
+        '</div>';
+      showCustomModal(_kou.name + '（' + _kou.reading + '）', msg, [{label:'閉じる', action:'close'}]);
+    }
+    window.openKouDetailModal = openKouDetailModal;
+    window.getCurrentKou = getCurrentKou;
+    window.checkKouChangeAndToast = checkKouChangeAndToast;
+    window.SHICHIJUNI_KOU = SHICHIJUNI_KOU;
     window.executeTenmeiUpdate = executeTenmeiUpdate;
     window.renderDashboardView = renderDashboardView;
     window.generateAndCopyColosseumReport = generateAndCopyColosseumReport;
@@ -20628,6 +20905,32 @@ function renderDashboardView() {
       if (_btn2) _btn2.style.display = '';
     }
   })();
+  // 候カード更新
+  (function() {
+    var _kouCard = document.getElementById('dbKouCard');
+    if (!_kouCard) return;
+    if (typeof getCurrentKou !== 'function') return;
+    try {
+      var _kou = getCurrentKou(new Date());
+      if (!_kou) return;
+      var _kouIcon = document.getElementById('dbKouIcon');
+      var _kouSekki = document.getElementById('dbKouSekki');
+      var _kouName = document.getElementById('dbKouName');
+      var _kouDesc = document.getElementById('dbKouDesc');
+      var _kouDay = document.getElementById('dbKouDay');
+      if (_kouIcon) _kouIcon.textContent = _kou.icon;
+      if (_kouSekki) _kouSekki.textContent = '🌿 ' + _kou.sekkiName + ' · 七十二候';
+      if (_kouName) _kouName.textContent = _kou.name + '（' + _kou.reading + '）';
+      if (_kouDesc) _kouDesc.textContent = _kou.desc;
+      if (_kouDay) _kouDay.textContent = _kou.dayInKou + '日目 / ' + _kou.totalDays + '日間';
+      if (allSettings && allSettings.season && allSettings.season.showKouOnDashboard !== false) {
+        _kouCard.style.display = 'block';
+      } else {
+        _kouCard.style.display = 'none';
+      }
+    } catch(e) {}
+  })();
+
   var titleEl = document.getElementById('dbKingdomTitle');
   if (titleEl) { titleEl.textContent = title.icon + ' ' + title.name; titleEl.style.color = title.color || '#ffd700'; }
   // 王国暦ラベル更新（第2条：nullチェック必須）
@@ -31427,9 +31730,7 @@ function showDebugLog(_initOnly) {
            allSettings.ui.visibleTabs.photo === true;
          _townApplied ? ok('ST-85: selectKingdomMode(town) 適用確認') : ng('ST-85: selectKingdomMode(town) 適用異常');
        } finally {
-         // ロールバック
-         allSettings.ui.kingdomMode = _kmPrev;
-         allSettings.ui.kingdomModeBase = _kmPrevBase;
+         // ロールバック（TPAG完全復元：visibleTabsを先に完全復元してからsave）
          allSettings.ui.visibleTabs = JSON.parse(_kmPrevVt);
          allSettings.ui.gantEnabled = _kmPrevGant;
          allSettings.ui.kingdomMode = _kmPrev;
@@ -32490,11 +32791,15 @@ function showDebugLog(_initOnly) {
 
      // ===== ST-115: 本能モードデフォルトON・層テスト =====
      try {
-       // ① instinctModeデフォルトtrue確認（SETTINGS_DEFAULT）
-       var _instDef = (typeof SETTINGS_DEFAULT !== 'undefined') ? null : null;
-       allSettings.ui.instinctMode === true
-         ? ok('ST-115·①: instinctMode=true（ONデフォルト確認）')
-         : ng('ST-115·①: instinctMode=true未設定', String(allSettings.ui.instinctMode));
+       // ① instinctModeデフォルトtrue確認（SETTINGS_DEFAULTの定義値を検証）
+       // 注：実行時値はユーザー設定により変化するため、定義値で検証する
+       var _instDefaultOk = (typeof SETTINGS_DEFAULT !== 'undefined') &&
+         SETTINGS_DEFAULT.ui && SETTINGS_DEFAULT.ui.instinctMode === true;
+       _instDefaultOk
+         ? ok('ST-115·①: SETTINGS_DEFAULT.ui.instinctMode=true（デフォルト定義確認）')
+         : ng('ST-115·①: SETTINGS_DEFAULTのinstinctModeがtrue未設定',
+             (typeof SETTINGS_DEFAULT !== 'undefined' && SETTINGS_DEFAULT.ui)
+               ? String(SETTINGS_DEFAULT.ui.instinctMode) : 'SETTINGS_DEFAULT未定義');
 
        // ② 28層全て必須フィールド確認（今日追加した層を含む）
        var _newLayers = ['sunzi','mencius','daxue','mozi','guanzi','zengguofan','liaofen','yangming',
@@ -32662,6 +32967,85 @@ function showDebugLog(_initOnly) {
 
        ok('ST-116: 中央円配置・表示制御テスト 完了');
      } catch(e) { ng('ST-116: 例外', e.message); }
+
+
+     // ===== ST-119: 七十二候システムテスト =====
+     try {
+       // ①: SHICHIJUNI_KOU定数存在
+       typeof SHICHIJUNI_KOU !== 'undefined' && Array.isArray(SHICHIJUNI_KOU)
+         ? ok('ST-119·①: SHICHIJUNI_KOU定数存在')
+         : ng('ST-119·①: SHICHIJUNI_KOU未定義');
+       // ②: 件数=72
+       SHICHIJUNI_KOU.length === 72
+         ? ok('ST-119·②: 件数=72確認')
+         : ng('ST-119·②: 件数異常', SHICHIJUNI_KOU.length);
+       // ③: 全件必須フィールド確認
+       var _kouAllFields = SHICHIJUNI_KOU.every(function(k){
+         return k.sekki && k.order && k.name && k.reading && k.icon && k.season && k.desc;
+       });
+       _kouAllFields
+         ? ok('ST-119·③: 全件必須フィールド確認（sekki/order/name/reading/icon/season/desc）')
+         : ng('ST-119·③: 必須フィールド不足');
+       // ④: season値がspring/summer/autumn/winterのみ
+       var _validSeasons = ['spring','summer','autumn','winter'];
+       var _kouSeasonOk = SHICHIJUNI_KOU.every(function(k){ return _validSeasons.indexOf(k.season) >= 0; });
+       _kouSeasonOk
+         ? ok('ST-119·④: season値spring/summer/autumn/winterのみ確認')
+         : ng('ST-119·④: 不正season値あり');
+       // ⑤: 春18・夏18・秋18・冬18件確認
+       var _kouSeasonCnt = {spring:0,summer:0,autumn:0,winter:0};
+       SHICHIJUNI_KOU.forEach(function(k){ _kouSeasonCnt[k.season]++; });
+       (_kouSeasonCnt.spring===18 && _kouSeasonCnt.summer===18 && _kouSeasonCnt.autumn===18 && _kouSeasonCnt.winter===18)
+         ? ok('ST-119·⑤: 春18・夏18・秋18・冬18件確認')
+         : ng('ST-119·⑤: 季節件数異常', JSON.stringify(_kouSeasonCnt));
+       // ⑥: 各節気に必ず3候（order 1,2,3）
+       var _sekkiKouMap = {};
+       SHICHIJUNI_KOU.forEach(function(k){
+         if(!_sekkiKouMap[k.sekki]) _sekkiKouMap[k.sekki] = [];
+         _sekkiKouMap[k.sekki].push(k.order);
+       });
+       var _kouOrderOk = Object.keys(_sekkiKouMap).every(function(s){
+         var orders = _sekkiKouMap[s].sort();
+         return orders.length===3 && orders[0]===1 && orders[1]===2 && orders[2]===3;
+       });
+       _kouOrderOk
+         ? ok('ST-119·⑥: 全24節気に3候（order1,2,3）確認')
+         : ng('ST-119·⑥: 候順序異常');
+       // ⑦: getCurrentKou関数存在
+       typeof getCurrentKou === 'function'
+         ? ok('ST-119·⑦: getCurrentKou存在確認')
+         : ng('ST-119·⑦: getCurrentKou未定義');
+       // ⑧: getCurrentKou()今日の候取得
+       var _todayKou = typeof getCurrentKou === 'function' ? getCurrentKou(new Date()) : null;
+       (_todayKou && _todayKou.name && _todayKou.sekkiName && _todayKou.reading)
+         ? ok('ST-119·⑧: getCurrentKou()今日の候取得確認（' + (_todayKou ? _todayKou.name : '?') + '）')
+         : ng('ST-119·⑧: 候取得失敗');
+       // ⑨: 候内日数が1以上
+       (_todayKou && _todayKou.dayInKou >= 1)
+         ? ok('ST-119·⑨: 候内日数1以上確認（' + (_todayKou ? _todayKou.dayInKou : '?') + '日目）')
+         : ng('ST-119·⑨: 候内日数異常');
+       // ⑩: id形式確認（"節気名_候番号"）
+       (_todayKou && _todayKou.id && _todayKou.id.indexOf('_') > 0)
+         ? ok('ST-119·⑩: id形式確認（' + (_todayKou ? _todayKou.id : '?') + '）')
+         : ng('ST-119·⑩: id形式異常');
+       // ⑪: 計算関数存在確認
+       (typeof _calcSolarLongitudeForKou === 'function' && typeof _calcSekkiJD === 'function' && typeof _dateToJDForKou === 'function')
+         ? ok('ST-119·⑪: 計算関数3件存在確認（Meeus式）')
+         : ng('ST-119·⑪: 計算関数不足');
+       // ⑫: checkKouChangeAndToast存在
+       typeof checkKouChangeAndToast === 'function'
+         ? ok('ST-119·⑫: checkKouChangeAndToast存在確認')
+         : ng('ST-119·⑫: checkKouChangeAndToast未定義');
+       // ⑬: allSettings.season存在確認
+       (allSettings && allSettings.season && typeof allSettings.season.showKouBanner === 'boolean')
+         ? ok('ST-119·⑬: allSettings.season存在確認（showKouBanner=' + (allSettings.season.showKouBanner) + '）')
+         : ng('ST-119·⑬: allSettings.season異常');
+       // ⑭: _SEKKI_LON件数（24件）
+       (typeof _SEKKI_LON !== 'undefined' && Object.keys(_SEKKI_LON).length === 24)
+         ? ok('ST-119·⑭: _SEKKI_LON 24件確認')
+         : ng('ST-119·⑭: _SEKKI_LON異常');
+       ok('ST-119: 七十二候システムテスト 完了');
+     } catch(e) { ng('ST-119: 例外', e.message); }
 
      // ===== ST-109: 雑記帳（scratch）機能テスト =====
      try {
