@@ -161,7 +161,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.58';
+    const APP_VERSION = 'v0.44.106';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3538,26 +3538,14 @@ END OF 開発ルール
   var body = document.getElementById('ycSplashBody');
   var sub  = document.getElementById('ycSplashSub');
 
-  // 時間帯別挨拶（初回はようこそ）
-  var _splashGreeting = (function() {
-    var _isFirst = !localStorage.getItem('_splashGreetingSeen');
-    if (_isFirst) {
-      localStorage.setItem('_splashGreetingSeen', '1');
-      return 'あなたの王国へ、ようこそ。';
-    }
-    var h = new Date().getHours();
-    if (h >= 5  && h < 10) return 'おはようございます。';
-    if (h >= 10 && h < 17) return 'こんにちは。';
-    if (h >= 17 && h < 21) return 'こんばんは。';
-    return '夜遅くまでお疲れ！';
-  })();
-  if (sub) sub.textContent = _splashGreeting;
+  // スプラッシュは「やることクラフトへようこそ」に統一
+  if (sub) { sub.textContent = 'やることクラフトへようこそ'; }
 
   // 今日の候をスプラッシュに表示
   var _splashKouEl = document.getElementById('ycSplashKou');
-  if (_splashKouEl && typeof getCurrentKou === 'function') {
+  if (_splashKouEl && typeof getCurrentShichijuniKou === 'function') {
     try {
-      var _sk = getCurrentKou(new Date());
+      var _sk = getCurrentShichijuniKou(new Date());
       if (_sk) {
         _splashKouEl.innerHTML =
           '🌿 ' + _sk.sekkiName + ' &nbsp;·&nbsp; ' +
@@ -3593,6 +3581,13 @@ END OF 開発ルール
     }, 1020);
   }
   setTimeout(closeSplash, 1500);
+
+  // スプラッシュ終了後（2.6秒後）に季節の風だよりモーダルを表示
+  setTimeout(function() {
+    if (typeof showKazedayoriModal === 'function') {
+      showKazedayoriModal();
+    }
+  }, 2600);
 
   // 初回起動時（_splashGreetingSeen未設定 = まだ1回も起動していない）にマトリクス紹介を表示
   // _splashGreetingSeen は closeSplash前の挨拶生成時に設定済みなので
@@ -3643,14 +3638,14 @@ END OF 開発ルール
       </div>
     </div>
 
-    <!-- 優先権説明 -->
+    <!-- 開発支援説明 -->
     <div style="text-align:left;background:rgba(251,191,36,0.08);border-radius:12px;padding:14px 16px;margin-bottom:20px;border:1px solid rgba(251,191,36,0.2);">
-      <div style="font-size:0.72em;font-weight:700;color:#fbbf24;margin-bottom:6px;letter-spacing:0.06em;">⭐ 300円で優先開発権</div>
+      <div style="font-size:0.72em;font-weight:700;color:#fbbf24;margin-bottom:6px;letter-spacing:0.06em;">⭐ 開発支援・優先開発権</div>
       <div style="font-size:0.79em;color:rgba(255,255,255,0.65);line-height:1.9;">
-        ご支援いただいた方の要望を、優先開発リストの上位に入れさせていただきたいと思います。<br><br>
-        ご要望は、OFUSEのファンレターからお気軽にお送りください。こちらからもご連絡差し上げます。<br><br>
-        いただいたご支援は、継続的なインフラ整備と開発用途に使わせていただくことをお約束申し上げます。<br><br>
-        一緒に育てていただけると、大変嬉しいです。
+        ご支援いただいた方のご要望を、優先開発リストの上位に入れさせていただきます。<br><br>
+        ご要望は、OFUSEのファンレターからお気軽にどうぞ。こちらからもご連絡します。<br><br>
+        いただいたご支援は、インフラ整備と開発に大切に使わせていただきます。<br><br>
+        あなたの想いの分だけ、このアプリは育ちます。
       </div>
     </div>
 
@@ -3659,8 +3654,112 @@ END OF 開発ルール
       style="display:block;background:linear-gradient(135deg,#fbbf24 0%,#f59e0b 50%,#d97706 100%);color:#1a1a00;font-weight:800;font-size:0.92em;padding:14px;border-radius:12px;text-decoration:none;margin-bottom:10px;letter-spacing:0.04em;box-shadow:0 4px 20px rgba(251,191,36,0.4);transition:transform 0.15s,box-shadow 0.15s;"
       onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 28px rgba(251,191,36,0.6)';"
       onmouseout="this.style.transform='';this.style.boxShadow='0 4px 20px rgba(251,191,36,0.4)';">
-      ⭐ OFUSEで開発を応援する（300円〜）
+      ⭐ OFUSEで開発を応援する（¥300〜ご随意）
     </a>
+    <!-- 称号ラインナップ -->
+    <div style="margin-bottom:16px;border:1px solid rgba(255,255,255,0.08);border-radius:12px;overflow:hidden;">
+      <div style="padding:10px 14px;background:rgba(251,191,36,0.06);font-size:0.7em;color:rgba(255,255,255,0.4);letter-spacing:0.08em;font-weight:700;">✦ 支援者の称号</div>
+      <div style="padding:4px 0;">
+        <div style="display:flex;align-items:baseline;gap:8px;padding:6px 14px;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <span style="font-size:0.78em;color:#fbbf24;white-space:nowrap;">¥300〜</span>
+          <span style="font-size:0.72em;color:rgba(255,255,255,0.9);">🌱 風のたより</span>
+          <span style="font-size:0.65em;color:rgba(255,255,255,0.7);margin-left:auto;">開発支援者として記録</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:8px;padding:6px 14px;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <span style="font-size:0.78em;color:#fbbf24;white-space:nowrap;">¥3,000〜</span>
+          <span style="font-size:0.72em;color:rgba(255,255,255,0.9);">🌿 季節の使者</span>
+          <span style="font-size:0.65em;color:rgba(255,255,255,0.7);margin-left:auto;">開発ブログで感謝</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:8px;padding:6px 14px;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <span style="font-size:0.78em;color:#fbbf24;white-space:nowrap;">¥5,000〜</span>
+          <span style="font-size:0.72em;color:rgba(255,255,255,0.9);">🌸 季節の守り人</span>
+          <span style="font-size:0.65em;color:rgba(255,255,255,0.7);margin-left:auto;">noteで感謝記事に名前を</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:8px;padding:6px 14px;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <span style="font-size:0.78em;color:#fbbf24;white-space:nowrap;">¥10,000〜</span>
+          <span style="font-size:0.72em;color:rgba(255,255,255,0.9);">🍃 風花（かざはな）</span>
+          <span style="font-size:0.65em;color:rgba(255,255,255,0.7);margin-left:auto;">季節の風だより特別号</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:8px;padding:6px 14px;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <span style="font-size:0.78em;color:#fbbf24;white-space:nowrap;">¥30,000〜</span>
+          <span style="font-size:0.72em;color:rgba(255,255,255,0.9);">🌕 月の巡り</span>
+          <span style="font-size:0.65em;color:rgba(255,255,255,0.7);margin-left:auto;">特別号＋直接ご挨拶</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:8px;padding:6px 14px;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <span style="font-size:0.78em;color:#fbbf24;white-space:nowrap;">¥50,000〜</span>
+          <span style="font-size:0.72em;color:rgba(255,255,255,0.9);">🍂 移ろいの証人</span>
+          <span style="font-size:0.65em;color:rgba(255,255,255,0.7);margin-left:auto;">未公開の一節を毎月</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:8px;padding:6px 14px;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <span style="font-size:0.78em;color:#fbbf24;white-space:nowrap;">¥100,000〜</span>
+          <span style="font-size:0.72em;color:rgba(255,255,255,0.9);">❄️ 四季を抱く者</span>
+          <span style="font-size:0.65em;color:rgba(255,255,255,0.7);margin-left:auto;">特別な文通（デジタル）</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:8px;padding:6px 14px;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <span style="font-size:0.78em;color:#fbbf24;white-space:nowrap;">¥300,000〜</span>
+          <span style="font-size:0.72em;color:rgba(255,255,255,0.6);font-weight:600;">🌟 永遠の暦人（こよみびと）</span>
+          <span style="font-size:0.65em;color:rgba(255,255,255,0.75);margin-left:auto;">心に3年間刻まれます</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:8px;padding:6px 14px;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <span style="font-size:0.78em;color:#fbbf24;white-space:nowrap;">¥500,000〜</span>
+          <span style="font-size:0.72em;color:rgba(255,255,255,0.6);font-weight:600;">🌌 天地の息吹</span>
+          <span style="font-size:0.65em;color:rgba(255,255,255,0.75);margin-left:auto;">心に5年間刻まれます</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:8px;padding:6px 14px;border-bottom:1px solid rgba(255,255,255,0.06);">
+          <span style="font-size:0.78em;color:#fbbf24;white-space:nowrap;">¥1,000,000〜</span>
+          <span style="font-size:0.72em;color:rgba(255,255,255,0.7);font-weight:700;">🌸 春霞の永久（とこしえ）</span>
+          <span style="font-size:0.65em;color:rgba(255,255,255,0.4);margin-left:auto;">心に一生刻まれます</span>
+        </div>
+        <!-- ラグジュアリー枠 -->
+        <div style="padding:8px 14px 4px;font-size:0.62em;color:rgba(255,255,255,0.55);letter-spacing:0.1em;">── ラグジュアリー枠 ──</div>
+        <div style="display:flex;align-items:baseline;gap:8px;padding:4px 14px;border-bottom:1px solid rgba(255,255,255,0.06);">
+          <span style="font-size:0.72em;color:rgba(255,191,36,0.9);white-space:nowrap;">¥1,500,000〜</span>
+          <span style="font-size:0.72em;color:rgba(255,255,255,0.85);">⌚ グランドセイコー級</span>
+          <span style="font-size:0.65em;color:rgba(255,255,255,0.6);margin-left:auto;">国産精工芸の粋のような支援</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:8px;padding:4px 14px;border-bottom:1px solid rgba(255,255,255,0.06);">
+          <span style="font-size:0.72em;color:rgba(255,191,36,0.9);white-space:nowrap;">¥2,000,000〜</span>
+          <span style="font-size:0.72em;color:rgba(255,255,255,0.85);">🏛️ オメガ級</span>
+          <span style="font-size:0.65em;color:rgba(255,255,255,0.6);margin-left:auto;">宇宙にも届くような支援</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:8px;padding:4px 14px;border-bottom:1px solid rgba(255,255,255,0.06);">
+          <span style="font-size:0.72em;color:rgba(255,191,36,0.9);white-space:nowrap;">¥2,500,000〜</span>
+          <span style="font-size:0.72em;color:rgba(255,255,255,0.85);">✈️ IWC級</span>
+          <span style="font-size:0.65em;color:rgba(255,255,255,0.6);margin-left:auto;">空を駆ける職人魂のような支援</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:8px;padding:4px 14px;border-bottom:1px solid rgba(255,255,255,0.06);">
+          <span style="font-size:0.72em;color:rgba(255,191,36,0.9);white-space:nowrap;">¥4,000,000〜</span>
+          <span style="font-size:0.72em;color:rgba(255,255,255,0.85);">⌛ ロレックス級</span>
+          <span style="font-size:0.65em;color:rgba(255,255,255,0.6);margin-left:auto;">王者のような揺るぎない支援</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:8px;padding:4px 14px;border-bottom:1px solid rgba(255,255,255,0.06);">
+          <span style="font-size:0.72em;color:rgba(255,191,36,0.9);white-space:nowrap;">¥5,000,000〜</span>
+          <span style="font-size:0.72em;color:rgba(255,255,255,0.85);">🇩🇪 A.ランゲ&amp;ゾーネ級</span>
+          <span style="font-size:0.65em;color:rgba(255,255,255,0.6);margin-left:auto;">雲上の職人技のような支援</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:8px;padding:4px 14px;border-bottom:1px solid rgba(255,255,255,0.06);">
+          <span style="font-size:0.72em;color:rgba(255,191,36,0.9);white-space:nowrap;">¥6,000,000〜</span>
+          <span style="font-size:0.72em;color:rgba(255,255,255,0.85);">⚜️ ブレゲ級</span>
+          <span style="font-size:0.65em;color:rgba(255,255,255,0.6);margin-left:auto;">時計の父と呼ばれる伝説のような支援</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:8px;padding:4px 14px;border-bottom:1px solid rgba(255,255,255,0.06);">
+          <span style="font-size:0.72em;color:rgba(255,191,36,0.9);white-space:nowrap;">¥8,000,000〜</span>
+          <span style="font-size:0.72em;color:rgba(255,255,255,0.85);">💎 オーデマ・ピゲ級</span>
+          <span style="font-size:0.65em;color:rgba(255,255,255,0.6);margin-left:auto;">革命を起こすような支援</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:8px;padding:4px 14px;border-bottom:1px solid rgba(255,255,255,0.06);">
+          <span style="font-size:0.72em;color:rgba(255,191,36,0.9);white-space:nowrap;">¥9,000,000〜</span>
+          <span style="font-size:0.72em;color:rgba(255,255,255,0.85);">🔱 ヴァシュロン・コンスタンタン級</span>
+          <span style="font-size:0.65em;color:rgba(255,255,255,0.6);margin-left:auto;">1755年創業・歴史を超えるような支援</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:8px;padding:4px 14px;">
+          <span style="font-size:0.72em;color:#fbbf24;white-space:nowrap;font-weight:700;">¥30,000,000〜</span>
+          <span style="font-size:0.72em;color:#fff;font-weight:700;">👑 パテック・フィリップ級</span>
+          <span style="font-size:0.65em;color:rgba(255,255,255,0.7);margin-left:auto;">時計界の頂点のような、至高の支援</span>
+        </div>
+      </div>
+    </div>
+
     <button onclick="closePolestarModal()"
       style="width:100%;padding:10px;border:1px solid rgba(255,255,255,0.12);border-radius:12px;background:transparent;color:rgba(255,255,255,0.35);font-size:0.82em;cursor:pointer;transition:color 0.15s;"
       onmouseover="this.style.color='rgba(255,255,255,0.6)';"
@@ -3691,7 +3790,7 @@ END OF 開発ルール
     <div style="background:#fff;border-radius:16px;padding:32px 28px;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.12);">
       <div style="text-align:center;margin-bottom:24px;">
         <div style="font-size:2.5em;margin-bottom:8px;">🏰</div>
-        <h2 style="margin:0 0 8px;font-size:1.3em;color:#333;">やることクラフトへようこそ！</h2>
+        <h2 style="margin:0 0 8px;font-size:1.3em;color:#333;">やることクラフト — あなたのクラフト</h2>
         <p style="margin:0;font-size:0.85em;color:#777;">使うカレンダーを選んでください</p>
       </div>
       <div id="setupCheckboxes" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;"></div>
@@ -4754,18 +4853,55 @@ END OF 開発ルール
 
     <!-- 今日の一言メッセージ -->
     <!-- 今日の候カード -->
-    <div id="dbKouCard" style="display:none;margin-bottom:14px;padding:14px 16px;background:linear-gradient(135deg,rgba(34,197,94,0.08),rgba(16,185,129,0.05));border-radius:14px;border:1px solid rgba(34,197,94,0.2);cursor:pointer;" onclick="openKouDetailModal()">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <span id="dbKouIcon" style="font-size:1.8em;">🌿</span>
-        <div style="flex:1;">
-          <div style="font-size:0.72em;color:#6b7280;margin-bottom:2px;" id="dbKouSekki">清明</div>
-          <div style="font-size:0.95em;font-weight:700;color:#065f46;" id="dbKouName">鴻雁北（こうがんきたへかえる）</div>
-          <div style="font-size:0.72em;color:#6b7280;margin-top:2px;" id="dbKouDesc">雁がV字飛行で北の故郷へ帰る頃</div>
+    <div id="dbKouCard" style="display:none;margin-bottom:14px;border-radius:14px;border:1px solid rgba(34,197,94,0.25);overflow:hidden;">
+      <!-- 節気ヘッダー（タップで節気詳細） -->
+      <div style="background:linear-gradient(135deg,rgba(34,197,94,0.15),rgba(16,185,129,0.10));padding:10px 14px 8px;cursor:pointer;" onclick="openNijushiSekkiDetailModal()">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+          <div style="font-size:0.68em;color:#065f46;font-weight:600;letter-spacing:0.04em;">二十四節気（にじゅうしせっき）</div>
+          <div style="font-size:0.65em;color:#6b7280;" id="dbKouSekkiRange">04/05〜04/19</div>
         </div>
-        <div style="text-align:right;font-size:0.72em;color:#6b7280;">
-          <div id="dbKouDay">3日目</div>
-          <div style="color:#10b981;font-size:0.9em;">七十二候</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div>
+            <div style="font-size:0.92em;font-weight:700;color:#065f46;" id="dbKouSekki">🌿 清明（せいめい）</div>
+            <div style="font-size:0.65em;color:#6b7280;margin-top:1px;" id="dbKouSekkiDay">8日目/15日間</div>
+          </div>
         </div>
+        <div style="font-size:0.72em;color:#6b7280;margin-top:2px;" id="dbKouSekkiDesc">万物が清らかに輝く頃</div>
+        <!-- 節気進捗バー -->
+        <div style="margin-top:6px;height:4px;background:rgba(34,197,94,0.2);border-radius:4px;overflow:hidden;">
+          <div id="dbKouSekkiBar" style="height:100%;background:linear-gradient(90deg,#10b981,#34d399);border-radius:4px;transition:width 0.3s;width:50%;"></div>
+        </div>
+      </div>
+      <!-- 候本体（タップで候詳細） -->
+      <div style="background:rgba(255,255,255,0.8);padding:10px 14px 10px;cursor:pointer;" onclick="openShichijuniKouDetailModal()">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+          <div style="font-size:0.68em;color:#374151;font-weight:600;letter-spacing:0.04em;">七十二候（しちじゅうにこう）</div>
+          <div style="font-size:0.65em;color:#6b7280;" id="dbKouRange">04/10〜04/14</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">
+          <span id="dbKouIcon" style="font-size:1.3em;">🪶</span>
+          <div>
+            <div style="font-size:0.9em;font-weight:700;color:#1f2937;" id="dbKouName">鴻雁北（こうがんきたへかえる）</div>
+            <div style="font-size:0.65em;color:#6b7280;margin-top:1px;" id="dbKouDay">3日目/5日間</div>
+          </div>
+        </div>
+        <div style="font-size:0.72em;color:#6b7280;margin-bottom:6px;" id="dbKouDesc">雁がV字飛行で北の故郷へ帰る頃</div>
+        <!-- 候進捗バー -->
+        <div style="height:4px;background:rgba(99,102,241,0.15);border-radius:4px;overflow:hidden;">
+          <div id="dbKouBar" style="height:100%;background:linear-gradient(90deg,#6366f1,#818cf8);border-radius:4px;transition:width 0.3s;width:60%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 季節の風だより 常設カード -->
+    <div id="dbKazedayoriCard" style="display:none;margin-bottom:14px;border-radius:14px;overflow:hidden;border:1px solid rgba(0,0,0,0.08);cursor:pointer;" onclick="showKazedayoriModal()">
+      <div id="dbKazedayoriInner" style="padding:14px 16px;">
+        <div style="font-size:1.05em;font-weight:800;letter-spacing:0.06em;margin-bottom:6px;" id="dbKazedayoriTitle">🌸 季節の風だより</div>
+        <div style="font-size:0.78em;opacity:0.7;margin-bottom:8px;" id="dbKazedayoriDate"></div>
+        <div style="font-size:0.88em;font-weight:700;margin-bottom:8px;line-height:1.5;" id="dbKazedayoriSummary"></div>
+        <div style="font-size:0.80em;line-height:1.8;opacity:0.85;" id="dbKazedayoriDetail"></div>
+        <div style="font-size:0.72em;opacity:0.55;margin-top:8px;" id="dbKazedayoriMoon"></div>
+        <div style="font-size:0.85em;font-weight:600;margin-top:10px;" id="dbKazedayoriClosing"></div>
       </div>
     </div>
 
@@ -9944,13 +10080,57 @@ function getKingdomPower() {
 // 精度：24節気中23件完全一致（啓蟄は境界時刻の微差）
 
 // 24節気の太陽黄経定義
-var _SEKKI_LON = {
+// 節気読み仮名テーブル（ふりがな付き表示用）
+var NIJUSHISEKKI_READING = {
+  '小寒':'しょうかん','大寒':'だいかん','立春':'りっしゅん','雨水':'うすい',
+  '啓蟄':'けいちつ','春分':'しゅんぶん','清明':'せいめい','穀雨':'こくう',
+  '立夏':'りっか','小満':'しょうまん','芒種':'ぼうしゅ','夏至':'げし',
+  '小暑':'しょうしょ','大暑':'たいしょ','立秋':'りっしゅう','処暑':'しょしょ',
+  '白露':'はくろ','秋分':'しゅうぶん','寒露':'かんろ','霜降':'そうこう',
+  '立冬':'りっとう','小雪':'しょうせつ','大雪':'たいせつ','冬至':'とうじ'
+};
+function getNijushiSekkiReading(name) {
+  return NIJUSHISEKKI_READING[name] || name;
+}
+
+// 節気一言コメントテーブル（24件）
+var NIJUSHISEKKI_DESC = {
+  '小寒':'寒さが一段と厳しくなる頃',
+  '大寒':'一年で最も寒さが極まる頃',
+  '立春':'暦の上で春が始まる頃',
+  '雨水':'雪が雨に変わり、氷が解け始める頃',
+  '啓蟄':'冬ごもりの虫が目覚め、動き出す頃',
+  '春分':'昼と夜の長さが等しくなる頃',
+  '清明':'万物が清らかに輝き、生き生きとする頃',
+  '穀雨':'春雨が百穀を潤し、農作業が始まる頃',
+  '立夏':'暦の上で夏が始まる頃',
+  '小満':'草木が茂り、天地に満ち始める頃',
+  '芒種':'稲や麦の種を蒔く頃',
+  '夏至':'一年で最も昼が長くなる頃',
+  '小暑':'梅雨が明け、本格的な暑さが始まる頃',
+  '大暑':'一年で最も暑さが厳しい頃',
+  '立秋':'暦の上で秋が始まる頃',
+  '処暑':'厳しい暑さが和らぎ始める頃',
+  '白露':'朝の草葉に白い露が宿る頃',
+  '秋分':'昼と夜の長さが等しくなる頃',
+  '寒露':'野の草に冷たい露が降りる頃',
+  '霜降':'霜が降り始め、冬の訪れを感じる頃',
+  '立冬':'暦の上で冬が始まる頃',
+  '小雪':'寒さが増し、山に雪が降り始める頃',
+  '大雪':'雪が本格的に降り積もる頃',
+  '冬至':'一年で最も夜が長くなる頃'
+};
+function getNijushiSekkiDesc(name) {
+  return NIJUSHISEKKI_DESC[name] || '';
+}
+
+var NIJUSHISEKKI_SOLAR_LONGITUDE = {
   '小寒':285,'大寒':300,'立春':315,'雨水':330,'啓蟄':345,'春分':0,
   '清明':15,'穀雨':30,'立夏':45,'小満':60,'芒種':75,'夏至':90,
   '小暑':105,'大暑':120,'立秋':135,'処暑':150,'白露':165,'秋分':180,
   '寒露':195,'霜降':210,'立冬':225,'小雪':240,'大雪':255,'冬至':270
 };
-var _SEKKI_ORDER = [
+var NIJUSHISEKKI_ORDER = [
   '小寒','大寒','立春','雨水','啓蟄','春分',
   '清明','穀雨','立夏','小満','芒種','夏至',
   '小暑','大暑','立秋','処暑','白露','秋分',
@@ -9958,6 +10138,120 @@ var _SEKKI_ORDER = [
 ];
 
 // 七十二候マスターデータ（72件）
+
+// ===== 七十二候カラーテーブル（デザイナー×CXO監修）=====
+// 背景グラデーション[from, to] + 文字色
+var SHICHIJUNI_KOU_COLORS = {
+  // ===== 春 =====
+  // 立春
+  '立春_1': { from:'#f8e1e8', to:'#fce4ec', text:'#7b2d42' }, // 東風解凍 - 淡い桜まだ蕾
+  '立春_2': { from:'#e8f5e9', to:'#f1f8e9', text:'#2e6b3e' }, // 黄鶯睍睆 - 鶯萌黄
+  '立春_3': { from:'#e3f2fd', to:'#e8f4f8', text:'#1a4a6b' }, // 魚上氷 - 解け始めた水色
+  // 雨水
+  '雨水_1': { from:'#e8eaf6', to:'#ede7f6', text:'#4527a0' }, // 土脉潤起 - 春雨紫
+  '雨水_2': { from:'#f3e5f5', to:'#fce4ec', text:'#6a1b9a' }, // 霞始靆 - 霞薄紫
+  '雨水_3': { from:'#e8f5e9', to:'#f9fbe7', text:'#33691e' }, // 草木萌動 - 新芽萌黄
+  // 啓蟄
+  '啓蟄_1': { from:'#fff8e1', to:'#fffde7', text:'#6d4c00' }, // 蟄虫啓戸 - 土の温もり
+  '啓蟄_2': { from:'#fce4ec', to:'#f8bbd0', text:'#880e4f' }, // 桃始笑 - 桃色
+  '啓蟄_3': { from:'#f3e5f5', to:'#e8eaf6', text:'#4a148c' }, // 菜虫化蝶 - 蝶羽紫
+  // 春分
+  '春分_1': { from:'#fff9c4', to:'#fff8e1', text:'#6d4c00' }, // 雀始巣 - 麦わら
+  '春分_2': { from:'#fce4ec', to:'#f48fb1', text:'#880e4f' }, // 桜始開 - 桜満開ピンク
+  '春分_3': { from:'#e0f7fa', to:'#b2ebf2', text:'#006064' }, // 雷乃発声 - 春雷空
+  // 清明
+  '清明_1': { from:'#f9fbe7', to:'#f0f4c3', text:'#558b2f' }, // 玄鳥至 - 若草
+  '清明_2': { from:'#e8f5e9', to:'#c8e6c9', text:'#1b5e20' }, // 鴻雁北 - 深萌黄
+  '清明_3': { from:'#e1f5fe', to:'#b3e5fc', text:'#01579b' }, // 虹始見 - 虹水色
+  // 穀雨
+  '穀雨_1': { from:'#f1f8e9', to:'#dcedc8', text:'#33691e' }, // 葭始生 - 葦萌え緑
+  '穀雨_2': { from:'#fce4ec', to:'#f8bbd0', text:'#ad1457' }, // 霜止出苗 - 苗ピンク
+  '穀雨_3': { from:'#fff3e0', to:'#ffe0b2', text:'#bf360c' }, // 牡丹華 - 牡丹橙
+
+  // ===== 夏 =====
+  // 立夏
+  '立夏_1': { from:'#e0f7fa', to:'#b2ebf2', text:'#006064' }, // 蛙始鳴 - 水面青
+  '立夏_2': { from:'#e8f5e9', to:'#a5d6a7', text:'#1b5e20' }, // 蚯蚓出 - 深緑
+  '立夏_3': { from:'#fff9c4', to:'#fff176', text:'#f57f17' }, // 竹笋生 - 竹の子黄
+  // 小満
+  '小満_1': { from:'#f9fbe7', to:'#c5e1a5', text:'#33691e' }, // 蚕起食桑 - 桑の葉
+  '小満_2': { from:'#fff8e1', to:'#ffecb3', text:'#e65100' }, // 紅花栄 - 紅花橙黄
+  '小満_3': { from:'#e8f5e9', to:'#a5d6a7', text:'#2e7d32' }, // 麦秋至 - 麦穂緑
+  // 芒種
+  '芒種_1': { from:'#e3f2fd', to:'#bbdefb', text:'#0d47a1' }, // 螳螂生 - 梅雨前空
+  '芒種_2': { from:'#fce4ec', to:'#f48fb1', text:'#880e4f' }, // 腐草為蛍 - 蛍ピンク
+  '芒種_3': { from:'#e8eaf6', to:'#c5cae9', text:'#1a237e' }, // 梅子黄 - 梅雨紫紺
+  // 夏至
+  '夏至_1': { from:'#e1f5fe', to:'#81d4fa', text:'#01579b' }, // 乃東枯 - 盛夏の空
+  '夏至_2': { from:'#fff9c4', to:'#fff176', text:'#f57f17' }, // 菖蒲華 - 菖蒲黄
+  '夏至_3': { from:'#fff3e0', to:'#ffcc80', text:'#e65100' }, // 半夏生 - 半夏橙
+  // 小暑
+  '小暑_1': { from:'#fff8e1', to:'#ffe082', text:'#f57f17' }, // 温風至 - 熱風黄金
+  '小暑_2': { from:'#e3f2fd', to:'#90caf9', text:'#0d47a1' }, // 蓮始開 - 蓮の水色
+  '小暑_3': { from:'#fbe9e7', to:'#ffab91', text:'#bf360c' }, // 鷹乃学習 - 朱鷹
+  // 大暑
+  '大暑_1': { from:'#fff3e0', to:'#ffb74d', text:'#bf360c' }, // 桐始結花 - 盛夏橙
+  '大暑_2': { from:'#e3f2fd', to:'#64b5f6', text:'#0d47a1' }, // 土潤溽暑 - 入道雲
+  '大暑_3': { from:'#fff9c4', to:'#fff176', text:'#827717' }, // 大雨時行 - 雷雨前黄
+
+  // ===== 秋 =====
+  // 立秋
+  '立秋_1': { from:'#fff8e1', to:'#ffe082', text:'#6d4c00' }, // 涼風至 - 夕暮れ金
+  '立秋_2': { from:'#fce4ec', to:'#ef9a9a', text:'#c62828' }, // 寒蝉鳴 - 晩夏赤
+  '立秋_3': { from:'#fff3e0', to:'#ffcc80', text:'#e65100' }, // 蒙霧升降 - 朝霧橙
+  // 処暑
+  '処暑_1': { from:'#ffebee', to:'#ef9a9a', text:'#b71c1c' }, // 綿柎開 - 綿の花赤
+  '処暑_2': { from:'#fff8e1', to:'#ffe0b2', text:'#bf360c' }, // 天地始粛 - 秋橙
+  '処暑_3': { from:'#fbe9e7', to:'#ffccbc', text:'#bf360c' }, // 禾乃登 - 稲穂
+  // 白露
+  '白露_1': { from:'#e8eaf6', to:'#c5cae9', text:'#283593' }, // 草露白 - 露の蒼
+  '白露_2': { from:'#fce4ec', to:'#f48fb1', text:'#880e4f' }, // 鶺鴒鳴 - 鶺鴒紅
+  '白露_3': { from:'#fff8e1', to:'#ffecb3', text:'#f57f17' }, // 玄鳥去 - 燕去る秋黄
+  // 秋分
+  '秋分_1': { from:'#fff3e0', to:'#ffb74d', text:'#e65100' }, // 雷乃収声 - 秋橙深
+  '秋分_2': { from:'#fbe9e7', to:'#ff8a65', text:'#bf360c' }, // 蟄虫坏戸 - 紅葉始まり
+  '秋分_3': { from:'#fff8e1', to:'#ffe082', text:'#6d4c00' }, // 水始涸 - 黄金の秋
+  // 寒露
+  '寒露_1': { from:'#fce4ec', to:'#e91e63', text:'#880e4f' }, // 鴻雁来 - 渡り鳥紅
+  '寒露_2': { from:'#ffebee', to:'#ef9a9a', text:'#c62828' }, // 菊花開 - 菊赤
+  '寒露_3': { from:'#e8eaf6', to:'#9fa8da', text:'#283593' }, // 蟋蟀在戸 - 虫の音紺
+  // 霜降
+  '霜降_1': { from:'#fff3e0', to:'#ff8a65', text:'#bf360c' }, // 霜始降 - 霜橙
+  '霜降_2': { from:'#fce4ec', to:'#f06292', text:'#880e4f' }, // 霎時施 - 時雨紅
+  '霜降_3': { from:'#fff8e1', to:'#ffb300', text:'#6d4c00' }, // 楓蔦黄 - 紅葉山吹
+
+  // ===== 冬 =====
+  // 立冬
+  '立冬_1': { from:'#e8eaf6', to:'#c5cae9', text:'#283593' }, // 山茶始開 - 山茶花紺
+  '立冬_2': { from:'#e3f2fd', to:'#90caf9', text:'#0d47a1' }, // 地始凍 - 冬空藍
+  '立冬_3': { from:'#f3e5f5', to:'#ce93d8', text:'#4a148c' }, // 金盞香 - 水仙紫
+  // 小雪
+  '小雪_1': { from:'#e8eaf6', to:'#b0bec5', text:'#263238' }, // 虹蔵不見 - 灰空
+  '小雪_2': { from:'#e3f2fd', to:'#b3e5fc', text:'#01579b' }, // 朔風払葉 - 北風青
+  '小雪_3': { from:'#f3e5f5', to:'#e1bee7', text:'#4a148c' }, // 橘始黄 - 橘薄紫
+  // 大雪
+  '大雪_1': { from:'#eceff1', to:'#cfd8dc', text:'#263238' }, // 閉塞成冬 - 鉛色空
+  '大雪_2': { from:'#e3f2fd', to:'#bbdefb', text:'#0d47a1' }, // 熊蟄穴 - 冬眠の蒼
+  '大雪_3': { from:'#fce4ec', to:'#f48fb1', text:'#880e4f' }, // 鱖魚群 - 鮭紅
+  // 冬至
+  '冬至_1': { from:'#e8eaf6', to:'#9fa8da', text:'#1a237e' }, // 乃東生 - 冬至藍
+  '冬至_2': { from:'#fff3e0', to:'#ffe0b2', text:'#e65100' }, // 麋角解 - 冬の温もり
+  '冬至_3': { from:'#e3f2fd', to:'#b3e5fc', text:'#01579b' }, // 雪下出麦 - 雪空
+  // 小寒
+  '小寒_1': { from:'#eceff1', to:'#b0bec5', text:'#263238' }, // 芹乃栄 - 霜の朝
+  '小寒_2': { from:'#e8eaf6', to:'#9fa8da', text:'#283593' }, // 水泉動 - 凍る泉
+  '小寒_3': { from:'#fce4ec', to:'#f48fb1', text:'#c62828' }, // 雉始雊 - 雉紅
+  // 大寒
+  '大寒_1': { from:'#eceff1', to:'#cfd8dc', text:'#263238' }, // 款冬華 - 厳冬灰
+  '大寒_2': { from:'#e3f2fd', to:'#81d4fa', text:'#01579b' }, // 水沢腹堅 - 氷の蒼
+  '大寒_3': { from:'#f3e5f5', to:'#ce93d8', text:'#4a148c' }  // 鶏始乳 - 夜明け紫
+};
+
+function getShichijuniKouColor(sekkiName, order) {
+  var _key = sekkiName + '_' + order;
+  return SHICHIJUNI_KOU_COLORS[_key] || { from:'#f5f5f5', to:'#eeeeee', text:'#333333' };
+}
+
 var SHICHIJUNI_KOU = [
   // ===== 春 =====
   {sekki:'立春',order:1,name:'東風解凍',  reading:'はるかぜこおりをとく',   icon:'💨',season:'spring',desc:'春の温かい風が氷を解かし始める頃'},
@@ -10038,7 +10332,7 @@ var SHICHIJUNI_KOU = [
 ];
 
 // ===== 七十二候計算関数群 =====
-function _calcSolarLongitudeForKou(jd) {
+function calcSolarLongitudeForShichijuniKou(jd) {
   var T = (jd - 2451545.0) / 36525.0;
   var L0 = 280.46646 + 36000.76983 * T + 0.0003032 * T * T;
   L0 = L0 % 360; if (L0 < 0) L0 += 360;
@@ -10054,13 +10348,13 @@ function _calcSolarLongitudeForKou(jd) {
   return sunLon;
 }
 
-function _calcSekkiJD(year, targetLon) {
+function calcNijushiSekkiJulianDate(year, targetLon) {
   // targetLonの太陽黄経になる日のユリウス日を計算
-  if (typeof _dateToJDForKou !== 'function') return 0;
+  if (typeof convertDateToJulianDateForKou !== 'function') return 0;
   var approxDoy = Math.round(targetLon / 360 * 365.25);
-  var jd = _dateToJDForKou(year, 1, 1, 12) + approxDoy;
+  var jd = convertDateToJulianDateForKou(year, 1, 1, 12) + approxDoy;
   for (var i = 0; i < 50; i++) {
-    var lon = _calcSolarLongitudeForKou(jd);
+    var lon = calcSolarLongitudeForShichijuniKou(jd);
     var diff = targetLon - lon;
     if (diff > 180) diff -= 360;
     if (diff < -180) diff += 360;
@@ -10070,7 +10364,7 @@ function _calcSekkiJD(year, targetLon) {
   return jd;
 }
 
-function _dateToJDForKou(year, month, day, hour) {
+function convertDateToJulianDateForKou(year, month, day, hour) {
   hour = hour || 12;
   if (month <= 2) { year--; month += 12; }
   var A = Math.floor(year / 100);
@@ -10078,18 +10372,18 @@ function _dateToJDForKou(year, month, day, hour) {
   return Math.floor(365.25 * (year + 4716)) + Math.floor(30.6001 * (month + 1)) + day + hour / 24 + B - 1524.5;
 }
 
-function getCurrentKou(dateObj) {
+function getCurrentShichijuniKou(dateObj) {
   // 今日がどの七十二候かを返す
   if (!dateObj) dateObj = new Date();
   var year = dateObj.getFullYear();
-  var todayJD = _dateToJDForKou(year, dateObj.getMonth() + 1, dateObj.getDate(), 12);
+  var todayJD = convertDateToJulianDateForKou(year, dateObj.getMonth() + 1, dateObj.getDate(), 12);
 
   // 今年・前後年の全節気JDを計算
   var sekkiDates = [];
   [-1, 0, 1].forEach(function(dy) {
     var y = year + dy;
-    _SEKKI_ORDER.forEach(function(name) {
-      sekkiDates.push({ name: name, jd: _calcSekkiJD(y, _SEKKI_LON[name]) });
+    NIJUSHISEKKI_ORDER.forEach(function(name) {
+      sekkiDates.push({ name: name, jd: calcNijushiSekkiJulianDate(y, NIJUSHISEKKI_SOLAR_LONGITUDE[name]) });
     });
   });
   sekkiDates.sort(function(a, b) { return a.jd - b.jd; });
@@ -10123,8 +10417,24 @@ function getCurrentKou(dateObj) {
   }
   if (!kouDef) return null;
 
+  // 節気の日付範囲（JD→JST日付文字列）
+  function _jdToMD(jd) {
+    var jdJST = jd + 9/24;
+    var z = Math.floor(jdJST + 0.5);
+    var A = z >= 2299161 ? (function(){ var a=Math.floor((z-1867216.25)/36524.25); return z+1+a-Math.floor(a/4); })() : z;
+    var B=A+1524, C=Math.floor((B-122.1)/365.25), D=Math.floor(365.25*C), E=Math.floor((B-D)/30.6001);
+    var d=B-D-Math.floor(30.6001*E), m=E<14?E-1:E-13;
+    return String(m).padStart(2,'0') + '/' + String(d).padStart(2,'0');
+  }
+  var sekkiStartStr = _jdToMD(curSekki.jd);
+  var sekkiEndStr   = _jdToMD(nextSekki.jd - 1);
+  var kouStartStr   = _jdToMD(kouStartJD);
+  var kouEndStr     = _jdToMD(kouEndJD - 1);
+  var dayInSekki    = Math.floor(todayJD - curSekki.jd) + 1;
+  var sekkiTotalDays= Math.round(nextSekki.jd - curSekki.jd);
+
   return {
-    id: curSekki.name + '_' + kouOrder,  // 一意ID（例："清明_2"）
+    id: curSekki.name + '_' + kouOrder,
     sekkiName: curSekki.name,
     kouOrder: kouOrder,
     name: kouDef.name,
@@ -10133,15 +10443,21 @@ function getCurrentKou(dateObj) {
     season: kouDef.season,
     desc: kouDef.desc,
     dayInKou: dayInKou,
-    totalDays: totalDays
+    totalDays: totalDays,
+    sekkiStart: sekkiStartStr,
+    sekkiEnd: sekkiEndStr,
+    sekkiDay: dayInSekki,
+    sekkiTotalDays: sekkiTotalDays,
+    kouStart: kouStartStr,
+    kouEnd: kouEndStr
   };
 }
 
-function checkKouChangeAndToast() {
+function checkShichijuniKouChangeAndShowToast() {
   // 起動時に候が変わっていたらToast
   if (window._isTesting) return;
   if (!allSettings || !allSettings.season) return;
-  var kou = getCurrentKou(new Date());
+  var kou = getCurrentShichijuniKou(new Date());
   if (!kou) return;
   var lastId = allSettings.season.lastKouId;
   if (lastId && lastId !== kou.id) {
@@ -14958,7 +15274,7 @@ function reviveBlueprint(id) {
         position:fixed; bottom:calc(80px + env(safe-area-inset-bottom, 0px)); left:50%; transform:translateX(-50%);
         background:${c.bg}; color:${c.text}; border:1px solid ${c.border};
         padding:12px 20px; border-radius:12px; font-size:0.88em;
-        z-index:99999; max-width:85vw; text-align:center;
+        z-index:99999; max-width:85vw; text-align:left; white-space:pre-line;
         box-shadow:0 4px 20px rgba(0,0,0,0.3);
         display:flex; align-items:center; gap:10px;
         transition:opacity 0.3s; opacity:1; pointer-events:auto;
@@ -16568,7 +16884,7 @@ function reviveBlueprint(id) {
     })();
     // 日次ビューを初期描画
     renderAllSections((typeof currentDailyDate !== 'undefined' && currentDailyDate) || null);
-    checkKouChangeAndToast();
+    checkShichijuniKouChangeAndShowToast();
       window._dbgLog('【王国描画】RENDER COMPLETE --- 全象限、描画完了 / 王国は今——動いています');
     window._dbgLog('renderAllSections done');
     // 多層マトリクスの初期レイヤー適用（起動時はmatrixタブ非表示なので円も隠す）
@@ -19287,8 +19603,16 @@ function loadSettingsUI() {
       var _toku = typeof getToku === 'function' ? getToku() : 0;
       var _gdp = typeof getGDP === 'function' ? getGDP() : 0;
       var _title = typeof getKingdomTitle === 'function' ? getKingdomTitle() : {icon:'🌱',name:'開拓民'};
-      showCustomModal(
-        '☯️ 天命降臨',
+      // customModalを直接操作
+      var _tcm = document.getElementById('customModal');
+      var _tcmTitle = _tcm ? _tcm.querySelector('.modal-title') : null;
+      var _tcmMsg = _tcm ? _tcm.querySelector('.modal-message') : null;
+      var _tcmCancel = document.getElementById('modal-cancel-btn');
+      var _tcmConfirm = document.getElementById('modal-confirm-btn');
+      if (!_tcm || !_tcmMsg) return;
+      if (_tcmTitle) _tcmTitle.textContent = '☯️ 天命降臨';
+      if (_tcmMsg) _tcmMsg.innerHTML =
+        '<div style="white-space:pre-line;font-size:0.85em;text-align:left;">' +
         '現在の王国の記録を前世の功績として永久に刻み、天命を更新します。\n\n' +
         '【前世の記録】\n' +
         '称号：' + _title.icon + ' ' + _title.name + '\n' +
@@ -19300,12 +19624,11 @@ function loadSettingsUI() {
         '・徳は引き継がれます\n' +
         '・天命Lv.' + (_lv + 1) + 'バッジを獲得します\n' +
         '・前世殿堂に記録が残ります\n\n' +
-        '本当に天命を更新しますか？',
-        [
-          { label:'✅ 天命を更新する', action: function() { executeTenmeiUpdate(); } },
-          { label:'キャンセル', action: function() {} }
-        ]
-      );
+        '本当に天命を更新しますか？' +
+        '</div>';
+      if (_tcmCancel) { _tcmCancel.style.display = ''; _tcmCancel.textContent = 'キャンセル'; _tcmCancel.onclick = function(){ closeModal(); }; }
+      if (_tcmConfirm) { _tcmConfirm.textContent = '✅ 天命を更新する'; _tcmConfirm.onclick = function(){ closeModal(); executeTenmeiUpdate(); }; }
+      _tcm.classList.add('show');
     }
 
     function executeTenmeiUpdate() {
@@ -19344,9 +19667,9 @@ function loadSettingsUI() {
 
     window.openTenmeiModal = openTenmeiModal;
 
-    function openKouDetailModal() {
-      if (typeof getCurrentKou !== 'function') return;
-      var _kou = getCurrentKou(new Date());
+    function openShichijuniKouDetailModal() {
+      if (typeof getCurrentShichijuniKou !== 'function') return;
+      var _kou = getCurrentShichijuniKou(new Date());
       if (!_kou) return;
       var msg = '<div style="text-align:center;">' +
         '<div style="font-size:2em;margin-bottom:8px;">' + _kou.icon + '</div>' +
@@ -19355,13 +19678,209 @@ function loadSettingsUI() {
         '<div style="font-size:0.85em;color:#374151;margin-bottom:12px;">（' + _kou.reading + '）</div>' +
         '<div style="font-size:0.82em;color:#6b7280;line-height:1.7;margin-bottom:12px;">' + _kou.desc + '</div>' +
         '<div style="font-size:0.78em;color:#9ca3af;">' + _kou.dayInKou + '日目 / ' + _kou.totalDays + '日間</div>' +
-        '<div style="font-size:0.7em;color:#9ca3af;margin-top:8px;">権威：国立天文台暦計算室 · Meeus式リアルタイム計算</div>' +
+        '<div style="font-size:0.7em;color:#9ca3af;margin-top:8px;">出典：国立天文台暦計算室・Meeus式リアルタイム計算</div>' +
         '</div>';
-      showCustomModal(_kou.name + '（' + _kou.reading + '）', msg, [{label:'閉じる', action:'close'}]);
+      // customModalを直接操作（showCustomModal関数は存在しないため）
+      var _cm = document.getElementById('customModal');
+      var _cmTitle = _cm ? _cm.querySelector('.modal-title') : null;
+      var _cmMsg = _cm ? _cm.querySelector('.modal-message') : null;
+      var _cmCancel = document.getElementById('modal-cancel-btn');
+      var _cmConfirm = document.getElementById('modal-confirm-btn');
+      if (!_cm || !_cmMsg) return;
+      if (_cmTitle) _cmTitle.textContent = _kou.name + '（' + _kou.reading + '）';
+      if (_cmMsg) _cmMsg.innerHTML = msg;
+      if (_cmCancel) _cmCancel.style.display = 'none';
+      if (_cmConfirm) { _cmConfirm.textContent = '閉じる'; _cmConfirm.onclick = function(){ closeModal(); if (_cmCancel) _cmCancel.style.display = ''; }; }
+      _cm.classList.add('show');
     }
-    window.openKouDetailModal = openKouDetailModal;
-    window.getCurrentKou = getCurrentKou;
-    window.checkKouChangeAndToast = checkKouChangeAndToast;
+    function openNijushiSekkiDetailModal() {
+      var _kou = getCurrentShichijuniKou(new Date());
+      if (!_kou) return;
+      var _cm = document.getElementById('customModal');
+      var _cmTitle = _cm ? _cm.querySelector('.modal-title') : null;
+      var _cmMsg = _cm ? _cm.querySelector('.modal-message') : null;
+      var _cmCancel = document.getElementById('modal-cancel-btn');
+      var _cmConfirm = document.getElementById('modal-confirm-btn');
+      if (!_cm || !_cmMsg) return;
+      if (_cmTitle) _cmTitle.textContent = '🌿 ' + _kou.sekkiName + '（' + (typeof getNijushiSekkiReading === 'function' ? getNijushiSekkiReading(_kou.sekkiName) : '') + '）';
+      if (_cmMsg) _cmMsg.innerHTML =
+        '<div style="text-align:center;">' +
+        '<div style="font-size:0.78em;color:#6b7280;margin-bottom:8px;">二十四節気（にじゅうしせっき）</div>' +
+        '<div style="font-size:1.1em;font-weight:700;color:#065f46;margin-bottom:4px;">🌿 ' + _kou.sekkiName + '（' + (typeof getNijushiSekkiReading === 'function' ? getNijushiSekkiReading(_kou.sekkiName) : '') + '）</div>' +
+        '<div style="font-size:0.78em;color:#6b7280;margin-bottom:4px;">' + (_kou.sekkiStart || '') + '〜' + (_kou.sekkiEnd || '') + '　' + (_kou.sekkiDay || '-') + '日目/' + (_kou.sekkiTotalDays || '-') + '日間</div>' +
+        '<div style="font-size:0.85em;color:#374151;margin-bottom:12px;">' + (typeof getNijushiSekkiDesc === 'function' ? getNijushiSekkiDesc(_kou.sekkiName) : '') + '</div>' +
+        '<div style="font-size:0.7em;color:#9ca3af;">出典：国立天文台暦計算室・Meeus式リアルタイム計算</div>' +
+        '</div>';
+      if (_cmCancel) _cmCancel.style.display = 'none';
+      if (_cmConfirm) { _cmConfirm.textContent = '閉じる'; _cmConfirm.onclick = function(){ closeModal(); if (_cmCancel) _cmCancel.style.display = ''; }; }
+      _cm.classList.add('show');
+    }
+    // ===== 季節の風だより モーダル =====
+    function showKazedayoriModal() {
+      try {
+        var _now = new Date();
+        var _h = _now.getHours();
+        var _days = ['日','月','火','水','木','金','土'];
+        var _dateStr = _now.getFullYear() + '/' +
+          String(_now.getMonth()+1).padStart(2,'0') + '/' +
+          String(_now.getDate()).padStart(2,'0') +
+          '（' + _days[_now.getDay()] + '）';
+        // 挨拶+寄り添う言葉（時間帯×8パターンからランダム）
+        // スタイル：パリッとした挨拶 + ほどよい距離感の一言
+        var _greetPatterns = {
+          morning: [
+            'おはようございます ☀️\nもう起きてるんですね。',
+            'おはようございます ☀️\n今日もはじまりましたね。',
+            'おはようございます ☀️\n朝早いですね。',
+            'おはようございます ☀️\nゆっくり起きれましたか。',
+            'おはようございます ☀️\n今日はどんな一日になりそうですか。',
+            'おはようございます ☀️\nまだ眠たい時間かもしれませんね。',
+            'おはようございます ☀️\n今朝の空気はどうですか。',
+            'おはようございます ☀️\n朝から動いてるんですね。',
+            'おはようございます ☀️\n今日もよろしくお願いします。',
+            'おはようございます ☀️\n朝ごはん、食べましたか。',
+          ],
+          noon: [
+            'こんにちは 🌤️\nお昼の時間ですね。',
+            'こんにちは 🌤️\nちょうど一日の折り返しですね。',
+            'こんにちは 🌤️\nお昼はもう食べましたか。',
+            'こんにちは 🌤️\n午前中お疲れさまでした。',
+            'こんにちは 🌤️\n今日はいい天気ですか。',
+            'こんにちは 🌤️\n昼間にアプリ開いてくれましたね。',
+            'こんにちは 🌤️\nひと息ついているところですか。',
+            'こんにちは 🌤️\n今日の調子はどうですか。',
+            'こんにちは 🌤️\nお昼どきですね。',
+            'こんにちは 🌤️\n少し一息ついてください。',
+          ],
+          afternoon: [
+            'こんにちは 🌿\n午後もお疲れさまです。',
+            'こんにちは 🌿\n午後の時間帯ですね。',
+            'こんにちは 🌿\nもうひと踏ん張りの時間帯ですね。',
+            'こんにちは 🌿\n夕方が近づいてきました。',
+            'こんにちは 🌿\n午後も動いてるんですね。',
+            'こんにちは 🌿\n少し休憩できてますか。',
+            'こんにちは 🌿\n今日の後半戦ですね。',
+            'こんにちは 🌿\nこの時間帯、眠くなりませんか。',
+            'こんにちは 🌿\n夕方まであとひとがんばりですね。',
+            'こんにちは 🌿\n気がついたら午後ですね。',
+          ],
+          evening: [
+            'こんばんは 🌆\n今日もお疲れさまでした。',
+            'こんばんは 🌆\n夕方になりましたね。',
+            'こんばんは 🌆\n一日の終わりが近づいてきました。',
+            'こんばんは 🌆\n今日はどんな一日でしたか。',
+            'こんばんは 🌆\n夜ですね。ゆっくりできそうですか。',
+            'こんばんは 🌆\n今日もよく動きましたね。',
+            'こんばんは 🌆\n夕暮れ時ですね。',
+            'こんばんは 🌆\nそろそろ自分の時間ですね。',
+            'こんばんは 🌆\n今日一日、お疲れさまでした。',
+            'こんばんは 🌆\n夜風が気持ちいい季節です。',
+          ],
+          night: [
+            'こんばんは 🌙\n夜更かしですね。',
+            'こんばんは 🌙\n深夜まで起きてるんですね。',
+            'こんばんは 🌙\n夜も遅いですね。',
+            'こんばんは 🌙\n静かな時間帯ですね。',
+            'こんばんは 🌙\nもうこんな時間ですか。',
+            'こんばんは 🌙\n夜中に開いてくれてるんですね。',
+            'こんばんは 🌙\n遅くまでお疲れさまです。',
+            'こんばんは 🌙\n夜の静けさ、好きですか。',
+            'こんばんは 🌙\nそろそろ休めそうですか。',
+            'こんばんは 🌙\n夜型なんですね。',
+          ]
+        };
+        var _greetKey =
+          (_h >= 5  && _h < 10) ? 'morning' :
+          (_h >= 10 && _h < 13) ? 'noon' :
+          (_h >= 13 && _h < 17) ? 'afternoon' :
+          (_h >= 17 && _h < 21) ? 'evening' : 'night';
+        var _greetList = _greetPatterns[_greetKey];
+        var _greet = _greetList[Math.floor(Math.random() * _greetList.length)];
+
+        var _body = '';
+        var _col = { from:'#f5f5f5', to:'#eeeeee', text:'#333333' };
+        if (typeof getCurrentShichijuniKou === 'function') {
+          var _gk = getCurrentShichijuniKou(_now);
+          if (_gk) {
+            var _sekkiR = typeof getNijushiSekkiReading === 'function' ? getNijushiSekkiReading(_gk.sekkiName) : '';
+            _body =
+              '今日は' + _gk.sekkiName + '（' + _sekkiR + '）で、\n' +
+              _gk.name + '（' + _gk.reading + '）です。\n' +
+              '\n' +
+              '🌿 二十四節気 ＝ ' + _gk.sekkiName + ' ' + (_gk.sekkiDay||'-') + '日目\n' +
+              '　　（' + (_gk.sekkiStart||'') + '〜' + (_gk.sekkiEnd||'') + '）\n' +
+              '\n' +
+              '🍃 七十二候 ＝ ' + _gk.name + ' ' + (_gk.dayInKou||'-') + '日目\n' +
+              '　　（' + (_gk.kouStart||'') + '〜' + (_gk.kouEnd||'') + '）\n' +
+              '\n' +
+              _gk.desc + '。';
+            if (typeof getShichijuniKouColor === 'function') {
+              _col = getShichijuniKouColor(_gk.sekkiName, _gk.kouOrder);
+            }
+          }
+        }
+
+        var _moonFooter = '';
+        if (typeof calcMoonAgeNAOJ === 'function') {
+          var _age = calcMoonAgeNAOJ(_now);
+          var _ageRound = Math.round(_age * 10) / 10;
+          var _phaseNames = ['🌑新月','🌑新月','🌒三日月','🌒三日月','🌒三日月','🌒三日月','🌒三日月','🌓上弦の月','🌓上弦の月','🌔十三夜','🌔十三夜','🌔十三夜','🌔十三夜','🌔十三夜','🌕満月','🌕満月','🌕満月','🌖十六夜','🌖十六夜','🌖十六夜','🌖十六夜','🌗下弦の月','🌗下弦の月','🌗下弦の月','🌘有明月','🌘有明月','🌘有明月','🌘有明月','🌘有明月','🌑晦日月'];
+          var _phase = _phaseNames[Math.min(Math.floor(_ageRound), 29)] || '';
+          _moonFooter = '今日の月は月齢 ' + _ageRound + '。\n' + _phase + '。\n\n今日もおつかれさま。';
+        } else {
+          _moonFooter = '今日もおつかれさま。';
+        }
+
+        // DOM反映
+        var _modal = document.getElementById('kazedayoriModal');
+        var _card  = document.getElementById('kazedayoriCard');
+        if (!_modal || !_card) return;
+        document.getElementById('kazedayoriDate').textContent  = _dateStr;
+        document.getElementById('kazedayoriGreet').textContent = _greet;
+        document.getElementById('kazedayoriBody').textContent  = _body;
+        document.getElementById('kazedayoriFooter').textContent = _moonFooter;
+
+        // 候カラーを適用
+        _card.style.background = 'linear-gradient(160deg,' + _col.from + ' 0%,' + _col.to + ' 100%)';
+        var _textEls = ['kazedayoriLabel','kazedayoriDate','kazedayoriGreet','kazedayoriBody','kazedayoriFooter'];
+        _textEls.forEach(function(id){
+          var _el = document.getElementById(id);
+          if (_el) _el.style.color = _col.text;
+        });
+        var _btn = document.getElementById('kazedayoriCloseBtn');
+        if (_btn) { _btn.style.color = _col.text; }
+        var _btnArea = document.getElementById('kazedayoriBtnArea');
+        if (_btnArea) { _btnArea.style.background = 'linear-gradient(160deg,' + _col.from + ' 0%,' + _col.to + ' 100%)'; }
+
+        _modal.style.display = 'flex';
+
+        // 35秒後に自動消去（フェードアウト）
+        if (window._kazedayoriTimer) clearTimeout(window._kazedayoriTimer);
+        window._kazedayoriTimer = setTimeout(function() {
+          var _m = document.getElementById('kazedayoriModal');
+          if (_m && _m.style.display !== 'none') {
+            _m.style.transition = 'opacity 1s';
+            _m.style.opacity = '0';
+            setTimeout(function() {
+              if (_m) { _m.style.display = 'none'; _m.style.opacity = '1'; _m.style.transition = ''; }
+            }, 1000);
+          }
+        }, 35000);
+      } catch(e) { console.error('kazedayori:', e); }
+    }
+
+    function closeKazedayoriModal() {
+      if (window._kazedayoriTimer) clearTimeout(window._kazedayoriTimer);
+      var _modal = document.getElementById('kazedayoriModal');
+      if (_modal) { _modal.style.display = 'none'; _modal.style.opacity = '1'; _modal.style.transition = ''; }
+    }
+
+    window.showKazedayoriModal = showKazedayoriModal;
+    window.closeKazedayoriModal = closeKazedayoriModal;
+    window.openNijushiSekkiDetailModal = openNijushiSekkiDetailModal;
+    window.openShichijuniKouDetailModal = openShichijuniKouDetailModal;
+    window.getCurrentShichijuniKou = getCurrentShichijuniKou;
+    window.checkShichijuniKouChangeAndShowToast = checkShichijuniKouChangeAndShowToast;
     window.SHICHIJUNI_KOU = SHICHIJUNI_KOU;
     window.executeTenmeiUpdate = executeTenmeiUpdate;
     window.renderDashboardView = renderDashboardView;
@@ -20905,24 +21424,93 @@ function renderDashboardView() {
       if (_btn2) _btn2.style.display = '';
     }
   })();
+  // 季節の風だより 常設カード更新（日付が変わったら自動更新）
+  (function() {
+    var _dbKaze = document.getElementById('dbKazedayoriCard');
+    var _dbKazeInner = document.getElementById('dbKazedayoriInner');
+    if (!_dbKaze) return;
+    try {
+      var _now = new Date();
+      var _todayStr = getLocalDateStr(_now);
+      var _days = ['日','月','火','水','木','金','土'];
+      var _dateStr = _now.getFullYear() + '/' +
+        String(_now.getMonth()+1).padStart(2,'0') + '/' +
+        String(_now.getDate()).padStart(2,'0') +
+        '（' + _days[_now.getDay()] + '）';
+
+      var _summary = '';
+      var _detail = '';
+      var _moonLine = '';
+      var _col = { from:'#f5f5f5', to:'#eeeeee', text:'#333' };
+
+      if (typeof getCurrentShichijuniKou === 'function') {
+        var _gk = getCurrentShichijuniKou(_now);
+        if (_gk) {
+          var _sr = typeof getNijushiSekkiReading === 'function' ? getNijushiSekkiReading(_gk.sekkiName) : '';
+          _summary = '今日は' + _gk.sekkiName + '（' + _sr + '）、' + _gk.name + '（' + _gk.reading + '）です。';
+          _detail =
+            '🌿 二十四節気 ＝ ' + _gk.sekkiName + ' ' + (_gk.sekkiDay||'-') + '日目（' + (_gk.sekkiStart||'') + '〜' + (_gk.sekkiEnd||'') + '）\n' +
+            '🍃 七十二候 ＝ ' + _gk.name + ' ' + (_gk.dayInKou||'-') + '日目（' + (_gk.kouStart||'') + '〜' + (_gk.kouEnd||'') + '）\n' +
+            _gk.desc + '。';
+          if (typeof getShichijuniKouColor === 'function') {
+            _col = getShichijuniKouColor(_gk.sekkiName, _gk.kouOrder);
+          }
+        }
+      }
+      if (typeof calcMoonAgeNAOJ === 'function') {
+        var _age = calcMoonAgeNAOJ(_now);
+        var _ageR = Math.round(_age * 10) / 10;
+        var _phases = ['🌑新月','🌑新月','🌒三日月','🌒三日月','🌒三日月','🌒三日月','🌒三日月','🌓上弦の月','🌓上弦の月','🌔十三夜','🌔十三夜','🌔十三夜','🌔十三夜','🌔十三夜','🌕満月','🌕満月','🌕満月','🌖十六夜','🌖十六夜','🌖十六夜','🌖十六夜','🌗下弦の月','🌗下弦の月','🌗下弦の月','🌘有明月','🌘有明月','🌘有明月','🌘有明月','🌘有明月','🌑晦日月'];
+        _moonLine = '今日の月は月齢' + _ageR + '。' + (_phases[Math.min(Math.floor(_ageR),29)]||'') + '。';
+      }
+
+      // DOM反映
+      var _el = function(id){ return document.getElementById(id); };
+      if (_el('dbKazedayoriDate'))   _el('dbKazedayoriDate').textContent   = _dateStr;
+      if (_el('dbKazedayoriSummary')) _el('dbKazedayoriSummary').textContent = _summary;
+      if (_el('dbKazedayoriDetail')) { _el('dbKazedayoriDetail').textContent = _detail; _el('dbKazedayoriDetail').style.whiteSpace = 'pre-line'; }
+      if (_el('dbKazedayoriMoon'))   _el('dbKazedayoriMoon').textContent   = _moonLine;
+      if (_el('dbKazedayoriClosing')) _el('dbKazedayoriClosing').textContent = '今日もおつかれさま。';
+
+      // 候カラー適用
+      if (_dbKazeInner) _dbKazeInner.style.background = 'linear-gradient(160deg,' + _col.from + ' 0%,' + _col.to + ' 100%)';
+      var _textIds = ['dbKazedayoriTitle','dbKazedayoriDate','dbKazedayoriSummary','dbKazedayoriDetail','dbKazedayoriMoon','dbKazedayoriClosing'];
+      _textIds.forEach(function(id){ var e = _el(id); if(e) e.style.color = _col.text; });
+
+      _dbKaze.style.display = 'block';
+    } catch(e) {}
+  })();
+
   // 候カード更新
   (function() {
     var _kouCard = document.getElementById('dbKouCard');
     if (!_kouCard) return;
-    if (typeof getCurrentKou !== 'function') return;
+    if (typeof getCurrentShichijuniKou !== 'function') return;
     try {
-      var _kou = getCurrentKou(new Date());
+      var _kou = getCurrentShichijuniKou(new Date());
       if (!_kou) return;
       var _kouIcon = document.getElementById('dbKouIcon');
       var _kouSekki = document.getElementById('dbKouSekki');
+      var _kouSekkiRange = document.getElementById('dbKouSekkiRange');
+      var _kouSekkiDay = document.getElementById('dbKouSekkiDay');
+      var _kouSekkiBar = document.getElementById('dbKouSekkiBar');
       var _kouName = document.getElementById('dbKouName');
       var _kouDesc = document.getElementById('dbKouDesc');
       var _kouDay = document.getElementById('dbKouDay');
+      var _kouRange = document.getElementById('dbKouRange');
+      var _kouBar = document.getElementById('dbKouBar');
       if (_kouIcon) _kouIcon.textContent = _kou.icon;
-      if (_kouSekki) _kouSekki.textContent = '🌿 ' + _kou.sekkiName + ' · 七十二候';
+      if (_kouSekki) _kouSekki.textContent = '🌿 ' + _kou.sekkiName + '（' + getNijushiSekkiReading(_kou.sekkiName) + '）';
+      if (_kouSekkiRange) _kouSekkiRange.textContent = (_kou.sekkiStart || '') + '〜' + (_kou.sekkiEnd || '');
+      if (_kouSekkiDay) _kouSekkiDay.textContent = (_kou.sekkiDay || '-') + '日目 / ' + (_kou.sekkiTotalDays || '-') + '日間';
+      if (_kouSekkiBar && _kou.sekkiTotalDays) _kouSekkiBar.style.width = Math.min(100, Math.round(_kou.sekkiDay / _kou.sekkiTotalDays * 100)) + '%';
+      var _kouSekkiDesc = document.getElementById('dbKouSekkiDesc');
+      if (_kouSekkiDesc && typeof getNijushiSekkiDesc === 'function') _kouSekkiDesc.textContent = getNijushiSekkiDesc(_kou.sekkiName);
       if (_kouName) _kouName.textContent = _kou.name + '（' + _kou.reading + '）';
       if (_kouDesc) _kouDesc.textContent = _kou.desc;
-      if (_kouDay) _kouDay.textContent = _kou.dayInKou + '日目 / ' + _kou.totalDays + '日間';
+      if (_kouDay) _kouDay.textContent = _kou.dayInKou + '日目/' + _kou.totalDays + '日間';
+      if (_kouRange) _kouRange.textContent = (_kou.kouStart || '') + '〜' + (_kou.kouEnd || '');
+      if (_kouBar && _kou.totalDays) _kouBar.style.width = Math.min(100, Math.round(_kou.dayInKou / _kou.totalDays * 100)) + '%';
       if (allSettings && allSettings.season && allSettings.season.showKouOnDashboard !== false) {
         _kouCard.style.display = 'block';
       } else {
@@ -22416,6 +23004,29 @@ window.addEventListener('afterprint', function() {
       </div>
     </div>
   </div>
+  <!-- 季節の風だより モーダル -->
+  <style>
+    #kazedayoriScroll::-webkit-scrollbar { width: 4px; }
+    #kazedayoriScroll::-webkit-scrollbar-track { background: transparent; }
+    #kazedayoriScroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 99px; }
+  </style>
+  <div id="kazedayoriModal" style="display:none;position:fixed;inset:0;z-index:99990;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;padding:20px;box-sizing:border-box;" onclick="if(event.target.id==='kazedayoriModal')closeKazedayoriModal()">
+    <div id="kazedayoriCard" style="width:100%;max-width:400px;border-radius:28px;box-shadow:0 16px 48px rgba(0,0,0,0.22);position:relative;display:flex;flex-direction:column;max-height:86vh;">
+      <!-- スクロール可能なコンテンツ -->
+      <div id="kazedayoriScroll" style="padding:28px 24px 16px;overflow-y:auto;flex:1;border-radius:28px 28px 0 0;">
+        <div style="font-size:1.35em;font-weight:800;letter-spacing:0.06em;margin-bottom:6px;" id="kazedayoriLabel">🌸 季節の風だより</div>
+        <div style="font-size:0.85em;font-weight:500;margin-bottom:18px;opacity:0.75;" id="kazedayoriDate"></div>
+        <div style="font-size:0.98em;font-weight:700;margin-bottom:18px;line-height:1.6;" id="kazedayoriGreet"></div>
+        <div style="font-size:0.93em;line-height:2.0;white-space:pre-line;" id="kazedayoriBody"></div>
+        <div style="margin-top:20px;font-size:0.93em;line-height:2.0;white-space:pre-line;" id="kazedayoriFooter"></div>
+      </div>
+      <!-- 常に見える閉じるボタン -->
+      <div style="padding:12px 24px 24px;flex-shrink:0;border-radius:0 0 28px 28px;" id="kazedayoriBtnArea">
+        <button onclick="closeKazedayoriModal()" style="width:100%;padding:14px;border:none;border-radius:14px;background:rgba(0,0,0,0.12);font-size:0.94em;font-weight:700;cursor:pointer;letter-spacing:0.05em;" id="kazedayoriCloseBtn">閉じる</button>
+      </div>
+    </div>
+  </div>
+
   <div id="customModal" class="custom-modal" onclick="if(event.target.id==='customModal') closeModal();">
     <div class="modal-content">
       <div class="modal-title">確認</div>
@@ -33011,14 +33622,14 @@ function showDebugLog(_initOnly) {
        _kouOrderOk
          ? ok('ST-119·⑥: 全24節気に3候（order1,2,3）確認')
          : ng('ST-119·⑥: 候順序異常');
-       // ⑦: getCurrentKou関数存在
-       typeof getCurrentKou === 'function'
-         ? ok('ST-119·⑦: getCurrentKou存在確認')
-         : ng('ST-119·⑦: getCurrentKou未定義');
-       // ⑧: getCurrentKou()今日の候取得
-       var _todayKou = typeof getCurrentKou === 'function' ? getCurrentKou(new Date()) : null;
+       // ⑦: getCurrentShichijuniKou関数存在
+       typeof getCurrentShichijuniKou === 'function'
+         ? ok('ST-119·⑦: getCurrentShichijuniKou存在確認')
+         : ng('ST-119·⑦: getCurrentShichijuniKou未定義');
+       // ⑧: getCurrentShichijuniKou()今日の候取得
+       var _todayKou = typeof getCurrentShichijuniKou === 'function' ? getCurrentShichijuniKou(new Date()) : null;
        (_todayKou && _todayKou.name && _todayKou.sekkiName && _todayKou.reading)
-         ? ok('ST-119·⑧: getCurrentKou()今日の候取得確認（' + (_todayKou ? _todayKou.name : '?') + '）')
+         ? ok('ST-119·⑧: getCurrentShichijuniKou()今日の候取得確認（' + (_todayKou ? _todayKou.name : '?') + '）')
          : ng('ST-119·⑧: 候取得失敗');
        // ⑨: 候内日数が1以上
        (_todayKou && _todayKou.dayInKou >= 1)
@@ -33029,21 +33640,57 @@ function showDebugLog(_initOnly) {
          ? ok('ST-119·⑩: id形式確認（' + (_todayKou ? _todayKou.id : '?') + '）')
          : ng('ST-119·⑩: id形式異常');
        // ⑪: 計算関数存在確認
-       (typeof _calcSolarLongitudeForKou === 'function' && typeof _calcSekkiJD === 'function' && typeof _dateToJDForKou === 'function')
+       (typeof calcSolarLongitudeForShichijuniKou === 'function' && typeof calcNijushiSekkiJulianDate === 'function' && typeof convertDateToJulianDateForKou === 'function')
          ? ok('ST-119·⑪: 計算関数3件存在確認（Meeus式）')
          : ng('ST-119·⑪: 計算関数不足');
-       // ⑫: checkKouChangeAndToast存在
-       typeof checkKouChangeAndToast === 'function'
-         ? ok('ST-119·⑫: checkKouChangeAndToast存在確認')
-         : ng('ST-119·⑫: checkKouChangeAndToast未定義');
+       // ⑫: checkShichijuniKouChangeAndShowToast存在
+       typeof checkShichijuniKouChangeAndShowToast === 'function'
+         ? ok('ST-119·⑫: checkShichijuniKouChangeAndShowToast存在確認')
+         : ng('ST-119·⑫: checkShichijuniKouChangeAndShowToast未定義');
        // ⑬: allSettings.season存在確認
        (allSettings && allSettings.season && typeof allSettings.season.showKouBanner === 'boolean')
          ? ok('ST-119·⑬: allSettings.season存在確認（showKouBanner=' + (allSettings.season.showKouBanner) + '）')
          : ng('ST-119·⑬: allSettings.season異常');
-       // ⑭: _SEKKI_LON件数（24件）
-       (typeof _SEKKI_LON !== 'undefined' && Object.keys(_SEKKI_LON).length === 24)
-         ? ok('ST-119·⑭: _SEKKI_LON 24件確認')
-         : ng('ST-119·⑭: _SEKKI_LON異常');
+       // ⑭: NIJUSHISEKKI_SOLAR_LONGITUDE件数（24件）
+       (typeof NIJUSHISEKKI_SOLAR_LONGITUDE !== 'undefined' && Object.keys(NIJUSHISEKKI_SOLAR_LONGITUDE).length === 24)
+         ? ok('ST-119·⑭: NIJUSHISEKKI_SOLAR_LONGITUDE 24件確認')
+         : ng('ST-119·⑭: NIJUSHISEKKI_SOLAR_LONGITUDE異常');
+       // ⑮: NIJUSHISEKKI_READING・getNijushiSekkiReading確認
+       (typeof NIJUSHISEKKI_READING !== 'undefined' && Object.keys(NIJUSHISEKKI_READING).length === 24)
+         ? ok('ST-119·⑮: NIJUSHISEKKI_READING 24件確認')
+         : ng('ST-119·⑮: NIJUSHISEKKI_READING異常');
+       (typeof getNijushiSekkiReading === 'function' && getNijushiSekkiReading('清明') === 'せいめい')
+         ? ok('ST-119·⑯: getNijushiSekkiReading(清明)=せいめい確認')
+         : ng('ST-119·⑯: getNijushiSekkiReading異常', typeof getNijushiSekkiReading === 'function' ? getNijushiSekkiReading('清明') : 'undefined');
+       // ⑰: getCurrentShichijuniKouの新フィールド確認
+       var _kouToday = typeof getCurrentShichijuniKou === 'function' ? getCurrentShichijuniKou(new Date()) : null;
+       (_kouToday && _kouToday.sekkiStart && _kouToday.sekkiEnd && _kouToday.sekkiDay && _kouToday.sekkiTotalDays && _kouToday.kouStart && _kouToday.kouEnd)
+         ? ok('ST-119·⑰: getCurrentShichijuniKou日付範囲フィールド確認（' + (_kouToday ? _kouToday.sekkiStart + '〜' + _kouToday.sekkiEnd : '?') + '）')
+         : ng('ST-119·⑰: 日付範囲フィールド不足');
+       // ⑱: ダッシュボード候カード新DOM確認
+       (document.getElementById('dbKouSekkiRange') && document.getElementById('dbKouSekkiDay') &&
+        document.getElementById('dbKouSekkiBar') && document.getElementById('dbKouRange') && document.getElementById('dbKouBar'))
+         ? ok('ST-119·⑱: ダッシュボード候カード新DOM5件確認')
+         : ng('ST-119·⑱: 候カード新DOM不足');
+       // ⑲: モーダル関数・window公開確認
+       (typeof openShichijuniKouDetailModal === 'function')
+         ? ok('ST-119·⑲: openShichijuniKouDetailModal存在確認')
+         : ng('ST-119·⑲: openShichijuniKouDetailModal未定義');
+       (typeof openNijushiSekkiDetailModal === 'function')
+         ? ok('ST-119·⑳: openNijushiSekkiDetailModal存在確認')
+         : ng('ST-119·⑳: openNijushiSekkiDetailModal未定義');
+       (typeof getNijushiSekkiDesc === 'function' && getNijushiSekkiDesc('清明').length > 0)
+         ? ok('ST-119·㉑: getNijushiSekkiDesc(清明)確認（' + getNijushiSekkiDesc('清明').slice(0,10) + '…）')
+         : ng('ST-119·㉑: getNijushiSekkiDesc異常');
+       // カード2段のonclick分離確認
+       var _kouCardHeader = document.querySelector('#dbKouCard > div:first-child');
+       var _kouCardBody   = document.querySelector('#dbKouCard > div:last-child');
+       (_kouCardHeader && _kouCardHeader.getAttribute('onclick') && _kouCardHeader.getAttribute('onclick').indexOf('openNijushiSekkiDetailModal') >= 0)
+         ? ok('ST-119·㉒: 節気ヘッダーonclick=openNijushiSekkiDetailModal確認')
+         : ng('ST-119·㉒: 節気ヘッダーonclick異常');
+       (_kouCardBody && _kouCardBody.getAttribute('onclick') && _kouCardBody.getAttribute('onclick').indexOf('openShichijuniKouDetailModal') >= 0)
+         ? ok('ST-119·㉓: 候本体onclick=openShichijuniKouDetailModal確認')
+         : ng('ST-119·㉓: 候本体onclick異常');
        ok('ST-119: 七十二候システムテスト 完了');
      } catch(e) { ng('ST-119: 例外', e.message); }
 
