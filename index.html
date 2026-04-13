@@ -161,7 +161,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.120';
+    const APP_VERSION = 'v0.44.121';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -7041,8 +7041,14 @@ function switchSearchTab(tab) {
   var container = document.getElementById('gouTaskResults');
   var countEl   = document.getElementById('gouTaskCount');
   if (!container || !countEl) return;
-  // スクロール位置を保存（バニッシュ後のトップ飛び防止）
+  // スクロール位置・グループ開閉状態を保存（バニッシュ後のリセット防止）
   var _savedScrollTop = container.scrollTop;
+  var _savedOpenGroups = {};
+  container.querySelectorAll('[data-gou-date]').forEach(function(el) {
+    var date = el.dataset.gouDate;
+    var body = el.nextElementSibling;
+    if (date && body) _savedOpenGroups[date] = body.style.maxHeight !== '0px' && body.style.maxHeight !== '0';
+  });
   var today = getLocalDateStr(new Date());
   var todayMs = new Date(today.replace(/-/g,'/')).getTime();
 
@@ -7122,8 +7128,10 @@ function switchSearchTab(tab) {
     var headerColor = daysOld >= 14 ? '#b71c1c' : daysOld >= 7 ? '#c62828' : '#e53935';
 
     // グループヘッダー（折りたたみ）
-    var isOpen = daysOld >= 7; // 7日以上は最初から開く
+    // 保存済みの開閉状態を優先、なければdaysOld>=7で開く
+    var isOpen = (_savedOpenGroups[dateStr] !== undefined) ? _savedOpenGroups[dateStr] : (daysOld >= 7);
     var header = document.createElement('div');
+    header.dataset.gouDate = dateStr; // 開閉状態保存用キー
     header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;' +
       'padding:7px 6px;cursor:pointer;border-radius:6px;margin-top:' + (gi > 0 ? '6px' : '0') + ';' +
       'background:' + (daysOld >= 14 ? '#ffebee' : daysOld >= 7 ? '#fff5f5' : '#fafafa') + ';' +
