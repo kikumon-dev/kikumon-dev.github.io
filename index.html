@@ -161,7 +161,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.114';
+    const APP_VERSION = 'v0.44.116';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -4920,6 +4920,48 @@ END OF 開発ルール
       </div>
     </div>
 
+    <!-- 月齢カード（天の運行） -->
+    <div id="dbMoonCard" style="display:none;margin-bottom:14px;background:linear-gradient(180deg,#0d0d1f 0%,#1a1a35 100%);border:1px solid #2a2a4a;border-radius:14px;padding:16px 12px;text-align:center;position:relative;overflow:hidden;">
+      <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(167,139,250,0.06),transparent 70%);pointer-events:none;"></div>
+      <div style="font-size:0.78em;color:#c4b5fd;letter-spacing:0.1em;margin-bottom:8px;font-weight:700;">🌙 今夜の月</div>
+      <canvas id="dbMoonCanvas" width="160" height="160" style="display:block;margin:0 auto 10px;border-radius:50%;"></canvas>
+      <div id="dbMoonAge" style="font-size:2.6em;font-weight:900;font-family:'SF Pro Display',-apple-system,'Helvetica Neue',Arial,sans-serif;font-variant-numeric:tabular-nums;color:#ffd700;letter-spacing:0.04em;line-height:1;margin-bottom:4px;">--</div>
+      <div id="dbMoonPhase" style="font-size:1.0em;color:#c4b5fd;font-weight:700;margin-bottom:6px;letter-spacing:0.06em;">--</div>
+      <div style="font-size:0.65em;color:#6655aa;margin-top:4px;">直近新月: <span id="dbLastNewMoon">--</span></div>
+      <div style="font-size:0.62em;color:#6655aa;margin-top:6px;line-height:1.7;">
+        <div>📡 アプリの月齢はリアルタイム計算</div>
+        <div>📋 国立天文台の公式値は正午月齢</div>
+        <div style="margin-top:2px;">データ出典: 国立天文台朔望表</div>
+      </div>
+    </div>
+
+    <!-- 天象カード（天の運行） -->
+    <div id="dbSkyCard" class="yc-fade-in" style="display:none;margin-bottom:14px;background:linear-gradient(135deg,#0a0a1a,#1a1a2e);border:1px solid #333;border-radius:14px;padding:16px;color:#fff;">
+      <div style="font-size:0.72em;color:#a78bfa;font-weight:700;margin-bottom:10px;">🌙 天象 — 東京</div>
+      <!-- 空の状態 -->
+      <div id="dbSkyBox" style="height:64px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1em;font-weight:700;margin-bottom:12px;transition:background 1s;">--</div>
+      <!-- 日時 -->
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <div style="flex:1;background:#1a1a2e;border-radius:8px;padding:8px;border:1px solid #333;">
+          <div style="font-size:0.65em;color:#888;margin-bottom:2px;">日の出</div>
+          <div id="dbSunrise" style="font-size:1em;font-weight:700;">--</div>
+        </div>
+        <div style="flex:1;background:#1a1a2e;border-radius:8px;padding:8px;border:1px solid #333;">
+          <div style="font-size:0.65em;color:#888;margin-bottom:2px;">日没</div>
+          <div id="dbSunset" style="font-size:1em;font-weight:700;">--</div>
+        </div>
+        <div style="flex:1;background:#1a1a2e;border-radius:8px;padding:8px;border:1px solid #333;">
+          <div style="font-size:0.65em;color:#888;margin-bottom:2px;">薄明終</div>
+          <div id="dbDusk" style="font-size:1em;font-weight:700;">--</div>
+        </div>
+      </div>
+      <!-- 年間テーブル -->
+      <div style="font-size:0.65em;color:#888;margin-bottom:6px;">年間テーブル（各月15日）</div>
+      <table id="dbSunTable" style="width:100%;font-size:0.75em;border-collapse:collapse;">
+        <tr><th style="color:#a78bfa;text-align:left;padding:3px 4px;">月</th><th style="padding:3px 4px;">日の出</th><th style="padding:3px 4px;">日没</th><th style="padding:3px 4px;">薄明終</th></tr>
+      </table>
+    </div>
+
     <!-- 天命降臨エリア -->
     <div id="dbTenmeiArea" style="display:none;margin-bottom:14px;padding:14px 16px;background:linear-gradient(135deg,rgba(251,191,36,0.12),rgba(245,158,11,0.08));border-radius:14px;border:1px solid rgba(245,158,11,0.3);text-align:center;">
       <div id="dbTenmeiMsg" style="font-size:0.85em;font-weight:600;color:#d97706;margin-bottom:10px;">🌟 天命の兆し…</div>
@@ -5040,46 +5082,7 @@ END OF 開発ルール
     <!-- データ操作 -->
     <div style="background:#fff;border-radius:20px;padding:18px;box-shadow:0 2px 16px rgba(79,172,254,0.08);border:1px solid #e8f0fe;margin-bottom:10px;">
       <div style="font-size:0.88em;font-weight:700;color:#a0aec0;letter-spacing:0.06em;margin-bottom:12px;">💾 データ</div>
-      <!-- 天象カード -->
-      <div id="dbSkyCard" class="yc-fade-in" style="background:linear-gradient(135deg,#0a0a1a,#1a1a2e);border:1px solid #333;border-radius:12px;padding:16px;margin-bottom:10px;color:#fff;">
-        <div style="font-size:0.72em;color:#a78bfa;font-weight:700;margin-bottom:10px;">🌙 天象 — 東京</div>
-        <!-- 空の状態 -->
-        <div id="dbSkyBox" style="height:64px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1em;font-weight:700;margin-bottom:12px;transition:background 1s;">--</div>
-        <!-- 日時 -->
-        <div style="display:flex;gap:8px;margin-bottom:12px;">
-          <div style="flex:1;background:#1a1a2e;border-radius:8px;padding:8px;border:1px solid #333;">
-            <div style="font-size:0.65em;color:#888;margin-bottom:2px;">日の出</div>
-            <div id="dbSunrise" style="font-size:1em;font-weight:700;">--</div>
-          </div>
-          <div style="flex:1;background:#1a1a2e;border-radius:8px;padding:8px;border:1px solid #333;">
-            <div style="font-size:0.65em;color:#888;margin-bottom:2px;">日没</div>
-            <div id="dbSunset" style="font-size:1em;font-weight:700;">--</div>
-          </div>
-          <div style="flex:1;background:#1a1a2e;border-radius:8px;padding:8px;border:1px solid #333;">
-            <div style="font-size:0.65em;color:#888;margin-bottom:2px;">薄明終</div>
-            <div id="dbDusk" style="font-size:1em;font-weight:700;">--</div>
-          </div>
-        </div>
-        <!-- 月齢カード（格上げ版） -->
-        <div style="background:linear-gradient(180deg,#0d0d1f 0%,#1a1a35 100%);border:1px solid #2a2a4a;border-radius:12px;padding:16px 12px;margin-bottom:12px;text-align:center;position:relative;overflow:hidden;">
-          <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(167,139,250,0.06),transparent 70%);pointer-events:none;"></div>
-          <div style="font-size:0.78em;color:#c4b5fd;letter-spacing:0.1em;margin-bottom:8px;font-weight:700;">🌙 今夜の月</div>
-          <canvas id="dbMoonCanvas" width="160" height="160" style="display:block;margin:0 auto 10px;border-radius:50%;"></canvas>
-          <div id="dbMoonAge" style="font-size:2.6em;font-weight:900;font-family:'SF Pro Display',-apple-system,'Helvetica Neue',Arial,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;color:#ffd700;letter-spacing:0.04em;line-height:1;margin-bottom:4px;">--</div>
-          <div id="dbMoonPhase" style="font-size:1.0em;color:#c4b5fd;font-weight:700;margin-bottom:6px;letter-spacing:0.06em;">--</div>
-          <div style="font-size:0.65em;color:#6655aa;margin-top:4px;">直近新月: <span id="dbLastNewMoon">--</span></div>
-          <div style="font-size:0.62em;color:#6655aa;margin-top:6px;line-height:1.7;">
-            <div>📡 アプリの月齢はリアルタイム計算</div>
-            <div>📋 国立天文台の公式値は正午月齢</div>
-            <div style="margin-top:2px;">データ出典: 国立天文台朔望表</div>
-          </div>
-        </div>
-        <!-- 年間テーブル -->
-        <div style="font-size:0.65em;color:#888;margin-bottom:6px;">年間テーブル（各月15日）</div>
-        <table id="dbSunTable" style="width:100%;font-size:0.75em;border-collapse:collapse;">
-          <tr><th style="color:#a78bfa;text-align:left;padding:3px 4px;">月</th><th style="padding:3px 4px;">日の出</th><th style="padding:3px 4px;">日没</th><th style="padding:3px 4px;">薄明終</th></tr>
-        </table>
-      </div>
+      <!-- 天象カードはダッシュボード上部に移動済み -->
       <!-- 自動バックアップ状態 -->
       <div id="dbBackupStatus" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
         <div>
@@ -21874,6 +21877,11 @@ function renderDashboardView() {
       _ctx.beginPath(); _ctx.arc(_cx,_cy,_R,0,Math.PI*2);
       _ctx.strokeStyle='rgba(255,210,60,0.22)'; _ctx.lineWidth=1.5; _ctx.stroke();
     }
+    // 月齢カード・天象カードをダッシュボード上部に表示
+    var _moonCard = document.getElementById('dbMoonCard');
+    if (_moonCard) _moonCard.style.display = 'block';
+    var _skyCard = document.getElementById('dbSkyCard');
+    if (_skyCard) _skyCard.style.display = 'block';
     // 年間テーブル（初回のみ）
     var _tb = document.getElementById('dbSunTable');
     if (_tb && _tb.rows.length <= 1) {
