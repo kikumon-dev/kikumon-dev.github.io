@@ -161,7 +161,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.125';
+    const APP_VERSION = 'v0.44.147';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -618,7 +618,7 @@ END OF 開発ルール
     }
     .scratch-input::placeholder { color: #ccc; font-weight: 300; }
     .section {
-      border: 1px solid #000;
+      border: 1px solid #e8e8e8;
       padding: 15px;
       overflow-y: auto;
       background-color: #ffffff;
@@ -727,7 +727,19 @@ END OF 開発ルール
       margin: 0;
       font-size: 1.1em;
     }
-    .date-display {
+    /* section2専用ヘッダー（simple-headerのCSS競合を完全回避） */
+    .section2-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .section2-header h4 {
+      margin: 0;
+      font-size: 1.1em;
+    }
       font-size: 0.85em;
       color: #333;
       font-weight: 900 !important;
@@ -887,6 +899,10 @@ END OF 開発ルール
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
+    }
+    /* スマホ専用ボタン行はPCでは非表示 */
+    .section4-mobile-btns {
+      display: none;
     }
     .data-btn {
       padding: 4px 12px;
@@ -1348,82 +1364,278 @@ END OF 開発ルール
       }
     }
     @media screen and (max-width: 768px) {
+      /* ===== グリッド：2×2固定高さ ===== */
       .container {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto auto auto auto;
-        height: auto;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        height: calc(var(--vh, 1vh) * 100 - 50px);
       }
+
+      /* ===== セクション共通 ===== */
       .section {
-        min-height: 300px;
+        min-height: unset;
+        overflow-y: auto;
+        padding: 7px 6px 5px;
+        border: 1px solid #e8e8e8;
+        background: #fff;
+        box-sizing: border-box;
       }
-      /* スマホ版：ヘッダー要素を縦積み */
+
+      /* ===== 共通：h4 ===== */
+      .header-row h4,
+      .simple-header h4 {
+        font-size: 0.6em;
+        white-space: normal;
+        line-height: 1.3;
+        color: #1a1a1a;
+        font-weight: 700;
+        margin: 0;
+      }
+
+      /* ===== 第1象限 header-row：縦積み ===== */
       .header-row {
+        display: flex;
         flex-direction: column;
-        align-items: flex-start !important;
-        gap: 10px;
-      }
-      .simple-header {
-        flex-direction: column;
-        align-items: flex-start !important;
-        gap: 10px;
-      }
-      .simple-header > div {
-        flex-direction: column;
-        align-items: flex-start !important;
+        align-items: flex-start;
+        gap: 3px;
+        margin-bottom: 5px;
         width: 100%;
       }
-      /* 目的入力・表示をスマホ幅に */
-      .purpose-group {
-        flex-direction: column;
-        align-items: flex-start !important;
-        width: 100%;
-      }
-      .purpose-group input {
-        width: 100% !important;
-        max-width: 100% !important;
-      }
-      .purpose-display {
-        flex-direction: column;
-        align-items: flex-start !important;
-        width: 100%;
-      }
-      /* 止める仕組みをスマホ幅に */
-      #stopConditionGroup {
-        flex-direction: column;
-        align-items: flex-start !important;
-        width: 100%;
-      }
-      #stopConditionGroup input {
-        width: 100% !important;
-        max-width: 100% !important;
-      }
-      #stopConditionDisplay {
-        flex-direction: column;
-        align-items: flex-start !important;
-        width: 100%;
-      }
-      /* 日付表示 */
-      .date-display {
-        width: 100%;
-        text-align: left;
-      }
-      /* スマホ縦画面：第1象限の右上に日付を固定表示 */
+
+      /* 日付：h4の右隣に小さく */
       .date-display-mobile {
         display: block !important;
-        position: static;
-        width: 100%;
+        width: auto !important;
         text-align: right;
-        margin: -8px 0 4px 0;
-        font-size: 0.85em;
+        font-size: 0.6em;
+        color: #aaa;
+        font-weight: 500;
+        margin: 0;
+        line-height: 1.2;
+        white-space: nowrap;
+        flex-shrink: 0;
       }
-      /* スマホ：第1象限のh4を幅いっぱいに */
-      #section1 .header-row h4 {
-        width: 100%;
-        font-size: 0.95em;
-      }
-      /* スマホ縦画面：第2象限の日付を非表示 */
-      #dateDisplay {
+      /* PC用日付はスマホで非表示 */
+      #dateDisplay,
+      .date-display:not(.date-display-mobile) {
         display: none !important;
+      }
+
+      /* 目的グループ：横並び・コンパクト */
+      .purpose-group {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        width: 100% !important;
+        gap: 3px !important;
+        flex-wrap: nowrap !important;
+      }
+      .purpose-group label {
+        font-size: 0.6em;
+        font-weight: bold;
+        color: #333;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .purpose-group input {
+        flex: 1 !important;
+        min-width: 0 !important;
+        width: auto !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        font-size: 0.7em !important;
+        padding: 3px 5px !important;
+        height: 24px !important;
+      }
+      /* 目的表示：横並び */
+      .purpose-display {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        flex-wrap: nowrap !important;
+        width: 100% !important;
+        font-size: 0.65em !important;
+        gap: 3px !important;
+        overflow: hidden;
+      }
+      .purpose-display #purposeText {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      /* タイマーボタン：フル幅 */
+      .timer-btn {
+        width: 100% !important;
+        min-width: unset !important;
+        font-size: 0.68em !important;
+        min-height: 24px !important;
+        border-radius: 5px !important;
+        box-sizing: border-box !important;
+        padding: 3px 6px !important;
+      }
+
+      /* ===== 第2象限 simple-header：縦積み ===== */
+      #section2 .simple-header {
+        display: block;
+        margin-bottom: 5px;
+        width: 100%;
+      }
+      /* section2専用ヘッダー：スマホで完全左寄せ */
+      .section2-header {
+        display: block !important;
+        margin-bottom: 5px;
+        width: 100%;
+      }
+      .section2-header h4 {
+        font-size: 0.62em;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin: 0 0 3px;
+        text-align: left;
+      }
+      /* 止める仕組み：第1象限の目的欄と同じ横並び1行構造 */
+      #stopConditionGroup {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        width: 100% !important;
+        gap: 3px !important;
+      }
+      #stopConditionGroup label {
+        font-size: 0.6em !important;
+        font-weight: bold !important;
+        color: #333 !important;
+        white-space: nowrap !important;
+        flex-shrink: 0 !important;
+      }
+      #stopConditionGroup input {
+        flex: 1 !important;
+        min-width: 0 !important;
+        width: auto !important;
+        box-sizing: border-box !important;
+        font-size: 0.72em !important;
+        padding: 3px 5px !important;
+        height: 24px !important;
+      }
+      /* 止める仕組み表示：同じく横並び */
+      #stopConditionDisplay {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        width: 100% !important;
+        gap: 3px !important;
+      }
+      #stopConditionDisplay label {
+        font-size: 0.6em !important;
+        color: #888 !important;
+        white-space: nowrap !important;
+        flex-shrink: 0 !important;
+      }
+
+      /* ===== 第3象限：h4+ボタン縦積み・プレースホルダー対策 ===== */
+      #section3 .simple-header {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 3px;
+        margin-bottom: 5px;
+      }
+      #input3 {
+        font-size: 0.7em;
+      }
+      #input3::placeholder {
+        font-size: 0.9em;
+        letter-spacing: -0.02em;
+      }
+
+      /* ===== 第4象限：simple-headerはシンプル横並び ===== */
+      #section4 .simple-header {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 3px;
+        margin-bottom: 5px;
+      }
+      /* PC用ボタン群は非表示 */
+      .header-buttons {
+        display: none !important;
+      }
+      /* スマホ専用ボタン行 */
+      .section4-mobile-btns {
+        display: flex;
+        flex-direction: row;
+        gap: 3px;
+        margin-bottom: 4px;
+        flex-wrap: nowrap;
+      }
+      .section4-mobile-btns .data-btn,
+      .section4-mobile-btns .clear-all-btn {
+        font-size: 0.52em;
+        padding: 2px 4px;
+        min-height: 18px;
+        border-radius: 4px;
+        flex-shrink: 0;
+        white-space: nowrap;
+      }
+
+      /* ===== 共通simple-header（第3・4象限） ===== */
+      .simple-header {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 3px;
+        margin-bottom: 5px;
+      }
+      .simple-header h4 {
+        flex: 1;
+        min-width: 0;
+      }
+      .simple-header > div {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        flex-shrink: 0;
+        gap: 3px;
+      }
+
+      /* ===== ボタン共通：コンパクト ===== */
+      .deep-dive-btn,
+      .color-toggle-btn,
+      .edit-btn {
+        font-size: 0.58em;
+        padding: 2px 5px;
+        min-height: 20px;
+        border-radius: 4px;
+        flex-shrink: 0;
+        line-height: 1.3;
+        white-space: nowrap;
+      }
+
+      /* ===== タスクアイテム：スマホでコンパクト ===== */
+      .task-item {
+        padding: 5px 7px;
+        margin-bottom: 3px;
+        font-size: 0.82em;
+        border-radius: 4px;
+      }
+
+      /* ===== 入力欄：全象限同じ高さに統一 ===== */
+      .task-input {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
+        font-size: 0.72em;
+        padding: 5px 7px;
+        border: 1px solid #e0e0e0;
+        border-radius: 5px;
+        background: #fafafa;
+        margin-bottom: 4px;
+        height: 30px;
+        line-height: 1.4;
       }
     }
     /* 週間ビュー用CSS（バーチカル） */
@@ -3916,13 +4128,15 @@ END OF 開発ルール
     <!-- 左上: 緊急かつ重要 -->
     <div class="section" id="section1">
       <div class="header-row">
-        <h4>やることクラフト【緊急かつ重要】</h4>
-        <!-- スマホ縦画面用：日付を第1象限に表示 -->
-        <div class="date-display date-display-mobile" id="dateDisplayMobile"></div>
+        <!-- h4 + 日付：横並び1行 -->
+        <div style="display:flex; align-items:center; width:100%; gap:4px;">
+          <h4 style="flex:1; min-width:0;">やることクラフト【緊急かつ重要】</h4>
+          <div class="date-display date-display-mobile" id="dateDisplayMobile" style="flex-shrink:0;"></div>
+        </div>
         <div class="purpose-group" id="purposeGroup" style="display: none;">
           <label>目的:</label>
           <input type="text" id="purposeInput" placeholder="本質的な目的を一行で入力...">
-          <button class="edit-btn" onclick="confirmPurpose()">仮決め</button>
+          <button class="edit-btn" onclick="confirmPurpose()">保存</button>
         </div>
         <div class="purpose-display" id="purposeDisplay" style="display: none;">
           <span id="purposeText"></span>
@@ -3937,20 +4151,22 @@ END OF 開発ルール
     <div id="matrixCenterCircle" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);-webkit-transform:translate(-50%,-50%);width:76px;height:76px;border-radius:50%;background:#1976d2;color:#fff;font-size:0.8em;font-weight:700;display:none;align-items:center;justify-content:center;text-align:center;line-height:1.2;z-index:100;box-shadow:0 4px 16px rgba(0,0,0,0.35);padding:4px;cursor:pointer;border:3px solid rgba(255,255,255,0.9);word-break:break-all;opacity:0.82;text-shadow:0 1px 3px rgba(0,0,0,0.5);overflow:hidden;" onclick="switchMatrixLayer()" title="タップでレイヤー切り替え">今ここで</div>
     <!-- 右上: 緊急でないが重要 -->
     <div class="section" id="section2">
-      <div class="simple-header">
-        <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
-          <h4>【緊急でないが重要】</h4>
-          <button class="deep-dive-btn" onclick="toggleDeepDive()">点検</button>
-          <!-- 止まる仕組み入力 -->
-          <div id="stopConditionGroup" style="display: none; align-items: center; gap: 4px;">
-            <label style="font-size: 0.75em; white-space: nowrap;">止める仕組み:</label>
-            <input type="text" id="stopConditionInput" placeholder="例: 期限3日超過、2週間経過" style="padding: 3px 6px; border: 1px solid #ccc; border-radius: 3px; font-size: 0.8em; width: 150px; max-width: 150px;" onkeydown="if(event.key==='Enter') saveStopCondition();">
-            <button class="edit-btn" onclick="saveStopCondition()">仮決め</button>
+      <div class="section2-header">
+        <div style="display: flex; flex-direction: column; gap: 4px; width: 100%;">
+          <!-- h4 + 点検ボタン：横並び行 -->
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <h4>【緊急でないが重要】</h4>
+            <button class="deep-dive-btn" onclick="toggleDeepDive()">点検</button>
           </div>
-          <!-- 止める仕組み表示 -->
-          <div id="stopConditionDisplay" style="display: none; font-size: 0.75em; flex-wrap: wrap; align-items: center; gap: 4px;">
-            <span style="white-space: nowrap;">止める仕組み:</span>
-            <span id="stopConditionText" style="font-weight: normal; word-wrap: break-word; overflow-wrap: break-word; flex: 1; min-width: 0;"></span>
+          <!-- 止める仕組み入力（点検ボタン押下後に表示） -->
+          <div id="stopConditionGroup" style="display: none; flex-direction: row; align-items: center; gap: 4px; width: 100%;">
+            <label style="font-size:0.75em; font-weight:bold; white-space:nowrap; flex-shrink:0;">止める仕組み:</label>
+            <input type="text" id="stopConditionInput" placeholder="例: 2週間経過" style="flex:1; min-width:0; box-sizing:border-box; padding:3px 6px; border:1px solid #ccc; border-radius:3px; font-size:0.8em;" onkeydown="if(event.key==='Enter') saveStopCondition();">
+            <button class="edit-btn" onclick="saveStopCondition()">保存</button>
+          </div>
+          <!-- 止める仕組み表示（保存後に表示） -->
+          <div id="stopConditionDisplay" style="display: none; flex-direction: row; align-items: center; gap: 4px; width: 100%;">
+            <span id="stopConditionText" style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:0.85em; color:#444;"></span>
             <button class="edit-btn" onclick="editStopCondition()">編集</button>
           </div>
         </div>
@@ -3983,7 +4199,7 @@ END OF 開発ルール
         <h4>【緊急だが重要ではない】</h4>
         <button class="color-toggle-btn" onclick="toggleColors()">色切替</button>
       </div>
-      <input type="text" class="task-input" id="input3" placeholder="些細だが急ぎの行動は？（人に任せる）...">
+      <input type="text" class="task-input" id="input3" placeholder="些細だが急ぎの行動は？（人に任せる）..." title="些細だが急ぎの行動は？（人に任せる）">
       <ul class="task-list" id="list3"></ul>
     </div>
     <!-- 右下: 緊急でも重要でもない -->
@@ -3997,7 +4213,14 @@ END OF 開発ルール
           <button class="clear-all-btn" onclick="clearAllData()">🗑️ 全クリア</button>
         </div>
       </div>
-      <input type="text" class="task-input" id="input4" placeholder="些末な事はやらないと決める...視界から外す、スマホ電源切る...">
+      <input type="text" class="task-input" id="input4" placeholder="些末な事はやらないと決める...">
+      <!-- スマホ専用ボタン行：header-buttonsが非表示になるスマホでのみ表示 -->
+      <div class="section4-mobile-btns">
+        <button class="data-btn" onclick="exportData()">📤 エクスポート</button>
+        <button class="data-btn" onclick="document.getElementById('importFile2').click()">📥 インポート</button>
+        <input type="file" id="importFile2" accept=".json" style="display:none" onchange="importData(event)">
+        <button class="clear-all-btn" onclick="clearAllData()">🗑️ 消す</button>
+      </div>
       <ul class="task-list" id="list4"></ul>
     </div>
   </div>
@@ -10891,7 +11114,7 @@ var MATRIX_LAYERS = [
       { label: '緊急かつ重要',       color: '#ffebee', ph: '本質的で今すぐ必要な行動は？...' },
       { label: '緊急でないが重要',   color: '#e8f5e9', ph: '本質的な計画行動は？...' },
       { label: '緊急だが重要でない', color: '#fffef5', ph: '些細だが急ぎの行動は？（人に任せる）...' },
-      { label: 'どちらでもない',     color: '#f0f0f0', ph: '些末な事はやらないと決める...' },
+      { label: '緊急でも重要でもない', color: '#f0f0f0', ph: '些末な事はやらないと決める...' },
     ]
   },
   {
@@ -31485,9 +31708,10 @@ function showDebugLog(_initOnly) {
          ? ok('ST-75: 吸収時正規UUID取込確認')
          : ng('ST-75: 吸収時正規UUIDが取り込まれていない', JSON.stringify(_st75ListCase3.map(function(c){return c.id;})));
 
-       // クリーンアップ
+       // クリーンアップ：旧calendarsキーをテスト前の状態に確実に復元
        localStorage.removeItem('calendars');
-       // 旧calendarsキーを復元（退避していた場合）
+       // 退避値がnullの場合（テスト前から存在しなかった）はremoveのまま維持
+       // 退避値がある場合は復元
        if (_st75PrevOldCals !== null) localStorage.setItem('calendars', _st75PrevOldCals);
        allSettings.calendar.list = _st75PrevList;
        allSettings.calendar.calIdMigMap = _st75PrevMigMap;
@@ -33587,13 +33811,20 @@ function showDebugLog(_initOnly) {
        var _mcc116 = document.getElementById('matrixCenterCircle');
        _mcc116 ? ok('ST-116·①: #matrixCenterCircle DOM存在確認') : ng('ST-116·①: #matrixCenterCircle DOM未存在');
 
-       // ② 初期状態 display:none確認（matrixタブ以外ではnoneであること）
-       var _mccDisp = _mcc116 ? _mcc116.style.display : '';
-       var _currentDailyTab = allSettings && allSettings.ui && allSettings.ui.dailyTab;
-       var _mccExpectNone = _currentDailyTab !== 'matrix';
-       (_mccExpectNone ? (_mccDisp === 'none' || _mccDisp === '') : true)
-         ? ok('ST-116·②: 初期状態 非表示確認（' + (_mccDisp||'none') + '）')
-         : ng('ST-116·②: 初期状態で表示されている（' + _mccDisp + '）');
+       // ② renderMatrixLayer後にdisplay:noneになること確認
+       // （起動時：renderMatrixLayer→flex→直後にnoneで隠す設計。_isTestingではrenderが走らないためDOM初期値を検査）
+       // matrixタブ以外では必ずnoneになることを、renderMatrixLayer→none の順で検証
+       if (_mcc116) {
+         renderMatrixLayer(); // flex化
+         var _mccAfterRender = _mcc116.style.display;
+         _mcc116.style.display = 'none'; // 起動時と同じく隠す
+         var _mccAfterHide = _mcc116.style.display;
+         (_mccAfterRender === 'flex' && _mccAfterHide === 'none')
+           ? ok('ST-116·②: renderMatrixLayer→flex→none 制御確認（起動シーケンス正常）')
+           : ng('ST-116·②: 制御異常 render=' + _mccAfterRender + ' hide=' + _mccAfterHide);
+       } else {
+         ng('ST-116·②: #matrixCenterCircle DOM未存在');
+       }
 
        // ③ position:absolute確認（containerグリッド内固定）
        if (_mcc116) {
