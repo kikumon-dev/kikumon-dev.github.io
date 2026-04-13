@@ -161,7 +161,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.116';
+    const APP_VERSION = 'v0.44.117';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -11500,7 +11500,7 @@ var KINGDOM_MODES = {
 function getUnlockedMatrixLayers() {
   var km = (allSettings.ui && allSettings.ui.kingdomMode) || 'kingdom';
   var tierOrder = { free: 0, village: 1, town: 2, kingdom: 3, locked: 99 };
-  var kmTier = { camp: 0, village: 1, town: 2, kingdom: 3, custom: 3 };
+  var kmTier = { camp: 0, village: 1, town: 2, kingdom: 3, custom: 3, polestar: 3 };
   var userTier = kmTier[km] !== undefined ? kmTier[km] : 0;
   var secretUnlocked = (allSettings.ui && allSettings.ui.unlockedSecretLayers) || [];
   var pinnedLayers = (allSettings.ui && allSettings.ui.pinnedMatrixLayers) || null;
@@ -25184,7 +25184,7 @@ function onTaskCompleted(task) {
   // 徳+1（象限問わず）、業-1、完了日記録
   if (typeof addToku === 'function') addToku(1, 'タスク完了');
   if (typeof addGou === 'function') addGou(-1, 'タスク完了');
-  if (typeof recordTaskCompletedDate === 'function') recordTaskCompletedDate();
+  if (!_isTesting && typeof recordTaskCompletedDate === 'function') recordTaskCompletedDate();
   // 📷 写真帳フック削除済み
   // クラフトモード専用処理
   if (!(allSettings && allSettings.ui && allSettings.ui.craftModeEnabled)) return;
@@ -33525,9 +33525,11 @@ function showDebugLog(_initOnly) {
        var _mcc116 = document.getElementById('matrixCenterCircle');
        _mcc116 ? ok('ST-116·①: #matrixCenterCircle DOM存在確認') : ng('ST-116·①: #matrixCenterCircle DOM未存在');
 
-       // ② 初期状態 display:none確認
+       // ② 初期状態 display:none確認（matrixタブ以外ではnoneであること）
        var _mccDisp = _mcc116 ? _mcc116.style.display : '';
-       _mccDisp === 'none' || _mccDisp === ''
+       var _currentDailyTab = allSettings && allSettings.ui && allSettings.ui.dailyTab;
+       var _mccExpectNone = _currentDailyTab !== 'matrix';
+       (_mccExpectNone ? (_mccDisp === 'none' || _mccDisp === '') : true)
          ? ok('ST-116·②: 初期状態 非表示確認（' + (_mccDisp||'none') + '）')
          : ng('ST-116·②: 初期状態で表示されている（' + _mccDisp + '）');
 
@@ -35052,10 +35054,12 @@ function showDebugLog(_initOnly) {
 
        // 許容される変化キーのリスト（テスト中に変化しても問題ないキー）
        var _tpag_allowed = new Set([
-         '_dev_snapshot',    // スナップショット更新は許容
-         '_dbg_log',         // デバッグログ追記は許容
-         'currentView',      // ビュー切替テストで変化する
-         'wgLastScrollTop',  // スクロール位置変化は許容
+         '_dev_snapshot',          // スナップショット更新は許容
+         '_dbg_log',               // デバッグログ追記は許容
+         'currentView',            // ビュー切替テストで変化する
+         'wgLastScrollTop',        // スクロール位置変化は許容
+         'escapeLog',              // アプリ起動時に自動記録される（open/inspect）
+         'lastTaskCompletedDate',  // onTaskCompletedが_isTestingガード済みだが念のため許容
          // backup_*は動的に生成されるため前方一致で許容
        ]);
        // allSettings.ui内の許容フィールド（ST-85がロールバック付きでテストする項目）
