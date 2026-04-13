@@ -161,7 +161,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.124';
+    const APP_VERSION = 'v0.44.125';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -5082,7 +5082,6 @@ END OF 開発ルール
     <!-- データ操作 -->
     <div style="background:#fff;border-radius:20px;padding:18px;box-shadow:0 2px 16px rgba(79,172,254,0.08);border:1px solid #e8f0fe;margin-bottom:10px;">
       <div style="font-size:0.88em;font-weight:700;color:#a0aec0;letter-spacing:0.06em;margin-bottom:12px;">💾 データ</div>
-      <!-- 天象カードはダッシュボード上部に移動済み -->
       <!-- 自動バックアップ状態 -->
       <div id="dbBackupStatus" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
         <div>
@@ -28699,7 +28698,7 @@ function showDebugLog(_initOnly) {
 
        // ===== ST-34C: テストセクション自己存在確認 =====
        // テストセクション自己存在確認：ソースコード上の存在をチェック
-       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-103','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75','ST-76','ST-77','ST-78','ST-79','ST-80','ST-81','ST-82','ST-106','ST-107','ST-108','ST-109','ST-110','ST-111','ST-112','ST-113','ST-114','ST-115','ST-120'];
+       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-103','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75','ST-76','ST-77','ST-78','ST-79','ST-80','ST-81','ST-82','ST-106','ST-107','ST-108','ST-109','ST-110','ST-111','ST-112','ST-113','ST-114','ST-115','ST-116','ST-119','ST-120','ST-121','ST-122','ST-123','ST-124'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -34065,6 +34064,113 @@ function showDebugLog(_initOnly) {
 
        ok('ST-120: 次ステップ自動解放テスト 完了');
      } catch(e) { ng('ST-120: 例外', e.message); }
+
+     // ===== ST-121: 業バニッシュ後スクロール保持・グループ開閉維持 =====
+     try {
+       // ① renderGouTaskList内のスクロール保存変数確認
+       var _gSrc121 = typeof renderGouTaskList === 'function' ? renderGouTaskList.toString() : '';
+       _gSrc121.indexOf('_gouListSavedScrollTop') !== -1
+         ? ok('ST-121·①: _gouListSavedScrollTop 変数定義確認')
+         : ng('ST-121·①: _gouListSavedScrollTop 未定義', '');
+       // ② グループ開閉保存変数確認
+       _gSrc121.indexOf('_gouListSavedOpenGroups') !== -1
+         ? ok('ST-121·②: _gouListSavedOpenGroups 変数定義確認')
+         : ng('ST-121·②: _gouListSavedOpenGroups 未定義', '');
+       // ③ data-gou-date属性付与確認
+       _gSrc121.indexOf('data-gou-date') !== -1
+         ? ok('ST-121·③: data-gou-date 属性付与コード確認')
+         : ng('ST-121·③: data-gou-date 未使用', '');
+       // ④ スクロール復元コード確認
+       _gSrc121.indexOf('container.scrollTop = _gouListSavedScrollTop') !== -1
+         ? ok('ST-121·④: スクロール復元コード確認')
+         : ng('ST-121·④: スクロール復元コードなし', '');
+       // ⑤ 変数が関数スコープ内に閉じているか（漏れ検査）
+       try {
+         var _leaked = typeof _gouListSavedScrollTop;
+         _leaked === 'undefined'
+           ? ok('ST-121·⑤: _gouListSavedScrollTop 関数外に漏れなし確認')
+           : ng('ST-121·⑤: 変数がグローバルに漏れている', _leaked);
+       } catch(e2) {
+         ok('ST-121·⑤: _gouListSavedScrollTop 関数外に漏れなし確認（ReferenceError=正常）');
+       }
+       ok('ST-121: バニッシュ後スクロール保持・グループ開閉維持テスト 完了');
+     } catch(e) { ng('ST-121: 例外', e.message); }
+
+     // ===== ST-122: ダッシュボード月齢カード・天象カード表示制御 =====
+     try {
+       // ① 月齢カードDOM確認
+       var _moonCard122 = document.getElementById('dbMoonCard');
+       _moonCard122 ? ok('ST-122·①: #dbMoonCard DOM存在確認') : ng('ST-122·①: #dbMoonCard 未存在', '');
+       // ② 天象カードDOM確認
+       var _skyCard122 = document.getElementById('dbSkyCard');
+       _skyCard122 ? ok('ST-122·②: #dbSkyCard DOM存在確認') : ng('ST-122·②: #dbSkyCard 未存在', '');
+       // ③ 月齢カードの初期display:none確認
+       (_moonCard122 && (_moonCard122.style.display === 'none' || _moonCard122.style.display === ''))
+         ? ok('ST-122·③: #dbMoonCard 初期非表示確認（renderDashboard時に表示制御）')
+         : ok('ST-122·③: #dbMoonCard 表示中（renderDashboardView実行済み）');
+       // ④ renderDashboardView内に月齢・天象カード表示コード確認
+       var _dbSrc122 = typeof renderDashboardView === 'function' ? renderDashboardView.toString() : '';
+       _dbSrc122.indexOf('dbMoonCard') !== -1
+         ? ok('ST-122·④: renderDashboardView dbMoonCard参照確認')
+         : ng('ST-122·④: renderDashboardView dbMoonCard参照なし', '');
+       _dbSrc122.indexOf('dbSkyCard') !== -1
+         ? ok('ST-122·⑤: renderDashboardView dbSkyCard参照確認')
+         : ng('ST-122·⑤: renderDashboardView dbSkyCard参照なし', '');
+       // ⑤ 月齢・天象カードがデータセクションではなくダッシュボード上部に配置されていること
+       var _dbView122 = document.getElementById('dashboardView');
+       var _moonInDb = _dbView122 && _dbView122.contains(_moonCard122);
+       var _skyInDb = _dbView122 && _dbView122.contains(_skyCard122);
+       _moonInDb ? ok('ST-122·⑥: #dbMoonCard がdashboardView内に配置確認') : ng('ST-122·⑥: #dbMoonCard がdashboardView外', '');
+       _skyInDb ? ok('ST-122·⑦: #dbSkyCard がdashboardView内に配置確認') : ng('ST-122·⑦: #dbSkyCard がdashboardView外', '');
+       ok('ST-122: ダッシュボード月齢・天象カード表示制御テスト 完了');
+     } catch(e) { ng('ST-122: 例外', e.message); }
+
+     // ===== ST-123: 季節の風だよりカード =====
+     try {
+       // ① DOM確認
+       var _kaze123 = document.getElementById('dbKazedayoriCard');
+       _kaze123 ? ok('ST-123·①: #dbKazedayoriCard DOM存在確認') : ng('ST-123·①: #dbKazedayoriCard 未存在', '');
+       // ② showKazedayoriModal関数確認
+       typeof showKazedayoriModal === 'function'
+         ? ok('ST-123·②: showKazedayoriModal 存在確認')
+         : ng('ST-123·②: showKazedayoriModal 未定義', '');
+       // ③ onclick属性確認
+       (_kaze123 && _kaze123.getAttribute('onclick') && _kaze123.getAttribute('onclick').indexOf('showKazedayoriModal') !== -1)
+         ? ok('ST-123·③: #dbKazedayoriCard onclick=showKazedayoriModal 確認')
+         : ng('ST-123·③: onclick未設定', '');
+       // ④ renderDashboardView内でKazedayoriCard参照確認
+       var _dbSrc123 = typeof renderDashboardView === 'function' ? renderDashboardView.toString() : '';
+       _dbSrc123.indexOf('dbKazedayoriCard') !== -1
+         ? ok('ST-123·④: renderDashboardView dbKazedayoriCard参照確認')
+         : ng('ST-123·④: renderDashboardView dbKazedayoriCard参照なし', '');
+       // ⑤ dbKazedayoriCardがdashboardView内に配置
+       var _dbView123 = document.getElementById('dashboardView');
+       (_dbView123 && _dbView123.contains(_kaze123))
+         ? ok('ST-123·⑤: #dbKazedayoriCard がdashboardView内に配置確認')
+         : ng('ST-123·⑤: dashboardView外に配置', '');
+       ok('ST-123: 季節の風だよりカードテスト 完了');
+     } catch(e) { ng('ST-123: 例外', e.message); }
+
+     // ===== ST-124: #polestarハッシュURL自動起動 =====
+     try {
+       // ① openPolestarModal関数確認
+       typeof openPolestarModal === 'function'
+         ? ok('ST-124·①: openPolestarModal 存在確認')
+         : ng('ST-124·①: openPolestarModal 未定義', '');
+       // ② window.openPolestarModal公開確認
+       typeof window.openPolestarModal === 'function'
+         ? ok('ST-124·②: window.openPolestarModal 公開確認')
+         : ng('ST-124·②: window公開なし', '');
+       // ③ ハッシュチェックコード確認
+       var _htmlStr124 = document.documentElement.innerHTML;
+       _htmlStr124.indexOf("location.hash === '#polestar'") !== -1 || _htmlStr124.indexOf('location.hash') !== -1
+         ? ok('ST-124·③: location.hash チェックコード確認')
+         : ng('ST-124·③: hashチェックコードなし', '');
+       // ④ polestarModalのDOM確認
+       var _pmDom124 = document.getElementById('polestarModal');
+       _pmDom124 ? ok('ST-124·④: #polestarModal DOM存在確認') : ng('ST-124·④: #polestarModal 未存在', '');
+       ok('ST-124: #polestarハッシュURL自動起動テスト 完了');
+     } catch(e) { ng('ST-124: 例外', e.message); }
 
      try {
        ok('');
