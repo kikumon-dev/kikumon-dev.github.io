@@ -161,7 +161,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.119';
+    const APP_VERSION = 'v0.44.120';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -7041,6 +7041,8 @@ function switchSearchTab(tab) {
   var container = document.getElementById('gouTaskResults');
   var countEl   = document.getElementById('gouTaskCount');
   if (!container || !countEl) return;
+  // スクロール位置を保存（バニッシュ後のトップ飛び防止）
+  var _savedScrollTop = container.scrollTop;
   var today = getLocalDateStr(new Date());
   var todayMs = new Date(today.replace(/-/g,'/')).getTime();
 
@@ -7282,6 +7284,10 @@ function renderTodoList() {
     row.appendChild(info);
     container.appendChild(row);
   });
+  // スクロール位置を復元（バニッシュ後のトップ飛び防止）
+  if (_savedScrollTop > 0) {
+    container.scrollTop = _savedScrollTop;
+  }
 }
 
     function openSearchModal() {
