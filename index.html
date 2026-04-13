@@ -161,7 +161,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.117';
+    const APP_VERSION = 'v0.44.119';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -6956,7 +6956,8 @@ function switchSearchTab(tab) {
         saveAllTasks();
         if (typeof onTaskCompleted === 'function') onTaskCompleted(task);
         showToast('完了しました 🌸 徳+1', { type: 'success', duration: 2000 });
-        animateAndRefresh();
+        // onTaskCompleted内のrender完了後に業リストを確実に更新
+        setTimeout(function() { renderGouTaskList(); }, 350);
       } else if (mode === 'today') {
         var todayStr = getLocalDateStr(new Date());
         task.date = todayStr;
@@ -25184,7 +25185,9 @@ function onTaskCompleted(task) {
   // 徳+1（象限問わず）、業-1、完了日記録
   if (typeof addToku === 'function') addToku(1, 'タスク完了');
   if (typeof addGou === 'function') addGou(-1, 'タスク完了');
-  if (!_isTesting && typeof recordTaskCompletedDate === 'function') recordTaskCompletedDate();
+  if (typeof _isTesting === 'undefined' || !_isTesting) {
+    if (typeof recordTaskCompletedDate === 'function') recordTaskCompletedDate();
+  }
   // 📷 写真帳フック削除済み
   // クラフトモード専用処理
   if (!(allSettings && allSettings.ui && allSettings.ui.craftModeEnabled)) return;
