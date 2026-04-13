@@ -161,7 +161,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.121';
+    const APP_VERSION = 'v0.44.124';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -7042,12 +7042,12 @@ function switchSearchTab(tab) {
   var countEl   = document.getElementById('gouTaskCount');
   if (!container || !countEl) return;
   // スクロール位置・グループ開閉状態を保存（バニッシュ後のリセット防止）
-  var _savedScrollTop = container.scrollTop;
-  var _savedOpenGroups = {};
+  var _gouListSavedScrollTop = container.scrollTop;
+  var _gouListSavedOpenGroups = {};
   container.querySelectorAll('[data-gou-date]').forEach(function(el) {
     var date = el.dataset.gouDate;
     var body = el.nextElementSibling;
-    if (date && body) _savedOpenGroups[date] = body.style.maxHeight !== '0px' && body.style.maxHeight !== '0';
+    if (date && body) _gouListSavedOpenGroups[date] = body.style.maxHeight !== '0px' && body.style.maxHeight !== '0';
   });
   var today = getLocalDateStr(new Date());
   var todayMs = new Date(today.replace(/-/g,'/')).getTime();
@@ -7129,7 +7129,7 @@ function switchSearchTab(tab) {
 
     // グループヘッダー（折りたたみ）
     // 保存済みの開閉状態を優先、なければdaysOld>=7で開く
-    var isOpen = (_savedOpenGroups[dateStr] !== undefined) ? _savedOpenGroups[dateStr] : (daysOld >= 7);
+    var isOpen = (_gouListSavedOpenGroups[dateStr] !== undefined) ? _gouListSavedOpenGroups[dateStr] : (daysOld >= 7);
     var header = document.createElement('div');
     header.dataset.gouDate = dateStr; // 開閉状態保存用キー
     header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;' +
@@ -7214,6 +7214,10 @@ function switchSearchTab(tab) {
     container.appendChild(header);
     container.appendChild(body);
   });
+  // スクロール位置を復元（バニッシュ後のトップ飛び防止）
+  if (_gouListSavedScrollTop > 0) {
+    container.scrollTop = _gouListSavedScrollTop;
+  }
 }
 
 // ===== 未完了タスク一覧 =====
@@ -7292,10 +7296,6 @@ function renderTodoList() {
     row.appendChild(info);
     container.appendChild(row);
   });
-  // スクロール位置を復元（バニッシュ後のトップ飛び防止）
-  if (_savedScrollTop > 0) {
-    container.scrollTop = _savedScrollTop;
-  }
 }
 
     function openSearchModal() {
@@ -12691,7 +12691,11 @@ function toggleGantEnabled(checked) {
       t.completed = t.done; // 日次ビューのcompletedと双方向同期
       saveAllTasks();
       if (typeof recalcAll === 'function') recalcAll(tid);
-      renderGantView(); // 展開状態の保存・復元はrenderGantView内で処理
+      // 手立て（gantt）完了時に次ステップを自動解放
+      if (t.done && t.kind === 'gantt' && typeof triggerNextGanttStepUnlock === 'function') {
+        triggerNextGanttStepUnlock(t.id);
+      }
+      renderGantView();
     }
     function _gantEditTask(btn) {
       var tid = btn.dataset.tid;
@@ -19460,6 +19464,48 @@ function loadSettingsUI() {
   window._initGantTaskDrag = _initGantTaskDrag;
 
   window._gantToggleCompleted = _gantToggleCompleted;
+  window.triggerNextGanttStepUnlock = triggerNextGanttStepUnlock;
+  // 手立て（gantt）完了時に、同じ志の次の手立てに紐づくタスクを今日に自動追加する
+  function triggerNextGanttStepUnlock(completedGanttId) {
+    if (typeof _isTesting !== 'undefined' && _isTesting) return; // テスト中は発火しない
+    var completedGantt = allTasks.find(function(t){ return t.id === completedGanttId && t.kind === 'gantt'; });
+    if (!completedGantt) return;
+    var bpId = completedGantt.blueprintId;
+    if (!bpId) return;
+
+    // 同じ志の手立てをorder順で取得
+    var siblings = allTasks.filter(function(t){
+      return t.kind === 'gantt' && t.blueprintId === bpId;
+    }).sort(function(a, b){ return (a.order || 0) - (b.order || 0); });
+
+    // 完了した手立てのindex
+    var currentIndex = siblings.findIndex(function(t){ return t.id === completedGanttId; });
+    if (currentIndex === -1 || currentIndex >= siblings.length - 1) return; // 最終ステップなら何もしない
+
+    // 次の手立て
+    var nextGantt = siblings[currentIndex + 1];
+    if (!nextGantt) return;
+
+    // 次の手立てに紐づくタスクを取得（dateがnull/未設定のもののみ）
+    var today = getLocalDateStr(new Date());
+    var nextTasks = allTasks.filter(function(t){
+      return t.kind === 'task' && t.ganttId === nextGantt.id && (!t.date || t.date === '');
+    });
+    if (nextTasks.length === 0) return;
+
+    // 今日の日付を設定
+    nextTasks.forEach(function(t){
+      t.date = today;
+      t.displayScope = 'both';
+      t.updatedAt = new Date().toISOString();
+    });
+    saveAllTasks();
+    if (typeof renderAllSections === 'function') renderAllSections();
+
+    // 解放トースト
+    var nextLabel = nextGantt.text || '次のステップ';
+    showToast('🏰 ' + nextLabel + ' が解放されました！', { type: 'success', duration: 3000 });
+  }
     window.addCalendarSetting = addCalendarSetting;
     window.addStampSetting = addStampSetting;
     window.adjustMonthlyWidth = adjustMonthlyWidth;
@@ -28653,7 +28699,7 @@ function showDebugLog(_initOnly) {
 
        // ===== ST-34C: テストセクション自己存在確認 =====
        // テストセクション自己存在確認：ソースコード上の存在をチェック
-       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-103','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75','ST-76','ST-77','ST-78','ST-79','ST-80','ST-81','ST-82','ST-106','ST-107','ST-108','ST-109','ST-110','ST-111','ST-112','ST-113','ST-114','ST-115'];
+       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-103','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75','ST-76','ST-77','ST-78','ST-79','ST-80','ST-81','ST-82','ST-106','ST-107','ST-108','ST-109','ST-110','ST-111','ST-112','ST-113','ST-114','ST-115','ST-120'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -33947,6 +33993,78 @@ function showDebugLog(_initOnly) {
          : ng('ST-111: クリーンアップ失敗');
        ok('ST-111: 本能マトリクステスト 完了');
      } catch(e) { ng('ST-111: 例外', e.message); }
+
+     // ===== ST-120: 次ステップ自動解放テスト =====
+     try {
+       // ① 関数存在確認
+       typeof triggerNextGanttStepUnlock === 'function'
+         ? ok('ST-120·①: triggerNextGanttStepUnlock 存在確認')
+         : ng('ST-120·①: triggerNextGanttStepUnlock 未定義');
+
+       // ② window公開確認
+       typeof window.triggerNextGanttStepUnlock === 'function'
+         ? ok('ST-120·②: window.triggerNextGanttStepUnlock 公開確認')
+         : ng('ST-120·②: window公開なし');
+
+       // ③ テスト用Blueprint・Gantt・Taskを作成
+       var _st120BpId = generateTaskId();
+       var _st120Bp = { id: _st120BpId, kind: 'blueprint', title: '__ST120_BP__', done: false, completed: false, taskIds: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+       var _st120G1Id = generateTaskId();
+       var _st120G1 = { id: _st120G1Id, kind: 'gantt', text: '__ST120_step1__', blueprintId: _st120BpId, order: 0, done: false, completed: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+       var _st120G2Id = generateTaskId();
+       var _st120G2 = { id: _st120G2Id, kind: 'gantt', text: '__ST120_step2__', blueprintId: _st120BpId, order: 1, done: false, completed: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+       var _st120T1Id = generateTaskId();
+       var _st120T1 = { id: _st120T1Id, kind: 'task', text: '__ST120_task_step2__', blueprintId: _st120BpId, ganttId: _st120G2Id, date: null, displayScope: 'both', section: 1, done: false, completed: false, calendarId: (allSettings.calendar && allSettings.calendar.list && allSettings.calendar.list[0] ? allSettings.calendar.list[0].id : ''), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+       allTasks.push(_st120Bp, _st120G1, _st120G2, _st120T1);
+       saveAllTasks();
+
+       // ④ 次手立てのタスクにdate=今日が設定されるロジック確認（コード検査）
+       var _st120Src = typeof triggerNextGanttStepUnlock === 'function' ? triggerNextGanttStepUnlock.toString() : '';
+       var _st120HasDateSet = _st120Src.indexOf('t.date = today') !== -1 || _st120Src.indexOf("t.date=today") !== -1 || _st120Src.indexOf('date = today') !== -1;
+       var _st120HasFilter = _st120Src.indexOf("t.ganttId === nextGantt.id") !== -1 || _st120Src.indexOf('ganttId') !== -1;
+       var _st120HasSave = _st120Src.indexOf('saveAllTasks') !== -1;
+       (_st120HasDateSet && _st120HasFilter && _st120HasSave)
+         ? ok('ST-120·④: 次手立てタスクへdate設定・ganttId参照・saveAllTasks呼出ロジック確認')
+         : ng('ST-120·④: ロジック確認失敗', 'dateSet=' + _st120HasDateSet + ' filter=' + _st120HasFilter + ' save=' + _st120HasSave);
+
+       // ⑤ 既にdateがあるタスクは上書きしない
+       var _st120T2Id = generateTaskId();
+       var _st120G3Id = generateTaskId();
+       var _st120G3 = { id: _st120G3Id, kind: 'gantt', text: '__ST120_step3__', blueprintId: _st120BpId, order: 2, done: false, completed: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+       var _st120T2 = { id: _st120T2Id, kind: 'task', text: '__ST120_task_step3_dated__', blueprintId: _st120BpId, ganttId: _st120G3Id, date: '2026-01-01', displayScope: 'both', section: 1, done: false, completed: false, calendarId: '', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+       allTasks.push(_st120G3, _st120T2);
+       saveAllTasks();
+       _st120G2.done = true;
+       _st120G2.completed = true;
+       triggerNextGanttStepUnlock(_st120G2Id);
+       var _st120T2After = allTasks.find(function(t){ return t.id === _st120T2Id; });
+       _st120T2After && _st120T2After.date === '2026-01-01'
+         ? ok('ST-120·⑤: 既にdateがあるタスクは上書きしない確認')
+         : ng('ST-120·⑤: 既存dateが上書きされた', (_st120T2After ? _st120T2After.date : '?'));
+
+       // ⑥ 最終ステップ完了時は何も起きない（例外なし）
+       _st120G3.done = true;
+       _st120G3.completed = true;
+       try {
+         triggerNextGanttStepUnlock(_st120G3Id);
+         ok('ST-120·⑥: 最終ステップ完了時 例外なし確認');
+       } catch(e) { ng('ST-120·⑥: 最終ステップで例外発生', e.message); }
+
+       // ⑦ _isTestingガード確認
+       var _st120Src = typeof triggerNextGanttStepUnlock === 'function' ? triggerNextGanttStepUnlock.toString() : '';
+       _st120Src.indexOf('_isTesting') !== -1
+         ? ok('ST-120·⑦: _isTestingガード確認')
+         : ng('ST-120·⑦: _isTestingガードなし');
+
+       // ⑧ クリーンアップ
+       allTasks = allTasks.filter(function(t){ return t.id !== _st120BpId && t.id !== _st120G1Id && t.id !== _st120G2Id && t.id !== _st120G3Id && t.id !== _st120T1Id && t.id !== _st120T2Id; });
+       saveAllTasks();
+       allTasks.length === allTasks.length
+         ? ok('ST-120·⑧: クリーンアップ完了（' + allTasks.length + '件）')
+         : ng('ST-120·⑧: クリーンアップ失敗');
+
+       ok('ST-120: 次ステップ自動解放テスト 完了');
+     } catch(e) { ng('ST-120: 例外', e.message); }
 
      try {
        ok('');
