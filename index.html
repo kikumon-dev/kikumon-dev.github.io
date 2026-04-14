@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.44.186 ★ -->
+<!-- ★ CURRENT VERSION: v0.44.192 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -121,7 +121,7 @@ str_replaceは対象が1箇所だけに限定されるため安全。
 セッション開始時は必ずアップロードされたファイルをベースに設定してから作業開始。
 バージョンアップ時は必ず以下2箇所を同時に更新すること：
   ① 冒頭HTMLコメント（CURRENT VERSION行）
-  ② JS定数：const APP_VERSION = 'v0.44.186';
+  ② JS定数：const APP_VERSION = 'v0.44.192';
 どちらか片方だけ更新することは禁止。必ずセットで更新する。
 制度趣旨：巻き戻れる地点がないと壊れた時に復元できない。冒頭コメントがずれると
 ファイルの正体が不明になりデプロイミスや混乱の原因になる。
@@ -17093,24 +17093,62 @@ function reviveBlueprint(id) {
     })();
 
     // 日付変更時：雑記帳→thoughtsに自動移動
+    // 空日誌テキストを動的生成（月齢・七十二候を織り込む）
+    function _buildEmptyJournalText(dateStr) {
+      // 月齢テキスト
+      var moonText = '';
+      try {
+        var moonAge = (typeof calcMoonAgeNAOJ === 'function') ? calcMoonAgeNAOJ(new Date(dateStr.replace(/-/g, '/'))) : null;
+        if (moonAge !== null && !isNaN(moonAge)) {
+          if (moonAge < 1.5) moonText = '新月の夜だった。';
+          else if (moonAge < 8) moonText = '細い月が空にあった。';
+          else if (moonAge < 13) moonText = '半月が見守っていた。';
+          else if (moonAge < 16) moonText = '満月の夜だった。';
+          else if (moonAge < 22) moonText = '月は欠けはじめていた。';
+          else moonText = '月は細く、夜は静かだった。';
+        }
+      } catch(e) {}
+      // 七十二候テキスト
+      var kouText = '';
+      try {
+        var kou = (typeof getCurrentShichijuniKou === 'function') ? getCurrentShichijuniKou(new Date(dateStr.replace(/-/g, '/'))) : null;
+        if (kou && kou.name) kouText = '「' + kou.name + '（' + kou.reading + '）」の頃。';
+      } catch(e) {}
+      // ベース文言（ランダム）
+      var bases = [
+        '今日は何も刻まれていない。',
+        '静かな一日だった。',
+        '平和な時が流れた。',
+        '雑記帳は白いままだった。',
+        'この日、王国は静かに息をしていた。',
+        '記録はない。それもまた、歴史だ。',
+      ];
+      var base = bases[Math.floor(Math.random() * bases.length)];
+      return [kouText, base, moonText].filter(Boolean).join('');
+    }
     function moveScratchToThoughts() {
       if (window._isTesting) return; // _isTestingガード（ST-30誤汚染防止）
       var today = getLocalDateStr(new Date());
+      // 過去60日分を遡って、日誌がない日は空日誌を自動生成（王国の歴史を途切れさせない）
+      // ※ _lastScratchMoveDateガードの外で毎回チェック（初回・再起動問わず補完する）
+      var _journalDates = new Set(allTasks.filter(function(t){ return t.kind === 'journal'; }).map(function(t){ return t.date; }));
+      var _fillAdded = 0;
+      for (var _di = 1; _di <= 60; _di++) {
+        var _d = new Date(); _d.setDate(_d.getDate() - _di);
+        var _ds = getLocalDateStr(_d);
+        if (!_journalDates.has(_ds)) {
+          allTasks.push({ id: generateTaskId(), kind: 'journal', date: _ds, text: _buildEmptyJournalText(_ds), thoughts: [], mood: 0, condition: 0, weather: '', savedAt: new Date().toISOString(), _autoCreated: true });
+          _fillAdded++;
+        }
+      }
+      if (_fillAdded > 0) {
+        saveAllTasks();
+        setTimeout(function(){
+          if (typeof showToast === 'function') showToast('📖 過去' + _fillAdded + '日分の王国日誌を自動で記しました');
+        }, 1500);
+      }
       if (localStorage.getItem('_lastScratchMoveDate') === today) return;
       var oldS = allTasks.filter(function(t){ return (t.kind === 'scratch' || t.kind === 'zen') && t.date && t.date < today; });
-      // 昨日の日誌が存在しない場合、空でも日誌レコードを生成（連続性を保つ）
-      var yesterday = (function(){
-        var d = new Date(); d.setDate(d.getDate() - 1);
-        return getLocalDateStr(d);
-      })();
-      var hasYesterdayJournal = allTasks.some(function(t){ return t.kind === 'journal' && t.date === yesterday; });
-      if (!hasYesterdayJournal) {
-        var _emptyTexts = ['今日は何も刻まれていない。', '静かな一日だった。', '平和な時が流れた。', '雑記帳は白いままだった。'];
-        var _emptyText = _emptyTexts[Math.floor(Math.random() * _emptyTexts.length)];
-        var _emptyJ = { id: generateTaskId(), kind: 'journal', date: yesterday, text: _emptyText, thoughts: [], mood: 0, condition: 0, weather: '', savedAt: new Date().toISOString(), _autoCreated: true };
-        allTasks.push(_emptyJ);
-        saveAllTasks();
-      }
       if (oldS.length === 0) { localStorage.setItem('_lastScratchMoveDate', today); return; }
       var byDate = {};
       oldS.forEach(function(s){ if (!byDate[s.date]) byDate[s.date]=[]; byDate[s.date].push({ id: generateTaskId(), text: s.text }); });
@@ -17137,6 +17175,20 @@ function reviveBlueprint(id) {
         if (typeof renderScratchView === 'function') renderScratchView();
       }
     });
+    // 0時監視：日付が変わったらmoveScratchToThoughtsを自動実行（王国の歴史を途切れさせない）
+    (function() {
+      var _midnightLastDate = getLocalDateStr(new Date());
+      setInterval(function() {
+        var _now = getLocalDateStr(new Date());
+        if (_now !== _midnightLastDate) {
+          _midnightLastDate = _now;
+          moveScratchToThoughts();
+          if (typeof renderScratchView === 'function') renderScratchView();
+          if (typeof renderJournalView === 'function' && document.getElementById('journalView') && document.getElementById('journalView').style.display !== 'none') renderJournalView();
+          _dbgLog && _dbgLog('midnight: date changed to ' + _now + ', moveScratchToThoughts fired');
+        }
+      }, 60000); // 1分ごとにチェック
+    })();
     window._dbgLog('【昇格完了】UUID ENGINE v7 --- 識別子体系、最新世代 / 時は刻まれました');
     window._dbgLog('migrateToUUIDv7 done');
     // mig_*フラグの値を'1'に正規化（'true'が残っている場合）
