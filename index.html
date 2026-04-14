@@ -161,7 +161,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.150';
+    const APP_VERSION = 'v0.44.151';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -739,6 +739,13 @@ END OF 開発ルール
     .section2-header h4 {
       margin: 0;
       font-size: 1.1em;
+    }
+    .date-display {
+      font-size: 0.85em;
+      color: #333;
+      font-weight: 900 !important;
+      margin-left: auto;
+      white-space: nowrap;
     }
     /* PC: モバイル用日付は非表示 */
     .date-display-mobile {
