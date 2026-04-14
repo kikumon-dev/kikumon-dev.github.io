@@ -161,7 +161,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.151';
+    const APP_VERSION = 'v0.44.154';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -724,19 +724,6 @@ END OF 開発ルール
       gap: 4px;
     }
     .simple-header h4 {
-      margin: 0;
-      font-size: 1.1em;
-    }
-    /* section2専用ヘッダー（スマホ用・PCはsimple-headerを使用） */
-    .section2-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 15px;
-      flex-wrap: wrap;
-      gap: 4px;
-    }
-    .section2-header h4 {
       margin: 0;
       font-size: 1.1em;
     }
@@ -1394,6 +1381,14 @@ END OF 開発ルール
         margin: 0;
       }
 
+      /* スマホ：目的欄・止める仕組みは非表示（4象限のみ表示） */
+      #purposeGroup,
+      #purposeDisplay,
+      #stopConditionGroup,
+      #stopConditionDisplay {
+        display: none !important;
+      }
+
       /* ===== 第1象限 header-row：縦積み ===== */
       .header-row {
         display: flex;
@@ -1411,7 +1406,7 @@ END OF 開発ルール
         text-align: right;
         font-size: 0.6em;
         color: #aaa;
-        font-weight: 500;
+        font-weight: 500 !important;
         margin: 0;
         line-height: 1.2;
         white-space: nowrap;
@@ -1478,24 +1473,14 @@ END OF 開発ルール
         padding: 3px 6px !important;
       }
 
-      /* ===== 第2象限 simple-header：縦積み ===== */
+      /* ===== 第2象限 simple-header：横並び ===== */
       #section2 .simple-header {
-        display: block;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 4px;
         margin-bottom: 5px;
         width: 100%;
-      }
-      /* section2専用ヘッダー：スマホで完全左寄せ */
-      .section2-header {
-        display: block !important;
-        margin-bottom: 5px;
-        width: 100%;
-      }
-      .section2-header h4 {
-        font-size: 0.62em;
-        font-weight: 700;
-        color: #1a1a1a;
-        margin: 0 0 3px;
-        text-align: left;
       }
       /* 止める仕組み：第1象限の目的欄と同じ横並び1行構造 */
       #stopConditionGroup {
@@ -1596,12 +1581,23 @@ END OF 開発ルール
         flex: 1;
         min-width: 0;
       }
-      .simple-header > div {
+      /* section2以外のsimple-header内div */
+      #section3 .simple-header > div,
+      #section4 .simple-header > div {
         display: flex;
         flex-direction: row;
         align-items: center;
         flex-shrink: 0;
         gap: 3px;
+      }
+      /* section2のsimple-header内div（止める仕組みグループ）はflex:1で伸ばす */
+      #section2 .simple-header > div {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 4px;
       }
 
       /* ===== ボタン共通：コンパクト ===== */
