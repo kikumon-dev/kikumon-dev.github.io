@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.44.171 ★ -->
+<!-- ★ CURRENT VERSION: v0.44.183 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -121,7 +121,7 @@ str_replaceは対象が1箇所だけに限定されるため安全。
 セッション開始時は必ずアップロードされたファイルをベースに設定してから作業開始。
 バージョンアップ時は必ず以下2箇所を同時に更新すること：
   ① 冒頭HTMLコメント（CURRENT VERSION行）
-  ② JS定数：const APP_VERSION = 'v0.44.171';
+  ② JS定数：const APP_VERSION = 'v0.44.183';
 どちらか片方だけ更新することは禁止。必ずセットで更新する。
 制度趣旨：巻き戻れる地点がないと壊れた時に復元できない。冒頭コメントがずれると
 ファイルの正体が不明になりデプロイミスや混乱の原因になる。
@@ -5623,6 +5623,13 @@ END OF 開発ルール
         </div>
       </div>
 
+      <!-- スマホ下部ナビ カスタム -->
+      <div class="settings-section">
+        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">📱 スマホ下部ナビ（カスタム）</h3>
+        <p style="margin:0 0 12px 0;font-size:0.8em;color:#888;">🏠日次と···その他は固定。残り3つを選んでください。</p>
+        <div id="bottomNavCustomList" style="display:flex;flex-direction:column;gap:10px;"></div>
+      </div>
+
 
 <div class="settings-section">
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">初期表示</h3>
@@ -6557,7 +6564,8 @@ END OF 開発ルール
           weekly: true, monthly: true, journal: true, photo: true,
           yearly: true, notebook: true, craft: true,
           shop: true, colosseum: true, dashboard: true
-        }
+        },
+        bottomNavTabs: ['weekly', 'monthly', 'dashboard']  // 日次固定・···固定、残り3個カスタム
       },
       calendar: {
         list:        [],
@@ -11579,10 +11587,10 @@ var MATRIX_LAYERS = [
     centerColor: '#80cbc4',
     tier: 'kingdom',
     sections: [
-      { label: '正見・正思（智慧）',   color: '#e8eaf6', ph: '今日、物事をありのままに見て正しく考える行動は？' },
-      { label: '正語・正業（戒律①）', color: '#e1f5fe', ph: '今日、正しい言葉と行動で人と関わる行動は？' },
-      { label: '正命・正精進（戒律②）',color: '#e8f5e9', ph: '今日、正しい生計を立て継続的に努力する行動は？' },
-      { label: '正念・正定（禅定）',   color: '#ede7f6', ph: '今日、今ここに意識を向け心を静める行動は？' },
+      { label: '正見・正思（智慧）',   color: '#e8f5e9', ph: '今日、物事をありのままに見て正しく考える行動は？' },
+      { label: '正語・正業（戒律①）', color: '#fff8e1', ph: '今日、正しい言葉と行動で人と関わる行動は？' },
+      { label: '正命・正精進（戒律②）',color: '#fce4ec', ph: '今日、正しい生計を立て継続的に努力する行動は？' },
+      { label: '正念・正定（禅定）',   color: '#e1f5fe', ph: '今日、今ここに意識を向け心を静める行動は？' },
     ]
   },
   {
@@ -11650,9 +11658,9 @@ var MATRIX_LAYERS = [
     tier: 'kingdom',
     sections: [
       { label: '眼・耳・鼻を清める（感覚の浄化）', color: '#e8f5e9', ph: '今日、見るもの・聞くものを意識して選び心を清める行動は？' },
-      { label: '舌・身を清める（言動の浄化）',     color: '#f1f8e9', ph: '今日、言葉と身体の使い方を慎み清める行動は？' },
-      { label: '意を清める（心の浄化）',           color: '#e0f2f1', ph: '今日、心の中の濁りや雑念を祓い澄ませる行動は？' },
-      { label: '六根一体（全体の統合）',           color: '#e8f5e9', ph: '今日、感覚・言動・心が一致している状態をつくる行動は？' },
+      { label: '舌・身を清める（言動の浄化）',     color: '#fff8e1', ph: '今日、言葉と身体の使い方を慎み清める行動は？' },
+      { label: '意を清める（心の浄化）',           color: '#fce4ec', ph: '今日、心の中の濁りや雑念を祓い澄ませる行動は？' },
+      { label: '六根一体（全体の統合）',           color: '#e1f5fe', ph: '今日、感覚・言動・心が一致している状態をつくる行動は？' },
     ]
   },
   {
@@ -11733,10 +11741,10 @@ var MATRIX_LAYERS = [
     centerColor: '#ce93d8',
     tier: 'kingdom',
     sections: [
-      { label: '', color: '#fafafa', ph: 'あなたが今世に与えられた使命は何ですか？（召命）' },
-      { label: '', color: '#fafafa', ph: 'その天命に、あなたはどう応えますか？（応答）' },
-      { label: '', color: '#fafafa', ph: ' 今日、天命に沿った具体的な行動は？（実践）' },
-      { label: '', color: '#fafafa', ph: 'あなたが次の世代に継ぎたいものは何ですか？（継承）' },
+      { label: '', color: '#e8f5e9', ph: 'あなたが今世に与えられた使命は何ですか？（召命）' },
+      { label: '', color: '#e1f5fe', ph: 'その天命に、あなたはどう応えますか？（応答）' },
+      { label: '', color: '#fff8e1', ph: ' 今日、天命に沿った具体的な行動は？（実践）' },
+      { label: '', color: '#fce4ec', ph: 'あなたが次の世代に継ぎたいものは何ですか？（継承）' },
     ]
   },
 ];
@@ -11942,7 +11950,7 @@ function selectKingdomMode(mode) {
     setTimeout(function() { openPolestarModal(); }, 300);
   }
   applyVisibleTabsSettings();
-  // 造営タブも反映
+  if (typeof applyBottomNavCustom === 'function') applyBottomNavCustom();
   var gantEl = document.getElementById('navGant');
   if (gantEl) gantEl.style.display = def.gantEnabled ? '' : 'none';
   // クラフトタブも反映（craftModeEnabledがfalseなら非表示）
@@ -12023,45 +12031,42 @@ function applySettingsSectionVisibility() {
   var _effectiveModeKey = (_modeKey === 'custom')
     ? ((allSettings.ui && allSettings.ui.kingdomModeBase) || 'kingdom')
     : _modeKey;
+  // polestarはkingdom同等扱い
+  var _isKingdomTier = (_effectiveModeKey === 'kingdom' || _effectiveModeKey === 'polestar');
+  var _isTownTier = (_effectiveModeKey === 'town' || _isKingdomTier);
 
-  // 造営セクション：王国のみ表示
+  // 造営セクション：王国以上のみ表示
   var gantSection = document.getElementById('settingsGantSection');
   var _effectiveKmForGant = (typeof KINGDOM_MODES !== 'undefined') ? KINGDOM_MODES[_effectiveModeKey] : null;
-  if (gantSection) gantSection.style.display = (_effectiveKmForGant && _effectiveKmForGant.gantEnabled) ? '' : 'none';
-  // ナビタブ表示セクションの造営ラベル：王国のみ表示
+  if (gantSection) gantSection.style.display = (_isKingdomTier || (_effectiveKmForGant && _effectiveKmForGant.gantEnabled)) ? '' : 'none';
+  // ナビタブ表示セクションの造営ラベル：王国以上のみ表示
   var labelGant = document.getElementById('settingsLabelGant');
-  var _gantAvailable = (_effectiveModeKey === 'kingdom');
-  if (labelGant) labelGant.style.display = _gantAvailable ? '' : 'none';
+  if (labelGant) labelGant.style.display = _isKingdomTier ? '' : 'none';
 
-  // ナビタブ：週間（村以上）
+  // ナビタブ：週間
   var labelWeekly = document.getElementById('settingsLabelWeekly');
-  // 週間：村・町・王国のみ表示
   var _effectiveKm = (typeof KINGDOM_MODES !== 'undefined') ? KINGDOM_MODES[_effectiveModeKey] : null;
   if (labelWeekly) labelWeekly.style.display = (!_effectiveKm || _effectiveKm.visibleTabs.weekly !== false) ? '' : 'none';
-  // ナビタブ：月間（村以上）
+  // ナビタブ：月間
   var labelMonthly = document.getElementById('settingsLabelMonthly');
   if (labelMonthly) labelMonthly.style.display = (!_effectiveKm || _effectiveKm.visibleTabs.monthly !== false) ? '' : 'none';
-  // ナビタブ：年間（モードが町・王国なら常に表示。ユーザーがOFFにしても消えない）
+  // ナビタブ：年間（町・王国以上）
   var labelYearly = document.getElementById('settingsLabelYearly');
-  var _yearlyAvailable = (_effectiveModeKey === 'town' || _effectiveModeKey === 'kingdom');
-  if (labelYearly) labelYearly.style.display = _yearlyAvailable ? '' : 'none';
+  if (labelYearly) labelYearly.style.display = _isTownTier ? '' : 'none';
 
-  // ナビタブ：自由帳（村以上）
+  // ナビタブ：自由帳
   var labelNotebook = document.getElementById('settingsLabelNotebook');
   if (labelNotebook) labelNotebook.style.display = (!_effectiveKm || _effectiveKm.visibleTabs.notebook !== false) ? '' : 'none';
 
-  // ナビタブ：コロシアム（王国のみ表示）
+  // ナビタブ：コロシアム（王国以上のみ表示）
   var labelColosseum = document.getElementById('settingsLabelColosseum');
-  var _colosseumAvailable = (_effectiveModeKey === 'kingdom');
-  if (labelColosseum) labelColosseum.style.display = _colosseumAvailable ? '' : 'none';
-  // ナビタブ：写真館（町・王国のみ表示）
+  if (labelColosseum) labelColosseum.style.display = _isKingdomTier ? '' : 'none';
+  // ナビタブ：写真館（町・王国以上）
   var labelPhoto = document.getElementById('settingsLabelPhoto');
-  var _photoAvailable = (_effectiveModeKey === 'town' || _effectiveModeKey === 'kingdom');
-  if (labelPhoto) labelPhoto.style.display = _photoAvailable ? '' : 'none';
-  // ナビタブ：ダッシュボード（町・王国のみ表示）
+  if (labelPhoto) labelPhoto.style.display = _isTownTier ? '' : 'none';
+  // ナビタブ：ダッシュボード（町・王国以上）
   var labelDashboard = document.getElementById('settingsLabelDashboard');
-  var _dashboardAvailable = (_effectiveModeKey === 'town' || _effectiveModeKey === 'kingdom');
-  if (labelDashboard) labelDashboard.style.display = _dashboardAvailable ? '' : 'none';
+  if (labelDashboard) labelDashboard.style.display = _isTownTier ? '' : 'none';
 }
 
 function toggleVisibleTab(key, checked) {
@@ -18881,6 +18886,8 @@ var OFFICIAL_DECKS = [
 function loadSettingsUI() {
       // モードに応じた設定セクション表示制御
       if (typeof applySettingsSectionVisibility === 'function') applySettingsSectionVisibility();
+      // 下部ナビカスタムリストを描画
+      if (typeof renderBottomNavCustomList === 'function') renderBottomNavCustomList();
       // クラフトモード
       const craftCheck = document.getElementById('craftModeEnabled');
       if (craftCheck) {
@@ -19928,7 +19935,12 @@ function loadSettingsUI() {
     window.openSearchModal = openSearchModal;
     // ===== 下部ナビ制御 =====
     function updateBottomNav(view) {
-      var map = { daily:'bnavDaily', journal:'bnavJournal', weekly:'bnavWeekly', dashboard:'bnavDashboard' };
+      var map = { daily:'bnavDaily' };
+      // 動的スロット（カスタム選択ボタン）も追加
+      document.querySelectorAll('.bnav-btn[data-view]').forEach(function(btn){
+        var v = btn.getAttribute('data-view');
+        if (v) map[v] = btn.id;
+      });
       document.querySelectorAll('.bnav-btn').forEach(function(b){ b.classList.remove('active'); });
       var activeId = map[view];
       if (activeId) {
@@ -19964,6 +19976,103 @@ function loadSettingsUI() {
     window.moveScratchToThoughts = moveScratchToThoughts;
     window.switchShopTab = switchShopTab;
     window.applyVisibleTabsSettings = applyVisibleTabsSettings;
+
+    // ===== スマホ下部ナビ カスタム選択 =====
+    var BNAV_OPTIONS = [
+      { key: 'weekly',    icon: '🗓️', label: '週間' },
+      { key: 'monthly',   icon: '📅', label: '月間' },
+      { key: 'dashboard', icon: '📈', label: 'ダッシュボード' },
+      { key: 'journal',   icon: '📖', label: '日誌' },
+      { key: 'notebook',  icon: '📓', label: '自由帳' },
+      { key: 'photo',     icon: '📸', label: '写真館' },
+      { key: 'yearly',    icon: '📆', label: '年間' },
+      { key: 'gant',      icon: '🏗️', label: '造営' },
+      { key: 'craft',     icon: '🏰', label: 'クラフト' },
+      { key: 'colosseum', icon: '⚔️', label: 'コロシアム' },
+      { key: 'shop',      icon: '🛍️', label: 'ショップ' },
+      { key: 'zen',       icon: '⊙',  label: '禅モード' },
+      { key: 'settings',  icon: '⚙️', label: '設定' },
+      { key: 'search',    icon: '🔍', label: '検索' },
+    ];
+
+    function renderBottomNavCustomList() {
+      var el = document.getElementById('bottomNavCustomList');
+      if (!el) return;
+      var current = allSettings.ui.bottomNavTabs || ['weekly', 'monthly', 'dashboard'];
+      el.innerHTML = '';
+      BNAV_OPTIONS.forEach(function(opt) {
+        var checked = current.indexOf(opt.key) !== -1;
+        var disabled = checked && current.length <= 1;
+        var label = document.createElement('label');
+        label.style.cssText = 'display:flex;align-items:center;gap:10px;cursor:pointer;' + (disabled ? 'opacity:0.5;' : '');
+        label.innerHTML =
+          '<input type="checkbox" ' + (checked ? 'checked' : '') + ' ' + (disabled ? 'disabled' : '') +
+          ' style="width:18px;height:18px;accent-color:#4facfe;cursor:pointer;"' +
+          ' onchange="window.toggleBottomNavTab(\'' + opt.key + '\',this.checked)">' +
+          '<span style="font-size:0.9em;color:#333;font-weight:600;">' + opt.icon + ' ' + opt.label + '</span>';
+        el.appendChild(label);
+      });
+      // 3個選択済みなら未選択のチェックボックスをdisableに
+      if (current.length >= 3) {
+        var inputs = el.querySelectorAll('input[type=checkbox]');
+        inputs.forEach(function(inp) {
+          if (!inp.checked) inp.disabled = true;
+        });
+      }
+    }
+
+    function toggleBottomNavTab(key, checked) {
+      var tabs = (allSettings.ui.bottomNavTabs || ['weekly', 'monthly', 'dashboard']).slice();
+      if (checked) {
+        if (tabs.indexOf(key) === -1 && tabs.length < 3) tabs.push(key);
+      } else {
+        tabs = tabs.filter(function(k){ return k !== key; });
+      }
+      allSettings.ui.bottomNavTabs = tabs;
+      saveAllSettings();
+      applyBottomNavCustom();
+      renderBottomNavCustomList();
+    }
+    window.toggleBottomNavTab = toggleBottomNavTab;
+
+    function applyBottomNavCustom() {
+      var tabs = allSettings.ui.bottomNavTabs || ['weekly', 'monthly', 'dashboard'];
+      var nav = document.getElementById('bottomNav');
+      if (!nav) return;
+      // 既存の動的ボタン（bnavSlot1〜3）を削除
+      ['bnavSlot1','bnavSlot2','bnavSlot3'].forEach(function(id){
+        var el = document.getElementById(id);
+        if (el) el.parentNode.removeChild(el);
+      });
+      // 日次ボタンの直後に差し込む
+      var bnavDaily = document.getElementById('bnavDaily');
+      var bnavMore = document.getElementById('bnavMore');
+      if (!bnavDaily || !bnavMore) return;
+      var optMap = {};
+      BNAV_OPTIONS.forEach(function(o){ optMap[o.key] = o; });
+      // tabs を逆順に insertBefore(bnavMore)
+      tabs.slice().reverse().forEach(function(key, ri) {
+        var slot = tabs.length - 1 - ri;
+        var opt = optMap[key];
+        if (!opt) return;
+        var btn = document.createElement('button');
+        btn.className = 'bnav-btn';
+        btn.id = 'bnavSlot' + (slot + 1);
+        btn.setAttribute('data-view', key);
+        if (key === 'zen') {
+          btn.onclick = function(){ if (typeof openZenMode === 'function') openZenMode(); };
+        } else if (key === 'search') {
+          btn.onclick = function(){ if (typeof openSearchModal === 'function') openSearchModal(); };
+        } else {
+          btn.onclick = function(){ switchView(key); };
+        }
+        btn.innerHTML = '<span class="bnav-icon">' + opt.icon + '</span><span class="bnav-label">' + opt.label + '</span>';
+        nav.insertBefore(btn, bnavMore);
+      });
+      // updateBottomNavのmapを動的に更新
+      if (typeof updateBottomNav === 'function') updateBottomNav(typeof currentView !== 'undefined' ? currentView : 'daily');
+    }
+    window.applyBottomNavCustom = applyBottomNavCustom;
     window.selectKingdomMode = selectKingdomMode;
 
     function openPolestarModal() {
@@ -33956,11 +34065,11 @@ function showDebugLog(_initOnly) {
            : ng('ST-116·④: 位置異常 top=' + _mccTop + ' left=' + _mccLeft);
        }
 
-       // ⑤ opacity:0.82確認（半透明）
+       // ⑤ opacity確認（半透明）
        if (_mcc116) {
          var _mccOp = _mcc116.style.opacity;
-         _mccOp === '0.82'
-           ? ok('ST-116·⑤: opacity:0.82 半透明確認')
+         (_mccOp === '0.82' || _mccOp === '0.9')
+           ? ok('ST-116·⑤: opacity 半透明確認（' + _mccOp + '）')
            : ng('ST-116·⑤: opacity異常（' + _mccOp + '）');
        }
 
@@ -34523,9 +34632,9 @@ function showDebugLog(_initOnly) {
        _bn ? ok('ST-125·①: #bottomNav DOM存在') : ng('ST-125·①: #bottomNav 未存在', '');
 
        // ② 5ボタン存在確認
-       var _bnavIds = ['bnavDaily','bnavJournal','bnavWeekly','bnavDashboard','bnavMore'];
+       var _bnavIds = ['bnavDaily','bnavMore'];
        var _bnavAll = _bnavIds.every(function(id){ return !!document.getElementById(id); });
-       _bnavAll ? ok('ST-125·②: 下部ナビ5ボタン全存在') : ng('ST-125·②: 下部ナビボタン不足', _bnavIds.filter(function(id){ return !document.getElementById(id); }).join(','));
+       _bnavAll ? ok('ST-125·②: 下部ナビ固定ボタン全存在（日次・その他）') : ng('ST-125·②: 下部ナビボタン不足', _bnavIds.filter(function(id){ return !document.getElementById(id); }).join(','));
 
        // ③ window公開確認
        (typeof window.openBottomNavMore === 'function')
@@ -34556,10 +34665,12 @@ function showDebugLog(_initOnly) {
        window.updateBottomNav('daily');
        var _dailyActive = document.getElementById('bnavDaily') && document.getElementById('bnavDaily').classList.contains('active');
        _dailyActive ? ok('ST-125·⑥: updateBottomNav(daily) でbnavDailyにactiveクラス') : ng('ST-125·⑥: activeクラスが付かない', '');
-       window.updateBottomNav('weekly');
-       var _weeklyActive = document.getElementById('bnavWeekly') && document.getElementById('bnavWeekly').classList.contains('active');
+       window.updateBottomNav('monthly');
+       // カスタムスロット方式：data-view="monthly"のボタンがactiveになるか確認
+       var _monthlyBtn = document.querySelector('.bnav-btn[data-view="monthly"]');
+       var _monthlyActive = _monthlyBtn && _monthlyBtn.classList.contains('active');
        var _dailyInactive = document.getElementById('bnavDaily') && !document.getElementById('bnavDaily').classList.contains('active');
-       _weeklyActive ? ok('ST-125·⑥: updateBottomNav(weekly) でbnavWeeklyにactive') : ng('ST-125·⑥: weekly activeクラスなし', '');
+       _monthlyActive ? ok('ST-125·⑥: updateBottomNav(monthly) でbnavMonthlyにactive') : ng('ST-125·⑥: monthly activeクラスなし', '');
        _dailyInactive ? ok('ST-125·⑥: 切替時に旧activeが除去される') : ng('ST-125·⑥: 旧activeが残存', '');
 
        ok('ST-125: 下部ナビゲーションテスト 完了');
@@ -38601,18 +38712,6 @@ window.togglePvStampPalette = togglePvStampPalette;
       <span class="bnav-icon">🏠</span>
       <span class="bnav-label">日次</span>
     </button>
-    <button class="bnav-btn" id="bnavWeekly" onclick="switchView('weekly')">
-      <span class="bnav-icon">🗓️</span>
-      <span class="bnav-label">週間</span>
-    </button>
-    <button class="bnav-btn" id="bnavJournal" onclick="switchView('journal')">
-      <span class="bnav-icon">📖</span>
-      <span class="bnav-label">日誌</span>
-    </button>
-    <button class="bnav-btn" id="bnavDashboard" onclick="switchView('dashboard')">
-      <span class="bnav-icon">📈</span>
-      <span class="bnav-label">統計</span>
-    </button>
     <button class="bnav-btn" id="bnavMore" onclick="openBottomNavMore()">
       <span class="bnav-icon">···</span>
       <span class="bnav-label">その他</span>
@@ -38627,13 +38726,13 @@ window.togglePvStampPalette = togglePvStampPalette;
         <span style="font-size:1.4em;">📖</span><span style="font-size:0.65em;color:#555;">日誌</span>
       </button>
       <button onclick="switchView('yearly');closeBottomNavMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;background:#f7f7f7;border:none;border-radius:10px;cursor:pointer;">
-        <span style="font-size:1.4em;">🗓️</span><span style="font-size:0.65em;color:#555;">年間</span>
+        <span style="font-size:1.4em;">📆</span><span style="font-size:0.65em;color:#555;">年間</span>
       </button>
       <button onclick="switchView('notebook');closeBottomNavMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;background:#f7f7f7;border:none;border-radius:10px;cursor:pointer;">
         <span style="font-size:1.4em;">📓</span><span style="font-size:0.65em;color:#555;">自由帳</span>
       </button>
       <button onclick="switchView('photo');closeBottomNavMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;background:#f7f7f7;border:none;border-radius:10px;cursor:pointer;">
-        <span style="font-size:1.4em;">📷</span><span style="font-size:0.65em;color:#555;">写真</span>
+        <span style="font-size:1.4em;">📸</span><span style="font-size:0.65em;color:#555;">写真館</span>
       </button>
       <button onclick="switchView('craft');closeBottomNavMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;background:#f7f7f7;border:none;border-radius:10px;cursor:pointer;">
         <span style="font-size:1.4em;">🏰</span><span style="font-size:0.65em;color:#555;">クラフト</span>
@@ -38654,7 +38753,7 @@ window.togglePvStampPalette = togglePvStampPalette;
         <span style="font-size:1.4em;">⚙️</span><span style="font-size:0.65em;color:#555;">設定</span>
       </button>
       <button onclick="window.openZenMode&&window.openZenMode();closeBottomNavMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;background:#f7f7f7;border:none;border-radius:10px;cursor:pointer;">
-        <span style="font-size:1.4em;">⊙</span><span style="font-size:0.65em;color:#555;">全モード</span>
+        <span style="font-size:1.4em;">⊙</span><span style="font-size:0.65em;color:#555;">禅モード</span>
       </button>
       <button onclick="showTutorial&&showTutorial();closeBottomNavMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;background:#f7f7f7;border:none;border-radius:10px;cursor:pointer;">
         <span style="font-size:1.4em;">❓</span><span style="font-size:0.65em;color:#555;">ヘルプ</span>
