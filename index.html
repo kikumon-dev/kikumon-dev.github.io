@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.44.183 ★ -->
+<!-- ★ CURRENT VERSION: v0.44.186 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -121,7 +121,7 @@ str_replaceは対象が1箇所だけに限定されるため安全。
 セッション開始時は必ずアップロードされたファイルをベースに設定してから作業開始。
 バージョンアップ時は必ず以下2箇所を同時に更新すること：
   ① 冒頭HTMLコメント（CURRENT VERSION行）
-  ② JS定数：const APP_VERSION = 'v0.44.183';
+  ② JS定数：const APP_VERSION = 'v0.44.186';
 どちらか片方だけ更新することは禁止。必ずセットで更新する。
 制度趣旨：巻き戻れる地点がないと壊れた時に復元できない。冒頭コメントがずれると
 ファイルの正体が不明になりデプロイミスや混乱の原因になる。
@@ -17098,6 +17098,19 @@ function reviveBlueprint(id) {
       var today = getLocalDateStr(new Date());
       if (localStorage.getItem('_lastScratchMoveDate') === today) return;
       var oldS = allTasks.filter(function(t){ return (t.kind === 'scratch' || t.kind === 'zen') && t.date && t.date < today; });
+      // 昨日の日誌が存在しない場合、空でも日誌レコードを生成（連続性を保つ）
+      var yesterday = (function(){
+        var d = new Date(); d.setDate(d.getDate() - 1);
+        return getLocalDateStr(d);
+      })();
+      var hasYesterdayJournal = allTasks.some(function(t){ return t.kind === 'journal' && t.date === yesterday; });
+      if (!hasYesterdayJournal) {
+        var _emptyTexts = ['今日は何も刻まれていない。', '静かな一日だった。', '平和な時が流れた。', '雑記帳は白いままだった。'];
+        var _emptyText = _emptyTexts[Math.floor(Math.random() * _emptyTexts.length)];
+        var _emptyJ = { id: generateTaskId(), kind: 'journal', date: yesterday, text: _emptyText, thoughts: [], mood: 0, condition: 0, weather: '', savedAt: new Date().toISOString(), _autoCreated: true };
+        allTasks.push(_emptyJ);
+        saveAllTasks();
+      }
       if (oldS.length === 0) { localStorage.setItem('_lastScratchMoveDate', today); return; }
       var byDate = {};
       oldS.forEach(function(s){ if (!byDate[s.date]) byDate[s.date]=[]; byDate[s.date].push({ id: generateTaskId(), text: s.text }); });
@@ -37104,7 +37117,15 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       const journals = loadJournals();
       if (journals.length === 0) {
-        area.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--ink-faint);font-family:serif;"><div style="font-size:2.2em;margin-bottom:16px;opacity:0.35;">📖</div><div style="font-size:0.85em;line-height:2.2;letter-spacing:0.1em;">まだ日誌がありません。<br>左上の「記す」から始めましょう。</div></div>';
+        // 空状態のメッセージをランダムに選ぶ
+        var _emptyMsgs = [
+          { icon: '🌙', title: '今日は何も刻まれていない。', sub: '——それが、平和な一日だったのかもしれない。' },
+          { icon: '🍃', title: 'まだ、何も残っていない。', sub: '雑記帳から、昨日の声が届くのを待っている。' },
+          { icon: '📖', title: 'ページが、白いままだ。', sub: 'それはそれで、ひとつの記録だ。' },
+          { icon: '⛩️', title: 'この王国に、まだ日誌はない。', sub: '左上の「記す」から、最初の一頁を。' },
+        ];
+        var _em = _emptyMsgs[Math.floor(Math.random() * _emptyMsgs.length)];
+        area.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--ink-faint);font-family:serif;"><div style="font-size:2.2em;margin-bottom:16px;opacity:0.35;">' + _em.icon + '</div><div style="font-size:0.9em;font-weight:600;color:var(--ink-light);letter-spacing:0.12em;line-height:2;">' + _em.title + '</div><div style="font-size:0.78em;color:var(--ink-faint);letter-spacing:0.08em;margin-top:4px;">' + _em.sub + '</div></div>';
         return;
       }
       const MOOD_E = ['','😞','😐','🙂','😊','🌟'];
@@ -37231,11 +37252,38 @@ document.addEventListener('DOMContentLoaded', function() {
         + '<h3 style="margin:0 0 16px;font-size:0.92em;font-weight:700;font-family:serif;color:var(--ink);letter-spacing:0.1em;">日誌を編集</h3>'
         + '<input id="journalEditDate" type="date" value="' + j.date + '" style="width:100%;padding:9px 12px;border:1px solid rgba(44,36,22,0.2);border-radius:8px;font-size:0.97em;box-sizing:border-box;margin-bottom:12px;background:rgba(255,255,255,0.7);color:var(--ink);">'
         + '<textarea id="journalEditText" style="width:100%;padding:11px 12px;border:1px solid rgba(44,36,22,0.2);border-radius:8px;font-size:1.0em;box-sizing:border-box;height:130px;resize:none;margin-bottom:12px;background:rgba(255,255,255,0.7);color:var(--ink);font-family:\'Noto Serif JP\',serif;line-height:1.85;">' + (j.text||'') + '</textarea>'
+        + '<div style="display:flex;gap:16px;margin-bottom:10px;flex-wrap:wrap;">'
+        // 天気ピッカー
+        + '<div><div style="font-size:0.68em;color:var(--ink-faint);margin-bottom:4px;letter-spacing:0.08em;">天気</div><div id="journalEditWeatherPicker" style="display:flex;gap:3px;">'
+        + ['☀️','🌤️','☁️','🌧️','⛄'].map(function(e){ return '<button onclick="window._setJournalEditMeta(\'weather\',\''+e+'\')" data-weather="'+e+'" style="font-size:1.2em;background:none;border:none;cursor:pointer;padding:2px;opacity:'+(j.weather===e?'1':'0.35')+';transition:opacity 0.15s;border-radius:4px;">' + e + '</button>'; }).join('')
+        + '</div></div>'
+        // 気分ピッカー
+        + '<div><div style="font-size:0.68em;color:var(--ink-faint);margin-bottom:4px;letter-spacing:0.08em;">気分</div><div id="journalEditMoodPicker" style="display:flex;gap:3px;">'
+        + ['😞','😐','🙂','😊','🌟'].map(function(e,i){ var v=i+1; return '<button onclick="window._setJournalEditMeta(\'mood\','+v+')" data-mood="'+v+'" style="font-size:1.2em;background:none;border:none;cursor:pointer;padding:2px;opacity:'+(j.mood===v?'1':'0.35')+';transition:opacity 0.15s;border-radius:4px;">' + e + '</button>'; }).join('')
+        + '</div></div>'
+        // 体調ピッカー
+        + '<div><div style="font-size:0.68em;color:var(--ink-faint);margin-bottom:4px;letter-spacing:0.08em;">体調</div><div id="journalEditCondPicker" style="display:flex;gap:3px;">'
+        + ['🤒','😴','😐','💪','⚡'].map(function(e,i){ var v=i+1; return '<button onclick="window._setJournalEditMeta(\'condition\','+v+')" data-condition="'+v+'" style="font-size:1.2em;background:none;border:none;cursor:pointer;padding:2px;opacity:'+(j.condition===v?'1':'0.35')+';transition:opacity 0.15s;border-radius:4px;">' + e + '</button>'; }).join('')
+        + '</div></div>'
+        + '</div>'
         + '</div>'
         + '<div style="display:flex;gap:8px;padding:12px 20px 18px;border-top:1px solid rgba(180,165,140,0.35);background:rgba(242,237,227,0.8);flex-shrink:0;">'
         + '<button onclick="saveJournalEdit(\'' + id + '\')" style="flex:1;padding:10px;background:var(--ink);color:#f5f0e8;border:none;border-radius:10px;font-size:0.88em;cursor:pointer;font-family:serif;letter-spacing:0.06em;">保存</button>'
         + '<button onclick="document.getElementById(\'journalEditModal\').style.display=\'none\'" style="padding:10px 16px;background:rgba(44,36,22,0.06);border:1px solid rgba(44,36,22,0.15);color:var(--ink-mid);border-radius:10px;font-size:0.88em;cursor:pointer;">キャンセル</button>'
         + '</div></div>';
+      // 編集用メタ状態を初期化
+      window._journalEditMeta = { mood: j.mood||0, condition: j.condition||0, weather: j.weather||'' };
+      window._setJournalEditMeta = function(type, val) {
+        window._journalEditMeta[type] = val;
+        var pickerId = type === 'weather' ? 'journalEditWeatherPicker' : type === 'mood' ? 'journalEditMoodPicker' : 'journalEditCondPicker';
+        var picker = document.getElementById(pickerId);
+        if (!picker) return;
+        picker.querySelectorAll('button').forEach(function(btn) {
+          var bval = btn.getAttribute('data-' + type);
+          var match = type === 'weather' ? bval === String(val) : parseInt(bval) === parseInt(val);
+          btn.style.opacity = match ? '1' : '0.35';
+        });
+      };
       modal.style.display = 'flex';
     }
     function saveJournalEdit(id) {
@@ -37260,6 +37308,11 @@ document.addEventListener('DOMContentLoaded', function() {
       } else {
         journals[idx].date = newDate;
         journals[idx].text = newText;
+        if (window._journalEditMeta) {
+          if (window._journalEditMeta.mood)      journals[idx].mood      = window._journalEditMeta.mood;
+          if (window._journalEditMeta.condition) journals[idx].condition = window._journalEditMeta.condition;
+          if (window._journalEditMeta.weather)   journals[idx].weather   = window._journalEditMeta.weather;
+        }
         journals[idx].savedAt = new Date().toISOString();
         _showJournalToast('📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(newDate) + 'の日誌を更新しました');
       }
