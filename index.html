@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.44.199 ★ -->
+<!-- ★ CURRENT VERSION: v0.44.165 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
-最終更新: 2026-04-14 v0.44.197
+最終更新: 2026-04-11 v0.39.593
 =============================================================================
 【重要】このコメントは削除・省略厳禁。
 スレッドが変わっても開発継続性を保つため全条文をここに保管する。
@@ -121,7 +121,7 @@ str_replaceは対象が1箇所だけに限定されるため安全。
 セッション開始時は必ずアップロードされたファイルをベースに設定してから作業開始。
 バージョンアップ時は必ず以下2箇所を同時に更新すること：
   ① 冒頭HTMLコメント（CURRENT VERSION行）
-  ② JS定数：const APP_VERSION = 'v0.44.199';
+  ② JS定数：const APP_VERSION = 'vX.Y.Z';
 どちらか片方だけ更新することは禁止。必ずセットで更新する。
 制度趣旨：巻き戻れる地点がないと壊れた時に復元できない。冒頭コメントがずれると
 ファイルの正体が不明になりデプロイミスや混乱の原因になる。
@@ -179,7 +179,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.197';
+    const APP_VERSION = 'v0.44.165';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -1433,7 +1433,7 @@ END OF 開発ルール
       /* ===== 共通：h4 ===== */
       .header-row h4,
       .simple-header h4 {
-        font-size: 0.6em;
+        font-size: 0.65em;
         white-space: normal;
         line-height: 1.3;
         color: #1a1a1a;
@@ -1445,7 +1445,10 @@ END OF 開発ルール
       #purposeGroup,
       #purposeDisplay,
       #stopConditionGroup,
-      #stopConditionDisplay {
+      #stopConditionDisplay,
+      #section2 #stopConditionGroup,
+      #section2 #stopConditionDisplay,
+      #deepDiveQuestions {
         display: none !important;
       }
 
@@ -1542,58 +1545,31 @@ END OF 開発ルール
         margin-bottom: 5px;
         width: 100%;
       }
-      /* 止める仕組み：第1象限の目的欄と同じ横並び1行構造 */
-      #stopConditionGroup {
-        display: flex !important;
-        flex-direction: row !important;
-        align-items: center !important;
-        width: 100% !important;
-        gap: 3px !important;
-      }
-      #stopConditionGroup label {
-        font-size: 0.6em !important;
-        font-weight: bold !important;
-        color: #333 !important;
-        white-space: nowrap !important;
-        flex-shrink: 0 !important;
-      }
-      #stopConditionGroup input {
-        flex: 1 !important;
-        min-width: 0 !important;
-        width: auto !important;
-        box-sizing: border-box !important;
-        font-size: 0.72em !important;
-        padding: 3px 5px !important;
-        height: 24px !important;
-      }
-      /* 止める仕組み表示：同じく横並び */
-      #stopConditionDisplay {
-        display: flex !important;
-        flex-direction: row !important;
-        align-items: center !important;
-        width: 100% !important;
-        gap: 3px !important;
-      }
-      #stopConditionDisplay label {
-        font-size: 0.6em !important;
-        color: #888 !important;
-        white-space: nowrap !important;
-        flex-shrink: 0 !important;
-      }
+      /* 止める仕組み：スマホでは非表示のため表示CSSは不要 */
 
-      /* ===== 第3象限：h4+ボタン縦積み・プレースホルダー対策 ===== */
+      /* ===== 第3象限：h4+ボタン横並び（第2象限と同じ構造） ===== */
       #section3 .simple-header {
         display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 3px;
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: nowrap;
+        gap: 4px;
         margin-bottom: 5px;
+        width: 100%;
+        overflow: hidden;
       }
-      #input3 {
-        font-size: 0.7em;
+      #section3 .simple-header h4 {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex-shrink: 1;
+        min-width: 0;
       }
+      #section3 .simple-header .color-toggle-btn {
+        flex-shrink: 0;
+      }
+      /* #input3 font-sizeは共通.task-inputの0.72emを使用 */
       #input3::placeholder {
-        font-size: 0.9em;
         letter-spacing: -0.02em;
       }
 
@@ -1610,13 +1586,9 @@ END OF 開発ルール
       .header-buttons {
         display: none !important;
       }
-      /* スマホ専用ボタン行 */
+      /* スマホ専用ボタン行：非表示 */
       .section4-mobile-btns {
-        display: flex;
-        flex-direction: row;
-        gap: 3px;
-        margin-bottom: 4px;
-        flex-wrap: nowrap;
+        display: none;
       }
       .section4-mobile-btns .data-btn,
       .section4-mobile-btns .clear-all-btn {
@@ -4204,7 +4176,7 @@ END OF 開発ルール
       <ul class="task-list" id="list1"></ul>
     </div>
     <!-- 多層マトリクス中心円: containerグリッドの中心にabsoluteで配置 -->
-    <div id="matrixCenterCircle" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);-webkit-transform:translate(-50%,-50%);width:76px;height:76px;border-radius:50%;background:#90caf9;color:#3a3a4a;font-size:0.8em;font-weight:700;display:none;align-items:center;justify-content:center;text-align:center;line-height:1.2;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,0.15);padding:4px;cursor:pointer;border:3px solid rgba(255,255,255,0.9);word-break:break-all;opacity:0.9;text-shadow:none;overflow:hidden;" onclick="switchMatrixLayer()" title="タップでレイヤー切り替え">今ここで</div>
+    <div id="matrixCenterCircle" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);-webkit-transform:translate(-50%,-50%);width:76px;height:76px;border-radius:50%;background:#1976d2;color:#fff;font-size:0.8em;font-weight:700;display:none;align-items:center;justify-content:center;text-align:center;line-height:1.2;z-index:100;box-shadow:0 4px 16px rgba(0,0,0,0.35);padding:4px;cursor:pointer;border:3px solid rgba(255,255,255,0.9);word-break:break-all;opacity:0.82;text-shadow:0 1px 3px rgba(0,0,0,0.5);overflow:hidden;" onclick="switchMatrixLayer()" title="タップでレイヤー切り替え">今ここで</div>
     <!-- 右上: 緊急でないが重要 -->
     <div class="section" id="section2">
       <div class="simple-header">
@@ -5623,13 +5595,6 @@ END OF 開発ルール
         </div>
       </div>
 
-      <!-- スマホ下部ナビ カスタム -->
-      <div class="settings-section">
-        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">📱 スマホ下部ナビ（カスタム）</h3>
-        <p style="margin:0 0 12px 0;font-size:0.8em;color:#888;">🏠日次と···その他は固定。残り3つを選んでください。</p>
-        <div id="bottomNavCustomList" style="display:flex;flex-direction:column;gap:10px;"></div>
-      </div>
-
 
 <div class="settings-section">
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">初期表示</h3>
@@ -6564,8 +6529,7 @@ END OF 開発ルール
           weekly: true, monthly: true, journal: true, photo: true,
           yearly: true, notebook: true, craft: true,
           shop: true, colosseum: true, dashboard: true
-        },
-        bottomNavTabs: ['weekly', 'monthly', 'dashboard']  // 日次固定・···固定、残り3個カスタム
+        }
       },
       calendar: {
         list:        [],
@@ -7860,9 +7824,9 @@ function renderTodoList() {
       if (!entry.stats) entry.stats = { received: 0, completed: 0 };
       entry.stats.received = (entry.stats.received || 0) + 1;
       saveAllTasks();
-      if (typeof addGDP === 'function') addGDP(1, 'ARV1:着荷（' + (data.deckTitle||'デッキ') + ' by ' + (data.reportedBy||'旅人') + '）');
+      if (typeof addGDP === 'function') addGDP(100, 'ARV1:着荷（' + (data.deckTitle||'デッキ') + ' by ' + (data.reportedBy||'旅人') + '）');
       if (typeof renderDeckHistory === 'function') renderDeckHistory();
-      showToast('⚓ ' + (data.reportedBy||'旅人') + 'さんに届きました！GDP+1', {type:'success', duration:4000});
+      showToast('⚓ ' + (data.reportedBy||'旅人') + 'さんに届きました！GDP+100万', {type:'success', duration:4000});
     }
 
     // ===== BLM1: 開花コード生成・受取 =====
@@ -7895,7 +7859,7 @@ function renderTodoList() {
       entry.stats.blmCompleted = (entry.stats.blmCompleted || 0) + (data.completedCount || 0);
       saveAllTasks();
       var bonus = data.completedCount || 0;
-      if (bonus > 0 && typeof addGDP === 'function') addGDP(bonus, 'BLM1:開花（' + (data.deckTitle||'デッキ') + ' by ' + (data.reportedBy||'旅人') + '）');
+      if (bonus > 0 && typeof addGDP === 'function') addGDP(bonus * 100, 'BLM1:開花（' + (data.deckTitle||'デッキ') + ' by ' + (data.reportedBy||'旅人') + '）');
       if (typeof renderDeckHistory === 'function') renderDeckHistory();
       // コロシアムランキングに記録
       if (typeof recordColosseumScore === 'function') {
@@ -7904,7 +7868,7 @@ function renderTodoList() {
           renderColosseumView();
         }
       }
-      showToast('🌸 ' + (data.reportedBy||'旅人') + 'さんが' + bonus + '件完了！GDP+' + bonus + "'", {type:'success', duration:4000});
+      showToast('🌸 ' + (data.reportedBy||'旅人') + 'さんが' + bonus + '件完了！GDP+' + (bonus*100) + '万', {type:'success', duration:4000});
     }
 
     function incrementDeckHistoryStat(deckId) {
@@ -10330,7 +10294,7 @@ function addGou(amount, reason) {
 // 毎日起動時：業によるGDP削減チェック
 function checkDailyGouPenalty() {
   var _migKey = 'lastGouCheckDate';
-  var today = getLocalDateStr(new Date()); // JST
+  var today = new Date().toISOString().slice(0,10);
   var last = localStorage.getItem(_migKey);
   if (last === today) return;
   localStorage.setItem(_migKey, today);
@@ -10338,10 +10302,10 @@ function checkDailyGouPenalty() {
   if (gou <= 0) return;
   var gdp = getGDP();
   if (gdp <= 0) return;
-  // 業10ごとに1GDP削減（最大5）
-  var penalty = Math.min(5, Math.floor(gou / 10));
+  var penalty = Math.floor(gdp * (gou / 365));
   if (penalty > 0) {
     addGDP(-penalty, '業によるGDP削減（業=' + gou + '）');
+    // GDP削減は静かに実行（設定の業ログで確認可能）
   }
 }
 // 3日放置チェック（起動時）
@@ -10371,8 +10335,8 @@ function checkMonthlyBonus() {
 function checkAbsencePenalty() {
   var lastKey = 'lastTaskCompletedDate';
   var last = localStorage.getItem(lastKey);
-  if (!last) { localStorage.setItem(lastKey, getLocalDateStr(new Date())); return; }
-  var today = getLocalDateStr(new Date()); // JST
+  if (!last) { localStorage.setItem(lastKey, new Date().toISOString().slice(0,10)); return; }
+  var today = new Date().toISOString().slice(0,10);
   if (last === today) return;
   var lastMs = new Date(last).getTime();
   var todayMs = new Date(today).getTime();
@@ -10384,7 +10348,7 @@ function checkAbsencePenalty() {
   }
 }
 function recordTaskCompletedDate() {
-  localStorage.setItem('lastTaskCompletedDate', getLocalDateStr(new Date())); // JST
+  localStorage.setItem('lastTaskCompletedDate', new Date().toISOString().slice(0,10));
 }
 
 // B1: 王国力計算
@@ -10392,8 +10356,9 @@ function getKingdomPower() {
   var toku = typeof getToku === 'function' ? getToku() : 0;
   var gdp  = typeof getGDP  === 'function' ? getGDP()  : 0;
   var gou  = typeof getGouNew === 'function' ? getGouNew() : 0;
-  // 徳60% + GDP40% ÷ 業ペナルティ（全て1単位に統一）
-  var power = (toku * 0.6 + gdp * 0.4) / (gou + 1);
+  // 個人の努力（徳）60% + 他者交流（GDP）40% ÷ 業ペナルティ
+  // GDP内部単位は「万」→ 徳スケールに合わせて×1000
+  var power = (toku * 0.6 + gdp * 0.4 * 10) / (gou + 1);
   return Math.floor(power);
 }
 
@@ -10794,105 +10759,105 @@ function checkShichijuniKouChangeAndShowToast() {
 }
 
 var KINGDOM_TITLES = [
-{ min:     0, icon:'🌱', name:'開拓民', color:'#bbb' },
-  { min:     3, icon:'🪨', name:'石を拾った者', color:'#a0a0a0' },
-  { min:     8, icon:'🌾', name:'種まき人', color:'#b5c96a' },
-  { min:    15, icon:'🏕️', name:'野営者', color:'#8bc34a' },
-  { min:    25, icon:'🐾', name:'旅人', color:'#7cb9e8' },
-  { min:    40, icon:'🪓', name:'開墾者', color:'#9e8060' },
-  { min:    60, icon:'🧑‍🌾', name:'農夫', color:'#8d6e63' },
-  { min:    85, icon:'🔨', name:'職人見習い', color:'#a07040' },
-  { min:   115, icon:'🪚', name:'職人', color:'#8d6e63' },
-  { min:   150, icon:'⚒️', name:'親方', color:'#7a6050' },
-  { min:   168, icon:'🏪', name:'商人', color:'#ff9800' },
-  { min:   186, icon:'🪶', name:'村の書記', color:'#8090a0' },
-  { min:   204, icon:'🏡', name:'村人', color:'#9e9e9e' },
-  { min:   223, icon:'🗡️', name:'衛兵', color:'#78909c' },
-  { min:   242, icon:'⚔️', name:'兵士', color:'#607d8b' },
-  { min:   261, icon:'🛡️', name:'盾持ち', color:'#5c6bc0' },
-  { min:   280, icon:'🗡️', name:'騎士', color:'#ff9800' },
-  { min:   299, icon:'🏇', name:'騎馬隊員', color:'#f57c00' },
-  { min:   319, icon:'🎖️', name:'男爵', color:'#a0856a' },
-  { min:   339, icon:'🎗️', name:'子爵', color:'#90a4ae' },
-  { min:   359, icon:'⚜️', name:'伯爵', color:'#7986cb' },
-  { min:   379, icon:'🏅', name:'侯爵', color:'#5c6bc0' },
-  { min:   399, icon:'👒', name:'公爵', color:'#4527a0' },
-  { min:   420, icon:'👑', name:'大公', color:'#7b1fa2' },
-  { min:   441, icon:'🏰', name:'城主', color:'#4caf50' },
-  { min:   462, icon:'🏯', name:'城将', color:'#388e3c' },
-  { min:   483, icon:'🏯', name:'大名', color:'#1976d2' },
-  { min:   504, icon:'⚔️', name:'藩主', color:'#0277bd' },
-  { min:   525, icon:'🎌', name:'将軍', color:'#c62828' },
-  { min:   547, icon:'📜', name:'摂政', color:'#6a1b9a' },
-  { min:   569, icon:'📜', name:'関白', color:'#4a148c' },
-  { min:   591, icon:'📜', name:'太政大臣', color:'#1a237e' },
-  { min:   613, icon:'🔱', name:'軍師', color:'#1976d2' },
-  { min:   635, icon:'⚖️', name:'宰相', color:'#6a1b9a' },
-  { min:   658, icon:'🏛️', name:'議員', color:'#7b1fa2' },
-  { min:   681, icon:'📋', name:'首相', color:'#1565c0' },
-  { min:   704, icon:'🦅', name:'大統領', color:'#bf360c' },
-  { min:   727, icon:'🌐', name:'総督', color:'#0288d1' },
-  { min:   750, icon:'⚖️', name:'統領', color:'#4527a0' },
-  { min:   774, icon:'🔭', name:'探求者', color:'#00838f' },
-  { min:   798, icon:'📡', name:'知の番人', color:'#00695c' },
-  { min:   822, icon:'📜', name:'法学者', color:'#5c6bc0' },
-  { min:   846, icon:'🌐', name:'外交官', color:'#0288d1' },
-  { min:   870, icon:'🏹', name:'将帥', color:'#e65100' },
-  { min:   895, icon:'🦅', name:'鷹将', color:'#bf360c' },
-  { min:   920, icon:'🌿', name:'君子', color:'#2e7d32' },
-  { min:   945, icon:'☯️', name:'賢人', color:'#00695c' },
-  { min:   970, icon:'📿', name:'聖職者', color:'#7986cb' },
-  { min:   995, icon:'🕊️', name:'聖人', color:'#00acc1' },
-  { min:  1021, icon:'✨', name:'聖人君子', color:'#0288d1' },
-  { min:  1047, icon:'🧘', name:'仙人', color:'#00796b' },
-  { min:  1073, icon:'🦁', name:'百獣の王', color:'#e65100' },
-  { min:  1099, icon:'🌊', name:'提督', color:'#0277bd' },
-  { min:  1125, icon:'👑', name:'覇者', color:'#9c27b0' },
-  { min:  1152, icon:'🐉', name:'竜の盟友', color:'#c62828' },
-  { min:  1179, icon:'🏆', name:'英雄王', color:'#ff8f00' },
-  { min:  1206, icon:'⚡', name:'伝説の勇者', color:'#f57f17' },
-  { min:  1233, icon:'🌟', name:'伝説の王', color:'#ff8800' },
-  { min:  1260, icon:'🔮', name:'魔導の賢者', color:'#7b1fa2' },
-  { min:  1287, icon:'🌌', name:'天文の達人', color:'#283593' },
-  { min:  1315, icon:'👁️', name:'大僧正', color:'#4a148c' },
-  { min:  1343, icon:'⛩️', name:'神官長', color:'#880e4f' },
-  { min:  1371, icon:'🔥', name:'魔王', color:'#b71c1c' },
-  { min:  1399, icon:'🌙', name:'月の賢者', color:'#7986cb' },
-  { min:  1427, icon:'🌠', name:'流星の騎士', color:'#1565c0' },
-  { min:  1456, icon:'🦋', name:'転生の王', color:'#ad1457' },
-  { min:  1485, icon:'🌞', name:'太陽の使者', color:'#f57f17' },
-  { min:  1514, icon:'💎', name:'宝石の王', color:'#00bcd4' },
-  { min:  1543, icon:'🌈', name:'虹の支配者', color:'#7c4dff' },
-  { min:  1572, icon:'🌍', name:'世界の王', color:'#1b5e20' },
-  { min:  1602, icon:'🛸', name:'宇宙の探求者', color:'#311b92' },
-  { min:  1632, icon:'🌀', name:'次元の旅人', color:'#4a148c' },
-  { min:  1662, icon:'🔥', name:'炎帝', color:'#b71c1c' },
-  { min:  1692, icon:'❄️', name:'氷の女王', color:'#006064' },
-  { min:  1722, icon:'⚡', name:'嵐の神', color:'#0d47a1' },
-  { min:  1753, icon:'🌑', name:'闇の君主', color:'#212121' },
-  { min:  1784, icon:'☀️', name:'光の神', color:'#ff6f00' },
-  { min:  1815, icon:'🌊', name:'海の神', color:'#01579b' },
-  { min:  1846, icon:'🌙', name:'月の神', color:'#4527a0' },
-  { min:  1877, icon:'⭐', name:'星の神', color:'#f57f17' },
-  { min:  1909, icon:'🌌', name:'宇宙の神', color:'#1a237e' },
-  { min:  1941, icon:'👁️', name:'全知の眼', color:'#880e4f' },
-  { min:  1973, icon:'∞', name:'無限の存在', color:'#4a148c' },
-  { min:  2005, icon:'🌐', name:'世界の魂', color:'#0d47a1' },
-  { min:  2037, icon:'🔱', name:'三位一体', color:'#1b5e20' },
-  { min:  2069, icon:'🐉', name:'古龍の盟主', color:'#b71c1c' },
-  { min:  2102, icon:'👑', name:'全世界の王', color:'#ff8f00' },
-  { min:  2135, icon:'🌌', name:'銀河の創造者', color:'#1a237e' },
-  { min:  2168, icon:'∞', name:'宇宙そのもの', color:'#4a148c' },
-  { min:  2201, icon:'🌟', name:'時間の外の者', color:'#880e4f' },
-  { min:  2234, icon:'💡', name:'概念の具現者', color:'#e65100' },
-  { min:  2268, icon:'🔥', name:'すべての始まり', color:'#b71c1c' },
-  { min:  2302, icon:'🌊', name:'原初の奔流', color:'#0277bd' },
-  { min:  2336, icon:'🌌', name:'宇宙の記憶', color:'#1a237e' },
-  { min:  2370, icon:'💫', name:'光速の旅人', color:'#f57f17' },
-  { min:  2404, icon:'🔱', name:'神々の末裔', color:'#4a148c' },
-  { min:  2439, icon:'🌠', name:'超新星の申し子', color:'#283593' },
-  { min:  2474, icon:'🌟', name:'創造神', color:'#ff8f00' },
-  { min:  2509, icon:'✨', name:'やることクラフトの伝説', color:'#ff8800' },
+  { min:       0, icon:'🌱', name:'開拓民', color:'#bbb' },
+  { min:     520, icon:'🪨', name:'石を拾った者', color:'#a0a0a0' },
+  { min:    1810, icon:'🌾', name:'種まき人', color:'#b5c96a' },
+  { min:    3760, icon:'🏕️', name:'野営者', color:'#8bc34a' },
+  { min:    6310, icon:'🐾', name:'旅人', color:'#7cb9e8' },
+  { min:    9430, icon:'🪓', name:'開墾者', color:'#9e8060' },
+  { min:   13100, icon:'🧑‍🌾', name:'農夫', color:'#8d6e63' },
+  { min:   17290, icon:'🔨', name:'職人見習い', color:'#a07040' },
+  { min:   21990, icon:'🪚', name:'職人', color:'#8d6e63' },
+  { min:   27190, icon:'⚒️', name:'親方', color:'#7a6050' },
+  { min:   32870, icon:'🏪', name:'商人', color:'#ff9800' },
+  { min:   39020, icon:'🪶', name:'村の書記', color:'#8090a0' },
+  { min:   45640, icon:'🏡', name:'村人', color:'#9e9e9e' },
+  { min:   52710, icon:'🗡️', name:'衛兵', color:'#78909c' },
+  { min:   60230, icon:'⚔️', name:'兵士', color:'#607d8b' },
+  { min:   68200, icon:'🛡️', name:'盾持ち', color:'#5c6bc0' },
+  { min:   76600, icon:'🗡️', name:'騎士', color:'#ff9800' },
+  { min:   85430, icon:'🏇', name:'騎馬隊員', color:'#f57c00' },
+  { min:   94690, icon:'🎖️', name:'男爵', color:'#a0856a' },
+  { min:  104370, icon:'🎗️', name:'子爵', color:'#90a4ae' },
+  { min:  114460, icon:'⚜️', name:'伯爵', color:'#7986cb' },
+  { min:  124970, icon:'🏅', name:'侯爵', color:'#5c6bc0' },
+  { min:  135880, icon:'👒', name:'公爵', color:'#4527a0' },
+  { min:  147200, icon:'👑', name:'大公', color:'#7b1fa2' },
+  { min:  158920, icon:'🏰', name:'城主', color:'#4caf50' },
+  { min:  171040, icon:'🏯', name:'城将', color:'#388e3c' },
+  { min:  183550, icon:'🏯', name:'大名', color:'#1976d2' },
+  { min:  196460, icon:'⚔️', name:'藩主', color:'#0277bd' },
+  { min:  209750, icon:'🎌', name:'将軍', color:'#c62828' },
+  { min:  223420, icon:'📜', name:'摂政', color:'#6a1b9a' },
+  { min:  237480, icon:'📜', name:'関白', color:'#4a148c' },
+  { min:  251920, icon:'📜', name:'太政大臣', color:'#1a237e' },
+  { min:  266740, icon:'🔱', name:'軍師', color:'#1976d2' },
+  { min:  281930, icon:'⚖️', name:'宰相', color:'#6a1b9a' },
+  { min:  297490, icon:'🏛️', name:'議員', color:'#7b1fa2' },
+  { min:  313430, icon:'📋', name:'首相', color:'#1565c0' },
+  { min:  329730, icon:'🦅', name:'大統領', color:'#bf360c' },
+  { min:  346400, icon:'🌐', name:'総督', color:'#0288d1' },
+  { min:  363440, icon:'⚖️', name:'統領', color:'#4527a0' },
+  { min:  380830, icon:'🔭', name:'探求者', color:'#00838f' },
+  { min:  398590, icon:'📡', name:'知の番人', color:'#00695c' },
+  { min:  416710, icon:'📜', name:'法学者', color:'#5c6bc0' },
+  { min:  435180, icon:'🌐', name:'外交官', color:'#0288d1' },
+  { min:  454010, icon:'🏹', name:'将帥', color:'#e65100' },
+  { min:  473190, icon:'🦅', name:'鷹将', color:'#bf360c' },
+  { min:  492720, icon:'🌿', name:'君子', color:'#2e7d32' },
+  { min:  512610, icon:'☯️', name:'賢人', color:'#00695c' },
+  { min:  532840, icon:'📿', name:'聖職者', color:'#7986cb' },
+  { min:  553420, icon:'🕊️', name:'聖人', color:'#00acc1' },
+  { min:  574340, icon:'✨', name:'聖人君子', color:'#0288d1' },
+  { min:  595610, icon:'🧘', name:'仙人', color:'#00796b' },
+  { min:  617230, icon:'🦁', name:'百獣の王', color:'#e65100' },
+  { min:  639180, icon:'🌊', name:'提督', color:'#0277bd' },
+  { min:  661480, icon:'👑', name:'覇者', color:'#9c27b0' },
+  { min:  684110, icon:'🐉', name:'竜の盟友', color:'#c62828' },
+  { min:  707090, icon:'🏆', name:'英雄王', color:'#ff8f00' },
+  { min:  730400, icon:'⚡', name:'伝説の勇者', color:'#f57f17' },
+  { min:  754040, icon:'🌟', name:'伝説の王', color:'#ff8800' },
+  { min:  778020, icon:'🔮', name:'魔導の賢者', color:'#7b1fa2' },
+  { min:  802330, icon:'🌌', name:'天文の達人', color:'#283593' },
+  { min:  826980, icon:'👁️', name:'大僧正', color:'#4a148c' },
+  { min:  851950, icon:'⛩️', name:'神官長', color:'#880e4f' },
+  { min:  877250, icon:'🔥', name:'魔王', color:'#b71c1c' },
+  { min:  902890, icon:'🌙', name:'月の賢者', color:'#7986cb' },
+  { min:  928850, icon:'🌠', name:'流星の騎士', color:'#1565c0' },
+  { min:  955140, icon:'🦋', name:'転生の王', color:'#ad1457' },
+  { min:  981750, icon:'🌞', name:'太陽の使者', color:'#f57f17' },
+  { min: 1008680, icon:'💎', name:'宝石の王', color:'#00bcd4' },
+  { min: 1035950, icon:'🌈', name:'虹の支配者', color:'#7c4dff' },
+  { min: 1063530, icon:'🌍', name:'世界の王', color:'#1b5e20' },
+  { min: 1091430, icon:'🛸', name:'宇宙の探求者', color:'#311b92' },
+  { min: 1119660, icon:'🌀', name:'次元の旅人', color:'#4a148c' },
+  { min: 1148210, icon:'🔥', name:'炎帝', color:'#b71c1c' },
+  { min: 1177070, icon:'❄️', name:'氷の女王', color:'#006064' },
+  { min: 1206250, icon:'⚡', name:'嵐の神', color:'#0d47a1' },
+  { min: 1235750, icon:'🌑', name:'闇の君主', color:'#212121' },
+  { min: 1265570, icon:'☀️', name:'光の神', color:'#ff6f00' },
+  { min: 1295700, icon:'🌊', name:'海の神', color:'#01579b' },
+  { min: 1326150, icon:'🌙', name:'月の神', color:'#4527a0' },
+  { min: 1356910, icon:'⭐', name:'星の神', color:'#f57f17' },
+  { min: 1387980, icon:'🌌', name:'宇宙の神', color:'#1a237e' },
+  { min: 1419370, icon:'👁️', name:'全知の眼', color:'#880e4f' },
+  { min: 1451060, icon:'∞', name:'無限の存在', color:'#4a148c' },
+  { min: 1483070, icon:'🌐', name:'世界の魂', color:'#0d47a1' },
+  { min: 1515390, icon:'🔱', name:'三位一体', color:'#1b5e20' },
+  { min: 1548020, icon:'🐉', name:'古龍の盟主', color:'#b71c1c' },
+  { min: 1580950, icon:'👑', name:'全世界の王', color:'#ff8f00' },
+  { min: 1614200, icon:'🌌', name:'銀河の創造者', color:'#1a237e' },
+  { min: 1647750, icon:'∞', name:'宇宙そのもの', color:'#4a148c' },
+  { min: 1681600, icon:'🌟', name:'時間の外の者', color:'#880e4f' },
+  { min: 1715770, icon:'💡', name:'概念の具現者', color:'#e65100' },
+  { min: 1750230, icon:'🔥', name:'すべての始まり', color:'#b71c1c' },
+  { min: 1785010, icon:'🌊', name:'原初の奔流', color:'#0277bd' },
+  { min: 1820080, icon:'🌌', name:'宇宙の記憶', color:'#1a237e' },
+  { min: 1855460, icon:'💫', name:'光速の旅人', color:'#f57f17' },
+  { min: 1891140, icon:'🔱', name:'神々の末裔', color:'#4a148c' },
+  { min: 1927130, icon:'🌠', name:'超新星の申し子', color:'#283593' },
+  { min: 1963410, icon:'🌟', name:'創造神', color:'#ff8f00' },
+  { min: 2000000, icon:'✨', name:'やることクラフトの伝説', color:'#ff8800' },
 ];
 
 
@@ -10906,21 +10871,24 @@ function getKingdomTitle() {
   return result;
 }
 
-// ===== GDPフォーマット（1単位・万億廃止） =====
+// ===== GDP億単位フォーマット =====
 function formatGDP(val) {
-  if (!val || val === 0) return '0';
-  return parseInt(val).toLocaleString();
+  if (!val || val === 0) return '0万';
+  if (val >= 1000000) return (val / 1000000).toFixed(1).replace(/\.0$/, '') + '兆';
+  if (val >= 10000)   return (val / 10000).toFixed(1).replace(/\.0$/, '') + '億';
+  if (val >= 1)       return val.toLocaleString() + '万';
+  return val + '万';
 }
 
 // ===== GDP称号 =====
 function getGDPTitle(val) {
   // 内部単位：万
-  // GDP（1単位・交流の積み重ね）
-  if (val >= 5000) return { icon: '🌟', name: '覇者' };
-  if (val >= 1000) return { icon: '🌍', name: '列強' };
-  if (val >= 500)  return { icon: '👑', name: '大名' };
-  if (val >= 100)  return { icon: '🏯', name: '城主' };
-  if (val >= 30)   return { icon: '🏠', name: '村長' };
+  // 村長=1,000万、城主=1億(10000万)、大名=10億、列強=100億、覇者=1000億
+  if (val >= 10000000) return { icon: '🌟', name: '覇者' };   // 1000億
+  if (val >= 1000000)  return { icon: '🌍', name: '列強' };   // 100億
+  if (val >= 100000)   return { icon: '👑', name: '大名' };   // 10億
+  if (val >= 10000)    return { icon: '🏯', name: '城主' };   // 1億
+  if (val >= 1000)     return { icon: '🏠', name: '村長' };   // 1000万
   return { icon: '🌱', name: '開拓民' };
 }
 
@@ -11174,7 +11142,7 @@ var MATRIX_LAYERS = [
     icon: '🗺️',
     label: 'マトリクス',
     center: '今ここで',
-    centerColor: '#90caf9',
+    centerColor: '#1976d2',
     tier: 'free',
     sections: [
       { label: '緊急かつ重要',       color: '#ffebee', ph: '本質的で今すぐ必要な行動は？...' },
@@ -11188,7 +11156,7 @@ var MATRIX_LAYERS = [
     icon: '🔥',
     label: '本能マトリクス',
     center: '生きること',
-    centerColor: '#f48fb1',
+    centerColor: '#c62828',
     tier: 'village',
     sections: [
       { label: '🛡️ 生存欲',    color: '#ffebee', ph: '身を守る・確保する行動は？' },
@@ -11202,7 +11170,7 @@ var MATRIX_LAYERS = [
     icon: '📚',
     label: '教育マトリクス',
     center: '仁',
-    centerColor: '#a5d6a7',
+    centerColor: '#1565c0',
     tier: 'town',
     sections: [
       { label: '義（正しく行う）', color: '#e3f2fd', ph: '正義・公正な行動は？' },
@@ -11216,7 +11184,7 @@ var MATRIX_LAYERS = [
     icon: '🌟',
     label: '使命マトリクス',
     center: '至誠',
-    centerColor: '#ffe082',
+    centerColor: '#4a148c',
     tier: 'kingdom',
     sections: [
       { label: '勤労（働く）',   color: '#fce4ec', ph: '今日の勤労行動は？' },
@@ -11230,7 +11198,7 @@ var MATRIX_LAYERS = [
     icon: '⚔️',
     label: '孫子マトリクス',
     center: '勝つ前に勝つ',
-    centerColor: '#ce93d8',
+    centerColor: '#b71c1c',
     tier: 'kingdom',
     sections: [
       { label: '知彼知己（己と敵を知る）', color: '#ffebee', ph: '今日、状況・自分・相手を正確に把握する行動は？' },
@@ -11244,7 +11212,7 @@ var MATRIX_LAYERS = [
     icon: '🌱',
     label: '孟子の四端マトリクス',
     center: '性善',
-    centerColor: '#80cbc4',
+    centerColor: '#2e7d32',
     tier: 'kingdom',
     sections: [
       { label: '惻隠（仁の端（あわれみ））',   color: '#e8f5e9', ph: '今日、他者の痛みに気づく行動は？' },
@@ -11258,7 +11226,7 @@ var MATRIX_LAYERS = [
     icon: '📖',
     label: '大学マトリクス',
     center: '修身',
-    centerColor: '#ffab91',
+    centerColor: '#1565c0',
     tier: 'kingdom',
     sections: [
       { label: '格物（物事の本質を究める）', color: '#e3f2fd', ph: '今日、物事の本質・道理を究める行動は？' },
@@ -11272,7 +11240,7 @@ var MATRIX_LAYERS = [
     icon: '🕊️',
     label: '墨子マトリクス',
     center: '兼愛',
-    centerColor: '#b39ddb',
+    centerColor: '#4527a0',
     tier: 'kingdom',
     sections: [
       { label: '兼愛（分け隔てなく愛する）', color: '#ede7f6', ph: '今日、全ての人を等しく思いやる行動は？' },
@@ -11286,7 +11254,7 @@ var MATRIX_LAYERS = [
     icon: '🏛️',
     label: '管子の四維マトリクス',
     center: '国の綱紀',
-    centerColor: '#c5e1a5',
+    centerColor: '#e65100',
     tier: 'kingdom',
     sections: [
       { label: '礼（節度を守る）',   color: '#fff3e0', ph: '今日、礼節・秩序を守る行動は？' },
@@ -11300,7 +11268,7 @@ var MATRIX_LAYERS = [
     icon: '🪬',
     label: '曾国藩マトリクス',
     center: '自強',
-    centerColor: '#81d4fa',
+    centerColor: '#37474f',
     tier: 'kingdom',
     sections: [
       { label: '敬（真剣に向き合う）', color: '#eceff1', ph: '今日、全力・真剣に向き合う行動は？' },
@@ -11314,7 +11282,7 @@ var MATRIX_LAYERS = [
     icon: '📿',
     label: '陰騭録マトリクス',
     center: '積善',
-    centerColor: '#bcaaa4',
+    centerColor: '#6a1b9a',
     tier: 'kingdom',
     sections: [
       { label: '立命（天命を自ら開く）', color: '#fff8e1', ph: '今日、運命を他人任せにしない行動は？' },
@@ -11328,7 +11296,7 @@ var MATRIX_LAYERS = [
     icon: '💡',
     label: '王陽明マトリクス',
     center: '致良知',
-    centerColor: '#ef9a9a',
+    centerColor: '#f57f17',
     tier: 'kingdom',
     sections: [
       { label: '知行合一（知ることと行うことは一つ）', color: '#fff8e1', ph: '今日、知っていることを実際に行う行動は？' },
@@ -11342,7 +11310,7 @@ var MATRIX_LAYERS = [
     icon: '☯️',
     label: '中庸マトリクス',
     center: '中和',
-    centerColor: '#90caf9',
+    centerColor: '#00695c',
     tier: 'kingdom',
     sections: [
       { label: '慎独（一人でも誠実に）',   color: '#e0f2f1', ph: '誰も見ていなくても正しくある行動は？' },
@@ -11356,7 +11324,7 @@ var MATRIX_LAYERS = [
     icon: '🎓',
     label: '荀子マトリクス',
     center: '礼による修身',
-    centerColor: '#f48fb1',
+    centerColor: '#1a237e',
     tier: 'kingdom',
     sections: [
       { label: '礼（規範で自己を整える）',   color: '#e8eaf6', ph: '今日、礼・規範に従い自己を整える行動は？' },
@@ -11370,7 +11338,7 @@ var MATRIX_LAYERS = [
     icon: '🌊',
     label: '老子マトリクス',
     center: '道（タオ）',
-    centerColor: '#a5d6a7',
+    centerColor: '#004d40',
     tier: 'kingdom',
     sections: [
       { label: '無為（作為しない）',       color: '#e0f2f1', ph: '今日、無理に動かず自然に委ねる行動は？' },
@@ -11384,7 +11352,7 @@ var MATRIX_LAYERS = [
     icon: '⚖️',
     label: '韓非子マトリクス',
     center: '法・術・勢',
-    centerColor: '#ffe082',
+    centerColor: '#bf360c',
     tier: 'kingdom',
     sections: [
       { label: '法（明確なルールを立てる）', color: '#fbe9e7', ph: '今日、明確な基準・ルールで判断する行動は？' },
@@ -11398,7 +11366,7 @@ var MATRIX_LAYERS = [
     icon: '🔮',
     label: '陸象山マトリクス',
     center: '本心',
-    centerColor: '#ce93d8',
+    centerColor: '#4a148c',
     tier: 'kingdom',
     sections: [
       { label: '立志（志を立てる）',           color: '#f3e5f5', ph: '今日、本当にやりたいことに向かう行動は？' },
@@ -11412,7 +11380,7 @@ var MATRIX_LAYERS = [
     icon: '📚',
     label: '朱子学マトリクス',
     center: '理を窮める',
-    centerColor: '#80cbc4',
+    centerColor: '#33691e',
     tier: 'kingdom',
     sections: [
       { label: '居敬（常に敬虔に）',       color: '#fff8e1', ph: '今日、散漫にならず真剣に向き合う行動は？' },
@@ -11426,7 +11394,7 @@ var MATRIX_LAYERS = [
     icon: '🏛️',
     label: 'プラトンの四元徳マトリクス',
     center: '魂の調和',
-    centerColor: '#ffab91',
+    centerColor: '#5d4037',
     tier: 'kingdom',
     sections: [
       { label: '知恵（Sophia）',     color: '#e3f2fd', ph: '正しく判断するための行動は？' },
@@ -11440,7 +11408,7 @@ var MATRIX_LAYERS = [
     icon: '⚖️',
     label: 'アリストテレスの中庸マトリクス',
     center: '中庸',
-    centerColor: '#b39ddb',
+    centerColor: '#1a237e',
     tier: 'kingdom',
     sections: [
       { label: '思慮（Phronesis）', color: '#e8eaf6', ph: '実践的な知恵で行動するには？' },
@@ -11454,7 +11422,7 @@ var MATRIX_LAYERS = [
     icon: '🌿',
     label: 'ストア派の四つの徳マトリクス',
     center: '内なる自由',
-    centerColor: '#c5e1a5',
+    centerColor: '#2e7d32',
     tier: 'kingdom',
     sections: [
       { label: '知恵（判断する）',       color: '#e8f5e9', ph: '自分の支配内にある判断は？' },
@@ -11468,7 +11436,7 @@ var MATRIX_LAYERS = [
     icon: '✝️',
     label: 'アクィナスの七元徳マトリクス',
     center: '神への愛',
-    centerColor: '#81d4fa',
+    centerColor: '#4a148c',
     tier: 'kingdom',
     sections: [
       { label: '対神徳（信仰・希望・愛）', color: '#f3e5f5', ph: '超越へ向かう行動は？' },
@@ -11482,7 +11450,7 @@ var MATRIX_LAYERS = [
     icon: '⭐',
     label: '普遍的価値マトリクス',
     center: '普遍善',
-    centerColor: '#bcaaa4',
+    centerColor: '#880e4f',
     tier: 'kingdom',
     sections: [
       { label: '愛（Agape・仁・慈悲）', color: '#fce4ec', ph: '今日、見返りなく他者を愛する行動は？' },
@@ -11496,7 +11464,7 @@ var MATRIX_LAYERS = [
     icon: '🌸',
     label: '五箇条の御誓文マトリクス',
     center: '天下為公',
-    centerColor: '#ef9a9a',
+    centerColor: '#1a237e',
     tier: 'kingdom',
     sections: [
       { label: '衆議公論（広く会議を興す）',   color: '#e8eaf6', ph: '今日、一人で決めず広く意見を聞く行動は？' },
@@ -11510,7 +11478,7 @@ var MATRIX_LAYERS = [
     icon: '🕊️',
     label: '深愛公徳マトリクス',
     center: '信仰心',
-    centerColor: '#90caf9',
+    centerColor: '#880e4f',
     tier: 'kingdom',
     sections: [
       { label: '愛念（家族・大切な人を深く愛する）', color: '#fce4ec', ph: '今日、家族や身近な人への愛を具体的な行動で表すには？' },
@@ -11524,7 +11492,7 @@ var MATRIX_LAYERS = [
     icon: '💪',
     label: 'アドラーマトリクス',
     center: '勇気',
-    centerColor: '#f48fb1',
+    centerColor: '#1565c0',
     tier: 'kingdom',
     sections: [
       { label: '課題の分離（自分の課題に集中する）',   color: '#e3f2fd', ph: '今日、他者の課題を手放し自分の課題に向かう行動は？' },
@@ -11538,7 +11506,7 @@ var MATRIX_LAYERS = [
     icon: '🌅',
     label: '敬天愛人マトリクス',
     center: '敬天愛人',
-    centerColor: '#a5d6a7',
+    centerColor: '#b71c1c',
     tier: 'kingdom',
     sections: [
       { label: '敬天（天理・道理を敬う）',       color: '#fff8e1', ph: '今日、道理・自然の摂理に従う行動は？' },
@@ -11552,13 +11520,13 @@ var MATRIX_LAYERS = [
     icon: '☸️',
     label: '仏教マトリクス',
     center: '空',
-    centerColor: '#ffe082',
+    centerColor: '#4a148c',
     tier: 'kingdom',
     sections: [
-      { label: '縁起（すべては関係の中にある）', color: '#e1f5fe', ph: '今日、他者・環境とのつながりに気づき感謝する行動は？' },
-      { label: '無常（変化を受け入れる）',       color: '#e8f5e9', ph: '今日、執着を手放し変化の流れに乗る行動は？' },
-      { label: '無我（自己へのこだわりを解く）', color: '#fff8e1', ph: '今日、「自分」という固定観念を緩め他者に開く行動は？' },
-      { label: '中道（極端を避ける）',           color: '#fce4ec', ph: '今日、過剰・不足を避けちょうどよいバランスを保つ行動は？' },
+      { label: '縁起（すべては関係の中にある）', color: '#ede7f6', ph: '今日、他者・環境とのつながりに気づき感謝する行動は？' },
+      { label: '無常（変化を受け入れる）',       color: '#f3e5f5', ph: '今日、執着を手放し変化の流れに乗る行動は？' },
+      { label: '無我（自己へのこだわりを解く）', color: '#e8eaf6', ph: '今日、「自分」という固定観念を緩め他者に開く行動は？' },
+      { label: '中道（極端を避ける）',           color: '#e1f5fe', ph: '今日、過剰・不足を避けちょうどよいバランスを保つ行動は？' },
     ]
   },
   {
@@ -11566,7 +11534,7 @@ var MATRIX_LAYERS = [
     icon: '🐍',
     label: '三毒マトリクス（仏教）',
     center: '三毒の滅',
-    centerColor: '#ce93d8',
+    centerColor: '#6a1b9a',
     tier: 'kingdom',
     sections: [
       { label: '貪（とん）—欲望・執着を観る', color: '#fce4ec', ph: '今日、「もっと欲しい」という執着を手放す行動は？' },
@@ -11580,13 +11548,13 @@ var MATRIX_LAYERS = [
     icon: '⚙️',
     label: '八正道マトリクス（仏教）',
     center: '正道',
-    centerColor: '#80cbc4',
+    centerColor: '#1a237e',
     tier: 'kingdom',
     sections: [
-      { label: '正見・正思（智慧）',   color: '#e8f5e9', ph: '今日、物事をありのままに見て正しく考える行動は？' },
-      { label: '正語・正業（戒律①）', color: '#fff8e1', ph: '今日、正しい言葉と行動で人と関わる行動は？' },
-      { label: '正命・正精進（戒律②）',color: '#fce4ec', ph: '今日、正しい生計を立て継続的に努力する行動は？' },
-      { label: '正念・正定（禅定）',   color: '#e1f5fe', ph: '今日、今ここに意識を向け心を静める行動は？' },
+      { label: '正見・正思（智慧）',   color: '#e8eaf6', ph: '今日、物事をありのままに見て正しく考える行動は？' },
+      { label: '正語・正業（戒律①）', color: '#e1f5fe', ph: '今日、正しい言葉と行動で人と関わる行動は？' },
+      { label: '正命・正精進（戒律②）',color: '#e8f5e9', ph: '今日、正しい生計を立て継続的に努力する行動は？' },
+      { label: '正念・正定（禅定）',   color: '#ede7f6', ph: '今日、今ここに意識を向け心を静める行動は？' },
     ]
   },
   {
@@ -11594,7 +11562,7 @@ var MATRIX_LAYERS = [
     icon: '✝️',
     label: 'キリスト教マトリクス',
     center: '愛',
-    centerColor: '#ffab91',
+    centerColor: '#b71c1c',
     tier: 'kingdom',
     sections: [
       { label: '信仰（神への信頼）', color: '#fce4ec', ph: '今日、見えないものを信じ委ねる行動は？' },
@@ -11608,7 +11576,7 @@ var MATRIX_LAYERS = [
     icon: '☪️',
     label: 'イスラム教マトリクス',
     center: '五行',
-    centerColor: '#b39ddb',
+    centerColor: '#1a237e',
     tier: 'kingdom',
     sections: [
       { label: 'シャハーダ（信仰告白・誠実）', color: '#e3f2fd', ph: '今日、誠実さと一貫性を貫く行動は？' },
@@ -11622,7 +11590,7 @@ var MATRIX_LAYERS = [
     icon: '✡️',
     label: 'ユダヤ教マトリクス',
     center: 'ティクン',
-    centerColor: '#c5e1a5',
+    centerColor: '#0d47a1',
     tier: 'kingdom',
     sections: [
       { label: 'トーラー学習（学びの継続）', color: '#e3f2fd', ph: '今日、学び知恵を深める行動は？' },
@@ -11636,7 +11604,7 @@ var MATRIX_LAYERS = [
     icon: '⛩️',
     label: '神道マトリクス',
     center: '清明心',
-    centerColor: '#81d4fa',
+    centerColor: '#1b5e20',
     tier: 'kingdom',
     sections: [
       { label: '清（清潔・清浄）',   color: '#e8f5e9', ph: '今日、心と環境を清める行動は？' },
@@ -11650,13 +11618,13 @@ var MATRIX_LAYERS = [
     icon: '🌿',
     label: '六根清浄マトリクス（神道）',
     center: '清浄',
-    centerColor: '#bcaaa4',
+    centerColor: '#2e7d32',
     tier: 'kingdom',
     sections: [
       { label: '眼・耳・鼻を清める（感覚の浄化）', color: '#e8f5e9', ph: '今日、見るもの・聞くものを意識して選び心を清める行動は？' },
-      { label: '舌・身を清める（言動の浄化）',     color: '#fff8e1', ph: '今日、言葉と身体の使い方を慎み清める行動は？' },
-      { label: '意を清める（心の浄化）',           color: '#fce4ec', ph: '今日、心の中の濁りや雑念を祓い澄ませる行動は？' },
-      { label: '六根一体（全体の統合）',           color: '#e1f5fe', ph: '今日、感覚・言動・心が一致している状態をつくる行動は？' },
+      { label: '舌・身を清める（言動の浄化）',     color: '#f1f8e9', ph: '今日、言葉と身体の使い方を慎み清める行動は？' },
+      { label: '意を清める（心の浄化）',           color: '#e0f2f1', ph: '今日、心の中の濁りや雑念を祓い澄ませる行動は？' },
+      { label: '六根一体（全体の統合）',           color: '#e8f5e9', ph: '今日、感覚・言動・心が一致している状態をつくる行動は？' },
     ]
   },
   {
@@ -11664,7 +11632,7 @@ var MATRIX_LAYERS = [
     icon: '🌊',
     label: '大祓マトリクス（神道）',
     center: '祓',
-    centerColor: '#ef9a9a',
+    centerColor: '#0277bd',
     tier: 'kingdom',
     sections: [
       { label: '祓（はらえ）—罪穢れを祓う', color: '#e1f5fe', ph: '今日、心に溜まった罪悪感・後悔・雑念を手放す行動は？' },
@@ -11678,7 +11646,7 @@ var MATRIX_LAYERS = [
     icon: '🌀',
     label: '産霊マトリクス（神道）',
     center: 'むすひ',
-    centerColor: '#90caf9',
+    centerColor: '#6a1b9a',
     tier: 'kingdom',
     sections: [
       { label: '天地（あめつち）—大いなる流れに乗る', color: '#f3e5f5', ph: '今日、天地自然の流れに逆らわず乗る行動は？' },
@@ -11692,7 +11660,7 @@ var MATRIX_LAYERS = [
     icon: '🔥',
     label: 'ゾロアスター教マトリクス',
     center: '善思善言善行',
-    centerColor: '#f48fb1',
+    centerColor: '#e65100',
     tier: 'kingdom',
     sections: [
       { label: '善思（フマタ）', color: '#fff3e0', ph: '今日、善い思考・正しい動機から始める行動は？' },
@@ -11706,7 +11674,7 @@ var MATRIX_LAYERS = [
     icon: '☯️',
     label: '道教マトリクス',
     center: '道',
-    centerColor: '#a5d6a7',
+    centerColor: '#37474f',
     tier: 'kingdom',
     sections: [
       { label: '無為（作為しない自然な行動）', color: '#eceff1', ph: '今日、力まず自然な流れに乗る行動は？' },
@@ -11720,7 +11688,7 @@ var MATRIX_LAYERS = [
     icon: '💫',
     label: 'マニ教マトリクス',
     center: '光',
-    centerColor: '#ffe082',
+    centerColor: '#f57f17',
     tier: 'kingdom',
     sections: [
       { label: '光の探求（真理の追求）', color: '#fffde7', ph: '今日、真理・本質を追い求める行動は？' },
@@ -11734,13 +11702,13 @@ var MATRIX_LAYERS = [
     icon: '✨',
     label: '天命マトリクス',
     center: '今世の天命',
-    centerColor: '#ce93d8',
+    centerColor: '#1a1a2e',
     tier: 'kingdom',
     sections: [
-      { label: '', color: '#e8f5e9', ph: 'あなたが今世に与えられた使命は何ですか？（召命）' },
-      { label: '', color: '#e1f5fe', ph: 'その天命に、あなたはどう応えますか？（応答）' },
-      { label: '', color: '#fff8e1', ph: ' 今日、天命に沿った具体的な行動は？（実践）' },
-      { label: '', color: '#fce4ec', ph: 'あなたが次の世代に継ぎたいものは何ですか？（継承）' },
+      { label: '', color: '#fafafa', ph: 'あなたが今世に与えられた使命は何ですか？（召命）' },
+      { label: '', color: '#fafafa', ph: 'その天命に、あなたはどう応えますか？（応答）' },
+      { label: '', color: '#fafafa', ph: ' 今日、天命に沿った具体的な行動は？（実践）' },
+      { label: '', color: '#fafafa', ph: 'あなたが次の世代に継ぎたいものは何ですか？（継承）' },
     ]
   },
 ];
@@ -11907,12 +11875,9 @@ function renderMatrixLayer() {
     var _centerText = layer.center || '';
     circle.textContent = _centerText;
     // 背景色に透明度を付与（後ろのテキストが透けて見えるように）
-    var _baseColor = layer.centerColor || '#90caf9';
+    var _baseColor = layer.centerColor || '#1976d2';
     circle.style.background = _baseColor;
-    circle.style.color = '#3a3a4a';
-    circle.style.textShadow = 'none';
-    circle.style.boxShadow = '0 2px 10px rgba(0,0,0,0.15)';
-    circle.style.opacity = '0.9';
+    circle.style.opacity = '0.82';
     circle.style.display = 'flex';
     // 文字数に応じてフォントサイズを動的調整（はみ出し防止）
     var _len = _centerText.length;
@@ -11946,7 +11911,7 @@ function selectKingdomMode(mode) {
     setTimeout(function() { openPolestarModal(); }, 300);
   }
   applyVisibleTabsSettings();
-  if (typeof applyBottomNavCustom === 'function') applyBottomNavCustom();
+  // 造営タブも反映
   var gantEl = document.getElementById('navGant');
   if (gantEl) gantEl.style.display = def.gantEnabled ? '' : 'none';
   // クラフトタブも反映（craftModeEnabledがfalseなら非表示）
@@ -12027,42 +11992,45 @@ function applySettingsSectionVisibility() {
   var _effectiveModeKey = (_modeKey === 'custom')
     ? ((allSettings.ui && allSettings.ui.kingdomModeBase) || 'kingdom')
     : _modeKey;
-  // polestarはkingdom同等扱い
-  var _isKingdomTier = (_effectiveModeKey === 'kingdom' || _effectiveModeKey === 'polestar');
-  var _isTownTier = (_effectiveModeKey === 'town' || _isKingdomTier);
 
-  // 造営セクション：王国以上のみ表示
+  // 造営セクション：王国のみ表示
   var gantSection = document.getElementById('settingsGantSection');
   var _effectiveKmForGant = (typeof KINGDOM_MODES !== 'undefined') ? KINGDOM_MODES[_effectiveModeKey] : null;
-  if (gantSection) gantSection.style.display = (_isKingdomTier || (_effectiveKmForGant && _effectiveKmForGant.gantEnabled)) ? '' : 'none';
-  // ナビタブ表示セクションの造営ラベル：王国以上のみ表示
+  if (gantSection) gantSection.style.display = (_effectiveKmForGant && _effectiveKmForGant.gantEnabled) ? '' : 'none';
+  // ナビタブ表示セクションの造営ラベル：王国のみ表示
   var labelGant = document.getElementById('settingsLabelGant');
-  if (labelGant) labelGant.style.display = _isKingdomTier ? '' : 'none';
+  var _gantAvailable = (_effectiveModeKey === 'kingdom');
+  if (labelGant) labelGant.style.display = _gantAvailable ? '' : 'none';
 
-  // ナビタブ：週間
+  // ナビタブ：週間（村以上）
   var labelWeekly = document.getElementById('settingsLabelWeekly');
+  // 週間：村・町・王国のみ表示
   var _effectiveKm = (typeof KINGDOM_MODES !== 'undefined') ? KINGDOM_MODES[_effectiveModeKey] : null;
   if (labelWeekly) labelWeekly.style.display = (!_effectiveKm || _effectiveKm.visibleTabs.weekly !== false) ? '' : 'none';
-  // ナビタブ：月間
+  // ナビタブ：月間（村以上）
   var labelMonthly = document.getElementById('settingsLabelMonthly');
   if (labelMonthly) labelMonthly.style.display = (!_effectiveKm || _effectiveKm.visibleTabs.monthly !== false) ? '' : 'none';
-  // ナビタブ：年間（町・王国以上）
+  // ナビタブ：年間（モードが町・王国なら常に表示。ユーザーがOFFにしても消えない）
   var labelYearly = document.getElementById('settingsLabelYearly');
-  if (labelYearly) labelYearly.style.display = _isTownTier ? '' : 'none';
+  var _yearlyAvailable = (_effectiveModeKey === 'town' || _effectiveModeKey === 'kingdom');
+  if (labelYearly) labelYearly.style.display = _yearlyAvailable ? '' : 'none';
 
-  // ナビタブ：自由帳
+  // ナビタブ：自由帳（村以上）
   var labelNotebook = document.getElementById('settingsLabelNotebook');
   if (labelNotebook) labelNotebook.style.display = (!_effectiveKm || _effectiveKm.visibleTabs.notebook !== false) ? '' : 'none';
 
-  // ナビタブ：コロシアム（王国以上のみ表示）
+  // ナビタブ：コロシアム（王国のみ表示）
   var labelColosseum = document.getElementById('settingsLabelColosseum');
-  if (labelColosseum) labelColosseum.style.display = _isKingdomTier ? '' : 'none';
-  // ナビタブ：写真館（町・王国以上）
+  var _colosseumAvailable = (_effectiveModeKey === 'kingdom');
+  if (labelColosseum) labelColosseum.style.display = _colosseumAvailable ? '' : 'none';
+  // ナビタブ：写真館（町・王国のみ表示）
   var labelPhoto = document.getElementById('settingsLabelPhoto');
-  if (labelPhoto) labelPhoto.style.display = _isTownTier ? '' : 'none';
-  // ナビタブ：ダッシュボード（町・王国以上）
+  var _photoAvailable = (_effectiveModeKey === 'town' || _effectiveModeKey === 'kingdom');
+  if (labelPhoto) labelPhoto.style.display = _photoAvailable ? '' : 'none';
+  // ナビタブ：ダッシュボード（町・王国のみ表示）
   var labelDashboard = document.getElementById('settingsLabelDashboard');
-  if (labelDashboard) labelDashboard.style.display = _isTownTier ? '' : 'none';
+  var _dashboardAvailable = (_effectiveModeKey === 'town' || _effectiveModeKey === 'kingdom');
+  if (labelDashboard) labelDashboard.style.display = _dashboardAvailable ? '' : 'none';
 }
 
 function toggleVisibleTab(key, checked) {
@@ -16724,18 +16692,6 @@ function reviveBlueprint(id) {
       }
       localStorage.setItem('mig_kingdom_mode_default_v2', '1');
     }
-    // bottomNavTabs修復マイグレーション：不正値・空・journal1個だけの場合はデフォルトに戻す
-    (function() {
-      var _bnTabs = allSettings.ui.bottomNavTabs;
-      var _validKeys = ['weekly','monthly','dashboard','journal','notebook','photo','yearly','gant','craft','colosseum','shop','zen','settings','search'];
-      var _needFix = !Array.isArray(_bnTabs) || _bnTabs.length === 0 ||
-        _bnTabs.filter(function(k){ return _validKeys.indexOf(k) !== -1; }).length === 0;
-      if (_needFix) {
-        allSettings.ui.bottomNavTabs = ['weekly', 'monthly', 'dashboard'];
-        saveAllSettings();
-        _dbgLog && _dbgLog('mig: bottomNavTabs repaired → ' + JSON.stringify(allSettings.ui.bottomNavTabs));
-      }
-    })();
     // 旧命名フラグを新命名に引き継ぎ（migrate実行前に必ず行う）
     const _migRename = {
       'mig_uuid_v7':          'mig_ids_to_uuid_v7',
@@ -16755,14 +16711,14 @@ function reviveBlueprint(id) {
     // GDP億単位マイグレーション（v0.38.83）
     (function() {
       var _migKey = 'mig_gdp_to_oku_v1';
-      if (localStorage.getItem(_migKey)) { localStorage.setItem(_migKey, '1'); return; }
-      var cur = parseInt(localStorage.getItem('gdpPoints') || '0'); // ← gdpPointsが正しい
+      if (localStorage.getItem(_migKey)) return;
+      var cur = parseInt(localStorage.getItem('tokuPoints') || '0');
       if (cur > 0 && cur < 10000) {
-        localStorage.setItem('gdpPoints', String(cur * 100));
-        var log = JSON.parse(localStorage.getItem('gdpLog') || '[]');
+        localStorage.setItem('tokuPoints', String(cur * 100));
+        var log = JSON.parse(localStorage.getItem('tokuLog') || '[]');
         log.push({ type:'migration', amount: cur * 99, reason: 'GDP億単位マイグレーション', date: new Date().toISOString() });
         if (log.length > 1000) log = log.slice(-1000);
-        localStorage.setItem('gdpLog', JSON.stringify(log));
+        localStorage.setItem('tokuLog', JSON.stringify(log));
       }
       localStorage.setItem(_migKey, '1');
     })();
@@ -17101,60 +17057,8 @@ function reviveBlueprint(id) {
     })();
 
     // 日付変更時：雑記帳→thoughtsに自動移動
-    // 空日誌テキストを動的生成（月齢・七十二候を織り込む）
-    function _buildEmptyJournalText(dateStr) {
-      // 月齢テキスト
-      var moonText = '';
-      try {
-        var moonAge = (typeof calcMoonAgeNAOJ === 'function') ? calcMoonAgeNAOJ(new Date(dateStr.replace(/-/g, '/'))) : null;
-        if (moonAge !== null && !isNaN(moonAge)) {
-          if (moonAge < 1.5) moonText = '新月の夜だった。';
-          else if (moonAge < 8) moonText = '細い月が空にあった。';
-          else if (moonAge < 13) moonText = '半月が見守っていた。';
-          else if (moonAge < 16) moonText = '満月の夜だった。';
-          else if (moonAge < 22) moonText = '月は欠けはじめていた。';
-          else moonText = '月は細く、夜は静かだった。';
-        }
-      } catch(e) {}
-      // 七十二候テキスト
-      var kouText = '';
-      try {
-        var kou = (typeof getCurrentShichijuniKou === 'function') ? getCurrentShichijuniKou(new Date(dateStr.replace(/-/g, '/'))) : null;
-        if (kou && kou.name) kouText = '「' + kou.name + '（' + kou.reading + '）」の頃。';
-      } catch(e) {}
-      // ベース文言（ランダム）
-      var bases = [
-        '今日は何も刻まれていない。',
-        '静かな一日だった。',
-        '平和な時が流れた。',
-        '雑記帳は白いままだった。',
-        'この日、王国は静かに息をしていた。',
-        '記録はない。それもまた、歴史だ。',
-      ];
-      var base = bases[Math.floor(Math.random() * bases.length)];
-      return [kouText, base, moonText].filter(Boolean).join('');
-    }
     function moveScratchToThoughts() {
-      if (window._isTesting) return; // _isTestingガード（ST-30誤汚染防止）
       var today = getLocalDateStr(new Date());
-      // 過去60日分を遡って、日誌がない日は空日誌を自動生成（王国の歴史を途切れさせない）
-      // ※ _lastScratchMoveDateガードの外で毎回チェック（初回・再起動問わず補完する）
-      var _journalDates = new Set(allTasks.filter(function(t){ return t.kind === 'journal'; }).map(function(t){ return t.date; }));
-      var _fillAdded = 0;
-      for (var _di = 1; _di <= 60; _di++) {
-        var _d = new Date(); _d.setDate(_d.getDate() - _di);
-        var _ds = getLocalDateStr(_d);
-        if (!_journalDates.has(_ds)) {
-          allTasks.push({ id: generateTaskId(), kind: 'journal', date: _ds, text: _buildEmptyJournalText(_ds), thoughts: [], mood: 0, condition: 0, weather: '', savedAt: new Date().toISOString(), _autoCreated: true });
-          _fillAdded++;
-        }
-      }
-      if (_fillAdded > 0) {
-        saveAllTasks();
-        setTimeout(function(){
-          if (typeof showToast === 'function') showToast('📖 過去' + _fillAdded + '日分の王国日誌を自動で記しました');
-        }, 1500);
-      }
       if (localStorage.getItem('_lastScratchMoveDate') === today) return;
       var oldS = allTasks.filter(function(t){ return (t.kind === 'scratch' || t.kind === 'zen') && t.date && t.date < today; });
       if (oldS.length === 0) { localStorage.setItem('_lastScratchMoveDate', today); return; }
@@ -17183,20 +17087,6 @@ function reviveBlueprint(id) {
         if (typeof renderScratchView === 'function') renderScratchView();
       }
     });
-    // 0時監視：日付が変わったらmoveScratchToThoughtsを自動実行（王国の歴史を途切れさせない）
-    (function() {
-      var _midnightLastDate = getLocalDateStr(new Date());
-      setInterval(function() {
-        var _now = getLocalDateStr(new Date());
-        if (_now !== _midnightLastDate) {
-          _midnightLastDate = _now;
-          moveScratchToThoughts();
-          if (typeof renderScratchView === 'function') renderScratchView();
-          if (typeof renderJournalView === 'function' && document.getElementById('journalView') && document.getElementById('journalView').style.display !== 'none') renderJournalView();
-          _dbgLog && _dbgLog('midnight: date changed to ' + _now + ', moveScratchToThoughts fired');
-        }
-      }, 60000); // 1分ごとにチェック
-    })();
     window._dbgLog('【昇格完了】UUID ENGINE v7 --- 識別子体系、最新世代 / 時は刻まれました');
     window._dbgLog('migrateToUUIDv7 done');
     // mig_*フラグの値を'1'に正規化（'true'が残っている場合）
@@ -17582,7 +17472,7 @@ function reviveBlueprint(id) {
               '● タスク完了 → 徳+1\n' +
               '● 日誌を書く → 徳+1\n' +
               '● 月末に先月の完了件数分ボーナス\n\n' +
-              '【王国力の計算式】\n徳×0.6 + GDP×0.4 ÷ (業+1)\n個人の努力60%+他者交流40%\n\n' +
+              '【王国力の計算式】\n徳×0.6 + GDP×0.4×10 ÷ (業+1)\n個人の努力60%+他者交流40%\n\n' +
               '業が多いと王国力が下がる。\n業を祓い、徳を積め。\n\n' +
               '【心得】\n不作為は業。\n具体的行動は徳。\n今日できることを今日やる。',
             dateL: '', dateR: '',
@@ -17604,7 +17494,7 @@ function reviveBlueprint(id) {
             textL:
               'でっかい志を立てよう！！\n小さきまとまるな。\n\n' +
               '【称号は全99段階】\n王国力を高めるほど\n新しい称号が解放される。\n\n' +
-              '王国力 = 徳×0.6 + GDP×0.4 ÷ (業+1)\n\n' +
+              '王国力 = 徳×0.6 + GDP×0.4×10 ÷ (業+1)\n\n' +
               '---前半（1〜49）---\n' +
               _titlesText.split('\n').slice(0, 49).join('\n'),
             textR:
@@ -18959,8 +18849,6 @@ var OFFICIAL_DECKS = [
 function loadSettingsUI() {
       // モードに応じた設定セクション表示制御
       if (typeof applySettingsSectionVisibility === 'function') applySettingsSectionVisibility();
-      // 下部ナビカスタムリストを描画
-      if (typeof renderBottomNavCustomList === 'function') renderBottomNavCustomList();
       // クラフトモード
       const craftCheck = document.getElementById('craftModeEnabled');
       if (craftCheck) {
@@ -20008,12 +19896,7 @@ function loadSettingsUI() {
     window.openSearchModal = openSearchModal;
     // ===== 下部ナビ制御 =====
     function updateBottomNav(view) {
-      var map = { daily:'bnavDaily' };
-      // 動的スロット（カスタム選択ボタン）も追加
-      document.querySelectorAll('.bnav-btn[data-view]').forEach(function(btn){
-        var v = btn.getAttribute('data-view');
-        if (v) map[v] = btn.id;
-      });
+      var map = { daily:'bnavDaily', weekly:'bnavWeekly', monthly:'bnavMonthly', dashboard:'bnavDashboard' };
       document.querySelectorAll('.bnav-btn').forEach(function(b){ b.classList.remove('active'); });
       var activeId = map[view];
       if (activeId) {
@@ -20049,112 +19932,6 @@ function loadSettingsUI() {
     window.moveScratchToThoughts = moveScratchToThoughts;
     window.switchShopTab = switchShopTab;
     window.applyVisibleTabsSettings = applyVisibleTabsSettings;
-
-    // ===== スマホ下部ナビ カスタム選択 =====
-    var BNAV_OPTIONS = [
-      { key: 'weekly',    icon: '🗓️', label: '週間' },
-      { key: 'monthly',   icon: '📅', label: '月間' },
-      { key: 'dashboard', icon: '📈', label: 'ダッシュボード' },
-      { key: 'journal',   icon: '📖', label: '日誌' },
-      { key: 'notebook',  icon: '📓', label: '自由帳' },
-      { key: 'photo',     icon: '📸', label: '写真館' },
-      { key: 'yearly',    icon: '📆', label: '年間' },
-      { key: 'gant',      icon: '🏗️', label: '造営' },
-      { key: 'craft',     icon: '🏰', label: 'クラフト' },
-      { key: 'colosseum', icon: '⚔️', label: 'コロシアム' },
-      { key: 'shop',      icon: '🛍️', label: 'ショップ' },
-      { key: 'zen',       icon: '⊙',  label: '禅モード' },
-      { key: 'settings',  icon: '⚙️', label: '設定' },
-      { key: 'search',    icon: '🔍', label: '検索' },
-    ];
-
-    function renderBottomNavCustomList() {
-      var el = document.getElementById('bottomNavCustomList');
-      if (!el) return;
-      var current = allSettings.ui.bottomNavTabs || ['weekly', 'monthly', 'dashboard'];
-      el.innerHTML = '';
-      BNAV_OPTIONS.forEach(function(opt) {
-        var checked = current.indexOf(opt.key) !== -1;
-        var disabled = checked && current.length <= 1;
-        var label = document.createElement('label');
-        label.style.cssText = 'display:flex;align-items:center;gap:10px;cursor:pointer;' + (disabled ? 'opacity:0.5;' : '');
-        label.innerHTML =
-          '<input type="checkbox" ' + (checked ? 'checked' : '') + ' ' + (disabled ? 'disabled' : '') +
-          ' style="width:18px;height:18px;accent-color:#4facfe;cursor:pointer;"' +
-          ' onchange="window.toggleBottomNavTab(\'' + opt.key + '\',this.checked)">' +
-          '<span style="font-size:0.9em;color:#333;font-weight:600;">' + opt.icon + ' ' + opt.label + '</span>';
-        el.appendChild(label);
-      });
-      // 3個選択済みなら未選択のチェックボックスをdisableに
-      if (current.length >= 3) {
-        var inputs = el.querySelectorAll('input[type=checkbox]');
-        inputs.forEach(function(inp) {
-          if (!inp.checked) inp.disabled = true;
-        });
-      }
-    }
-
-    function toggleBottomNavTab(key, checked) {
-      var tabs = (allSettings.ui.bottomNavTabs || ['weekly', 'monthly', 'dashboard']).slice();
-      if (checked) {
-        if (tabs.indexOf(key) === -1 && tabs.length < 3) tabs.push(key);
-      } else {
-        tabs = tabs.filter(function(k){ return k !== key; });
-      }
-      allSettings.ui.bottomNavTabs = tabs;
-      saveAllSettings();
-      applyBottomNavCustom();
-      renderBottomNavCustomList();
-    }
-    window.toggleBottomNavTab = toggleBottomNavTab;
-
-    function applyBottomNavCustom() {
-      var tabs = allSettings.ui.bottomNavTabs || ['weekly', 'monthly', 'dashboard'];
-      // 不正な値（配列でない・空・BNAV_OPTIONSに存在しないキーだけ）の場合はデフォルトにリセット
-      var validKeys = BNAV_OPTIONS.map(function(o){ return o.key; });
-      if (!Array.isArray(tabs)) tabs = ['weekly', 'monthly', 'dashboard'];
-      tabs = tabs.filter(function(k){ return validKeys.indexOf(k) !== -1; });
-      if (tabs.length === 0) tabs = ['weekly', 'monthly', 'dashboard'];
-      if (allSettings.ui.bottomNavTabs !== tabs) {
-        allSettings.ui.bottomNavTabs = tabs;
-        saveAllSettings();
-      }
-      var nav = document.getElementById('bottomNav');
-      if (!nav) return;
-      // 既存の動的ボタン（bnavSlot1〜3）を削除
-      ['bnavSlot1','bnavSlot2','bnavSlot3'].forEach(function(id){
-        var el = document.getElementById(id);
-        if (el) el.parentNode.removeChild(el);
-      });
-      // 日次ボタンの直後に差し込む
-      var bnavDaily = document.getElementById('bnavDaily');
-      var bnavMore = document.getElementById('bnavMore');
-      if (!bnavDaily || !bnavMore) return;
-      var optMap = {};
-      BNAV_OPTIONS.forEach(function(o){ optMap[o.key] = o; });
-      // tabs を逆順に insertBefore(bnavMore)
-      tabs.slice().reverse().forEach(function(key, ri) {
-        var slot = tabs.length - 1 - ri;
-        var opt = optMap[key];
-        if (!opt) return;
-        var btn = document.createElement('button');
-        btn.className = 'bnav-btn';
-        btn.id = 'bnavSlot' + (slot + 1);
-        btn.setAttribute('data-view', key);
-        if (key === 'zen') {
-          btn.onclick = function(){ if (typeof openZenMode === 'function') openZenMode(); };
-        } else if (key === 'search') {
-          btn.onclick = function(){ if (typeof openSearchModal === 'function') openSearchModal(); };
-        } else {
-          btn.onclick = function(){ switchView(key); };
-        }
-        btn.innerHTML = '<span class="bnav-icon">' + opt.icon + '</span><span class="bnav-label">' + opt.label + '</span>';
-        nav.insertBefore(btn, bnavMore);
-      });
-      // updateBottomNavのmapを動的に更新
-      if (typeof updateBottomNav === 'function') updateBottomNav(typeof currentView !== 'undefined' ? currentView : 'daily');
-    }
-    window.applyBottomNavCustom = applyBottomNavCustom;
     window.selectKingdomMode = selectKingdomMode;
 
     function openPolestarModal() {
@@ -21600,7 +21377,7 @@ function receiveDeck(deckId) {
   saveAllTasks();
   renderAllSections(today);
   renderDeckShop();
-  if (typeof addGDP === 'function') addGDP(1, 'DCK1:受取（' + deck.title + '）');
+  if (typeof addGDP === 'function') addGDP(100, 'DCK1:受取（' + deck.title + '）');
   showToast('🛍️ ' + deck.title + ' を受け取った！');
 }
 function receiveDeckAgain(deckId) {
@@ -21828,10 +21605,10 @@ function executeColosseumBattle() {
     if (window._isTesting) return; // テスト中は報酬・トースト抑制
     if (wins >= 2) {
       if (typeof addGDP === 'function') addGDP(3, 'コロシアム勝利');
-      showToast('⚔️ ' + wins + '勝！勝利！GDP+3獲得！', {type:'success', duration:4000});
+      showToast('⚔️ ' + wins + '勝！勝利！GDP+3万獲得！', {type:'success', duration:4000});
     } else if (wins === 1) {
       if (typeof addGDP === 'function') addGDP(1, 'コロシアム引き分け');
-      showToast('🤝 ' + wins + '勝…接戦でした。GDP+1', {type:'info', duration:3000});
+      showToast('🤝 ' + wins + '勝…接戦でした。GDP+1万', {type:'info', duration:3000});
     } else {
       if (typeof addGou === 'function') addGou(1, 'コロシアム敗北');
       showToast('💀 敗北…業が積まれた。明日リベンジ！', {type:'warn', duration:4000});
@@ -22119,7 +21896,7 @@ function renderDashboardView() {
     dbEraLabelEl.textContent = getKingdomEraLabel();
   }
   _set('dbToku', typeof getToku === 'function' ? getToku() : 0);
-  _set('dbGdp', typeof formatGDP === 'function' ? formatGDP(typeof getGDP === 'function' ? getGDP() : 0) : '0');
+  _set('dbGdp', typeof formatGDP === 'function' ? formatGDP(typeof getGDP === 'function' ? getGDP() : 0) : '0万');
   _set('dbGou', typeof getGouNew === 'function' ? getGouNew() : 0);
   _set('dbPower', typeof getKingdomPower === 'function' ? Math.floor(getKingdomPower()) : 0);
 
@@ -22578,9 +22355,9 @@ function renderColosseumView() {
     html += '<div style="font-size:0.82em;color:#aaa;margin-top:4px;">' + wins + '勝 ' + b.results.filter(function(r){ return r.win === 'draw'; }).length + '分 ' + loses + '敗</div>';
     html += '<div style="font-size:0.8em;color:' + overallColor + 'cc;margin-top:10px;line-height:1.6;font-style:italic;">' + outcomeMsg + '</div>';
     if (overall === 'WIN') {
-      html += '<div style="font-size:0.78em;color:#ffd700;margin-top:8px;font-weight:700;">GDP +3 獲得！</div>';
+      html += '<div style="font-size:0.78em;color:#ffd700;margin-top:8px;font-weight:700;">GDP +3万 獲得！</div>';
     } else if (overall === 'DRAW') {
-      html += '<div style="font-size:0.78em;color:#aaa;margin-top:8px;font-weight:700;">GDP +1 獲得</div>';
+      html += '<div style="font-size:0.78em;color:#aaa;margin-top:8px;font-weight:700;">GDP +1万 獲得</div>';
     } else {
       html += '<div style="font-size:0.78em;color:#ef4444;margin-top:8px;">業が1積まれた…</div>';
     }
@@ -23825,8 +23602,8 @@ function copyCraftCode() {
         if (!allSettings.meta) allSettings.meta = {};
         allSettings.meta.lastKingdomCodeDate = _todayStr;
         saveAllSettings();
-        if (typeof addGDP === 'function') addGDP(1, '王国コード配布');
-        if (typeof showToast === 'function') showToast('👑 王国コードを配布！GDP+1', {type:'success'});
+        if (typeof addGDP === 'function') addGDP(100, '王国コード配布');
+        if (typeof showToast === 'function') showToast('👑 王国コードを配布！GDP+100万', {type:'success'});
       }
     }
     showCraftMessage('👑 王国コードをコピーしました！');
@@ -28909,10 +28686,8 @@ function showDebugLog(_initOnly) {
        // _lastScratchMoveDateを削除して強制実行可能にする
        var _stPrevMoveDate = localStorage.getItem('_lastScratchMoveDate');
        localStorage.removeItem('_lastScratchMoveDate');
-       // _isTestingを一時解除してmoveScratchToThoughtsを実行
-       window._isTesting = false;
+       // moveScratchToThoughtsを実行
        if (typeof moveScratchToThoughts === 'function') moveScratchToThoughts();
-       window._isTesting = true;
        // 雑記帳アイテムがthoughtsに移動されたか確認
        var _stSc1After = allTasks.find(function(t){ return t.id === _stSc1; });
        var _stSc2After = allTasks.find(function(t){ return t.id === _stSc2; });
@@ -28938,18 +28713,13 @@ function showDebugLog(_initOnly) {
        // クリーンアップ（日誌とthoughtsを削除）
        if (_stJournal21) {
          var _stJId21 = _stJournal21.id;
+         // thoughtsを直接allTasksからIDで削除（getThoughtsに依存しない）
          allTasks = allTasks.filter(function(t){
            if (t.kind === 'thought' && t.parentId === _stJId21) return false;
            if (t.id === _stJId21) return false;
            return true;
          });
        }
-       // scratch2件→journal1件変換で-1件になるため、件数をstPrev21に戻す
-       // （moveScratchToThoughtsでscratchが消えてjournalが増えた純減分を補正）
-       while (allTasks.length < _stPrev21) {
-         allTasks.push({ id: generateTaskId(), kind: 'scratch', text: '_st30_cleanup_pad', date: '2000-01-01', createdAt: new Date().toISOString(), _temp: true });
-       }
-       allTasks = allTasks.filter(function(t){ return !t._temp; });
        // _lastScratchMoveDateを元に戻す
        if (_stPrevMoveDate) localStorage.setItem('_lastScratchMoveDate', _stPrevMoveDate);
        else localStorage.removeItem('_lastScratchMoveDate');
@@ -29334,13 +29104,13 @@ function showDebugLog(_initOnly) {
        typeof formatGDP === 'function'
          ? ok('ST-35: formatGDP 存在確認')
          : ng('ST-35: formatGDP', '未定義');
-       formatGDP(0) === '0'
+       formatGDP(0) === '0万'
          ? ok('ST-35: formatGDP(0)=0万')
          : ng('ST-35: formatGDP(0)', formatGDP(0));
-       formatGDP(100) === '100'
+       formatGDP(100) === '100万'
          ? ok('ST-35: formatGDP(100)=100万')
          : ng('ST-35: formatGDP(100)', formatGDP(100));
-       formatGDP(10000) === '10,000'
+       formatGDP(10000) === '1億'
          ? ok('ST-35: formatGDP(10000)=1億')
          : ng('ST-35: formatGDP(10000)', formatGDP(10000));
 
@@ -33009,10 +32779,7 @@ function showDebugLog(_initOnly) {
        allTasks.push({ id: _zenId, kind: 'zen', text: 'テスト禅アイテム', date: _yStr2, createdAt: new Date().toISOString() });
        saveAllTasks();
        localStorage.removeItem('_lastScratchMoveDate');
-       // _isTestingを一時解除して実行
-       window._isTesting = false;
        moveScratchToThoughts();
-       window._isTesting = true;
        var _zenGone = !allTasks.find(t => t.id === _zenId);
        _zenGone ? ok('ST-87: zenアイテム日誌移動確認') : ng('ST-87: zenアイテムが移動されなかった', '');
        // クリーンアップ
@@ -33020,9 +32787,6 @@ function showDebugLog(_initOnly) {
        var _delJ = allTasks.findIndex(t => t.kind === 'journal' && t.date === _yStr2 && t.thoughts && t.thoughts.find(th => th.text === 'テスト禅アイテム'));
        if (_delJ !== -1) allTasks.splice(_delJ, 1);
        saveAllTasks();
-       // _lastScratchMoveDateを復元
-       var _stToday87 = typeof getLocalDateStr === 'function' ? getLocalDateStr(new Date()) : '';
-       localStorage.setItem('_lastScratchMoveDate', _stToday87);
        ok('ST-87: moveScratchToThoughts zen含む移動 完了');
      } catch(e) { ng('ST-87: 例外', e.message); }
 
@@ -34147,11 +33911,11 @@ function showDebugLog(_initOnly) {
            : ng('ST-116·④: 位置異常 top=' + _mccTop + ' left=' + _mccLeft);
        }
 
-       // ⑤ opacity確認（半透明）
+       // ⑤ opacity:0.82確認（半透明）
        if (_mcc116) {
          var _mccOp = _mcc116.style.opacity;
-         (_mccOp === '0.82' || _mccOp === '0.9')
-           ? ok('ST-116·⑤: opacity 半透明確認（' + _mccOp + '）')
+         _mccOp === '0.82'
+           ? ok('ST-116·⑤: opacity:0.82 半透明確認')
            : ng('ST-116·⑤: opacity異常（' + _mccOp + '）');
        }
 
@@ -34714,9 +34478,9 @@ function showDebugLog(_initOnly) {
        _bn ? ok('ST-125·①: #bottomNav DOM存在') : ng('ST-125·①: #bottomNav 未存在', '');
 
        // ② 5ボタン存在確認
-       var _bnavIds = ['bnavDaily','bnavMore'];
+       var _bnavIds = ['bnavDaily','bnavJournal','bnavWeekly','bnavDashboard','bnavMore'];
        var _bnavAll = _bnavIds.every(function(id){ return !!document.getElementById(id); });
-       _bnavAll ? ok('ST-125·②: 下部ナビ固定ボタン全存在（日次・その他）') : ng('ST-125·②: 下部ナビボタン不足', _bnavIds.filter(function(id){ return !document.getElementById(id); }).join(','));
+       _bnavAll ? ok('ST-125·②: 下部ナビ5ボタン全存在') : ng('ST-125·②: 下部ナビボタン不足', _bnavIds.filter(function(id){ return !document.getElementById(id); }).join(','));
 
        // ③ window公開確認
        (typeof window.openBottomNavMore === 'function')
@@ -34747,12 +34511,10 @@ function showDebugLog(_initOnly) {
        window.updateBottomNav('daily');
        var _dailyActive = document.getElementById('bnavDaily') && document.getElementById('bnavDaily').classList.contains('active');
        _dailyActive ? ok('ST-125·⑥: updateBottomNav(daily) でbnavDailyにactiveクラス') : ng('ST-125·⑥: activeクラスが付かない', '');
-       window.updateBottomNav('monthly');
-       // カスタムスロット方式：data-view="monthly"のボタンがactiveになるか確認
-       var _monthlyBtn = document.querySelector('.bnav-btn[data-view="monthly"]');
-       var _monthlyActive = _monthlyBtn && _monthlyBtn.classList.contains('active');
+       window.updateBottomNav('weekly');
+       var _weeklyActive = document.getElementById('bnavWeekly') && document.getElementById('bnavWeekly').classList.contains('active');
        var _dailyInactive = document.getElementById('bnavDaily') && !document.getElementById('bnavDaily').classList.contains('active');
-       _monthlyActive ? ok('ST-125·⑥: updateBottomNav(monthly) でbnavMonthlyにactive') : ng('ST-125·⑥: monthly activeクラスなし', '');
+       _weeklyActive ? ok('ST-125·⑥: updateBottomNav(weekly) でbnavWeeklyにactive') : ng('ST-125·⑥: weekly activeクラスなし', '');
        _dailyInactive ? ok('ST-125·⑥: 切替時に旧activeが除去される') : ng('ST-125·⑥: 旧activeが残存', '');
 
        ok('ST-125: 下部ナビゲーションテスト 完了');
@@ -37186,15 +36948,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       const journals = loadJournals();
       if (journals.length === 0) {
-        // 空状態のメッセージをランダムに選ぶ
-        var _emptyMsgs = [
-          { icon: '🌙', title: '今日は何も刻まれていない。', sub: '——それが、平和な一日だったのかもしれない。' },
-          { icon: '🍃', title: 'まだ、何も残っていない。', sub: '雑記帳から、昨日の声が届くのを待っている。' },
-          { icon: '📖', title: 'ページが、白いままだ。', sub: 'それはそれで、ひとつの記録だ。' },
-          { icon: '⛩️', title: 'この王国に、まだ日誌はない。', sub: '左上の「記す」から、最初の一頁を。' },
-        ];
-        var _em = _emptyMsgs[Math.floor(Math.random() * _emptyMsgs.length)];
-        area.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--ink-faint);font-family:serif;"><div style="font-size:2.2em;margin-bottom:16px;opacity:0.35;">' + _em.icon + '</div><div style="font-size:0.9em;font-weight:600;color:var(--ink-light);letter-spacing:0.12em;line-height:2;">' + _em.title + '</div><div style="font-size:0.78em;color:var(--ink-faint);letter-spacing:0.08em;margin-top:4px;">' + _em.sub + '</div></div>';
+        area.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--ink-faint);font-family:serif;"><div style="font-size:2.2em;margin-bottom:16px;opacity:0.35;">📖</div><div style="font-size:0.85em;line-height:2.2;letter-spacing:0.1em;">まだ日誌がありません。<br>左上の「記す」から始めましょう。</div></div>';
         return;
       }
       const MOOD_E = ['','😞','😐','🙂','😊','🌟'];
@@ -37321,38 +37075,11 @@ document.addEventListener('DOMContentLoaded', function() {
         + '<h3 style="margin:0 0 16px;font-size:0.92em;font-weight:700;font-family:serif;color:var(--ink);letter-spacing:0.1em;">日誌を編集</h3>'
         + '<input id="journalEditDate" type="date" value="' + j.date + '" style="width:100%;padding:9px 12px;border:1px solid rgba(44,36,22,0.2);border-radius:8px;font-size:0.97em;box-sizing:border-box;margin-bottom:12px;background:rgba(255,255,255,0.7);color:var(--ink);">'
         + '<textarea id="journalEditText" style="width:100%;padding:11px 12px;border:1px solid rgba(44,36,22,0.2);border-radius:8px;font-size:1.0em;box-sizing:border-box;height:130px;resize:none;margin-bottom:12px;background:rgba(255,255,255,0.7);color:var(--ink);font-family:\'Noto Serif JP\',serif;line-height:1.85;">' + (j.text||'') + '</textarea>'
-        + '<div style="display:flex;gap:16px;margin-bottom:10px;flex-wrap:wrap;">'
-        // 天気ピッカー
-        + '<div><div style="font-size:0.68em;color:var(--ink-faint);margin-bottom:4px;letter-spacing:0.08em;">天気</div><div id="journalEditWeatherPicker" style="display:flex;gap:3px;">'
-        + ['☀️','🌤️','☁️','🌧️','⛄'].map(function(e){ return '<button onclick="window._setJournalEditMeta(\'weather\',\''+e+'\')" data-weather="'+e+'" style="font-size:1.2em;background:none;border:none;cursor:pointer;padding:2px;opacity:'+(j.weather===e?'1':'0.35')+';transition:opacity 0.15s;border-radius:4px;">' + e + '</button>'; }).join('')
-        + '</div></div>'
-        // 気分ピッカー
-        + '<div><div style="font-size:0.68em;color:var(--ink-faint);margin-bottom:4px;letter-spacing:0.08em;">気分</div><div id="journalEditMoodPicker" style="display:flex;gap:3px;">'
-        + ['😞','😐','🙂','😊','🌟'].map(function(e,i){ var v=i+1; return '<button onclick="window._setJournalEditMeta(\'mood\','+v+')" data-mood="'+v+'" style="font-size:1.2em;background:none;border:none;cursor:pointer;padding:2px;opacity:'+(j.mood===v?'1':'0.35')+';transition:opacity 0.15s;border-radius:4px;">' + e + '</button>'; }).join('')
-        + '</div></div>'
-        // 体調ピッカー
-        + '<div><div style="font-size:0.68em;color:var(--ink-faint);margin-bottom:4px;letter-spacing:0.08em;">体調</div><div id="journalEditCondPicker" style="display:flex;gap:3px;">'
-        + ['🤒','😴','😐','💪','⚡'].map(function(e,i){ var v=i+1; return '<button onclick="window._setJournalEditMeta(\'condition\','+v+')" data-condition="'+v+'" style="font-size:1.2em;background:none;border:none;cursor:pointer;padding:2px;opacity:'+(j.condition===v?'1':'0.35')+';transition:opacity 0.15s;border-radius:4px;">' + e + '</button>'; }).join('')
-        + '</div></div>'
-        + '</div>'
         + '</div>'
         + '<div style="display:flex;gap:8px;padding:12px 20px 18px;border-top:1px solid rgba(180,165,140,0.35);background:rgba(242,237,227,0.8);flex-shrink:0;">'
         + '<button onclick="saveJournalEdit(\'' + id + '\')" style="flex:1;padding:10px;background:var(--ink);color:#f5f0e8;border:none;border-radius:10px;font-size:0.88em;cursor:pointer;font-family:serif;letter-spacing:0.06em;">保存</button>'
         + '<button onclick="document.getElementById(\'journalEditModal\').style.display=\'none\'" style="padding:10px 16px;background:rgba(44,36,22,0.06);border:1px solid rgba(44,36,22,0.15);color:var(--ink-mid);border-radius:10px;font-size:0.88em;cursor:pointer;">キャンセル</button>'
         + '</div></div>';
-      // 編集用メタ状態を初期化
-      window._journalEditMeta = { mood: j.mood||0, condition: j.condition||0, weather: j.weather||'' };
-      window._setJournalEditMeta = function(type, val) {
-        window._journalEditMeta[type] = val;
-        var pickerId = type === 'weather' ? 'journalEditWeatherPicker' : type === 'mood' ? 'journalEditMoodPicker' : 'journalEditCondPicker';
-        var picker = document.getElementById(pickerId);
-        if (!picker) return;
-        picker.querySelectorAll('button').forEach(function(btn) {
-          var bval = btn.getAttribute('data-' + type);
-          var match = type === 'weather' ? bval === String(val) : parseInt(bval) === parseInt(val);
-          btn.style.opacity = match ? '1' : '0.35';
-        });
-      };
       modal.style.display = 'flex';
     }
     function saveJournalEdit(id) {
@@ -37377,11 +37104,6 @@ document.addEventListener('DOMContentLoaded', function() {
       } else {
         journals[idx].date = newDate;
         journals[idx].text = newText;
-        if (window._journalEditMeta) {
-          if (window._journalEditMeta.mood)      journals[idx].mood      = window._journalEditMeta.mood;
-          if (window._journalEditMeta.condition) journals[idx].condition = window._journalEditMeta.condition;
-          if (window._journalEditMeta.weather)   journals[idx].weather   = window._journalEditMeta.weather;
-        }
         journals[idx].savedAt = new Date().toISOString();
         _showJournalToast('📖 ' + (function(d){ var p=d.split('-'); return parseInt(p[1])+'月'+parseInt(p[2])+'日'; })(newDate) + 'の日誌を更新しました');
       }
@@ -38834,6 +38556,18 @@ window.togglePvStampPalette = togglePvStampPalette;
       <span class="bnav-icon">🏠</span>
       <span class="bnav-label">日次</span>
     </button>
+    <button class="bnav-btn" id="bnavWeekly" onclick="switchView('weekly')">
+      <span class="bnav-icon">🗓️</span>
+      <span class="bnav-label">週間</span>
+    </button>
+    <button class="bnav-btn" id="bnavMonthly" onclick="switchView('monthly')">
+      <span class="bnav-icon">📅</span>
+      <span class="bnav-label">月間</span>
+    </button>
+    <button class="bnav-btn" id="bnavDashboard" onclick="switchView('dashboard')">
+      <span class="bnav-icon">📈</span>
+      <span class="bnav-label">統計</span>
+    </button>
     <button class="bnav-btn" id="bnavMore" onclick="openBottomNavMore()">
       <span class="bnav-icon">···</span>
       <span class="bnav-label">その他</span>
@@ -38848,13 +38582,13 @@ window.togglePvStampPalette = togglePvStampPalette;
         <span style="font-size:1.4em;">📖</span><span style="font-size:0.65em;color:#555;">日誌</span>
       </button>
       <button onclick="switchView('yearly');closeBottomNavMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;background:#f7f7f7;border:none;border-radius:10px;cursor:pointer;">
-        <span style="font-size:1.4em;">📆</span><span style="font-size:0.65em;color:#555;">年間</span>
+        <span style="font-size:1.4em;">🗓️</span><span style="font-size:0.65em;color:#555;">年間</span>
       </button>
       <button onclick="switchView('notebook');closeBottomNavMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;background:#f7f7f7;border:none;border-radius:10px;cursor:pointer;">
         <span style="font-size:1.4em;">📓</span><span style="font-size:0.65em;color:#555;">自由帳</span>
       </button>
       <button onclick="switchView('photo');closeBottomNavMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;background:#f7f7f7;border:none;border-radius:10px;cursor:pointer;">
-        <span style="font-size:1.4em;">📸</span><span style="font-size:0.65em;color:#555;">写真館</span>
+        <span style="font-size:1.4em;">📷</span><span style="font-size:0.65em;color:#555;">写真</span>
       </button>
       <button onclick="switchView('craft');closeBottomNavMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;background:#f7f7f7;border:none;border-radius:10px;cursor:pointer;">
         <span style="font-size:1.4em;">🏰</span><span style="font-size:0.65em;color:#555;">クラフト</span>
@@ -38875,7 +38609,7 @@ window.togglePvStampPalette = togglePvStampPalette;
         <span style="font-size:1.4em;">⚙️</span><span style="font-size:0.65em;color:#555;">設定</span>
       </button>
       <button onclick="window.openZenMode&&window.openZenMode();closeBottomNavMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;background:#f7f7f7;border:none;border-radius:10px;cursor:pointer;">
-        <span style="font-size:1.4em;">⊙</span><span style="font-size:0.65em;color:#555;">禅モード</span>
+        <span style="font-size:1.4em;">⊙</span><span style="font-size:0.65em;color:#555;">全モード</span>
       </button>
       <button onclick="showTutorial&&showTutorial();closeBottomNavMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;background:#f7f7f7;border:none;border-radius:10px;cursor:pointer;">
         <span style="font-size:1.4em;">❓</span><span style="font-size:0.65em;color:#555;">ヘルプ</span>
