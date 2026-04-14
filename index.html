@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.44.192 ★ -->
+<!-- ★ CURRENT VERSION: v0.44.197 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -121,7 +121,7 @@ str_replaceは対象が1箇所だけに限定されるため安全。
 セッション開始時は必ずアップロードされたファイルをベースに設定してから作業開始。
 バージョンアップ時は必ず以下2箇所を同時に更新すること：
   ① 冒頭HTMLコメント（CURRENT VERSION行）
-  ② JS定数：const APP_VERSION = 'v0.44.192';
+  ② JS定数：const APP_VERSION = 'v0.44.197';
 どちらか片方だけ更新することは禁止。必ずセットで更新する。
 制度趣旨：巻き戻れる地点がないと壊れた時に復元できない。冒頭コメントがずれると
 ファイルの正体が不明になりデプロイミスや混乱の原因になる。
@@ -7860,9 +7860,9 @@ function renderTodoList() {
       if (!entry.stats) entry.stats = { received: 0, completed: 0 };
       entry.stats.received = (entry.stats.received || 0) + 1;
       saveAllTasks();
-      if (typeof addGDP === 'function') addGDP(100, 'ARV1:着荷（' + (data.deckTitle||'デッキ') + ' by ' + (data.reportedBy||'旅人') + '）');
+      if (typeof addGDP === 'function') addGDP(1, 'ARV1:着荷（' + (data.deckTitle||'デッキ') + ' by ' + (data.reportedBy||'旅人') + '）');
       if (typeof renderDeckHistory === 'function') renderDeckHistory();
-      showToast('⚓ ' + (data.reportedBy||'旅人') + 'さんに届きました！GDP+100万', {type:'success', duration:4000});
+      showToast('⚓ ' + (data.reportedBy||'旅人') + 'さんに届きました！GDP+1', {type:'success', duration:4000});
     }
 
     // ===== BLM1: 開花コード生成・受取 =====
@@ -7895,7 +7895,7 @@ function renderTodoList() {
       entry.stats.blmCompleted = (entry.stats.blmCompleted || 0) + (data.completedCount || 0);
       saveAllTasks();
       var bonus = data.completedCount || 0;
-      if (bonus > 0 && typeof addGDP === 'function') addGDP(bonus * 100, 'BLM1:開花（' + (data.deckTitle||'デッキ') + ' by ' + (data.reportedBy||'旅人') + '）');
+      if (bonus > 0 && typeof addGDP === 'function') addGDP(bonus, 'BLM1:開花（' + (data.deckTitle||'デッキ') + ' by ' + (data.reportedBy||'旅人') + '）');
       if (typeof renderDeckHistory === 'function') renderDeckHistory();
       // コロシアムランキングに記録
       if (typeof recordColosseumScore === 'function') {
@@ -7904,7 +7904,7 @@ function renderTodoList() {
           renderColosseumView();
         }
       }
-      showToast('🌸 ' + (data.reportedBy||'旅人') + 'さんが' + bonus + '件完了！GDP+' + (bonus*100) + '万', {type:'success', duration:4000});
+      showToast('🌸 ' + (data.reportedBy||'旅人') + 'さんが' + bonus + '件完了！GDP+' + bonus + "'", {type:'success', duration:4000});
     }
 
     function incrementDeckHistoryStat(deckId) {
@@ -10330,7 +10330,7 @@ function addGou(amount, reason) {
 // 毎日起動時：業によるGDP削減チェック
 function checkDailyGouPenalty() {
   var _migKey = 'lastGouCheckDate';
-  var today = new Date().toISOString().slice(0,10);
+  var today = getLocalDateStr(new Date()); // JST
   var last = localStorage.getItem(_migKey);
   if (last === today) return;
   localStorage.setItem(_migKey, today);
@@ -10338,10 +10338,10 @@ function checkDailyGouPenalty() {
   if (gou <= 0) return;
   var gdp = getGDP();
   if (gdp <= 0) return;
-  var penalty = Math.floor(gdp * (gou / 365));
+  // 業10ごとに1GDP削減（最大5）
+  var penalty = Math.min(5, Math.floor(gou / 10));
   if (penalty > 0) {
     addGDP(-penalty, '業によるGDP削減（業=' + gou + '）');
-    // GDP削減は静かに実行（設定の業ログで確認可能）
   }
 }
 // 3日放置チェック（起動時）
@@ -10371,8 +10371,8 @@ function checkMonthlyBonus() {
 function checkAbsencePenalty() {
   var lastKey = 'lastTaskCompletedDate';
   var last = localStorage.getItem(lastKey);
-  if (!last) { localStorage.setItem(lastKey, new Date().toISOString().slice(0,10)); return; }
-  var today = new Date().toISOString().slice(0,10);
+  if (!last) { localStorage.setItem(lastKey, getLocalDateStr(new Date())); return; }
+  var today = getLocalDateStr(new Date()); // JST
   if (last === today) return;
   var lastMs = new Date(last).getTime();
   var todayMs = new Date(today).getTime();
@@ -10384,7 +10384,7 @@ function checkAbsencePenalty() {
   }
 }
 function recordTaskCompletedDate() {
-  localStorage.setItem('lastTaskCompletedDate', new Date().toISOString().slice(0,10));
+  localStorage.setItem('lastTaskCompletedDate', getLocalDateStr(new Date())); // JST
 }
 
 // B1: 王国力計算
@@ -10392,9 +10392,8 @@ function getKingdomPower() {
   var toku = typeof getToku === 'function' ? getToku() : 0;
   var gdp  = typeof getGDP  === 'function' ? getGDP()  : 0;
   var gou  = typeof getGouNew === 'function' ? getGouNew() : 0;
-  // 個人の努力（徳）60% + 他者交流（GDP）40% ÷ 業ペナルティ
-  // GDP内部単位は「万」→ 徳スケールに合わせて×1000
-  var power = (toku * 0.6 + gdp * 0.4 * 10) / (gou + 1);
+  // 徳60% + GDP40% ÷ 業ペナルティ（全て1単位に統一）
+  var power = (toku * 0.6 + gdp * 0.4) / (gou + 1);
   return Math.floor(power);
 }
 
@@ -10907,24 +10906,21 @@ function getKingdomTitle() {
   return result;
 }
 
-// ===== GDP億単位フォーマット =====
+// ===== GDPフォーマット（1単位・万億廃止） =====
 function formatGDP(val) {
-  if (!val || val === 0) return '0万';
-  if (val >= 1000000) return (val / 1000000).toFixed(1).replace(/\.0$/, '') + '兆';
-  if (val >= 10000)   return (val / 10000).toFixed(1).replace(/\.0$/, '') + '億';
-  if (val >= 1)       return val.toLocaleString() + '万';
-  return val + '万';
+  if (!val || val === 0) return '0';
+  return parseInt(val).toLocaleString();
 }
 
 // ===== GDP称号 =====
 function getGDPTitle(val) {
   // 内部単位：万
-  // 村長=1,000万、城主=1億(10000万)、大名=10億、列強=100億、覇者=1000億
-  if (val >= 10000000) return { icon: '🌟', name: '覇者' };   // 1000億
-  if (val >= 1000000)  return { icon: '🌍', name: '列強' };   // 100億
-  if (val >= 100000)   return { icon: '👑', name: '大名' };   // 10億
-  if (val >= 10000)    return { icon: '🏯', name: '城主' };   // 1億
-  if (val >= 1000)     return { icon: '🏠', name: '村長' };   // 1000万
+  // GDP（1単位・交流の積み重ね）
+  if (val >= 5000) return { icon: '🌟', name: '覇者' };
+  if (val >= 1000) return { icon: '🌍', name: '列強' };
+  if (val >= 500)  return { icon: '👑', name: '大名' };
+  if (val >= 100)  return { icon: '🏯', name: '城主' };
+  if (val >= 30)   return { icon: '🏠', name: '村長' };
   return { icon: '🌱', name: '開拓民' };
 }
 
@@ -16728,6 +16724,18 @@ function reviveBlueprint(id) {
       }
       localStorage.setItem('mig_kingdom_mode_default_v2', '1');
     }
+    // bottomNavTabs修復マイグレーション：不正値・空・journal1個だけの場合はデフォルトに戻す
+    (function() {
+      var _bnTabs = allSettings.ui.bottomNavTabs;
+      var _validKeys = ['weekly','monthly','dashboard','journal','notebook','photo','yearly','gant','craft','colosseum','shop','zen','settings','search'];
+      var _needFix = !Array.isArray(_bnTabs) || _bnTabs.length === 0 ||
+        _bnTabs.filter(function(k){ return _validKeys.indexOf(k) !== -1; }).length === 0;
+      if (_needFix) {
+        allSettings.ui.bottomNavTabs = ['weekly', 'monthly', 'dashboard'];
+        saveAllSettings();
+        _dbgLog && _dbgLog('mig: bottomNavTabs repaired → ' + JSON.stringify(allSettings.ui.bottomNavTabs));
+      }
+    })();
     // 旧命名フラグを新命名に引き継ぎ（migrate実行前に必ず行う）
     const _migRename = {
       'mig_uuid_v7':          'mig_ids_to_uuid_v7',
@@ -16747,14 +16755,14 @@ function reviveBlueprint(id) {
     // GDP億単位マイグレーション（v0.38.83）
     (function() {
       var _migKey = 'mig_gdp_to_oku_v1';
-      if (localStorage.getItem(_migKey)) return;
-      var cur = parseInt(localStorage.getItem('tokuPoints') || '0');
+      if (localStorage.getItem(_migKey)) { localStorage.setItem(_migKey, '1'); return; }
+      var cur = parseInt(localStorage.getItem('gdpPoints') || '0'); // ← gdpPointsが正しい
       if (cur > 0 && cur < 10000) {
-        localStorage.setItem('tokuPoints', String(cur * 100));
-        var log = JSON.parse(localStorage.getItem('tokuLog') || '[]');
+        localStorage.setItem('gdpPoints', String(cur * 100));
+        var log = JSON.parse(localStorage.getItem('gdpLog') || '[]');
         log.push({ type:'migration', amount: cur * 99, reason: 'GDP億単位マイグレーション', date: new Date().toISOString() });
         if (log.length > 1000) log = log.slice(-1000);
-        localStorage.setItem('tokuLog', JSON.stringify(log));
+        localStorage.setItem('gdpLog', JSON.stringify(log));
       }
       localStorage.setItem(_migKey, '1');
     })();
@@ -17574,7 +17582,7 @@ function reviveBlueprint(id) {
               '● タスク完了 → 徳+1\n' +
               '● 日誌を書く → 徳+1\n' +
               '● 月末に先月の完了件数分ボーナス\n\n' +
-              '【王国力の計算式】\n徳×0.6 + GDP×0.4×10 ÷ (業+1)\n個人の努力60%+他者交流40%\n\n' +
+              '【王国力の計算式】\n徳×0.6 + GDP×0.4 ÷ (業+1)\n個人の努力60%+他者交流40%\n\n' +
               '業が多いと王国力が下がる。\n業を祓い、徳を積め。\n\n' +
               '【心得】\n不作為は業。\n具体的行動は徳。\n今日できることを今日やる。',
             dateL: '', dateR: '',
@@ -17596,7 +17604,7 @@ function reviveBlueprint(id) {
             textL:
               'でっかい志を立てよう！！\n小さきまとまるな。\n\n' +
               '【称号は全99段階】\n王国力を高めるほど\n新しい称号が解放される。\n\n' +
-              '王国力 = 徳×0.6 + GDP×0.4×10 ÷ (業+1)\n\n' +
+              '王国力 = 徳×0.6 + GDP×0.4 ÷ (業+1)\n\n' +
               '---前半（1〜49）---\n' +
               _titlesText.split('\n').slice(0, 49).join('\n'),
             textR:
@@ -20102,6 +20110,15 @@ function loadSettingsUI() {
 
     function applyBottomNavCustom() {
       var tabs = allSettings.ui.bottomNavTabs || ['weekly', 'monthly', 'dashboard'];
+      // 不正な値（配列でない・空・BNAV_OPTIONSに存在しないキーだけ）の場合はデフォルトにリセット
+      var validKeys = BNAV_OPTIONS.map(function(o){ return o.key; });
+      if (!Array.isArray(tabs)) tabs = ['weekly', 'monthly', 'dashboard'];
+      tabs = tabs.filter(function(k){ return validKeys.indexOf(k) !== -1; });
+      if (tabs.length === 0) tabs = ['weekly', 'monthly', 'dashboard'];
+      if (allSettings.ui.bottomNavTabs !== tabs) {
+        allSettings.ui.bottomNavTabs = tabs;
+        saveAllSettings();
+      }
       var nav = document.getElementById('bottomNav');
       if (!nav) return;
       // 既存の動的ボタン（bnavSlot1〜3）を削除
@@ -21583,7 +21600,7 @@ function receiveDeck(deckId) {
   saveAllTasks();
   renderAllSections(today);
   renderDeckShop();
-  if (typeof addGDP === 'function') addGDP(100, 'DCK1:受取（' + deck.title + '）');
+  if (typeof addGDP === 'function') addGDP(1, 'DCK1:受取（' + deck.title + '）');
   showToast('🛍️ ' + deck.title + ' を受け取った！');
 }
 function receiveDeckAgain(deckId) {
@@ -21811,10 +21828,10 @@ function executeColosseumBattle() {
     if (window._isTesting) return; // テスト中は報酬・トースト抑制
     if (wins >= 2) {
       if (typeof addGDP === 'function') addGDP(3, 'コロシアム勝利');
-      showToast('⚔️ ' + wins + '勝！勝利！GDP+3万獲得！', {type:'success', duration:4000});
+      showToast('⚔️ ' + wins + '勝！勝利！GDP+3獲得！', {type:'success', duration:4000});
     } else if (wins === 1) {
       if (typeof addGDP === 'function') addGDP(1, 'コロシアム引き分け');
-      showToast('🤝 ' + wins + '勝…接戦でした。GDP+1万', {type:'info', duration:3000});
+      showToast('🤝 ' + wins + '勝…接戦でした。GDP+1', {type:'info', duration:3000});
     } else {
       if (typeof addGou === 'function') addGou(1, 'コロシアム敗北');
       showToast('💀 敗北…業が積まれた。明日リベンジ！', {type:'warn', duration:4000});
@@ -22102,7 +22119,7 @@ function renderDashboardView() {
     dbEraLabelEl.textContent = getKingdomEraLabel();
   }
   _set('dbToku', typeof getToku === 'function' ? getToku() : 0);
-  _set('dbGdp', typeof formatGDP === 'function' ? formatGDP(typeof getGDP === 'function' ? getGDP() : 0) : '0万');
+  _set('dbGdp', typeof formatGDP === 'function' ? formatGDP(typeof getGDP === 'function' ? getGDP() : 0) : '0');
   _set('dbGou', typeof getGouNew === 'function' ? getGouNew() : 0);
   _set('dbPower', typeof getKingdomPower === 'function' ? Math.floor(getKingdomPower()) : 0);
 
@@ -22561,9 +22578,9 @@ function renderColosseumView() {
     html += '<div style="font-size:0.82em;color:#aaa;margin-top:4px;">' + wins + '勝 ' + b.results.filter(function(r){ return r.win === 'draw'; }).length + '分 ' + loses + '敗</div>';
     html += '<div style="font-size:0.8em;color:' + overallColor + 'cc;margin-top:10px;line-height:1.6;font-style:italic;">' + outcomeMsg + '</div>';
     if (overall === 'WIN') {
-      html += '<div style="font-size:0.78em;color:#ffd700;margin-top:8px;font-weight:700;">GDP +3万 獲得！</div>';
+      html += '<div style="font-size:0.78em;color:#ffd700;margin-top:8px;font-weight:700;">GDP +3 獲得！</div>';
     } else if (overall === 'DRAW') {
-      html += '<div style="font-size:0.78em;color:#aaa;margin-top:8px;font-weight:700;">GDP +1万 獲得</div>';
+      html += '<div style="font-size:0.78em;color:#aaa;margin-top:8px;font-weight:700;">GDP +1 獲得</div>';
     } else {
       html += '<div style="font-size:0.78em;color:#ef4444;margin-top:8px;">業が1積まれた…</div>';
     }
@@ -23808,8 +23825,8 @@ function copyCraftCode() {
         if (!allSettings.meta) allSettings.meta = {};
         allSettings.meta.lastKingdomCodeDate = _todayStr;
         saveAllSettings();
-        if (typeof addGDP === 'function') addGDP(100, '王国コード配布');
-        if (typeof showToast === 'function') showToast('👑 王国コードを配布！GDP+100万', {type:'success'});
+        if (typeof addGDP === 'function') addGDP(1, '王国コード配布');
+        if (typeof showToast === 'function') showToast('👑 王国コードを配布！GDP+1', {type:'success'});
       }
     }
     showCraftMessage('👑 王国コードをコピーしました！');
@@ -29317,13 +29334,13 @@ function showDebugLog(_initOnly) {
        typeof formatGDP === 'function'
          ? ok('ST-35: formatGDP 存在確認')
          : ng('ST-35: formatGDP', '未定義');
-       formatGDP(0) === '0万'
+       formatGDP(0) === '0'
          ? ok('ST-35: formatGDP(0)=0万')
          : ng('ST-35: formatGDP(0)', formatGDP(0));
-       formatGDP(100) === '100万'
+       formatGDP(100) === '100'
          ? ok('ST-35: formatGDP(100)=100万')
          : ng('ST-35: formatGDP(100)', formatGDP(100));
-       formatGDP(10000) === '1億'
+       formatGDP(10000) === '10,000'
          ? ok('ST-35: formatGDP(10000)=1億')
          : ng('ST-35: formatGDP(10000)', formatGDP(10000));
 
