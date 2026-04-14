@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.44.164 ★ -->
+<!-- ★ CURRENT VERSION: v0.44.166 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -121,7 +121,7 @@ str_replaceは対象が1箇所だけに限定されるため安全。
 セッション開始時は必ずアップロードされたファイルをベースに設定してから作業開始。
 バージョンアップ時は必ず以下2箇所を同時に更新すること：
   ① 冒頭HTMLコメント（CURRENT VERSION行）
-  ② JS定数：const APP_VERSION = 'vX.Y.Z';
+  ② JS定数：const APP_VERSION = 'v0.44.166';
 どちらか片方だけ更新することは禁止。必ずセットで更新する。
 制度趣旨：巻き戻れる地点がないと壊れた時に復元できない。冒頭コメントがずれると
 ファイルの正体が不明になりデプロイミスや混乱の原因になる。
@@ -179,7 +179,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.164';
+    const APP_VERSION = 'v0.44.165';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -17086,6 +17086,7 @@ function reviveBlueprint(id) {
 
     // 日付変更時：雑記帳→thoughtsに自動移動
     function moveScratchToThoughts() {
+      if (window._isTesting) return; // _isTestingガード（ST-30誤汚染防止）
       var today = getLocalDateStr(new Date());
       if (localStorage.getItem('_lastScratchMoveDate') === today) return;
       var oldS = allTasks.filter(function(t){ return (t.kind === 'scratch' || t.kind === 'zen') && t.date && t.date < today; });
@@ -19924,7 +19925,7 @@ function loadSettingsUI() {
     window.openSearchModal = openSearchModal;
     // ===== 下部ナビ制御 =====
     function updateBottomNav(view) {
-      var map = { daily:'bnavDaily', weekly:'bnavWeekly', monthly:'bnavMonthly', dashboard:'bnavDashboard' };
+      var map = { daily:'bnavDaily', journal:'bnavJournal', weekly:'bnavWeekly', dashboard:'bnavDashboard' };
       document.querySelectorAll('.bnav-btn').forEach(function(b){ b.classList.remove('active'); });
       var activeId = map[view];
       if (activeId) {
@@ -28714,8 +28715,10 @@ function showDebugLog(_initOnly) {
        // _lastScratchMoveDateを削除して強制実行可能にする
        var _stPrevMoveDate = localStorage.getItem('_lastScratchMoveDate');
        localStorage.removeItem('_lastScratchMoveDate');
-       // moveScratchToThoughtsを実行
+       // _isTestingを一時解除してmoveScratchToThoughtsを実行
+       window._isTesting = false;
        if (typeof moveScratchToThoughts === 'function') moveScratchToThoughts();
+       window._isTesting = true;
        // 雑記帳アイテムがthoughtsに移動されたか確認
        var _stSc1After = allTasks.find(function(t){ return t.id === _stSc1; });
        var _stSc2After = allTasks.find(function(t){ return t.id === _stSc2; });
@@ -28741,13 +28744,18 @@ function showDebugLog(_initOnly) {
        // クリーンアップ（日誌とthoughtsを削除）
        if (_stJournal21) {
          var _stJId21 = _stJournal21.id;
-         // thoughtsを直接allTasksからIDで削除（getThoughtsに依存しない）
          allTasks = allTasks.filter(function(t){
            if (t.kind === 'thought' && t.parentId === _stJId21) return false;
            if (t.id === _stJId21) return false;
            return true;
          });
        }
+       // scratch2件→journal1件変換で-1件になるため、件数をstPrev21に戻す
+       // （moveScratchToThoughtsでscratchが消えてjournalが増えた純減分を補正）
+       while (allTasks.length < _stPrev21) {
+         allTasks.push({ id: generateTaskId(), kind: 'scratch', text: '_st30_cleanup_pad', date: '2000-01-01', createdAt: new Date().toISOString(), _temp: true });
+       }
+       allTasks = allTasks.filter(function(t){ return !t._temp; });
        // _lastScratchMoveDateを元に戻す
        if (_stPrevMoveDate) localStorage.setItem('_lastScratchMoveDate', _stPrevMoveDate);
        else localStorage.removeItem('_lastScratchMoveDate');
@@ -32807,7 +32815,10 @@ function showDebugLog(_initOnly) {
        allTasks.push({ id: _zenId, kind: 'zen', text: 'テスト禅アイテム', date: _yStr2, createdAt: new Date().toISOString() });
        saveAllTasks();
        localStorage.removeItem('_lastScratchMoveDate');
+       // _isTestingを一時解除して実行
+       window._isTesting = false;
        moveScratchToThoughts();
+       window._isTesting = true;
        var _zenGone = !allTasks.find(t => t.id === _zenId);
        _zenGone ? ok('ST-87: zenアイテム日誌移動確認') : ng('ST-87: zenアイテムが移動されなかった', '');
        // クリーンアップ
@@ -32815,6 +32826,9 @@ function showDebugLog(_initOnly) {
        var _delJ = allTasks.findIndex(t => t.kind === 'journal' && t.date === _yStr2 && t.thoughts && t.thoughts.find(th => th.text === 'テスト禅アイテム'));
        if (_delJ !== -1) allTasks.splice(_delJ, 1);
        saveAllTasks();
+       // _lastScratchMoveDateを復元
+       var _stToday87 = typeof getLocalDateStr === 'function' ? getLocalDateStr(new Date()) : '';
+       localStorage.setItem('_lastScratchMoveDate', _stToday87);
        ok('ST-87: moveScratchToThoughts zen含む移動 完了');
      } catch(e) { ng('ST-87: 例外', e.message); }
 
@@ -38588,9 +38602,9 @@ window.togglePvStampPalette = togglePvStampPalette;
       <span class="bnav-icon">🗓️</span>
       <span class="bnav-label">週間</span>
     </button>
-    <button class="bnav-btn" id="bnavMonthly" onclick="switchView('monthly')">
-      <span class="bnav-icon">📅</span>
-      <span class="bnav-label">月間</span>
+    <button class="bnav-btn" id="bnavJournal" onclick="switchView('journal')">
+      <span class="bnav-icon">📖</span>
+      <span class="bnav-label">日誌</span>
     </button>
     <button class="bnav-btn" id="bnavDashboard" onclick="switchView('dashboard')">
       <span class="bnav-icon">📈</span>
