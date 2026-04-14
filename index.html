@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.44.153 ★ -->
+<!-- ★ CURRENT VERSION: v0.44.157 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -162,7 +162,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.155';
+    const APP_VERSION = 'v0.44.157';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -1355,10 +1355,14 @@ END OF 開発ルール
     @media screen and (max-width: 768px) {
       /* ===== グリッド：2×2固定高さ ===== */
       .container {
-        display: grid !important;
+        display: grid;
         grid-template-columns: 1fr 1fr;
         grid-template-rows: 1fr 1fr;
         height: calc(var(--vh, 1vh) * 100 - 50px);
+      }
+      /* 日次表示中のみgridを有効化（非表示時はJSのdisplay:noneが勝つ） */
+      .container.daily-active {
+        display: grid !important;
       }
 
       /* ===== セクション共通 ===== */
@@ -17224,6 +17228,7 @@ function reviveBlueprint(id) {
       const gantView = document.getElementById('gantView');
       // 全ビューを非表示
       dailyView.style.display = 'none';
+      dailyView.classList.remove('daily-active');
       weeklyView.style.display = 'none';
       monthlyView.style.display = 'none';
       yearlyView.style.display = 'none';
@@ -17254,6 +17259,8 @@ function reviveBlueprint(id) {
       // タブのアクティブ状態を更新
       document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
       if (view === 'daily') {
+        dailyView.style.display = 'grid';
+        dailyView.classList.add('daily-active');
         document.getElementById('dailyInnerTabBar').style.display = 'flex';
         var _navBar = document.getElementById('dailyDateNavBar');
         if (_navBar) { _navBar.style.display = 'flex'; }
