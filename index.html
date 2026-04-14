@@ -161,7 +161,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.154';
+    const APP_VERSION = 'v0.44.155';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -8242,6 +8242,9 @@ function myDeckApply(idx) {
       document.getElementById('purposeDisplay').style.display = 'none';
       document.getElementById('purposeInput').value = purpose;
     }
+    // スマホ判定（768px以下）
+    function _isMobileView() { return window.innerWidth <= 768; }
+
     // 止まる仕組みの保存
     function saveStopCondition() {
       const input = document.getElementById('stopConditionInput');
@@ -8249,7 +8252,10 @@ function myDeckApply(idx) {
       if (stopCondition) {
         stopConditionSaved = true;
         document.getElementById('stopConditionGroup').style.display = 'none';
-        document.getElementById('stopConditionDisplay').style.display = 'flex';
+        // スマホでは表示しない
+        if (!_isMobileView()) {
+          document.getElementById('stopConditionDisplay').style.display = 'flex';
+        }
         document.getElementById('stopConditionText').textContent = stopCondition;
         // 止める仕組みをlocalStorageに保存
         allSettings.flags.stopCondition = stopCondition; saveAllSettings();
@@ -8259,7 +8265,10 @@ function myDeckApply(idx) {
     // 止まる仕組みの編集
     function editStopCondition() {
       stopConditionSaved = false;
-      document.getElementById('stopConditionGroup').style.display = 'flex';
+      // スマホでは表示しない
+      if (!_isMobileView()) {
+        document.getElementById('stopConditionGroup').style.display = 'flex';
+      }
       document.getElementById('stopConditionDisplay').style.display = 'none';
       document.getElementById('stopConditionInput').value = stopCondition;
     }
@@ -15587,11 +15596,11 @@ function reviveBlueprint(id) {
       selectedTaskText = null;
       pomodoroCount = 0;
       stopTimer();
-      document.getElementById('purposeGroup').style.display = 'flex';
+      document.getElementById('purposeGroup').style.display = _isMobileView() ? 'none' : 'flex';
       document.getElementById('purposeDisplay').style.display = 'none';
       document.getElementById('purposeInput').value = '';
       document.getElementById('purposeText').textContent = '';
-      document.getElementById('stopConditionGroup').style.display = 'flex';
+      document.getElementById('stopConditionGroup').style.display = _isMobileView() ? 'none' : 'flex';
       document.getElementById('stopConditionDisplay').style.display = 'none';
       document.getElementById('stopConditionInput').value = '';
       document.getElementById('stopConditionText').textContent = '';
@@ -19543,15 +19552,17 @@ function loadSettingsUI() {
           <div style="margin-top: 8px; font-weight: bold; color: #388e3c;">7. エリクサーは具体的な行動だ！</div>
         `;
         questionsDiv.style.display = 'block';
-        // 目的と止める仕組みを表示
-        if (!purposeConfirmed) {
-          purposeGroup.style.display = 'flex';
-        }
-        if (!stopConditionSaved) {
-          stopConditionGroup.style.display = 'flex';
-        } else if (stopConditionSaved && stopCondition) {
-          document.getElementById('stopConditionDisplay').style.display = 'flex';
-          document.getElementById('stopConditionText').textContent = stopCondition;
+        // 目的と止める仕組みを表示（スマホでは非表示）
+        if (!_isMobileView()) {
+          if (!purposeConfirmed) {
+            purposeGroup.style.display = 'flex';
+          }
+          if (!stopConditionSaved) {
+            stopConditionGroup.style.display = 'flex';
+          } else if (stopConditionSaved && stopCondition) {
+            document.getElementById('stopConditionDisplay').style.display = 'flex';
+            document.getElementById('stopConditionText').textContent = stopCondition;
+          }
         }
         // 点検ログに記録
         logAction('inspect');
