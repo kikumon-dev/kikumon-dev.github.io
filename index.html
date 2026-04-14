@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.44.166 ★ -->
+<!-- ★ CURRENT VERSION: v0.44.171 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -121,7 +121,7 @@ str_replaceは対象が1箇所だけに限定されるため安全。
 セッション開始時は必ずアップロードされたファイルをベースに設定してから作業開始。
 バージョンアップ時は必ず以下2箇所を同時に更新すること：
   ① 冒頭HTMLコメント（CURRENT VERSION行）
-  ② JS定数：const APP_VERSION = 'v0.44.166';
+  ② JS定数：const APP_VERSION = 'v0.44.171';
 どちらか片方だけ更新することは禁止。必ずセットで更新する。
 制度趣旨：巻き戻れる地点がないと壊れた時に復元できない。冒頭コメントがずれると
 ファイルの正体が不明になりデプロイミスや混乱の原因になる。
@@ -4204,7 +4204,7 @@ END OF 開発ルール
       <ul class="task-list" id="list1"></ul>
     </div>
     <!-- 多層マトリクス中心円: containerグリッドの中心にabsoluteで配置 -->
-    <div id="matrixCenterCircle" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);-webkit-transform:translate(-50%,-50%);width:76px;height:76px;border-radius:50%;background:#1976d2;color:#fff;font-size:0.8em;font-weight:700;display:none;align-items:center;justify-content:center;text-align:center;line-height:1.2;z-index:100;box-shadow:0 4px 16px rgba(0,0,0,0.35);padding:4px;cursor:pointer;border:3px solid rgba(255,255,255,0.9);word-break:break-all;opacity:0.82;text-shadow:0 1px 3px rgba(0,0,0,0.5);overflow:hidden;" onclick="switchMatrixLayer()" title="タップでレイヤー切り替え">今ここで</div>
+    <div id="matrixCenterCircle" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);-webkit-transform:translate(-50%,-50%);width:76px;height:76px;border-radius:50%;background:#90caf9;color:#3a3a4a;font-size:0.8em;font-weight:700;display:none;align-items:center;justify-content:center;text-align:center;line-height:1.2;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,0.15);padding:4px;cursor:pointer;border:3px solid rgba(255,255,255,0.9);word-break:break-all;opacity:0.9;text-shadow:none;overflow:hidden;" onclick="switchMatrixLayer()" title="タップでレイヤー切り替え">今ここで</div>
     <!-- 右上: 緊急でないが重要 -->
     <div class="section" id="section2">
       <div class="simple-header">
@@ -11170,7 +11170,7 @@ var MATRIX_LAYERS = [
     icon: '🗺️',
     label: 'マトリクス',
     center: '今ここで',
-    centerColor: '#1976d2',
+    centerColor: '#90caf9',
     tier: 'free',
     sections: [
       { label: '緊急かつ重要',       color: '#ffebee', ph: '本質的で今すぐ必要な行動は？...' },
@@ -11184,7 +11184,7 @@ var MATRIX_LAYERS = [
     icon: '🔥',
     label: '本能マトリクス',
     center: '生きること',
-    centerColor: '#c62828',
+    centerColor: '#f48fb1',
     tier: 'village',
     sections: [
       { label: '🛡️ 生存欲',    color: '#ffebee', ph: '身を守る・確保する行動は？' },
@@ -11198,7 +11198,7 @@ var MATRIX_LAYERS = [
     icon: '📚',
     label: '教育マトリクス',
     center: '仁',
-    centerColor: '#1565c0',
+    centerColor: '#a5d6a7',
     tier: 'town',
     sections: [
       { label: '義（正しく行う）', color: '#e3f2fd', ph: '正義・公正な行動は？' },
@@ -11212,7 +11212,7 @@ var MATRIX_LAYERS = [
     icon: '🌟',
     label: '使命マトリクス',
     center: '至誠',
-    centerColor: '#4a148c',
+    centerColor: '#ffe082',
     tier: 'kingdom',
     sections: [
       { label: '勤労（働く）',   color: '#fce4ec', ph: '今日の勤労行動は？' },
@@ -11226,7 +11226,7 @@ var MATRIX_LAYERS = [
     icon: '⚔️',
     label: '孫子マトリクス',
     center: '勝つ前に勝つ',
-    centerColor: '#b71c1c',
+    centerColor: '#ce93d8',
     tier: 'kingdom',
     sections: [
       { label: '知彼知己（己と敵を知る）', color: '#ffebee', ph: '今日、状況・自分・相手を正確に把握する行動は？' },
@@ -11240,7 +11240,7 @@ var MATRIX_LAYERS = [
     icon: '🌱',
     label: '孟子の四端マトリクス',
     center: '性善',
-    centerColor: '#2e7d32',
+    centerColor: '#80cbc4',
     tier: 'kingdom',
     sections: [
       { label: '惻隠（仁の端（あわれみ））',   color: '#e8f5e9', ph: '今日、他者の痛みに気づく行動は？' },
@@ -11254,7 +11254,7 @@ var MATRIX_LAYERS = [
     icon: '📖',
     label: '大学マトリクス',
     center: '修身',
-    centerColor: '#1565c0',
+    centerColor: '#ffab91',
     tier: 'kingdom',
     sections: [
       { label: '格物（物事の本質を究める）', color: '#e3f2fd', ph: '今日、物事の本質・道理を究める行動は？' },
@@ -11268,7 +11268,7 @@ var MATRIX_LAYERS = [
     icon: '🕊️',
     label: '墨子マトリクス',
     center: '兼愛',
-    centerColor: '#4527a0',
+    centerColor: '#b39ddb',
     tier: 'kingdom',
     sections: [
       { label: '兼愛（分け隔てなく愛する）', color: '#ede7f6', ph: '今日、全ての人を等しく思いやる行動は？' },
@@ -11282,7 +11282,7 @@ var MATRIX_LAYERS = [
     icon: '🏛️',
     label: '管子の四維マトリクス',
     center: '国の綱紀',
-    centerColor: '#e65100',
+    centerColor: '#c5e1a5',
     tier: 'kingdom',
     sections: [
       { label: '礼（節度を守る）',   color: '#fff3e0', ph: '今日、礼節・秩序を守る行動は？' },
@@ -11296,7 +11296,7 @@ var MATRIX_LAYERS = [
     icon: '🪬',
     label: '曾国藩マトリクス',
     center: '自強',
-    centerColor: '#37474f',
+    centerColor: '#81d4fa',
     tier: 'kingdom',
     sections: [
       { label: '敬（真剣に向き合う）', color: '#eceff1', ph: '今日、全力・真剣に向き合う行動は？' },
@@ -11310,7 +11310,7 @@ var MATRIX_LAYERS = [
     icon: '📿',
     label: '陰騭録マトリクス',
     center: '積善',
-    centerColor: '#6a1b9a',
+    centerColor: '#bcaaa4',
     tier: 'kingdom',
     sections: [
       { label: '立命（天命を自ら開く）', color: '#fff8e1', ph: '今日、運命を他人任せにしない行動は？' },
@@ -11324,7 +11324,7 @@ var MATRIX_LAYERS = [
     icon: '💡',
     label: '王陽明マトリクス',
     center: '致良知',
-    centerColor: '#f57f17',
+    centerColor: '#ef9a9a',
     tier: 'kingdom',
     sections: [
       { label: '知行合一（知ることと行うことは一つ）', color: '#fff8e1', ph: '今日、知っていることを実際に行う行動は？' },
@@ -11338,7 +11338,7 @@ var MATRIX_LAYERS = [
     icon: '☯️',
     label: '中庸マトリクス',
     center: '中和',
-    centerColor: '#00695c',
+    centerColor: '#90caf9',
     tier: 'kingdom',
     sections: [
       { label: '慎独（一人でも誠実に）',   color: '#e0f2f1', ph: '誰も見ていなくても正しくある行動は？' },
@@ -11352,7 +11352,7 @@ var MATRIX_LAYERS = [
     icon: '🎓',
     label: '荀子マトリクス',
     center: '礼による修身',
-    centerColor: '#1a237e',
+    centerColor: '#f48fb1',
     tier: 'kingdom',
     sections: [
       { label: '礼（規範で自己を整える）',   color: '#e8eaf6', ph: '今日、礼・規範に従い自己を整える行動は？' },
@@ -11366,7 +11366,7 @@ var MATRIX_LAYERS = [
     icon: '🌊',
     label: '老子マトリクス',
     center: '道（タオ）',
-    centerColor: '#004d40',
+    centerColor: '#a5d6a7',
     tier: 'kingdom',
     sections: [
       { label: '無為（作為しない）',       color: '#e0f2f1', ph: '今日、無理に動かず自然に委ねる行動は？' },
@@ -11380,7 +11380,7 @@ var MATRIX_LAYERS = [
     icon: '⚖️',
     label: '韓非子マトリクス',
     center: '法・術・勢',
-    centerColor: '#bf360c',
+    centerColor: '#ffe082',
     tier: 'kingdom',
     sections: [
       { label: '法（明確なルールを立てる）', color: '#fbe9e7', ph: '今日、明確な基準・ルールで判断する行動は？' },
@@ -11394,7 +11394,7 @@ var MATRIX_LAYERS = [
     icon: '🔮',
     label: '陸象山マトリクス',
     center: '本心',
-    centerColor: '#4a148c',
+    centerColor: '#ce93d8',
     tier: 'kingdom',
     sections: [
       { label: '立志（志を立てる）',           color: '#f3e5f5', ph: '今日、本当にやりたいことに向かう行動は？' },
@@ -11408,7 +11408,7 @@ var MATRIX_LAYERS = [
     icon: '📚',
     label: '朱子学マトリクス',
     center: '理を窮める',
-    centerColor: '#33691e',
+    centerColor: '#80cbc4',
     tier: 'kingdom',
     sections: [
       { label: '居敬（常に敬虔に）',       color: '#fff8e1', ph: '今日、散漫にならず真剣に向き合う行動は？' },
@@ -11422,7 +11422,7 @@ var MATRIX_LAYERS = [
     icon: '🏛️',
     label: 'プラトンの四元徳マトリクス',
     center: '魂の調和',
-    centerColor: '#5d4037',
+    centerColor: '#ffab91',
     tier: 'kingdom',
     sections: [
       { label: '知恵（Sophia）',     color: '#e3f2fd', ph: '正しく判断するための行動は？' },
@@ -11436,7 +11436,7 @@ var MATRIX_LAYERS = [
     icon: '⚖️',
     label: 'アリストテレスの中庸マトリクス',
     center: '中庸',
-    centerColor: '#1a237e',
+    centerColor: '#b39ddb',
     tier: 'kingdom',
     sections: [
       { label: '思慮（Phronesis）', color: '#e8eaf6', ph: '実践的な知恵で行動するには？' },
@@ -11450,7 +11450,7 @@ var MATRIX_LAYERS = [
     icon: '🌿',
     label: 'ストア派の四つの徳マトリクス',
     center: '内なる自由',
-    centerColor: '#2e7d32',
+    centerColor: '#c5e1a5',
     tier: 'kingdom',
     sections: [
       { label: '知恵（判断する）',       color: '#e8f5e9', ph: '自分の支配内にある判断は？' },
@@ -11464,7 +11464,7 @@ var MATRIX_LAYERS = [
     icon: '✝️',
     label: 'アクィナスの七元徳マトリクス',
     center: '神への愛',
-    centerColor: '#4a148c',
+    centerColor: '#81d4fa',
     tier: 'kingdom',
     sections: [
       { label: '対神徳（信仰・希望・愛）', color: '#f3e5f5', ph: '超越へ向かう行動は？' },
@@ -11478,7 +11478,7 @@ var MATRIX_LAYERS = [
     icon: '⭐',
     label: '普遍的価値マトリクス',
     center: '普遍善',
-    centerColor: '#880e4f',
+    centerColor: '#bcaaa4',
     tier: 'kingdom',
     sections: [
       { label: '愛（Agape・仁・慈悲）', color: '#fce4ec', ph: '今日、見返りなく他者を愛する行動は？' },
@@ -11492,7 +11492,7 @@ var MATRIX_LAYERS = [
     icon: '🌸',
     label: '五箇条の御誓文マトリクス',
     center: '天下為公',
-    centerColor: '#1a237e',
+    centerColor: '#ef9a9a',
     tier: 'kingdom',
     sections: [
       { label: '衆議公論（広く会議を興す）',   color: '#e8eaf6', ph: '今日、一人で決めず広く意見を聞く行動は？' },
@@ -11506,7 +11506,7 @@ var MATRIX_LAYERS = [
     icon: '🕊️',
     label: '深愛公徳マトリクス',
     center: '信仰心',
-    centerColor: '#880e4f',
+    centerColor: '#90caf9',
     tier: 'kingdom',
     sections: [
       { label: '愛念（家族・大切な人を深く愛する）', color: '#fce4ec', ph: '今日、家族や身近な人への愛を具体的な行動で表すには？' },
@@ -11520,7 +11520,7 @@ var MATRIX_LAYERS = [
     icon: '💪',
     label: 'アドラーマトリクス',
     center: '勇気',
-    centerColor: '#1565c0',
+    centerColor: '#f48fb1',
     tier: 'kingdom',
     sections: [
       { label: '課題の分離（自分の課題に集中する）',   color: '#e3f2fd', ph: '今日、他者の課題を手放し自分の課題に向かう行動は？' },
@@ -11534,7 +11534,7 @@ var MATRIX_LAYERS = [
     icon: '🌅',
     label: '敬天愛人マトリクス',
     center: '敬天愛人',
-    centerColor: '#b71c1c',
+    centerColor: '#a5d6a7',
     tier: 'kingdom',
     sections: [
       { label: '敬天（天理・道理を敬う）',       color: '#fff8e1', ph: '今日、道理・自然の摂理に従う行動は？' },
@@ -11548,13 +11548,13 @@ var MATRIX_LAYERS = [
     icon: '☸️',
     label: '仏教マトリクス',
     center: '空',
-    centerColor: '#4a148c',
+    centerColor: '#ffe082',
     tier: 'kingdom',
     sections: [
-      { label: '縁起（すべては関係の中にある）', color: '#ede7f6', ph: '今日、他者・環境とのつながりに気づき感謝する行動は？' },
-      { label: '無常（変化を受け入れる）',       color: '#f3e5f5', ph: '今日、執着を手放し変化の流れに乗る行動は？' },
-      { label: '無我（自己へのこだわりを解く）', color: '#e8eaf6', ph: '今日、「自分」という固定観念を緩め他者に開く行動は？' },
-      { label: '中道（極端を避ける）',           color: '#e1f5fe', ph: '今日、過剰・不足を避けちょうどよいバランスを保つ行動は？' },
+      { label: '縁起（すべては関係の中にある）', color: '#e1f5fe', ph: '今日、他者・環境とのつながりに気づき感謝する行動は？' },
+      { label: '無常（変化を受け入れる）',       color: '#e8f5e9', ph: '今日、執着を手放し変化の流れに乗る行動は？' },
+      { label: '無我（自己へのこだわりを解く）', color: '#fff8e1', ph: '今日、「自分」という固定観念を緩め他者に開く行動は？' },
+      { label: '中道（極端を避ける）',           color: '#fce4ec', ph: '今日、過剰・不足を避けちょうどよいバランスを保つ行動は？' },
     ]
   },
   {
@@ -11562,7 +11562,7 @@ var MATRIX_LAYERS = [
     icon: '🐍',
     label: '三毒マトリクス（仏教）',
     center: '三毒の滅',
-    centerColor: '#6a1b9a',
+    centerColor: '#ce93d8',
     tier: 'kingdom',
     sections: [
       { label: '貪（とん）—欲望・執着を観る', color: '#fce4ec', ph: '今日、「もっと欲しい」という執着を手放す行動は？' },
@@ -11576,7 +11576,7 @@ var MATRIX_LAYERS = [
     icon: '⚙️',
     label: '八正道マトリクス（仏教）',
     center: '正道',
-    centerColor: '#1a237e',
+    centerColor: '#80cbc4',
     tier: 'kingdom',
     sections: [
       { label: '正見・正思（智慧）',   color: '#e8eaf6', ph: '今日、物事をありのままに見て正しく考える行動は？' },
@@ -11590,7 +11590,7 @@ var MATRIX_LAYERS = [
     icon: '✝️',
     label: 'キリスト教マトリクス',
     center: '愛',
-    centerColor: '#b71c1c',
+    centerColor: '#ffab91',
     tier: 'kingdom',
     sections: [
       { label: '信仰（神への信頼）', color: '#fce4ec', ph: '今日、見えないものを信じ委ねる行動は？' },
@@ -11604,7 +11604,7 @@ var MATRIX_LAYERS = [
     icon: '☪️',
     label: 'イスラム教マトリクス',
     center: '五行',
-    centerColor: '#1a237e',
+    centerColor: '#b39ddb',
     tier: 'kingdom',
     sections: [
       { label: 'シャハーダ（信仰告白・誠実）', color: '#e3f2fd', ph: '今日、誠実さと一貫性を貫く行動は？' },
@@ -11618,7 +11618,7 @@ var MATRIX_LAYERS = [
     icon: '✡️',
     label: 'ユダヤ教マトリクス',
     center: 'ティクン',
-    centerColor: '#0d47a1',
+    centerColor: '#c5e1a5',
     tier: 'kingdom',
     sections: [
       { label: 'トーラー学習（学びの継続）', color: '#e3f2fd', ph: '今日、学び知恵を深める行動は？' },
@@ -11632,7 +11632,7 @@ var MATRIX_LAYERS = [
     icon: '⛩️',
     label: '神道マトリクス',
     center: '清明心',
-    centerColor: '#1b5e20',
+    centerColor: '#81d4fa',
     tier: 'kingdom',
     sections: [
       { label: '清（清潔・清浄）',   color: '#e8f5e9', ph: '今日、心と環境を清める行動は？' },
@@ -11646,7 +11646,7 @@ var MATRIX_LAYERS = [
     icon: '🌿',
     label: '六根清浄マトリクス（神道）',
     center: '清浄',
-    centerColor: '#2e7d32',
+    centerColor: '#bcaaa4',
     tier: 'kingdom',
     sections: [
       { label: '眼・耳・鼻を清める（感覚の浄化）', color: '#e8f5e9', ph: '今日、見るもの・聞くものを意識して選び心を清める行動は？' },
@@ -11660,7 +11660,7 @@ var MATRIX_LAYERS = [
     icon: '🌊',
     label: '大祓マトリクス（神道）',
     center: '祓',
-    centerColor: '#0277bd',
+    centerColor: '#ef9a9a',
     tier: 'kingdom',
     sections: [
       { label: '祓（はらえ）—罪穢れを祓う', color: '#e1f5fe', ph: '今日、心に溜まった罪悪感・後悔・雑念を手放す行動は？' },
@@ -11674,7 +11674,7 @@ var MATRIX_LAYERS = [
     icon: '🌀',
     label: '産霊マトリクス（神道）',
     center: 'むすひ',
-    centerColor: '#6a1b9a',
+    centerColor: '#90caf9',
     tier: 'kingdom',
     sections: [
       { label: '天地（あめつち）—大いなる流れに乗る', color: '#f3e5f5', ph: '今日、天地自然の流れに逆らわず乗る行動は？' },
@@ -11688,7 +11688,7 @@ var MATRIX_LAYERS = [
     icon: '🔥',
     label: 'ゾロアスター教マトリクス',
     center: '善思善言善行',
-    centerColor: '#e65100',
+    centerColor: '#f48fb1',
     tier: 'kingdom',
     sections: [
       { label: '善思（フマタ）', color: '#fff3e0', ph: '今日、善い思考・正しい動機から始める行動は？' },
@@ -11702,7 +11702,7 @@ var MATRIX_LAYERS = [
     icon: '☯️',
     label: '道教マトリクス',
     center: '道',
-    centerColor: '#37474f',
+    centerColor: '#a5d6a7',
     tier: 'kingdom',
     sections: [
       { label: '無為（作為しない自然な行動）', color: '#eceff1', ph: '今日、力まず自然な流れに乗る行動は？' },
@@ -11716,7 +11716,7 @@ var MATRIX_LAYERS = [
     icon: '💫',
     label: 'マニ教マトリクス',
     center: '光',
-    centerColor: '#f57f17',
+    centerColor: '#ffe082',
     tier: 'kingdom',
     sections: [
       { label: '光の探求（真理の追求）', color: '#fffde7', ph: '今日、真理・本質を追い求める行動は？' },
@@ -11730,7 +11730,7 @@ var MATRIX_LAYERS = [
     icon: '✨',
     label: '天命マトリクス',
     center: '今世の天命',
-    centerColor: '#1a1a2e',
+    centerColor: '#ce93d8',
     tier: 'kingdom',
     sections: [
       { label: '', color: '#fafafa', ph: 'あなたが今世に与えられた使命は何ですか？（召命）' },
@@ -11903,9 +11903,12 @@ function renderMatrixLayer() {
     var _centerText = layer.center || '';
     circle.textContent = _centerText;
     // 背景色に透明度を付与（後ろのテキストが透けて見えるように）
-    var _baseColor = layer.centerColor || '#1976d2';
+    var _baseColor = layer.centerColor || '#90caf9';
     circle.style.background = _baseColor;
-    circle.style.opacity = '0.82';
+    circle.style.color = '#3a3a4a';
+    circle.style.textShadow = 'none';
+    circle.style.boxShadow = '0 2px 10px rgba(0,0,0,0.15)';
+    circle.style.opacity = '0.9';
     circle.style.display = 'flex';
     // 文字数に応じてフォントサイズを動的調整（はみ出し防止）
     var _len = _centerText.length;
