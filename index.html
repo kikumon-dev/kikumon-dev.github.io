@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.44.163 ★ -->
+<!-- ★ CURRENT VERSION: v0.44.164 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -179,7 +179,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.163';
+    const APP_VERSION = 'v0.44.164';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -34498,6 +34498,55 @@ function showDebugLog(_initOnly) {
        _pmDom124 ? ok('ST-124·④: #polestarModal DOM存在確認') : ng('ST-124·④: #polestarModal 未存在', '');
        ok('ST-124: #polestarハッシュURL自動起動テスト 完了');
      } catch(e) { ng('ST-124: 例外', e.message); }
+
+     // ===== ST-125: 下部ナビゲーションテスト =====
+     try {
+       // ① DOM存在確認
+       var _bn = document.getElementById('bottomNav');
+       _bn ? ok('ST-125·①: #bottomNav DOM存在') : ng('ST-125·①: #bottomNav 未存在', '');
+
+       // ② 5ボタン存在確認
+       var _bnavIds = ['bnavDaily','bnavJournal','bnavWeekly','bnavDashboard','bnavMore'];
+       var _bnavAll = _bnavIds.every(function(id){ return !!document.getElementById(id); });
+       _bnavAll ? ok('ST-125·②: 下部ナビ5ボタン全存在') : ng('ST-125·②: 下部ナビボタン不足', _bnavIds.filter(function(id){ return !document.getElementById(id); }).join(','));
+
+       // ③ window公開確認
+       (typeof window.openBottomNavMore === 'function')
+         ? ok('ST-125·③: openBottomNavMore 公開確認')
+         : ng('ST-125·③: openBottomNavMore 未公開', '');
+       (typeof window.closeBottomNavMore === 'function')
+         ? ok('ST-125·③: closeBottomNavMore 公開確認')
+         : ng('ST-125·③: closeBottomNavMore 未公開', '');
+       (typeof window.updateBottomNav === 'function')
+         ? ok('ST-125·③: updateBottomNav 公開確認')
+         : ng('ST-125·③: updateBottomNav 未公開', '');
+
+       // ④ その他シートDOM存在確認
+       var _moreSheet = document.getElementById('bottomNavMoreSheet');
+       var _moreOverlay = document.getElementById('bottomNavMoreOverlay');
+       _moreSheet ? ok('ST-125·④: #bottomNavMoreSheet DOM存在') : ng('ST-125·④: #bottomNavMoreSheet 未存在', '');
+       _moreOverlay ? ok('ST-125·④: #bottomNavMoreOverlay DOM存在') : ng('ST-125·④: #bottomNavMoreOverlay 未存在', '');
+
+       // ⑤ openBottomNavMore動作確認（開いて閉じる）
+       window.openBottomNavMore();
+       var _sheetOpen = _moreSheet && _moreSheet.style.display === 'block';
+       _sheetOpen ? ok('ST-125·⑤: openBottomNavMore でシート表示') : ng('ST-125·⑤: シートが開かない', '');
+       window.closeBottomNavMore();
+       var _sheetClosed = _moreSheet && _moreSheet.style.display === 'none';
+       _sheetClosed ? ok('ST-125·⑤: closeBottomNavMore でシート非表示') : ng('ST-125·⑤: シートが閉じない', '');
+
+       // ⑥ updateBottomNav でactiveクラス付与確認
+       window.updateBottomNav('daily');
+       var _dailyActive = document.getElementById('bnavDaily') && document.getElementById('bnavDaily').classList.contains('active');
+       _dailyActive ? ok('ST-125·⑥: updateBottomNav(daily) でbnavDailyにactiveクラス') : ng('ST-125·⑥: activeクラスが付かない', '');
+       window.updateBottomNav('weekly');
+       var _weeklyActive = document.getElementById('bnavWeekly') && document.getElementById('bnavWeekly').classList.contains('active');
+       var _dailyInactive = document.getElementById('bnavDaily') && !document.getElementById('bnavDaily').classList.contains('active');
+       _weeklyActive ? ok('ST-125·⑥: updateBottomNav(weekly) でbnavWeeklyにactive') : ng('ST-125·⑥: weekly activeクラスなし', '');
+       _dailyInactive ? ok('ST-125·⑥: 切替時に旧activeが除去される') : ng('ST-125·⑥: 旧activeが残存', '');
+
+       ok('ST-125: 下部ナビゲーションテスト 完了');
+     } catch(e) { ng('ST-125: 例外', e.message); }
 
      try {
        ok('');
