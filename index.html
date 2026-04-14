@@ -161,7 +161,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.148';
+    const APP_VERSION = 'v0.44.150';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -727,7 +727,7 @@ END OF 開発ルール
       margin: 0;
       font-size: 1.1em;
     }
-    /* section2専用ヘッダー（simple-headerのCSS競合を完全回避） */
+    /* section2専用ヘッダー（スマホ用・PCはsimple-headerを使用） */
     .section2-header {
       display: flex;
       justify-content: space-between;
@@ -739,12 +739,6 @@ END OF 開発ルール
     .section2-header h4 {
       margin: 0;
       font-size: 1.1em;
-    }
-      font-size: 0.85em;
-      color: #333;
-      font-weight: 900 !important;
-      margin-left: auto;
-      white-space: nowrap;
     }
     /* PC: モバイル用日付は非表示 */
     .date-display-mobile {
@@ -4129,15 +4123,13 @@ END OF 開発ルール
     <!-- 左上: 緊急かつ重要 -->
     <div class="section" id="section1">
       <div class="header-row">
-        <!-- h4 + 日付：横並び1行 -->
-        <div style="display:flex; align-items:center; width:100%; gap:4px;">
-          <h4 style="flex:1; min-width:0;">やることクラフト【緊急かつ重要】</h4>
-          <div class="date-display date-display-mobile" id="dateDisplayMobile" style="flex-shrink:0;"></div>
-        </div>
+        <h4>やることクラフト【緊急かつ重要】</h4>
+        <!-- スマホ縦画面用：日付を第1象限に表示 -->
+        <div class="date-display date-display-mobile" id="dateDisplayMobile"></div>
         <div class="purpose-group" id="purposeGroup" style="display: none;">
           <label>目的:</label>
           <input type="text" id="purposeInput" placeholder="本質的な目的を一行で入力...">
-          <button class="edit-btn" onclick="confirmPurpose()">保存</button>
+          <button class="edit-btn" onclick="confirmPurpose()">仮決め</button>
         </div>
         <div class="purpose-display" id="purposeDisplay" style="display: none;">
           <span id="purposeText"></span>
@@ -4152,21 +4144,18 @@ END OF 開発ルール
     <div id="matrixCenterCircle" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);-webkit-transform:translate(-50%,-50%);width:76px;height:76px;border-radius:50%;background:#1976d2;color:#fff;font-size:0.8em;font-weight:700;display:none;align-items:center;justify-content:center;text-align:center;line-height:1.2;z-index:100;box-shadow:0 4px 16px rgba(0,0,0,0.35);padding:4px;cursor:pointer;border:3px solid rgba(255,255,255,0.9);word-break:break-all;opacity:0.82;text-shadow:0 1px 3px rgba(0,0,0,0.5);overflow:hidden;" onclick="switchMatrixLayer()" title="タップでレイヤー切り替え">今ここで</div>
     <!-- 右上: 緊急でないが重要 -->
     <div class="section" id="section2">
-      <div class="section2-header">
-        <div style="display: flex; flex-direction: column; gap: 4px; width: 100%;">
-          <!-- h4 + 点検ボタン：横並び行 -->
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <h4>【緊急でないが重要】</h4>
-            <button class="deep-dive-btn" onclick="toggleDeepDive()">点検</button>
-          </div>
+      <div class="simple-header">
+        <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+          <h4>【緊急でないが重要】</h4>
+          <button class="deep-dive-btn" onclick="toggleDeepDive()">点検</button>
           <!-- 止める仕組み入力（点検ボタン押下後に表示） -->
-          <div id="stopConditionGroup" style="display: none; flex-direction: row; align-items: center; gap: 4px; width: 100%;">
+          <div id="stopConditionGroup" style="display: none; flex-direction: row; align-items: center; gap: 4px; flex: 1;">
             <label style="font-size:0.75em; font-weight:bold; white-space:nowrap; flex-shrink:0;">止める仕組み:</label>
             <input type="text" id="stopConditionInput" placeholder="例: 2週間経過" style="flex:1; min-width:0; box-sizing:border-box; padding:3px 6px; border:1px solid #ccc; border-radius:3px; font-size:0.8em;" onkeydown="if(event.key==='Enter') saveStopCondition();">
             <button class="edit-btn" onclick="saveStopCondition()">保存</button>
           </div>
           <!-- 止める仕組み表示（保存後に表示） -->
-          <div id="stopConditionDisplay" style="display: none; flex-direction: row; align-items: center; gap: 4px; width: 100%;">
+          <div id="stopConditionDisplay" style="display: none; flex-direction: row; align-items: center; gap: 4px; flex: 1;">
             <span id="stopConditionText" style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:0.85em; color:#444;"></span>
             <button class="edit-btn" onclick="editStopCondition()">編集</button>
           </div>
