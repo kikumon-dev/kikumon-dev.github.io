@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.44.195 ★ -->
+<!-- ★ CURRENT VERSION: v0.44.196 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -179,7 +179,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.195';
+    const APP_VERSION = 'v0.44.196';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -5336,6 +5336,7 @@ END OF 開発ルール
         <div>
           <div style="font-size:0.88em;font-weight:700;color:#16a34a;">🛡️ 自動バックアップ</div>
           <div id="dbBackupLabel" style="font-size:0.88em;color:#4ade80;margin-top:2px;">確認中...</div>
+          <div id="dbStorageUsage" style="font-size:0.78em;color:#888;margin-top:3px;">💾 容量確認中...</div>
         </div>
         <button onclick="openRestoreModal()" style="padding:7px 14px;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;border-radius:10px;color:#fff;font-size:0.78em;font-weight:700;cursor:pointer;">🔄 復元</button>
       </div>
@@ -22335,6 +22336,38 @@ function renderDashboardView() {
     _bsLabel.style.color = _bsColor;
     var _bsLabelSettings = document.getElementById('settingsBackupLabel');
     if (_bsLabelSettings) { _bsLabelSettings.textContent = _bsMsg; _bsLabelSettings.style.color = _bsColor; }
+
+    // localStorage容量計算
+    (function _calcStorage() {
+      var _storageEl = document.getElementById('dbStorageUsage');
+      if (!_storageEl) return;
+      try {
+        var _total = 0;
+        var _photoSize = 0;
+        var _taskSize = 0;
+        for (var k in localStorage) {
+          if (!localStorage.hasOwnProperty(k)) continue;
+          var _sz = (localStorage[k].length + k.length) * 2; // UTF-16
+          _total += _sz;
+          if (k === 'photoImages') _photoSize = _sz;
+          if (k === 'allTasks') _taskSize = _sz;
+        }
+        var _totalKB = Math.round(_total / 1024);
+        var _photoKB = Math.round(_photoSize / 1024);
+        var _taskKB  = Math.round(_taskSize / 1024);
+        var _limitKB = 5120; // 5MB
+        var _pct = Math.round(_totalKB / _limitKB * 100);
+        var _color = _pct >= 80 ? '#ef4444' : _pct >= 60 ? '#f59e0b' : '#888';
+        _storageEl.style.color = _color;
+        _storageEl.textContent = '💾 使用量 ' + _totalKB + 'KB / 5MB（' + _pct + '%）'
+          + '　写真: ' + _photoKB + 'KB　データ: ' + _taskKB + 'KB';
+        if (_pct >= 80) {
+          _storageEl.textContent += '　⚠️ 容量不足注意';
+        }
+      } catch(e) {
+        _storageEl.textContent = '💾 容量取得失敗';
+      }
+    })();
   })();
   // Gist同期ステータス更新
   if (typeof _gistUpdateSyncBadge === 'function') _gistUpdateSyncBadge();
