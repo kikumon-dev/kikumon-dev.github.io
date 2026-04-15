@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.44.165 ★ -->
+<!-- ★ CURRENT VERSION: v0.44.170 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -179,7 +179,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.165';
+    const APP_VERSION = 'v0.44.170';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -1462,18 +1462,9 @@ END OF 開発ルール
         width: 100%;
       }
 
-      /* 日付：h4の右隣に小さく */
+      /* 日付：スマホでは非表示（上部ナビバーに日付があるため不要） */
       .date-display-mobile {
-        display: block !important;
-        width: auto !important;
-        text-align: right;
-        font-size: 0.6em;
-        color: #aaa;
-        font-weight: 500 !important;
-        margin: 0;
-        line-height: 1.2;
-        white-space: nowrap;
-        flex-shrink: 0;
+        display: none !important;
       }
       /* PC用日付はスマホで非表示 */
       #dateDisplay,
@@ -1553,6 +1544,7 @@ END OF 開発ルール
         flex-direction: row;
         align-items: center;
         flex-wrap: nowrap;
+        justify-content: flex-start;
         gap: 4px;
         margin-bottom: 5px;
         width: 100%;
@@ -1567,6 +1559,12 @@ END OF 開発ルール
       }
       #section3 .simple-header .color-toggle-btn {
         flex-shrink: 0;
+        position: relative;
+        z-index: 101;
+      }
+      /* 第3象限h4はautoサイズ（伸ばさない）→ボタンが右端に飛ばない */
+      #section3 .simple-header h4 {
+        flex: 0 0 auto !important;
       }
       /* #input3 font-sizeは共通.task-inputの0.72emを使用 */
       #input3::placeholder {
@@ -4158,7 +4156,7 @@ END OF 開発ルール
     <!-- 左上: 緊急かつ重要 -->
     <div class="section" id="section1">
       <div class="header-row">
-        <h4>やることクラフト【緊急かつ重要】</h4>
+        <h4>【緊急かつ重要】</h4>
         <!-- スマホ縦画面用：日付を第1象限に表示 -->
         <div class="date-display date-display-mobile" id="dateDisplayMobile"></div>
         <div class="purpose-group" id="purposeGroup" style="display: none;">
