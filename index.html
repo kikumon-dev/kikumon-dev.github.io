@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.44.193 ★ -->
+<!-- ★ CURRENT VERSION: v0.44.195 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -179,7 +179,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.193';
+    const APP_VERSION = 'v0.44.195';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -5217,6 +5217,9 @@ END OF 開発ルール
       ✨ 今日も一歩ずつ、前へ！
     </div>
 
+    <!-- 魂の旅カード -->
+    <div id="dbSoulJourneyCard" style="display:none;margin-bottom:14px;border-radius:14px;overflow:hidden;border:1px solid rgba(99,102,241,0.2);background:linear-gradient(135deg,rgba(99,102,241,0.04),rgba(139,92,246,0.06));"></div>
+
     <!-- 統計グリッド -->
     <div class="yc-fade-in" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
       <div style="background:#fff;border-radius:18px;padding:16px;box-shadow:0 2px 16px rgba(79,172,254,0.10);border:1px solid #e8f0fe;position:relative;overflow:hidden;min-height:110px;">
@@ -6612,11 +6615,13 @@ END OF 開発ルール
       meta: {
         dataVersion: 1,
         phaseBDone: false,
-        unlockedAxes: ['shin'],   // 解放済みの成長軸
-        talents: {},              // 来世引き継ぎ才能
-        cycleHistory: [],         // 周回記録
-        lastColosseumRewardDate: '',
-        colosseumRewardCount: 0
+        unlockedAxes: ['shin'],      // 解放済みの成長軸
+        talents: {},                 // 来世引き継ぎ才能
+        cycleHistory: [],            // 周回記録
+        lastColosseumRewardDate: '', // コロシアム報酬日
+        colosseumRewardCount: 0,     // コロシアム報酬回数
+        tokuDailyDate: '',           // 徳加算上限管理日
+        tokuDailyCount: 0            // 徳加算上限カウント
       }
     };
     let allSettings = JSON.parse(JSON.stringify(SETTINGS_DEFAULT)); // deep copy
@@ -22021,6 +22026,84 @@ function renderDashboardView() {
 
       _dbKaze.style.display = 'block';
     } catch(e) {}
+  })();
+
+  // 魂の旅カード
+  (function _renderSoulJourney() {
+    var _card = document.getElementById('dbSoulJourneyCard');
+    if (!_card) return;
+    var _craftOn = allSettings && allSettings.ui && allSettings.ui.craftModeEnabled;
+    if (!_craftOn) {
+      // craftModeOFF：予告カード
+      _card.style.display = 'block';
+      _card.innerHTML = '<div style="padding:16px;text-align:center;">'
+        + '<div style="font-size:1.0em;font-weight:700;color:#6366f1;margin-bottom:6px;">✨ 魂の旅</div>'
+        + '<div style="font-size:0.82em;color:#888;margin-bottom:12px;">クラフトモードをONにすると<br>魂の成長記録が解放されます</div>'
+        + '<button onclick="switchView(\'settings\')" style="padding:8px 20px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;border-radius:10px;color:#fff;font-size:0.82em;font-weight:700;cursor:pointer;">設定を開く</button>'
+        + '</div>';
+      return;
+    }
+    // craftModeON：通常カード
+    var _axis = (allSettings.ui && allSettings.ui.growthAxis) || 'shin';
+    var _cfg = CYCLE_CONFIG[_axis] || CYCLE_CONFIG['shin'];
+    var _power = typeof getKingdomPower === 'function' ? getKingdomPower() : 0;
+    var _kanst = _cfg.kanst;
+    var _pct = Math.min(Math.round(_power / _kanst * 100), 100);
+    var _remain = Math.max(_kanst - _power, 0);
+    var _nextCfg = CYCLE_CONFIG[_cfg.next] || CYCLE_CONFIG['shin'];
+    var _talents = (allSettings.meta && allSettings.meta.talents) || {};
+    var _history = (allSettings.meta && allSettings.meta.cycleHistory) || [];
+    var _talentNames = { gakumon:'🎓 学問の才能', shinko:'🙏 信仰心の才能', geijutsu:'🎨 芸術の才能', toitsu:'☯️ 統合の才能', en:'🤝 縁の才能' };
+    var _talentDesc = { gakumon:'徳+10%/周', shinko:'業軽減/周', geijutsu:'日誌+1徳/周', toitsu:'全才能+5%/周', en:'交流+1GDP/周' };
+    var _axisDesc = { shin:'なぜ生きるかを問い続ける者', zen:'今日も一歩、黙って積む者', bi:'この命を、美しく使い切る者', sei:'天命を知り、道を歩む者', ko:'交流と影響力で世界を拓く者' };
+
+    // 才能HTML
+    var _talentHtml = '';
+    var _hasTalent = false;
+    Object.keys(_talentNames).forEach(function(k) {
+      if (_talents[k] && _talents[k] > 0) {
+        _hasTalent = true;
+        _talentHtml += '<div style="font-size:0.8em;color:#6366f1;margin-bottom:3px;">'
+          + _talentNames[k] + ' Lv.' + _talents[k]
+          + ' <span style="color:#aaa;font-size:0.9em;">（' + _talentDesc[k] + '）</span></div>';
+      }
+    });
+    if (!_hasTalent) _talentHtml = '<div style="font-size:0.78em;color:#bbb;">（まだなし）</div>';
+
+    // 周回記録HTML
+    var _historyHtml = '';
+    if (_history.length === 0) {
+      _historyHtml = '<div style="font-size:0.78em;color:#bbb;">（初周回中）</div>';
+    } else {
+      _history.forEach(function(h) {
+        var _d = h.completedAt ? h.completedAt.slice(0,10) : '';
+        _historyHtml += '<div style="font-size:0.8em;color:#666;margin-bottom:2px;">'
+          + h.icon + ' ' + h.label + '　' + _d + '　極めた</div>';
+      });
+    }
+
+    _card.style.display = 'block';
+    _card.innerHTML = '<div style="padding:16px;">'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'
+      + '<span style="font-size:1.1em;font-weight:800;color:#333;">' + _cfg.icon + ' ' + _cfg.label + 'の道</span>'
+      + '</div>'
+      + '<div style="font-size:0.78em;color:#888;margin-bottom:10px;">' + (_axisDesc[_axis] || '') + '</div>'
+      // プログレスバー
+      + '<div style="background:#ede9fe;border-radius:6px;height:8px;margin-bottom:6px;overflow:hidden;">'
+      + '<div style="background:linear-gradient(90deg,#6366f1,#8b5cf6);height:100%;width:' + _pct + '%;border-radius:6px;transition:width 0.5s;"></div>'
+      + '</div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:0.75em;color:#aaa;margin-bottom:2px;">'
+      + '<span>王国力 ' + _power.toLocaleString() + '</span><span>' + _pct + '%</span>'
+      + '</div>'
+      + '<div style="font-size:0.75em;color:#6366f1;margin-bottom:12px;">'
+      + (_remain > 0 ? 'あと' + _remain.toLocaleString() + 'で「' + _nextCfg.icon + ' ' + _nextCfg.label + 'の道」が解放' : '✨ カンスト達成！') + '</div>'
+      // 才能
+      + '<div style="font-size:0.75em;font-weight:700;color:#555;margin-bottom:6px;border-top:1px solid #ede9fe;padding-top:10px;">獲得した才能</div>'
+      + _talentHtml
+      // 記録
+      + '<div style="font-size:0.75em;font-weight:700;color:#555;margin:10px 0 6px;border-top:1px solid #ede9fe;padding-top:10px;">旅の記録</div>'
+      + _historyHtml
+      + '</div>';
   })();
 
   // 候カード更新
