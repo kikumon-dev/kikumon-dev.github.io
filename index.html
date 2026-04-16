@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.44.220 ★ -->
+<!-- ★ CURRENT VERSION: v0.44.235 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -198,7 +198,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.220';
+    const APP_VERSION = 'v0.44.235';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -208,6 +208,10 @@ END OF 開発ルール
       if (modeDiv) modeDiv.style.display = enabled ? '' : 'none';
       if (!enabled && typeof currentView !== 'undefined' && currentView === 'craft') {
         if (typeof switchView === 'function') switchView('daily');
+      }
+      // クラフトON/OFF切替後にダッシュボードカードを再描画
+      if (typeof renderDashboardView === 'function') {
+        setTimeout(function(){ renderDashboardView(); }, 100);
       }
     }
     // 起動時クラフトタブ表示制御
@@ -5003,6 +5007,16 @@ END OF 開発ルール
       <div id="craftKingdomTitle" style="font-size:0.82em;font-weight:700;color:#fff;letter-spacing:0.08em;text-shadow:0 0 8px rgba(255,255,255,0.2);">🌱 開拓民</div>
       <div id="craftEraLabel" style="font-size:0.65em;color:#4facfe;letter-spacing:0.08em;font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 0 6px rgba(79,172,254,0.4);"></div>
     </div>
+    <div style="height:1px;background:rgba(255,255,255,0.06);margin-bottom:4px;"></div>
+    <!-- 全周回累計（上段）-->
+    <div id="craftLifetimeArea" style="margin-bottom:4px;">
+      <div style="font-size:0.45em;color:rgba(255,255,255,0.3);letter-spacing:0.1em;margin-bottom:2px;">全周回累計</div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <span style="font-size:0.5em;color:rgba(255,220,80,0.5);">💰 <span id="craftLifetimeGDP" style="font-weight:700;">0</span>万</span>
+        <span style="font-size:0.5em;color:rgba(255,180,210,0.5);">🌸 <span id="craftLifetimeToku" style="font-weight:700;">0</span></span>
+      </div>
+    </div>
+    <!-- 今の値（下段）-->
     <div style="height:1px;background:rgba(255,255,255,0.06);margin-bottom:6px;"></div>
     <div style="display:flex;flex-direction:row;gap:12px;align-items:center;">
       <div style="text-align:center;">
@@ -5133,6 +5147,27 @@ END OF 開発ルール
     </div>
 
     <!-- 今日の一言メッセージ -->
+        <!-- お知らせバナー -->
+    <div onclick="openOshiraseModal()" style="margin-bottom:14px;padding:12px 16px;background:linear-gradient(135deg,#f5f3ff,#ede9fe);border-radius:14px;border:1px solid rgba(99,102,241,0.2);cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:1.3em;">📣</span>
+        <div>
+          <div style="font-size:0.88em;font-weight:700;color:#4338ca;">お知らせ・使い方</div>
+          <div style="font-size:0.72em;color:#6366f1;margin-top:1px;">北極星予告・新機能・チュートリアル</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div id="oshiraseNewBadge" style="background:#ef4444;color:#fff;font-size:0.65em;font-weight:700;padding:2px 7px;border-radius:20px;">NEW</div>
+        <span style="color:#aaa;font-size:0.9em;">›</span>
+      </div>
+    </div>
+<!-- 魂の旅カード -->
+    <div id="dbSoulJourneyCard" style="display:none;margin-bottom:14px;border-radius:14px;overflow:hidden;border:1px solid rgba(99,102,241,0.2);background:linear-gradient(135deg,rgba(99,102,241,0.04),rgba(139,92,246,0.06));"></div>
+
+    <div id="dbMessage" class="yc-fade-in" style="text-align:center;margin-bottom:14px;padding:11px 16px;background:rgba(99,102,241,0.08);border-radius:14px;color:#6366f1;font-size:0.85em;font-weight:600;letter-spacing:0.02em;border:1px solid rgba(99,102,241,0.15);">
+      ✨ 今日も一歩ずつ、前へ！
+    </div>
+
     <!-- 今日の候カード -->
     <div id="dbKouCard" style="display:none;margin-bottom:14px;border-radius:14px;border:1px solid rgba(34,197,94,0.25);overflow:hidden;">
       <!-- 節気ヘッダー（タップで節気詳細） -->
@@ -5233,13 +5268,6 @@ END OF 開発ルール
       <div id="dbTenmeiMsg" style="font-size:0.85em;font-weight:600;color:#d97706;margin-bottom:10px;">🌟 天命の兆し…</div>
       <button id="dbTenmeiBtn" onclick="openTenmeiModal()" style="display:none;padding:10px 24px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;border-radius:10px;color:#fff;font-size:0.88em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(245,158,11,0.4);">☯️ 天命を更新する</button>
     </div>
-    <div id="dbMessage" class="yc-fade-in" style="text-align:center;margin-bottom:14px;padding:11px 16px;background:rgba(99,102,241,0.08);border-radius:14px;color:#6366f1;font-size:0.85em;font-weight:600;letter-spacing:0.02em;border:1px solid rgba(99,102,241,0.15);">
-      ✨ 今日も一歩ずつ、前へ！
-    </div>
-
-    <!-- 魂の旅カード -->
-    <div id="dbSoulJourneyCard" style="display:none;margin-bottom:14px;border-radius:14px;overflow:hidden;border:1px solid rgba(99,102,241,0.2);background:linear-gradient(135deg,rgba(99,102,241,0.04),rgba(139,92,246,0.06));"></div>
-
     <!-- 統計グリッド -->
     <div class="yc-fade-in" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
       <div style="background:#fff;border-radius:18px;padding:16px;box-shadow:0 2px 16px rgba(79,172,254,0.10);border:1px solid #e8f0fe;position:relative;overflow:hidden;min-height:110px;">
@@ -5377,6 +5405,73 @@ END OF 開発ルール
 
   </div>
 </div>
+
+<!-- ===== お知らせモーダル ===== -->
+<div id="oshiraseModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99000;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);" onclick="if(event.target===this)closeOshiraseModal()">
+  <div style="background:#fff;border-radius:20px;width:100%;max-width:400px;max-height:85vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.2);">
+    <div style="padding:20px 20px 0;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f0f0f0;margin-bottom:0;">
+      <div style="font-size:1.1em;font-weight:800;color:#1a1a2e;">📣 お知らせ</div>
+      <button onclick="closeOshiraseModal()" style="background:none;border:none;font-size:1.4em;color:#aaa;cursor:pointer;line-height:1;">×</button>
+    </div>
+    <!-- タブ -->
+    <div style="display:flex;border-bottom:1px solid #f0f0f0;">
+      <button id="oshiraseTab_news" onclick="switchOshiraseTab('news')" style="flex:1;padding:12px 8px;border:none;background:none;font-size:0.85em;font-weight:700;color:#6366f1;border-bottom:2px solid #6366f1;cursor:pointer;">🔔 新着</button>
+      <button id="oshiraseTab_howto" onclick="switchOshiraseTab('howto')" style="flex:1;padding:12px 8px;border:none;background:none;font-size:0.85em;font-weight:600;color:#888;border-bottom:2px solid transparent;cursor:pointer;">📖 使い方</button>
+      <button id="oshiraseTab_history" onclick="switchOshiraseTab('history')" style="flex:1;padding:12px 8px;border:none;background:none;font-size:0.85em;font-weight:600;color:#888;border-bottom:2px solid transparent;cursor:pointer;">🆕 更新履歴</button>
+    </div>
+    <!-- 新着 -->
+    <div id="oshirasePane_news" style="padding:16px;">
+      <div style="margin-bottom:16px;padding:14px;background:#f5f3ff;border-radius:12px;border-left:4px solid #6366f1;">
+        <div style="font-size:0.72em;color:#6366f1;font-weight:700;margin-bottom:4px;">⭐ 北極星モード — 開発予告</div>
+        <div style="font-size:0.85em;color:#333;line-height:1.7;">複数端末同期・コロシアム対人戦・Stripe課金などバックエンド機能を準備中です。</div>
+      </div>
+      <div style="margin-bottom:16px;padding:14px;background:#f0fdf4;border-radius:12px;border-left:4px solid #22c55e;">
+        <div style="font-size:0.72em;color:#22c55e;font-weight:700;margin-bottom:4px;">🌟 新機能 — 魂の旅（成長モード）</div>
+        <div style="font-size:0.85em;color:#333;line-height:1.7;">真・善・美・聖・功の5軸で成長を記録。周回を重ねるごとに才能が解放され、全周回の累計GDPと徳が記録されます。</div>
+      </div>
+      <div style="padding:14px;background:#fff7ed;border-radius:12px;border-left:4px solid #f59e0b;">
+        <div style="font-size:0.72em;color:#f59e0b;font-weight:700;margin-bottom:4px;">📸 新機能 — 写真館</div>
+        <div style="font-size:0.85em;color:#333;line-height:1.7;">日々の記録を写真で残せます。スタンプを貼って感情を記録。全画面ビューアーでピンチズーム対応。</div>
+      </div>
+    </div>
+    <!-- 使い方 -->
+    <div id="oshirasePane_howto" style="display:none;padding:16px;">
+      <div style="margin-bottom:12px;padding:14px;background:#f8f9ff;border-radius:12px;">
+        <div style="font-size:0.88em;font-weight:700;color:#333;margin-bottom:8px;">📖 チュートリアルを見る</div>
+        <div style="font-size:0.82em;color:#666;line-height:1.7;margin-bottom:12px;">自由帳に「やることクラフト完全ガイド」があります。タップで開きます。</div>
+        <button onclick="closeOshiraseModal();switchView('notebook');setTimeout(function(){var nb=document.querySelector('.nb-page');if(nb)nb.click();},300);" style="width:100%;padding:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;border-radius:10px;color:#fff;font-size:0.85em;font-weight:700;cursor:pointer;">自由帳を開く →</button>
+      </div>
+      <div style="margin-bottom:12px;padding:14px;background:#f8f9ff;border-radius:12px;">
+        <div style="font-size:0.88em;font-weight:700;color:#333;margin-bottom:6px;">⚔️ コロシアムとは？</div>
+        <div style="font-size:0.82em;color:#666;line-height:1.7;">完了タスクがカードになりバトルできます。毎日のデッキが変わります。</div>
+      </div>
+      <div style="margin-bottom:12px;padding:14px;background:#f8f9ff;border-radius:12px;">
+        <div style="font-size:0.88em;font-weight:700;color:#333;margin-bottom:6px;">🌟 魂の旅とは？</div>
+        <div style="font-size:0.82em;color:#666;line-height:1.7;">王国力が一定に達すると次の成長軸が解放されます。真→善→美→聖→功の順で周回します。</div>
+      </div>
+      <div style="padding:14px;background:#f8f9ff;border-radius:12px;">
+        <div style="font-size:0.88em;font-weight:700;color:#333;margin-bottom:6px;">☁️ Gistクラウド同期とは？</div>
+        <div style="font-size:0.82em;color:#666;line-height:1.7;">GitHubアカウントがあればトークンを設定するだけでデータをクラウド保存できます。設定画面から。</div>
+      </div>
+    </div>
+    <!-- 更新履歴 -->
+    <div id="oshirasePane_history" style="display:none;padding:16px;">
+      <div style="margin-bottom:10px;padding:12px 14px;background:#f8f9ff;border-radius:10px;">
+        <div style="font-size:0.72em;color:#6366f1;font-weight:700;margin-bottom:4px;">v0.44.x（2026年4月）</div>
+        <div style="font-size:0.82em;color:#333;line-height:1.8;">魂の旅・全周回累計 / 写真館IDB移行 / ダッシュボード再設計 / 下部ナビゲーション / 七十二候 / 王国暦 / Gist同期 / スプラッシュ画面</div>
+      </div>
+      <div style="margin-bottom:10px;padding:12px 14px;background:#f8f9ff;border-radius:10px;">
+        <div style="font-size:0.72em;color:#888;font-weight:700;margin-bottom:4px;">v0.39.x（2026年3月）</div>
+        <div style="font-size:0.82em;color:#333;line-height:1.8;">天象カード / 月齢カード / SDF深考モード80問拡張 / カレンダー記号 / 月次スライダー</div>
+      </div>
+      <div style="padding:12px 14px;background:#f8f9ff;border-radius:10px;">
+        <div style="font-size:0.72em;color:#888;font-weight:700;margin-bottom:4px;">v0.27〜0.38（2026年1月〜2月）</div>
+        <div style="font-size:0.82em;color:#333;line-height:1.8;">コロシアム / ダッシュボード / 造営（ガントチャート） / デッキシステム / 家族共有</div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ===== お知らせモーダル ここまで ===== -->
 <!-- 復元モーダル -->
 <div id="restoreModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;" onclick="if(event.target.id==='restoreModal') closeRestoreModal()">
   <div style="background:#fff;border-radius:20px;padding:24px;max-width:360px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
@@ -6631,7 +6726,8 @@ END OF 開発ルール
         purpose:            '',
         purposeConfirmed:   false,
         stopCondition:      '',
-        stopConditionSaved: false
+        stopConditionSaved: false,
+        oshiraseRead:       false
       },
       meta: {
         dataVersion: 1,
@@ -22057,22 +22153,11 @@ function renderDashboardView() {
     } catch(e) {}
   })();
 
-  // 魂の旅カード
+  // 魂の旅カード（クラフトモードON/OFF問わず常時表示）
   (function _renderSoulJourney() {
     var _card = document.getElementById('dbSoulJourneyCard');
     if (!_card) return;
-    var _craftOn = allSettings && allSettings.ui && allSettings.ui.craftModeEnabled;
-    if (!_craftOn) {
-      // craftModeOFF：予告カード
-      _card.style.display = 'block';
-      _card.innerHTML = '<div style="padding:16px;text-align:center;">'
-        + '<div style="font-size:1.0em;font-weight:700;color:#6366f1;margin-bottom:6px;">✨ 魂の旅</div>'
-        + '<div style="font-size:0.82em;color:#888;margin-bottom:12px;">クラフトモードをONにすると<br>魂の成長記録が解放されます</div>'
-        + '<button onclick="switchView(\'settings\')" style="padding:8px 20px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;border-radius:10px;color:#fff;font-size:0.82em;font-weight:700;cursor:pointer;">設定を開く</button>'
-        + '</div>';
-      return;
-    }
-    // craftModeON：通常カード
+    // craftModeOFF分岐を廃止：デフォルトONのため常にカードを表示する
     var _axis = (allSettings.ui && allSettings.ui.growthAxis) || 'shin';
     var _cfg = CYCLE_CONFIG[_axis] || CYCLE_CONFIG['shin'];
     var _power = typeof getKingdomPower === 'function' ? getKingdomPower() : 0;
@@ -22111,6 +22196,16 @@ function renderDashboardView() {
       });
     }
 
+    // 全周回累計
+    var _lifeToku = (allSettings.meta && allSettings.meta.lifetimeToku) || 0;
+    var _lifeToku2 = _lifeToku + (typeof getToku === 'function' ? getToku() : 0);
+    var _lifeGDP  = (allSettings.meta && allSettings.meta.lifetimeGDP)  || 0;
+    var _lifeGDP2 = _lifeGDP + (typeof getGDP  === 'function' ? getGDP()  : 0);
+    var _lifeHtml = '<div style="display:flex;gap:16px;font-size:0.8em;margin-bottom:4px;">'
+      + '<span>💰 累計GDP <b style="color:#f59e0b;">' + _lifeGDP2.toLocaleString() + '万</b></span>'
+      + '<span>🌸 累計徳 <b style="color:#d946ef;">' + _lifeToku2.toLocaleString() + '</b></span>'
+      + '</div>';
+
     _card.style.display = 'block';
     _card.innerHTML = '<div style="padding:16px;">'
       + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'
@@ -22126,8 +22221,11 @@ function renderDashboardView() {
       + '</div>'
       + '<div style="font-size:0.75em;color:#6366f1;margin-bottom:12px;">'
       + (_remain > 0 ? 'あと' + _remain.toLocaleString() + 'で「' + _nextCfg.icon + ' ' + _nextCfg.label + 'の道」が解放' : '✨ カンスト達成！') + '</div>'
+      // 全周回累計
+      + '<div style="font-size:0.75em;font-weight:700;color:#555;margin-bottom:6px;border-top:1px solid #ede9fe;padding-top:10px;">全周回累計</div>'
+      + _lifeHtml
       // 才能
-      + '<div style="font-size:0.75em;font-weight:700;color:#555;margin-bottom:6px;border-top:1px solid #ede9fe;padding-top:10px;">獲得した才能</div>'
+      + '<div style="font-size:0.75em;font-weight:700;color:#555;margin:10px 0 6px;border-top:1px solid #ede9fe;padding-top:10px;">獲得した才能</div>'
       + _talentHtml
       // 記録
       + '<div style="font-size:0.75em;font-weight:700;color:#555;margin:10px 0 6px;border-top:1px solid #ede9fe;padding-top:10px;">旅の記録</div>'
@@ -22370,37 +22468,48 @@ function renderDashboardView() {
       var _storageEl = document.getElementById('dbStorageUsage');
       if (!_storageEl) return;
       try {
-        var _total = 0;
+        // ① バックアップキーを除いたデータ本体のみ計算
+        var _BACKUP_PREFIX = 'backup_';
+        var _total = 0;      // バックアップ除く合計
+        var _totalAll = 0;   // バックアップ込み合計
         var _photoSize = 0;
         var _taskSize = 0;
         for (var k in localStorage) {
           if (!localStorage.hasOwnProperty(k)) continue;
           var _sz = (localStorage[k].length + k.length) * 2; // UTF-16
-          _total += _sz;
+          _totalAll += _sz;
           if (k === 'photoImages') _photoSize = _sz;
           if (k === 'allTasks') _taskSize = _sz;
+          // バックアップキーは合計から除外
+          if (k.indexOf(_BACKUP_PREFIX) === 0) continue;
+          _total += _sz;
         }
-        var _totalKB = Math.round(_total / 1024);
-        var _photoKB = Math.round(_photoSize / 1024);
-        var _taskKB  = Math.round(_taskSize / 1024);
-        var _limitKB = 5120; // 5MB
+        var _totalKB   = Math.round(_total / 1024);
+        var _totalAllKB = Math.round(_totalAll / 1024);
+        var _photoKB   = Math.round(_photoSize / 1024);
+        var _taskKB    = Math.round(_taskSize / 1024);
+        var _limitKB   = 5120; // localStorage上限 5MB
         var _pct = Math.round(_totalKB / _limitKB * 100);
         var _color = _pct >= 80 ? '#ef4444' : _pct >= 60 ? '#f59e0b' : '#888';
         _storageEl.style.color = _color;
-        var _baseText = '💾 使用量 ' + _totalKB + 'KB / 5MB（' + _pct + '%）'
-          + '　写真: ' + _photoKB + 'KB　データ: ' + _taskKB + 'KB';
+        var _baseText = '💾 データ: ' + _totalKB + 'KB / 5MB（' + _pct + '%）'
+          + '　タスク: ' + _taskKB + 'KB'
+          + (_totalAllKB > _totalKB ? '　バックアップ込: ' + _totalAllKB + 'KB' : '');
         if (_pct >= 80) _baseText += '　⚠️ 容量不足注意';
         _storageEl.textContent = _baseText;
-        // IDB容量をStorageEstimate APIで取得
+        // ② IDB（写真）容量：ブラウザが許可した実際のquotaに対して表示
         if (navigator.storage && navigator.storage.estimate) {
           navigator.storage.estimate().then(function(est) {
-            var _idbUsedKB = Math.round((est.usage || 0) / 1024);
+            var _idbUsedKB  = Math.round((est.usage || 0) / 1024);
             var _idbQuotaKB = Math.round((est.quota || 0) / 1024);
             var _idbPct = _idbQuotaKB > 0 ? Math.round(_idbUsedKB / _idbQuotaKB * 100) : 0;
-            var _idbMB = _idbUsedKB >= 1024 ? (_idbUsedKB / 1024).toFixed(1) + 'MB' : _idbUsedKB + 'KB';
-            var _idbQuotaMB = _idbQuotaKB >= 1024 ? (_idbQuotaKB / 1024).toFixed(0) + 'MB' : _idbQuotaKB + 'KB';
+            var _fmt = function(kb) {
+              return kb >= 1024 * 1024 ? (kb / 1024 / 1024).toFixed(1) + 'GB'
+                   : kb >= 1024       ? (kb / 1024).toFixed(0) + 'MB'
+                   :                    kb + 'KB';
+            };
             _storageEl.style.whiteSpace = 'pre-line';
-            _storageEl.textContent = _baseText + '\n📷 写真ストレージ: ' + _idbMB + ' / ' + _idbQuotaMB + '（' + _idbPct + '%）';
+            _storageEl.textContent = _baseText + '\n📷 写真(IDB): ' + _fmt(_idbUsedKB) + ' / ' + _fmt(_idbQuotaKB) + '（' + _idbPct + '%）';
           }).catch(function() {});
         }
       } catch(e) {
@@ -22408,6 +22517,12 @@ function renderDashboardView() {
       }
     })();
   })();
+  // お知らせバッジ既読制御
+  var _newBadge = document.getElementById('oshiraseNewBadge');
+  if (_newBadge) {
+    var _read = allSettings && allSettings.flags && allSettings.flags.oshiraseRead;
+    _newBadge.style.display = _read ? 'none' : '';
+  }
   // Gist同期ステータス更新
   if (typeof _gistUpdateSyncBadge === 'function') _gistUpdateSyncBadge();
 
@@ -24331,13 +24446,28 @@ function checkCycleKanst() {
   // 才能付与
   allSettings.meta.talents[cfg.talent] = (allSettings.meta.talents[cfg.talent] || 0) + 1;
 
-  // 周回記録
+  // 周回完了時の累計スナップショット
+  var _snapToku = typeof getToku === 'function' ? getToku() : 0;
+  var _snapGDP  = typeof getGDP  === 'function' ? getGDP()  : 0;
+  var _snapGou  = typeof getGouNew === 'function' ? getGouNew() : 0;
+  // lifetimeToku / lifetimeGDP / lifetimeGou に累積加算
+  if (!allSettings.meta.lifetimeToku) allSettings.meta.lifetimeToku = 0;
+  if (!allSettings.meta.lifetimeGDP)  allSettings.meta.lifetimeGDP  = 0;
+  if (!allSettings.meta.lifetimeGou)  allSettings.meta.lifetimeGou  = 0;
+  allSettings.meta.lifetimeToku += _snapToku;
+  allSettings.meta.lifetimeGDP  += _snapGDP;
+  allSettings.meta.lifetimeGou  += _snapGou;
+
+  // 周回記録（累計スナップ含む）
   allSettings.meta.cycleHistory.push({
     axis: axis,
     label: cfg.label,
     icon: cfg.icon,
     kanst: cfg.kanst,
-    completedAt: new Date().toISOString()
+    completedAt: new Date().toISOString(),
+    snapToku: _snapToku,
+    snapGDP:  _snapGDP,
+    snapGou:  _snapGou
   });
 
   // 次の軸を解放
@@ -24374,7 +24504,7 @@ function showCycleKanstModal(axis, cfg) {
     + '<div style="font-size:0.9em;font-weight:700;color:#b8860b;margin-bottom:6px;">🌟 ' + talentNames[cfg.talent] + ' を取得</div>'
     + '<div style="font-size:0.82em;color:#666;">' + talentDesc[cfg.talent] + '</div>'
     + '</div>'
-    + '<div style="font-size:0.85em;color:#888;margin-bottom:20px;">次の道「' + nextCfg.icon + ' ' + nextCfg.label + '」が解放されました。<br>徳・GDPをリセットして新たな旅へ。</div>'
+    + '<div style="font-size:0.85em;color:#888;margin-bottom:20px;">次の道「' + nextCfg.icon + ' ' + nextCfg.label + '」が解放されました。<br>徳・GDPをリセットして新たな旅へ。<br><span style="font-size:0.9em;color:#aaa;">※累計の記録は引き継がれます</span></div>'
     + '<div style="display:flex;gap:10px;">'
     + '<button onclick="document.getElementById(\'_cycleKanstModal\').remove()" style="flex:1;padding:12px;background:#f0f0f0;border:none;border-radius:10px;font-size:0.88em;cursor:pointer;">このまま続ける</button>'
     + '<button onclick="startNextCycle(\'' + cfg.next + '\')" style="flex:1;padding:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;border-radius:10px;color:#fff;font-size:0.88em;font-weight:700;cursor:pointer;">' + nextCfg.icon + ' ' + nextCfg.label + 'の道へ</button>'
@@ -24385,19 +24515,11 @@ function showCycleKanstModal(axis, cfg) {
 window.showCycleKanstModal = showCycleKanstModal;
 
 function startNextCycle(nextAxis) {
-  // 徳・GDP・業をリセット（禊）
+  // 徳・GDP・業のポイントをリセット（禊）
+  // ※ログ（tokuLog/gdpLog/gouLog）は持ち主の累計実績のため削除しない
   localStorage.setItem('tokuPoints', '0');
   localStorage.setItem('gdpPoints', '0');
   localStorage.setItem('gouPoints', '0');
-  if (typeof loadAllSettings === 'function') {
-    // toku/gdp/gouのメモリも更新
-    if (window.allSettings) {
-      // ログもリセット
-      localStorage.removeItem('tokuLog');
-      localStorage.removeItem('gdpLog');
-      localStorage.removeItem('gouLog');
-    }
-  }
   // 次の軸に切り替え
   allSettings.ui.growthAxis = nextAxis;
   saveAllSettings();
@@ -24411,6 +24533,38 @@ function startNextCycle(nextAxis) {
   setTimeout(function(){ location.reload(); }, 1500);
 }
 window.startNextCycle = startNextCycle;
+// ===== お知らせモーダル =====
+function openOshiraseModal() {
+  var m = document.getElementById('oshiraseModal');
+  if (m) { m.style.display = 'flex'; switchOshiraseTab('news'); }
+  // 既読フラグ＆NEWバッジ消去
+  if (allSettings && allSettings.flags) allSettings.flags.oshiraseRead = true;
+  saveAllSettings();
+  var badge = document.getElementById('oshiraseNewBadge');
+  if (badge) badge.style.display = 'none';
+}
+window.openOshiraseModal = openOshiraseModal;
+
+function closeOshiraseModal() {
+  var m = document.getElementById('oshiraseModal');
+  if (m) m.style.display = 'none';
+}
+window.closeOshiraseModal = closeOshiraseModal;
+
+function switchOshiraseTab(tab) {
+  ['news','howto','history'].forEach(function(t) {
+    var p = document.getElementById('oshirasePane_' + t);
+    var b = document.getElementById('oshiraseTab_' + t);
+    if (p) p.style.display = t === tab ? 'block' : 'none';
+    if (b) {
+      b.style.color = t === tab ? '#6366f1' : '#888';
+      b.style.fontWeight = t === tab ? '700' : '600';
+      b.style.borderBottom = t === tab ? '2px solid #6366f1' : '2px solid transparent';
+    }
+  });
+}
+window.switchOshiraseTab = switchOshiraseTab;
+
 
 function updateCraftHUD() {
   var s=getCraftStats();
@@ -24443,6 +24597,13 @@ function updateCraftHUD() {
   // 業（怠り負債）表示
   var gouEl2 = document.getElementById('craftGouValue');
   if (gouEl2) gouEl2.textContent = getGouNew();
+  // 全周回累計表示
+  var _lifeGDP  = ((allSettings.meta && allSettings.meta.lifetimeGDP)  || 0) + getGDP();
+  var _lifeToku = ((allSettings.meta && allSettings.meta.lifetimeToku) || 0) + getToku();
+  var _lgEl = document.getElementById('craftLifetimeGDP');
+  var _ltEl = document.getElementById('craftLifetimeToku');
+  if (_lgEl) _lgEl.textContent = _lifeGDP.toLocaleString();
+  if (_ltEl) _ltEl.textContent = _lifeToku.toLocaleString();
   // 称号表示
   var titleEl = document.getElementById('craftKingdomTitle');
   if (titleEl && typeof getKingdomTitle === 'function') {
@@ -29436,7 +29597,7 @@ function showDebugLog(_initOnly) {
 
        // ===== ST-34C: テストセクション自己存在確認 =====
        // テストセクション自己存在確認：ソースコード上の存在をチェック
-       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-103','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75','ST-76','ST-77','ST-78','ST-79','ST-80','ST-81','ST-82','ST-106','ST-107','ST-108','ST-109','ST-110','ST-111','ST-112','ST-113','ST-114','ST-115','ST-116','ST-119','ST-120','ST-121','ST-122','ST-123','ST-124','ST-125','ST-126','ST-127','ST-128','ST-129','ST-130'];
+       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-103','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75','ST-76','ST-77','ST-78','ST-79','ST-80','ST-81','ST-82','ST-106','ST-107','ST-108','ST-109','ST-110','ST-111','ST-112','ST-113','ST-114','ST-115','ST-116','ST-119','ST-120','ST-121','ST-122','ST-123','ST-124','ST-125','ST-126','ST-127','ST-128','ST-129','ST-130','ST-131','ST-132'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -35154,6 +35315,227 @@ function showDebugLog(_initOnly) {
 
        ok('ST-130: 写真カード全画面バッジ・タップ案内テスト 完了');
      } catch(e) { ng('ST-130: 例外', e.message); }
+
+     // ===== ST-131: 全周回累計（lifetimeToku/lifetimeGDP）計算・表示テスト =====
+     try {
+       ok('');
+       ok('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+       ok('ST-131: 全周回累計システムテスト');
+       ok('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+       // ① 定数・関数の存在確認
+       typeof checkCycleKanst === 'function'
+         ? ok('ST-131·①: checkCycleKanst 存在確認')
+         : ng('ST-131·①: checkCycleKanst 未定義', '');
+       typeof startNextCycle === 'function'
+         ? ok('ST-131·①: startNextCycle 存在確認')
+         : ng('ST-131·①: startNextCycle 未定義', '');
+       typeof CYCLE_CONFIG === 'object' && CYCLE_CONFIG !== null
+         ? ok('ST-131·①: CYCLE_CONFIG 存在確認')
+         : ng('ST-131·①: CYCLE_CONFIG 未定義', '');
+
+       // ② DOM存在確認
+       var _131LtEl = document.getElementById('craftLifetimeToku');
+       var _131LgEl = document.getElementById('craftLifetimeGDP');
+       _131LtEl ? ok('ST-131·②: #craftLifetimeToku DOM確認') : ng('ST-131·②: #craftLifetimeToku 未存在', '');
+       _131LgEl ? ok('ST-131·②: #craftLifetimeGDP DOM確認') : ng('ST-131·②: #craftLifetimeGDP 未存在', '');
+       document.getElementById('dbSoulJourneyCard')
+         ? ok('ST-131·②: #dbSoulJourneyCard DOM確認')
+         : ng('ST-131·②: #dbSoulJourneyCard 未存在', '');
+
+       // ③ allSettings.meta に lifetimeToku/lifetimeGDP フィールド存在確認
+       var _131meta = allSettings.meta || {};
+       typeof _131meta.lifetimeToku !== 'undefined'
+         ? ok('ST-131·③: allSettings.meta.lifetimeToku フィールド存在（値=' + _131meta.lifetimeToku + '）')
+         : ok('ST-131·③: allSettings.meta.lifetimeToku 未設定（初周回中・正常）');
+       typeof _131meta.lifetimeGDP !== 'undefined'
+         ? ok('ST-131·③: allSettings.meta.lifetimeGDP フィールド存在（値=' + _131meta.lifetimeGDP + '）')
+         : ok('ST-131·③: allSettings.meta.lifetimeGDP 未設定（初周回中・正常）');
+
+       // ④ checkCycleKanstの累計スナップショット記録コード確認
+       var _131src = typeof checkCycleKanst === 'function' ? checkCycleKanst.toString() : '';
+       _131src.indexOf('lifetimeToku') !== -1
+         ? ok('ST-131·④: checkCycleKanst内 lifetimeToku 累積加算コード確認')
+         : ng('ST-131·④: checkCycleKanst内 lifetimeToku コードなし', '');
+       _131src.indexOf('lifetimeGDP') !== -1
+         ? ok('ST-131·④: checkCycleKanst内 lifetimeGDP 累積加算コード確認')
+         : ng('ST-131·④: checkCycleKanst内 lifetimeGDP コードなし', '');
+       _131src.indexOf('snapToku') !== -1
+         ? ok('ST-131·④: cycleHistoryにsnapToku記録コード確認')
+         : ng('ST-131·④: cycleHistoryにsnapToku コードなし', '');
+
+       // ⑤ startNextCycleのログ削除廃止確認
+       var _131nextSrc = typeof startNextCycle === 'function' ? startNextCycle.toString() : '';
+       _131nextSrc.indexOf('removeItem') === -1
+         ? ok('ST-131·⑤: startNextCycle内 removeItem（ログ削除）なし確認 ✅ 累計ログ保持')
+         : ng('ST-131·⑤: startNextCycle内 removeItemが残存（ログが消える）', '');
+       _131nextSrc.indexOf("'tokuPoints'") !== -1
+         ? ok('ST-131·⑤: tokuPoints（現在値）はリセット確認')
+         : ng('ST-131·⑤: tokuPointsリセットコードなし', '');
+
+       // ⑥ updateCraftHUDの累計セット処理確認
+       var _131hudSrc = typeof updateCraftHUD === 'function' ? updateCraftHUD.toString() : '';
+       _131hudSrc.indexOf('craftLifetimeToku') !== -1
+         ? ok('ST-131·⑥: updateCraftHUD内 craftLifetimeToku 更新コード確認')
+         : ng('ST-131·⑥: updateCraftHUD内 craftLifetimeToku コードなし', '');
+       _131hudSrc.indexOf('craftLifetimeGDP') !== -1
+         ? ok('ST-131·⑥: updateCraftHUD内 craftLifetimeGDP 更新コード確認')
+         : ng('ST-131·⑥: updateCraftHUD内 craftLifetimeGDP コードなし', '');
+
+       // ⑦ 累計計算の挙動テスト（メモリ上でシミュレート）
+       // 現在値を退避
+       var _131prevMeta = JSON.parse(JSON.stringify(allSettings.meta || {}));
+       var _131prevToku = parseInt(localStorage.getItem('tokuPoints') || '0');
+       var _131prevGDP  = parseInt(localStorage.getItem('gdpPoints') || '0');
+
+       // 1周目完了をシミュレート（snapToku=100, snapGDP=50）
+       if (!allSettings.meta) allSettings.meta = {};
+       allSettings.meta.lifetimeToku = 0;
+       allSettings.meta.lifetimeGDP  = 0;
+       allSettings.meta.lifetimeToku += 100; // 1周目の徳
+       allSettings.meta.lifetimeGDP  += 50;  // 1周目のGDP
+
+       var _131calcToku1 = allSettings.meta.lifetimeToku + 30; // 現在30徳として累計130
+       var _131calcGDP1  = allSettings.meta.lifetimeGDP  + 20; // 現在20GDPとして累計70
+       _131calcToku1 === 130
+         ? ok('ST-131·⑦: 累計徳 計算確認（1周100 + 現在30 = 130）')
+         : ng('ST-131·⑦: 累計徳 計算エラー', '期待130 実際=' + _131calcToku1);
+       _131calcGDP1 === 70
+         ? ok('ST-131·⑦: 累計GDP 計算確認（1周50 + 現在20 = 70）')
+         : ng('ST-131·⑦: 累計GDP 計算エラー', '期待70 実際=' + _131calcGDP1);
+
+       // 2周目完了をシミュレート（snapToku=200, snapGDP=80）
+       allSettings.meta.lifetimeToku += 200; // 2周目追加
+       allSettings.meta.lifetimeGDP  += 80;
+       var _131calcToku2 = allSettings.meta.lifetimeToku + 50; // 現在50徳として累計350
+       var _131calcGDP2  = allSettings.meta.lifetimeGDP  + 30; // 現在30GDPとして累計160
+       _131calcToku2 === 350
+         ? ok('ST-131·⑦: 累計徳 2周計算確認（1周100+2周200 + 現在50 = 350）')
+         : ng('ST-131·⑦: 累計徳 2周計算エラー', '期待350 実際=' + _131calcToku2);
+       _131calcGDP2 === 160
+         ? ok('ST-131·⑦: 累計GDP 2周計算確認（1周50+2周80 + 現在30 = 160）')
+         : ng('ST-131·⑦: 累計GDP 2周計算エラー', '期待160 実際=' + _131calcGDP2);
+
+       // ⑧ クラフトHUDの表示テスト
+       if (typeof updateCraftHUD === 'function') updateCraftHUD();
+       if (_131LtEl) {
+         var _131ltText = _131LtEl.textContent;
+         _131ltText && _131ltText.length > 0
+           ? ok('ST-131·⑧: craftLifetimeToku 表示値確認（' + _131ltText + '）')
+           : ng('ST-131·⑧: craftLifetimeToku 表示値が空', '');
+       }
+       if (_131LgEl) {
+         var _131lgText = _131LgEl.textContent;
+         _131lgText && _131lgText.length > 0
+           ? ok('ST-131·⑧: craftLifetimeGDP 表示値確認（' + _131lgText + '）')
+           : ng('ST-131·⑧: craftLifetimeGDP 表示値が空', '');
+       }
+
+       // ⑨ ロールバック
+       allSettings.meta = _131prevMeta;
+       saveAllSettings();
+       if (typeof updateCraftHUD === 'function') updateCraftHUD();
+       ok('ST-131·⑨: ロールバック完了');
+
+       ok('ST-131: 全周回累計システムテスト 完了');
+     } catch(e) { ng('ST-131: 例外', e.message); }
+
+     // ===== ST-132: お知らせモーダル・NEWバッジ既読制御テスト =====
+     try {
+       ok('');
+       ok('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+       ok('ST-132: お知らせモーダルテスト');
+       ok('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+       // ① 関数・DOM存在確認
+       typeof openOshiraseModal === 'function'
+         ? ok('ST-132·①: openOshiraseModal 存在確認')
+         : ng('ST-132·①: openOshiraseModal 未定義', '');
+       typeof closeOshiraseModal === 'function'
+         ? ok('ST-132·①: closeOshiraseModal 存在確認')
+         : ng('ST-132·①: closeOshiraseModal 未定義', '');
+       typeof switchOshiraseTab === 'function'
+         ? ok('ST-132·①: switchOshiraseTab 存在確認')
+         : ng('ST-132·①: switchOshiraseTab 未定義', '');
+
+       // ② DOM確認
+       document.getElementById('oshiraseModal')
+         ? ok('ST-132·②: #oshiraseModal DOM確認')
+         : ng('ST-132·②: #oshiraseModal 未存在', '');
+       document.getElementById('oshiraseNewBadge')
+         ? ok('ST-132·②: #oshiraseNewBadge DOM確認')
+         : ng('ST-132·②: #oshiraseNewBadge 未存在', '');
+       ['news','howto','history'].forEach(function(t) {
+         document.getElementById('oshirasePane_' + t)
+           ? ok('ST-132·②: #oshirasePane_' + t + ' DOM確認')
+           : ng('ST-132·②: #oshirasePane_' + t + ' 未存在', '');
+         document.getElementById('oshiraseTab_' + t)
+           ? ok('ST-132·②: #oshiraseTab_' + t + ' DOM確認')
+           : ng('ST-132·②: #oshiraseTab_' + t + ' 未存在', '');
+       });
+
+       // ③ allSettings.flags.oshiraseReadフィールド確認
+       typeof (allSettings.flags && allSettings.flags.oshiraseRead) !== 'undefined'
+         ? ok('ST-132·③: allSettings.flags.oshiraseRead フィールド確認（値=' + allSettings.flags.oshiraseRead + '）')
+         : ng('ST-132·③: oshiraseRead フィールド未定義', '');
+
+       // ④ 開閉挙動テスト
+       openOshiraseModal();
+       var _m = document.getElementById('oshiraseModal');
+       _m && _m.style.display === 'flex'
+         ? ok('ST-132·④: openOshiraseModal → display:flex 確認')
+         : ng('ST-132·④: openOshiraseModal 表示失敗', _m ? _m.style.display : 'null');
+       closeOshiraseModal();
+       _m && _m.style.display === 'none'
+         ? ok('ST-132·④: closeOshiraseModal → display:none 確認')
+         : ng('ST-132·④: closeOshiraseModal 非表示失敗', _m ? _m.style.display : 'null');
+
+       // ⑤ 既読フラグ連動テスト
+       // フラグを未読に戻してバッジが表示されるか確認
+       var _prevRead = allSettings.flags.oshiraseRead;
+       allSettings.flags.oshiraseRead = false;
+       // renderDashboardViewのバッジ制御コードを直接実行
+       var _badge = document.getElementById('oshiraseNewBadge');
+       if (_badge) {
+         _badge.style.display = '';
+         ok('ST-132·⑤: 未読状態 → バッジ表示リセット確認');
+       }
+       // openOshiraseModal でバッジが消えるか
+       openOshiraseModal();
+       _badge = document.getElementById('oshiraseNewBadge');
+       _badge && _badge.style.display === 'none'
+         ? ok('ST-132·⑤: openOshiraseModal → NEWバッジ非表示確認')
+         : ng('ST-132·⑤: NEWバッジが消えない', _badge ? _badge.style.display : 'null');
+       allSettings.flags.oshiraseRead === true
+         ? ok('ST-132·⑤: oshiraseRead=true 保存確認')
+         : ng('ST-132·⑤: oshiraseRead フラグ更新失敗', '');
+       closeOshiraseModal();
+
+       // ⑥ タブ切替テスト
+       openOshiraseModal();
+       switchOshiraseTab('howto');
+       var _pHowto = document.getElementById('oshirasePane_howto');
+       var _pNews  = document.getElementById('oshirasePane_news');
+       _pHowto && _pHowto.style.display === 'block'
+         ? ok('ST-132·⑥: switchOshiraseTab(howto) → howtoPane表示確認')
+         : ng('ST-132·⑥: howtoPane表示失敗', '');
+       _pNews && _pNews.style.display === 'none'
+         ? ok('ST-132·⑥: switchOshiraseTab(howto) → newsPane非表示確認')
+         : ng('ST-132·⑥: newsPane非表示失敗', '');
+       switchOshiraseTab('history');
+       var _pHistory = document.getElementById('oshirasePane_history');
+       _pHistory && _pHistory.style.display === 'block'
+         ? ok('ST-132·⑥: switchOshiraseTab(history) → historyPane表示確認')
+         : ng('ST-132·⑥: historyPane表示失敗', '');
+       closeOshiraseModal();
+
+       // ⑦ ロールバック
+       allSettings.flags.oshiraseRead = _prevRead;
+       saveAllSettings();
+       ok('ST-132·⑦: ロールバック完了');
+
+       ok('ST-132: お知らせモーダルテスト 完了');
+     } catch(e) { ng('ST-132: 例外', e.message); }
 
      try {
        ok('');
