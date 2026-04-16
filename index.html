@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.44.218 ★ -->
+<!-- ★ CURRENT VERSION: v0.44.220 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -198,7 +198,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.218';
+    const APP_VERSION = 'v0.44.220';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -5594,8 +5594,8 @@ END OF 開発ルール
         </div>
 
       </div>
-      <div class="settings-section">
-        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">📱 ナビタブ表示</h3>
+      <div class="settings-section" id="settingsNavTabSection">
+        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">🗂️ タブ表示</h3>
         <p style="margin:0 0 12px 0;font-size:0.8em;color:#888;">表示するタブを選択できます。日次・🔍・⚙️は常時表示。</p>
         <div style="display:flex;flex-direction:column;gap:10px;">
           <label style="display:flex;align-items:center;gap:10px;opacity:0.45;">
@@ -12148,10 +12148,14 @@ function applySettingsSectionVisibility() {
   var _km = (typeof KINGDOM_MODES !== 'undefined' && allSettings.ui && allSettings.ui.kingdomMode)
     ? KINGDOM_MODES[allSettings.ui.kingdomMode] : null;
   var _modeKey = (allSettings.ui && allSettings.ui.kingdomMode) || 'kingdom';
-  // カスタムモード時は権限判断にベースモードを使う
+  // カスタム・北極星モード時は権限判断にベースモード／王国を使う
   var _effectiveModeKey = (_modeKey === 'custom')
     ? ((allSettings.ui && allSettings.ui.kingdomModeBase) || 'kingdom')
-    : _modeKey;
+    : (_modeKey === 'polestar' ? 'kingdom' : _modeKey);
+
+  // タブ表示セクション：PC・スマホ問わず常時表示
+  var navTabSection = document.getElementById('settingsNavTabSection');
+  if (navTabSection) navTabSection.style.display = '';
 
   // 造営セクション：王国のみ表示
   var gantSection = document.getElementById('settingsGantSection');
