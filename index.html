@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.44.236 ★ -->
+<!-- ★ CURRENT VERSION: v0.44.239 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -198,7 +198,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.236';
+    const APP_VERSION = 'v0.44.239';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -5617,6 +5617,18 @@ END OF 開発ルール
         <div id="_kingdomCustomLabel" style="display:none;font-size:0.78em;color:#f97316;font-weight:700;margin-top:8px;text-align:center;">⚙️ カスタム中</div>
       </div>
       <!-- 成長軸セクション -->
+      <div class="settings-section" id="reflectionTimeSection">
+        <h3 style="margin:0 0 15px 0;color:#262626;font-size:1.05em;font-weight:600;border-bottom:1px solid #efefef;padding-bottom:12px;">🕐 振り返り時間</h3>
+        <p style="margin:0 0 14px 0;font-size:0.8em;color:#888;">設定した時間を過ぎてアプリを開くと、1日1回振り返りの問いかけが届きます。</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+          <button onclick="setReflectionTime('')" id="reflBtnOff" style="padding:8px 14px;border-radius:10px;border:2px solid #e0e0e0;background:#f8f8f8;font-size:0.85em;cursor:pointer;">OFF</button>
+          <button onclick="setReflectionTime('20:00')" id="reflBtn20" style="padding:8px 14px;border-radius:10px;border:2px solid #e0e0e0;background:#f8f8f8;font-size:0.85em;cursor:pointer;">20:00</button>
+          <button onclick="setReflectionTime('21:00')" id="reflBtn21" style="padding:8px 14px;border-radius:10px;border:2px solid #e0e0e0;background:#f8f8f8;font-size:0.85em;cursor:pointer;">21:00</button>
+          <button onclick="setReflectionTime('22:00')" id="reflBtn22" style="padding:8px 14px;border-radius:10px;border:2px solid #e0e0e0;background:#f8f8f8;font-size:0.85em;cursor:pointer;">22:00</button>
+          <button onclick="setReflectionTime('23:00')" id="reflBtn23" style="padding:8px 14px;border-radius:10px;border:2px solid #e0e0e0;background:#f8f8f8;font-size:0.85em;cursor:pointer;">23:00</button>
+        </div>
+        <div id="reflectionTimeStatus" style="font-size:0.8em;color:#6366f1;font-weight:600;"></div>
+      </div>
       <div class="settings-section" id="growthAxisSection">
         <h3 style="margin:0 0 15px 0;color:#262626;font-size:1.05em;font-weight:600;border-bottom:1px solid #efefef;padding-bottom:12px;">🌟 成長の軸</h3>
         <p style="margin:0 0 14px 0;font-size:0.8em;color:#888;">あなたの王国力は、何によって育つか。</p>
@@ -6727,7 +6739,9 @@ END OF 開発ルール
         purposeConfirmed:   false,
         stopCondition:      '',
         stopConditionSaved: false,
-        oshiraseRead:       false
+        oshiraseRead:       false,
+        reflectionTime:     '',   // 振り返り時間 例:'21:00' 空=OFF
+        reflectionAskedDate:''    // 今日すでに聞いたか
       },
       meta: {
         dataVersion: 1,
@@ -12170,6 +12184,8 @@ function updateKingdomModeButtons() {
   // クラフトモード・造営チェックボックスも同期
   var craftCheck = document.getElementById('craftModeEnabled');
   if (craftCheck) craftCheck.checked = allSettings.ui.craftModeEnabled === true;
+  // 振り返り時間UI初期化
+  if (typeof _updateReflectionTimeUI === 'function') _updateReflectionTimeUI();
   var gantCheck = document.getElementById('gantEnabled');
   if (gantCheck) gantCheck.checked = allSettings.ui.gantEnabled === true;
   var visTabGantCheck = document.getElementById('visTabGant');
@@ -17649,6 +17665,7 @@ function reviveBlueprint(id) {
         if (dbView) dbView.style.display = 'block';
         var navDb = document.getElementById('navDashboard');
         if (navDb) navDb.classList.add('active');
+        if (typeof checkReflectionTime === 'function') checkReflectionTime();
         if (typeof renderDashboardView === 'function') {
           // 初回ロード時にCanvasがレイアウト確定前に描画されるのを防ぐため1フレーム遅延
           requestAnimationFrame(function(){
@@ -24533,6 +24550,133 @@ function startNextCycle(nextAxis) {
   setTimeout(function(){ location.reload(); }, 1500);
 }
 window.startNextCycle = startNextCycle;
+// ===== 振り返り問いかけシステム =====
+var REFLECTION_QUESTIONS = [
+  '今日やったことの中で、なぜそれをしようと思いましたか？',
+  '今日、一番エネルギーを感じた瞬間はいつでしたか？',
+  '今日の発見を一行で書くとしたら？',
+  '明日の自分に一言残すとしたら？',
+  '今日、小さくても「できた」と思えることはありましたか？',
+  'もっと深く調べてみたいと感じたことはありますか？',
+  '今日の自分を一言で表すとしたら？',
+  '明日、一番大切にしたいことは何ですか？'
+];
+
+function setReflectionTime(time) {
+  if (!allSettings.flags) return;
+  allSettings.flags.reflectionTime = time;
+  saveAllSettings();
+  _updateReflectionTimeUI();
+  showToast(time ? '🕐 振り返り時間を ' + time + ' に設定しました' : '振り返り通知をOFFにしました', {duration:2500});
+}
+window.setReflectionTime = setReflectionTime;
+
+function _updateReflectionTimeUI() {
+  var t = (allSettings.flags && allSettings.flags.reflectionTime) || '';
+  var ids = ['Off','20','21','22','23'];
+  var vals = ['','20:00','21:00','22:00','23:00'];
+  ids.forEach(function(id, i) {
+    var btn = document.getElementById('reflBtn' + id);
+    if (!btn) return;
+    var active = vals[i] === t;
+    btn.style.background = active ? '#6366f1' : '#f8f8f8';
+    btn.style.color = active ? '#fff' : '#333';
+    btn.style.borderColor = active ? '#6366f1' : '#e0e0e0';
+    btn.style.fontWeight = active ? '700' : '400';
+  });
+  var statusEl = document.getElementById('reflectionTimeStatus');
+  if (statusEl) statusEl.textContent = t ? '✅ ' + t + ' に届きます' : 'OFFです';
+}
+window._updateReflectionTimeUI = _updateReflectionTimeUI;
+
+function checkReflectionTime() {
+  if (window._isTesting) return;
+  var t = allSettings.flags && allSettings.flags.reflectionTime;
+  if (!t) return;
+  var now = new Date();
+  var hhmm = ('0'+now.getHours()).slice(-2) + ':' + ('0'+now.getMinutes()).slice(-2);
+  if (hhmm < t) return; // まだ時間前
+  // JSTで今日の日付を取得
+  var _jstOffset = 9 * 60;
+  var _jstNow = new Date(now.getTime() + _jstOffset * 60 * 1000);
+  var today = _jstNow.toISOString().slice(0,10);
+  if (allSettings.flags.reflectionAskedDate === today) return; // 今日もう聞いた
+  // 今日分記録
+  allSettings.flags.reflectionAskedDate = today;
+  saveAllSettings();
+  // 問いをランダム選択
+  var _q = REFLECTION_QUESTIONS[Math.floor(Math.random() * REFLECTION_QUESTIONS.length)];
+  _showReflectionToast(_q);
+}
+window.checkReflectionTime = checkReflectionTime;
+
+function _showReflectionToast(question) {
+  // 既存トーストを除去
+  var old = document.getElementById('_reflToast');
+  if (old) old.remove();
+
+  var toast = document.createElement('div');
+  toast.id = '_reflToast';
+  toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:400px;background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(99,102,241,0.18);border:1px solid rgba(99,102,241,0.2);padding:16px;z-index:89000;animation:_reflFadeIn 0.3s ease;';
+  toast.innerHTML = '<div style="font-size:0.72em;color:#6366f1;font-weight:700;margin-bottom:6px;">🌙 今日の振り返り</div>'
+    + '<div style="font-size:0.88em;color:#333;font-weight:600;margin-bottom:10px;line-height:1.5;">' + question + '</div>'
+    + '<div style="display:flex;gap:8px;align-items:center;">'
+    + '<input id="_reflInput" type="text" placeholder="一行でどうぞ..." style="flex:1;padding:8px 12px;border:1px solid #e0e0e0;border-radius:8px;font-size:0.85em;outline:none;">'
+    + '<button onclick="saveReflectionEntry()" style="padding:8px 14px;background:#6366f1;border:none;border-radius:8px;color:#fff;font-size:0.85em;font-weight:700;cursor:pointer;">保存</button>'
+    + '<button onclick="closeReflectionToast()" style="padding:8px 10px;background:#f0f0f0;border:none;border-radius:8px;font-size:0.85em;cursor:pointer;color:#888;">後で</button>'
+    + '</div>';
+
+  // アニメーション
+  var style = document.createElement('style');
+  style.textContent = '@keyframes _reflFadeIn{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}';
+  document.head.appendChild(style);
+  document.body.appendChild(toast);
+
+  // Enterキーで保存
+  setTimeout(function() {
+    var inp = document.getElementById('_reflInput');
+    if (inp) {
+      inp.focus();
+      inp.onkeydown = function(e) {
+        if (e.key === 'Enter' && !e.isComposing) saveReflectionEntry();
+      };
+    }
+  }, 300);
+}
+function closeReflectionToast() {
+  var t = document.getElementById('_reflToast');
+  if (t) t.remove();
+}
+window.closeReflectionToast = closeReflectionToast;
+window._showReflectionToast = _showReflectionToast;
+
+function saveReflectionEntry() {
+  var inp = document.getElementById('_reflInput');
+  var toast = document.getElementById('_reflToast');
+  var qEl = toast && toast.querySelector('div:nth-child(2)');
+  var question = qEl ? qEl.textContent : '振り返り';
+  var answer = inp ? inp.value.trim() : '';
+  if (!answer) { showToast('一言だけでも書いてみてください', {duration:1500}); return; }
+
+  // 日誌に保存
+  var _today = (function(){var d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);})();
+  var entry = {
+    id: generateTaskId(),
+    kind: 'journal',
+    text: '【振り返り】' + question,
+    content: answer,
+    date: _today,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  allTasks.push(entry);
+  saveAllTasks();
+
+  if (toast) toast.remove();
+  showToast('✨ 振り返りを日誌に保存しました', {type:'success', duration:2500});
+}
+window.saveReflectionEntry = saveReflectionEntry;
+
 // ===== お知らせモーダル =====
 function openOshiraseModal() {
   var m = document.getElementById('oshiraseModal');
@@ -35588,7 +35732,7 @@ function showDebugLog(_initOnly) {
        var _st39FlagKeys = ['tutorialSeen','gantTourSeen','journalTourSeen','scratchTourSeen','adminMode','inspectionMode','purpose','purposeConfirmed','stopCondition','stopConditionSaved'];
        var _st39FlagMissing = _st39FlagKeys.filter(function(k){ return !(k in allSettings.flags); });
        // flags許容フィールド（動的追加される既知フラグも含む）
-       var _st39FlagAllowed = _st39FlagKeys.concat(['searchOnboardSeen','nbGouTokuPageAdded','zenOnboardSeen','nbZenPageAdded','nbTitlesPageAdded','nbMatrixIntroPageAdded','oshiraseRead']);
+       var _st39FlagAllowed = _st39FlagKeys.concat(['searchOnboardSeen','nbGouTokuPageAdded','zenOnboardSeen','nbZenPageAdded','nbTitlesPageAdded','nbMatrixIntroPageAdded','oshiraseRead','reflectionTime','reflectionAskedDate']);
        var _st39FlagUnknown = Object.keys(allSettings.flags).filter(function(k){ return _st39FlagAllowed.indexOf(k) === -1; });
        _st39FlagMissing.length === 0
          ? ok('SPAG[·A1·SETTINGS INTEGRITY] allSettings.flags必須フィールド全確認')
