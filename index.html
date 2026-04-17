@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.44.239 ★ -->
+<!-- ★ CURRENT VERSION: v0.44.262 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -198,7 +198,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.239';
+    const APP_VERSION = 'v0.44.262';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -4175,6 +4175,11 @@ END OF 開発ルール
 
     </div>
   </div>
+  <!-- 今日の焦点バナー -->
+  <div id="dailyFocusBanner" style="display:none;margin:0 8px 8px;padding:10px 14px;background:linear-gradient(135deg,#fff9f0,#fffdf5);border-radius:12px;border:1px solid rgba(245,158,11,0.25);cursor:pointer;" onclick="switchView('notebook')">
+    <div style="font-size:0.7em;color:#f59e0b;font-weight:700;margin-bottom:2px;">📋 今日の焦点</div>
+    <div id="dailyFocusText" style="font-size:0.85em;color:#444;font-weight:600;line-height:1.4;"></div>
+  </div>
   <div class="container" style="position:relative;">
     <!-- 左上: 緊急かつ重要 -->
     <div class="section" id="section1">
@@ -5121,7 +5126,7 @@ END OF 開発ルール
   <div style="max-width:520px;margin:0 auto;padding:16px 14px 48px;">
 
     <!-- 王国ヘッダー -->
-    <div class="yc-fade-in" style="text-align:center;margin-bottom:16px;padding:22px 16px 18px;background:#fff;border-radius:24px;box-shadow:0 4px 24px rgba(99,102,241,0.10);border:1px solid rgba(99,102,241,0.08);">
+      <div class="yc-fade-in" style="text-align:center;margin-bottom:16px;padding:22px 16px 18px;background:#fff;border-radius:24px;box-shadow:0 4px 24px rgba(99,102,241,0.10);border:1px solid rgba(99,102,241,0.08);">
       <div style="font-size:0.82em;font-weight:700;color:#a0aec0;letter-spacing:0.18em;margin-bottom:4px;">MY KINGDOM</div>
       <div id="dbKingdomName" style="font-size:1.25em;font-weight:800;color:#1a1a2e;letter-spacing:0.02em;margin-bottom:4px;">王国</div>
       <div id="dbKingdomTitle" style="display:inline-block;font-size:0.92em;font-weight:700;color:#6366f1;background:#f0f0ff;border-radius:20px;padding:3px 14px;margin-bottom:4px;">🌱 開拓民</div>
@@ -5147,7 +5152,107 @@ END OF 開発ルール
     </div>
 
     <!-- 今日の一言メッセージ -->
-        <!-- お知らせバナー -->
+        <!-- 見えてきた行動カード -->
+        <div id="dbMyBehaviorsCard" style="display:none;margin-bottom:10px;padding:14px 16px;background:linear-gradient(135deg,#f0fdf4,#f7fff9);border-radius:14px;border:1px solid rgba(34,197,94,0.2);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div style="font-size:0.88em;font-weight:800;color:#166534;">👁 見えてきた行動</div>
+            <button onclick="openAddMyBehaviorInline()" style="padding:6px 16px;background:#22c55e;border:none;border-radius:10px;color:#fff;font-size:0.82em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(34,197,94,0.3);">＋ 追加</button>
+          </div>
+          <div id="dbMyBehaviorsList" style="margin-bottom:8px;"></div>
+          <div id="dbMyBehaviorsEmpty" style="font-size:0.82em;color:#bbb;display:none;padding:8px 0;">気づいた行動パターンを書いてみましょう。<br>例：朝にタスクをこなしやすい</div>
+          <div id="dbMyBehaviorInput" style="display:none;margin-top:6px;">
+            <input id="dbMyBehaviorInputText" type="text" placeholder="例：後回しにすると3日放置になる" style="width:100%;padding:8px 12px;border:1px solid #22c55e;border-radius:8px;font-size:0.85em;box-sizing:border-box;outline:none;margin-bottom:6px;">
+            <div style="display:flex;gap:6px;">
+              <button onclick="saveMyBehaviorInline()" style="flex:1;padding:8px;background:#22c55e;border:none;border-radius:8px;color:#fff;font-size:0.82em;font-weight:700;cursor:pointer;">保存</button>
+              <button onclick="cancelMyBehaviorInline()" style="padding:8px 12px;background:#f0f0f0;border:none;border-radius:8px;font-size:0.82em;cursor:pointer;color:#888;">キャンセル</button>
+            </div>
+          </div>
+        </div>
+        <!-- 見えてきた知見カード -->
+        <div id="dbMyInsightsCard" style="display:none;margin-bottom:10px;padding:14px 16px;background:linear-gradient(135deg,#eff6ff,#f5f8ff);border-radius:14px;border:1px solid rgba(99,102,241,0.2);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div style="font-size:0.88em;font-weight:800;color:#3730a3;">💡 見えてきた知見</div>
+            <button onclick="openAddMyInsightInline()" style="padding:6px 16px;background:#6366f1;border:none;border-radius:10px;color:#fff;font-size:0.82em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(99,102,241,0.3);">＋ 追加</button>
+          </div>
+          <div id="dbMyInsightsList" style="margin-bottom:8px;"></div>
+          <div id="dbMyInsightsEmpty" style="font-size:0.82em;color:#bbb;display:none;padding:8px 0;">行動を観察して気づいたことを書いてみましょう。<br>例：禁じるより別のことで上書きする方が効く</div>
+          <div id="dbMyInsightInput" style="display:none;margin-top:6px;">
+            <input id="dbMyInsightInputText" type="text" placeholder="例：タバコは禁じるより忘れさせる方が効く" style="width:100%;padding:8px 12px;border:1px solid #6366f1;border-radius:8px;font-size:0.85em;box-sizing:border-box;outline:none;margin-bottom:6px;">
+            <div style="display:flex;gap:6px;">
+              <button onclick="saveMyInsightInline()" style="flex:1;padding:8px;background:#6366f1;border:none;border-radius:8px;color:#fff;font-size:0.82em;font-weight:700;cursor:pointer;">保存</button>
+              <button onclick="cancelMyInsightInline()" style="padding:8px 12px;background:#f0f0f0;border:none;border-radius:8px;font-size:0.82em;cursor:pointer;color:#888;">キャンセル</button>
+            </div>
+          </div>
+        </div>
+        <!-- 見えてきたマイルールカード -->
+        <div id="dbMyRulesCard" style="display:none;margin-bottom:14px;padding:14px 16px;background:linear-gradient(135deg,#fff9f0,#fffdf5);border-radius:14px;border:1px solid rgba(245,158,11,0.2);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div style="font-size:0.88em;font-weight:800;color:#92400e;">🔍 見えてきたマイルール</div>
+            <button onclick="openAddMyRuleInline()" style="padding:6px 16px;background:#f59e0b;border:none;border-radius:10px;color:#fff;font-size:0.82em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(245,158,11,0.3);">＋ 追加</button>
+          </div>
+          <div id="dbMyRulesList" style="margin-bottom:8px;"></div>
+          <div id="dbMyRulesEmpty" style="font-size:0.82em;color:#bbb;display:none;padding:8px 0;">まだマイルールがありません。<br>「+ 追加」から書いてみましょう。</div>
+          <div id="dbMyRuleInput" style="display:none;margin-top:6px;">
+            <input id="dbMyRuleInputText" type="text" placeholder="例：朝タスクを3つ決めてから始める" style="width:100%;padding:8px 12px;border:1px solid #f59e0b;border-radius:8px;font-size:0.85em;box-sizing:border-box;outline:none;margin-bottom:6px;">
+            <div style="display:flex;gap:6px;">
+              <button onclick="saveMyRuleInline()" style="flex:1;padding:8px;background:#f59e0b;border:none;border-radius:8px;color:#fff;font-size:0.82em;font-weight:700;cursor:pointer;">保存</button>
+              <button onclick="cancelMyRuleInline()" style="padding:8px 12px;background:#f0f0f0;border:none;border-radius:8px;font-size:0.82em;cursor:pointer;color:#888;">キャンセル</button>
+            </div>
+          </div>
+        </div>
+        <!-- より良いフォーカス先カード -->
+        <div id="dbMyFocusCard" style="display:none;margin-bottom:10px;padding:14px 16px;background:linear-gradient(135deg,#fdf4ff,#faf0ff);border-radius:14px;border:1px solid rgba(168,85,247,0.2);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div style="font-size:0.88em;font-weight:800;color:#7e22ce;">✨ より良いフォーカス先</div>
+            <button onclick="openAddMyFocusInline()" style="padding:6px 16px;background:#a855f7;border:none;border-radius:10px;color:#fff;font-size:0.82em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(168,85,247,0.3);">＋ 追加</button>
+          </div>
+          <div id="dbMyFocusList" style="margin-bottom:8px;"></div>
+          <div id="dbMyFocusEmpty" style="font-size:0.82em;color:#bbb;display:none;padding:8px 0;">禁じるのではなく、向かいたい方向を書きましょう。<br>例：入念な準備の続き　次のタスク</div>
+          <div id="dbMyFocusInput" style="display:none;margin-top:6px;">
+            <input id="dbMyFocusInputText" type="text" placeholder="例：入念な準備の続きに向かう" style="width:100%;padding:8px 12px;border:1px solid #a855f7;border-radius:8px;font-size:0.85em;box-sizing:border-box;outline:none;margin-bottom:6px;">
+            <div style="display:flex;gap:6px;">
+              <button onclick="saveMyFocusInline()" style="flex:1;padding:8px;background:#a855f7;border:none;border-radius:8px;color:#fff;font-size:0.82em;font-weight:700;cursor:pointer;">保存</button>
+              <button onclick="cancelMyFocusInline()" style="padding:8px 12px;background:#f0f0f0;border:none;border-radius:8px;font-size:0.82em;cursor:pointer;color:#888;">キャンセル</button>
+            </div>
+          </div>
+        </div>
+    <!-- 自分新聞 -->
+    <div id="dbNewspaperCard" style="display:none;margin-bottom:16px;background:#fdfdf0;border-top:4px solid #1a1a1a;border-bottom:4px solid #1a1a1a;border-left:1px solid #1a1a1a;border-right:1px solid #1a1a1a;overflow:hidden;font-family:'Hiragino Mincho ProN','Yu Mincho',serif;">
+      <!-- 新聞題字 -->
+      <div style="padding:10px 14px 6px;border-bottom:3px double #1a1a1a;text-align:center;">
+        <div style="font-size:1.6em;font-weight:900;color:#1a1a1a;letter-spacing:0.3em;">王　国　新　聞</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+          <div id="dbNpDate" style="font-size:0.62em;color:#444;letter-spacing:0.05em;"></div>
+          <div style="font-size:0.62em;color:#444;font-style:italic;">Your Life, Your News.</div>
+        </div>
+      </div>
+      <!-- 一面トップ -->
+      <div style="padding:8px 14px;border-bottom:1px solid #999;">
+        <div style="font-size:0.58em;font-weight:700;color:#1a1a1a;letter-spacing:0.15em;border-bottom:1px solid #1a1a1a;padding-bottom:2px;margin-bottom:5px;">◆ 一面トップ</div>
+        <div id="dbNpHeadline" style="font-size:1.05em;font-weight:900;color:#1a1a1a;line-height:1.5;letter-spacing:0.03em;"></div>
+        <div id="dbNpSub" style="font-size:0.72em;color:#555;margin-top:4px;line-height:1.6;"></div>
+      </div>
+      <!-- 2段組 -->
+      <div style="display:grid;grid-template-columns:1fr 1px 1fr;padding:8px 0;">
+        <div style="padding:0 12px;">
+          <div style="font-size:0.58em;font-weight:700;color:#1a1a1a;letter-spacing:0.12em;border-bottom:1px solid #999;padding-bottom:2px;margin-bottom:5px;">◆ 本日の数字</div>
+          <div id="dbNpStats" style="font-size:0.78em;color:#1a1a1a;line-height:2.0;"></div>
+        </div>
+        <div style="background:#999;"></div>
+        <div style="padding:0 12px;">
+          <div style="font-size:0.58em;font-weight:700;color:#1a1a1a;letter-spacing:0.12em;border-bottom:1px solid #999;padding-bottom:2px;margin-bottom:5px;">◆ 構造</div>
+          <div id="dbNpStructure" style="font-size:0.78em;color:#1a1a1a;line-height:2.0;"></div>
+        </div>
+      </div>
+      <!-- 株価欄 -->
+      <div style="padding:6px 14px;border-top:1px solid #999;border-bottom:1px solid #999;background:#fafae8;">
+        <div style="font-size:0.58em;font-weight:700;color:#1a1a1a;letter-spacing:0.12em;margin-bottom:3px;">◆ 王国株式市場</div>
+        <div id="dbNpStock" style="font-size:0.82em;color:#1a1a1a;"></div>
+      </div>
+      <!-- フォーカス欄 -->
+      <div id="dbNpFocus" style="display:none;padding:6px 14px;background:#1a1a1a;font-size:0.72em;color:#fffef0;font-style:italic;text-align:center;letter-spacing:0.05em;"></div>
+    </div>
+          <!-- お知らせバナー -->
     <div onclick="openOshiraseModal()" style="margin-bottom:14px;padding:12px 16px;background:linear-gradient(135deg,#f5f3ff,#ede9fe);border-radius:14px;border:1px solid rgba(99,102,241,0.2);cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
       <div style="display:flex;align-items:center;gap:10px;">
         <span style="font-size:1.3em;">📣</span>
@@ -5628,6 +5733,46 @@ END OF 開発ルール
           <button onclick="setReflectionTime('23:00')" id="reflBtn23" style="padding:8px 14px;border-radius:10px;border:2px solid #e0e0e0;background:#f8f8f8;font-size:0.85em;cursor:pointer;">23:00</button>
         </div>
         <div id="reflectionTimeStatus" style="font-size:0.8em;color:#6366f1;font-weight:600;"></div>
+      </div>
+      <!-- 見えてきた行動管理セクション -->
+      <div class="settings-section" id="myBehaviorsSettingsSection">
+        <h3 style="margin:0 0 15px 0;color:#262626;font-size:1.05em;font-weight:600;border-bottom:1px solid #efefef;padding-bottom:12px;">👁 見えてきた行動</h3>
+        <p style="margin:0 0 14px 0;font-size:0.8em;color:#888;">自分の行動パターンの観察記録。ここから見えてきたマイルールが生まれます。</p>
+        <div id="settingsMyBehaviorsList" style="margin-bottom:12px;"></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="settingsMyBehaviorInput" type="text" placeholder="気づいた行動パターンを入力..." style="flex:1;padding:8px 12px;border:1px solid #e0e0e0;border-radius:8px;font-size:0.85em;outline:none;">
+          <button onclick="addMyBehaviorFromSettings()" style="padding:8px 14px;background:#22c55e;border:none;border-radius:8px;color:#fff;font-size:0.85em;font-weight:700;cursor:pointer;">追加</button>
+        </div>
+      </div>
+      <!-- 見えてきた知見管理セクション -->
+      <div class="settings-section" id="myInsightsSettingsSection">
+        <h3 style="margin:0 0 15px 0;color:#262626;font-size:1.05em;font-weight:600;border-bottom:1px solid #efefef;padding-bottom:12px;">💡 見えてきた知見</h3>
+        <p style="margin:0 0 14px 0;font-size:0.8em;color:#888;">行動を観察して気づいたこと・発見。これがマイルールの種になります。</p>
+        <div id="settingsMyInsightsList" style="margin-bottom:12px;"></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="settingsMyInsightInput" type="text" placeholder="気づいた知見を入力..." style="flex:1;padding:8px 12px;border:1px solid #e0e0e0;border-radius:8px;font-size:0.85em;outline:none;">
+          <button onclick="addMyInsightFromSettings()" style="padding:8px 14px;background:#6366f1;border:none;border-radius:8px;color:#fff;font-size:0.85em;font-weight:700;cursor:pointer;">追加</button>
+        </div>
+      </div>
+      <!-- 見えてきたマイルール管理セクション -->
+      <div class="settings-section" id="myRulesSettingsSection">
+        <h3 style="margin:0 0 15px 0;color:#262626;font-size:1.05em;font-weight:600;border-bottom:1px solid #efefef;padding-bottom:12px;">🔍 見えてきたマイルール</h3>
+        <p style="margin:0 0 14px 0;font-size:0.8em;color:#888;">変わらない自分の軸。ダッシュボード・振り返りと連動します。</p>
+        <div id="settingsMyRulesList" style="margin-bottom:12px;"></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="settingsMyRuleInput" type="text" placeholder="新しいマイルールを入力..." style="flex:1;padding:8px 12px;border:1px solid #e0e0e0;border-radius:8px;font-size:0.85em;outline:none;">
+          <button onclick="addMyRuleFromSettings()" style="padding:8px 14px;background:#f59e0b;border:none;border-radius:8px;color:#fff;font-size:0.85em;font-weight:700;cursor:pointer;">追加</button>
+        </div>
+      </div>
+      <!-- より良いフォーカス先管理セクション -->
+      <div class="settings-section" id="myFocusSettingsSection">
+        <h3 style="margin:0 0 15px 0;color:#262626;font-size:1.05em;font-weight:600;border-bottom:1px solid #efefef;padding-bottom:12px;">✨ より良いフォーカス先</h3>
+        <p style="margin:0 0 14px 0;font-size:0.8em;color:#888;">禁じるのではなく、意識を向けたい方向を宣言します。</p>
+        <div id="settingsMyFocusList" style="margin-bottom:12px;"></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="settingsMyFocusInput" type="text" placeholder="より良いフォーカス先を入力..." style="flex:1;padding:8px 12px;border:1px solid #e0e0e0;border-radius:8px;font-size:0.85em;outline:none;">
+          <button onclick="addMyFocusFromSettings()" style="padding:8px 14px;background:#a855f7;border:none;border-radius:8px;color:#fff;font-size:0.85em;font-weight:700;cursor:pointer;">追加</button>
+        </div>
       </div>
       <div class="settings-section" id="growthAxisSection">
         <h3 style="margin:0 0 15px 0;color:#262626;font-size:1.05em;font-weight:600;border-bottom:1px solid #efefef;padding-bottom:12px;">🌟 成長の軸</h3>
@@ -6752,8 +6897,13 @@ END OF 開発ルール
         lastColosseumRewardDate: '', // コロシアム報酬日
         colosseumRewardCount: 0,     // コロシアム報酬回数
         tokuDailyDate: '',           // 徳加算上限管理日
-        tokuDailyCount: 0            // 徳加算上限カウント
-      }
+        tokuDailyCount: 0,           // 徳加算上限カウント
+        lastTitleName: ''             // 前回の称号名（称号変化検知用）
+      },
+      myRules: [],     // 見えてきたマイルール（永続・引き継ぎ）
+      myBehaviors: [], // 見えてきた行動（観察記録）
+      myInsights: [], // 見えてきた知見（気づき・発見）
+      myFocus: []      // より良いフォーカス先
     };
     let allSettings = JSON.parse(JSON.stringify(SETTINGS_DEFAULT)); // deep copy
     function saveAllSettings() {
@@ -12186,6 +12336,19 @@ function updateKingdomModeButtons() {
   if (craftCheck) craftCheck.checked = allSettings.ui.craftModeEnabled === true;
   // 振り返り時間UI初期化
   if (typeof _updateReflectionTimeUI === 'function') _updateReflectionTimeUI();
+  // マイルール設定UI初期化
+  if (typeof renderMyBehaviorsSettings === 'function') renderMyBehaviorsSettings();
+  if (typeof renderMyInsightsSettings === 'function') renderMyInsightsSettings();
+  if (typeof renderMyFocusSettings === 'function') renderMyFocusSettings();
+  if (typeof renderMyRulesSettings === 'function') renderMyRulesSettings();
+  var _sbInp = document.getElementById('settingsMyBehaviorInput');
+  if (_sbInp) _sbInp.onkeydown = function(e){ if(e.key==='Enter'&&!e.isComposing) addMyBehaviorFromSettings(); };
+  var _siInp = document.getElementById('settingsMyInsightInput');
+  if (_siInp) _siInp.onkeydown = function(e){ if(e.key==='Enter'&&!e.isComposing) addMyInsightFromSettings(); };
+  var _sfInp = document.getElementById('settingsMyFocusInput');
+  if (_sfInp) _sfInp.onkeydown = function(e){ if(e.key==='Enter'&&!e.isComposing) addMyFocusFromSettings(); };
+  var _smiInp = document.getElementById('settingsMyRuleInput');
+  if (_smiInp) _smiInp.onkeydown = function(e){ if(e.key==='Enter'&&!e.isComposing) addMyRuleFromSettings(); };
   var gantCheck = document.getElementById('gantEnabled');
   if (gantCheck) gantCheck.checked = allSettings.ui.gantEnabled === true;
   var visTabGantCheck = document.getElementById('visTabGant');
@@ -17589,6 +17752,7 @@ function reviveBlueprint(id) {
       // タブのアクティブ状態を更新
       document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
       if (view === 'daily') {
+        if (typeof renderDailyFocusBanner === 'function') renderDailyFocusBanner();
         dailyView.style.display = 'grid';
         dailyView.classList.add('daily-active');
         document.getElementById('dailyInnerTabBar').style.display = 'flex';
@@ -17811,6 +17975,38 @@ function reviveBlueprint(id) {
           };
           _pages.push(_tlPage);
           nbPagesSet(_pages);
+          setTimeout(function(){ nbRender(); }, 100);
+        }
+
+        // マイルールページ自動追加
+        if (!allSettings.flags.nbMyRulesPageAdded) {
+          allSettings.flags.nbMyRulesPageAdded = true;
+          saveAllSettings();
+          var _mrId = generateTaskId();
+          var _mrNow = new Date().toISOString();
+          var _mrPage = {
+            id: _mrId, kind: 'note',
+            title: '📋 マイルール & 入念な準備',
+            textL:
+              '【マイルール】\n' +
+              '変わらない自分の軸。\n毎日ここを起点に動く。\n\n' +
+              '例）\n' +
+              '・朝タスクを3つ決めてから始める\n' +
+              '・後回しにしたら理由を書く\n' +
+              '・1日1つ、深く調べる\n\n' +
+              '---ここに書く---\n\n\n\n\n\n\n\n' +
+              '【引き継ぎ】\nこのルールは明日も・来月も有効。\n変えたくなったら理由と一緒に更新する。',
+            textR:
+              '【入念な準備】\n今日・明日の自分への指示書。\n\n' +
+              '▼ 今日の焦点\n（今日一番大切にすることは？）\n▷ ',
+            dateL: '', dateR: '',
+            text: '', margin: '',
+            order: -1,
+            createdAt: _mrNow, updatedAt: _mrNow
+          };
+          var _mrPages = nbPages();
+          _mrPages.unshift(_mrPage); // 先頭に追加
+          nbPagesSet(_mrPages);
           setTimeout(function(){ nbRender(); }, 100);
         }
 
@@ -22534,6 +22730,16 @@ function renderDashboardView() {
       }
     })();
   })();
+  // マイルールカード描画
+  if (typeof renderMyBehaviorsDashboard === 'function') renderMyBehaviorsDashboard();
+  if (typeof renderMyInsightsDashboard === 'function') renderMyInsightsDashboard();
+  if (typeof renderMyRulesDashboard === 'function') renderMyRulesDashboard();
+  if (typeof renderMyFocusDashboard === 'function') renderMyFocusDashboard();
+
+    // 称号変化チェック
+  if (typeof checkTitleChangeAndNotify === 'function') checkTitleChangeAndNotify();
+  // 自分新聞
+  if (typeof renderNewspaper === 'function') renderNewspaper();
   // お知らせバッジ既読制御
   var _newBadge = document.getElementById('oshiraseNewBadge');
   if (_newBadge) {
@@ -24604,11 +24810,191 @@ function checkReflectionTime() {
   // 今日分記録
   allSettings.flags.reflectionAskedDate = today;
   saveAllSettings();
-  // 問いをランダム選択
-  var _q = REFLECTION_QUESTIONS[Math.floor(Math.random() * REFLECTION_QUESTIONS.length)];
+  // マイルールがあれば専用の問い、なければランダム
+  var _myRules = (allSettings.myRules || []).filter(function(r){ return r && r.trim(); });
+  var _q;
+  var _myInsights = (allSettings.myInsights || []).filter(function(r){ return r && r.trim(); });
+  var _myFocus = (allSettings.myFocus || []).filter(function(r){ return r && r.trim(); });
+  var _combined = _myRules.concat(_myInsights).concat(_myFocus);
+  if (_combined.length > 0 && Math.random() < 0.6) {
+    var _r = _combined[Math.floor(Math.random() * _combined.length)];
+    var _isRule = _myRules.indexOf(_r) !== -1;
+    var _isFocus = _myFocus.indexOf(_r) !== -1;
+    _q = _isRule ? '「' + _r + '」\n今日はこのルール通りに動けましたか？'
+       : _isFocus ? '「' + _r + '」\n今日、ここにフォーカスできましたか？'
+       : '「' + _r + '」\nこの知見、今日の行動に活かせましたか？';
+  } else {
+    _q = REFLECTION_QUESTIONS[Math.floor(Math.random() * REFLECTION_QUESTIONS.length)];
+  }
   _showReflectionToast(_q);
 }
 window.checkReflectionTime = checkReflectionTime;
+// ===== 称号変化時の4軸問いかけ =====
+function checkTitleChangeAndNotify() {
+  if (window._isTesting) return;
+  var _title = typeof getKingdomTitle === 'function' ? getKingdomTitle() : null;
+  if (!_title) return;
+  var _currentName = _title.icon + ' ' + _title.name;
+  var _lastName = (allSettings.meta && allSettings.meta.lastTitleName) || '';
+
+  // 初回（未設定）は記録だけして返す
+  if (!_lastName) {
+    if (allSettings.meta) allSettings.meta.lastTitleName = _currentName;
+    saveAllSettings();
+    return;
+  }
+
+  // 称号が変わっていなければ何もしない
+  if (_lastName === _currentName) return;
+
+  // 称号変化！記録更新
+  allSettings.meta.lastTitleName = _currentName;
+  saveAllSettings();
+
+  // 4軸の問いかけを順番に表示
+  var _msgs = [
+    { delay: 500,  icon: '👁', text: '自分の行動パターンが、見えてきました' },
+    { delay: 2500, icon: '💡', text: '自分だけの気づきが、見えてきました' },
+    { delay: 4500, icon: '📋', text: '自分のマイルールが、見えかけてきました' },
+    { delay: 6500, icon: '✨', text: 'より良いフォーカス先が、見えてきました' }
+  ];
+
+  // まず称号変化を告知
+  setTimeout(function() {
+    showToast(_title.icon + ' ' + _title.name + ' に称号が変わりました', {type:'success', duration:3000});
+  }, 100);
+
+  // 続けて4軸を問いかけ
+  _msgs.forEach(function(m) {
+    setTimeout(function() {
+      showToast(m.icon + ' ' + m.text, {type:'next', duration:3000});
+    }, m.delay);
+  });
+
+  // 最後にダッシュボードへの誘導
+  setTimeout(function() {
+    showToast('ダッシュボードで4つの軸を見直しましょう', {duration:3000});
+  }, 9000);
+}
+window.checkTitleChangeAndNotify = checkTitleChangeAndNotify;
+// ===== 自分新聞 =====
+function renderNewspaper() {
+  var card = document.getElementById('dbNewspaperCard');
+  if (!card) return;
+
+  var now = new Date();
+  var _weekdays = ['日','月','火','水','木','金','土'];
+  var _dateStr = now.getFullYear() + '年' + (now.getMonth()+1) + '月' + now.getDate() + '日'
+    + '（' + _weekdays[now.getDay()] + '）版';
+
+  // 日付
+  var _dateEl = document.getElementById('dbNpDate');
+  if (_dateEl) _dateEl.textContent = _dateStr;
+
+  // 統計
+  var _completed = allTasks.filter(function(t){ return t.kind==='task' && t.completed; }).length;
+  var _total = allTasks.filter(function(t){ return t.kind==='task'; }).length;
+  var _journals = allTasks.filter(function(t){ return t.kind==='journal'; }).length;
+  var _toku = typeof getToku === 'function' ? getToku() : 0;
+  var _gdp = typeof getGDP === 'function' ? getGDP() : 0;
+  var _title = typeof getKingdomTitle === 'function' ? getKingdomTitle() : {icon:'🌱',name:'開拓民'};
+
+  // 今日完了したタスク
+  var _today = now.toISOString().slice(0,10);
+  var _todayCompleted = allTasks.filter(function(t){
+    return t.kind==='task' && t.completed && (t.date||'').slice(0,10) === _today;
+  });
+
+  // トップ記事見出し
+  var _headlineEl = document.getElementById('dbNpHeadline');
+  var _headline = '';
+  if (_todayCompleted.length > 0) {
+    var _firstTask = (_todayCompleted[0].text||'').slice(0,16);
+    _headline = _title.icon + ' ' + _title.name + '、本日' + _todayCompleted.length + '件を遂行';
+    if (_firstTask) _headline += '　「' + _firstTask + '」ほか';
+  } else {
+    _headline = _title.icon + ' ' + _title.name + '　本日の陣頭指揮を開始';
+  }
+  if (_headlineEl) _headlineEl.textContent = _headline;
+
+  // サブ見出し
+  var _subEl = document.getElementById('dbNpSub');
+  if (_subEl) {
+    var _streak = 0;
+    try {
+      var _tLog2 = JSON.parse(localStorage.getItem('tokuLog') || '[]');
+      var _days2 = new Set(_tLog2.filter(function(l){ return l.reason==='タスク完了'; }).map(function(l){ return (l.date||'').slice(0,10); }));
+      var _d2 = new Date(_today.replace(/-/g,'/'));
+      while(true){ var _ds2=_today; if(_days2.has(_d2.toISOString().slice(0,10))){ _streak++; _d2.setDate(_d2.getDate()-1); } else break; }
+    } catch(e){}
+    var _subParts = [];
+    if (_streak > 1) _subParts.push('連続稼働' + _streak + '日目');
+    var _kou = typeof getCurrentShichijuniKou === 'function' ? getCurrentShichijuniKou(new Date()) : null;
+    if (_kou) _subParts.push(_kou.icon + _kou.name);
+    _subEl.textContent = _subParts.join('　／　');
+  }
+
+  // 数字欄
+  var _statsEl = document.getElementById('dbNpStats');
+  if (_statsEl) {
+    _statsEl.innerHTML =
+      '徳：' + _toku.toLocaleString() + '<br>' +
+      'GDP：' + _gdp.toLocaleString() + '万<br>' +
+      '完了：' + _completed + '件<br>' +
+      '日誌：' + _journals + '件';
+  }
+
+  // 自分の構造欄
+  var _structEl = document.getElementById('dbNpStructure');
+  if (_structEl) {
+    var _behaviors = (allSettings.myBehaviors || []);
+    var _rules = (allSettings.myRules || []);
+    var _focus = (allSettings.myFocus || []);
+    var _lines = [];
+    if (_behaviors.length > 0) _lines.push('👁 ' + _behaviors[0].slice(0,12));
+    if (_rules.length > 0) _lines.push('📋 ' + _rules[0].slice(0,12));
+    if (_focus.length > 0) _lines.push('✨ ' + _focus[0].slice(0,12));
+    _structEl.innerHTML = _lines.length > 0 ? _lines.join('<br>') : '記録なし';
+  }
+
+  // フォーカス先欄
+  var _focusEl = document.getElementById('dbNpFocus');
+  var _focusList = (allSettings.myFocus || []);
+  if (_focusEl && _focusList.length > 0) {
+    _focusEl.style.display = 'block';
+    _focusEl.textContent = '✨ ' + _focusList[0];
+  }
+
+  // 株価計算：ライバルは昨日の自分
+  var _stockEl = document.getElementById('dbNpStock');
+  if (_stockEl) {
+    // 株価 = 累計完了タスク数
+    var _stockPrice = allTasks.filter(function(t){ return t.kind==='task' && t.completed; }).length;
+
+    // 前日比 = 今日の完了件数
+    var _yesterday = new Date(now); _yesterday.setDate(_yesterday.getDate() - 1);
+    var _yesterdayStr = _yesterday.toISOString().slice(0,10);
+    var _todayCount = allTasks.filter(function(t){
+      return t.kind==='task' && t.completed && (t.date||'').slice(0,10) === _today;
+    }).length;
+    var _yesterdayCount = allTasks.filter(function(t){
+      return t.kind==='task' && t.completed && (t.date||'').slice(0,10) === _yesterdayStr;
+    }).length;
+    var _diff = _todayCount - _yesterdayCount;
+    var _diffSign = _diff > 0 ? '▲' : _diff < 0 ? '▼' : '－';
+    var _diffColor = _diff > 0 ? '#e53e3e' : _diff < 0 ? '#3182ce' : '#888';
+    var _comment = _diff > 0 ? '昨日より' + _diff + '件多い' : _diff < 0 ? '昨日より' + Math.abs(_diff) + '件少ない' : '昨日と同じペース';
+    _stockEl.innerHTML =
+      '<span style="font-weight:700;">' + _stockPrice.toLocaleString() + ' 件</span>　' +
+      '<span style="color:' + _diffColor + ';font-weight:700;">' + _diffSign + Math.abs(_diff) + '</span>' +
+      '<span style="font-size:0.85em;color:#666;">　' + _comment + '</span>';
+  }
+
+  card.style.display = 'block';
+}
+window.renderNewspaper = renderNewspaper;
+
+
 
 function _showReflectionToast(question) {
   // 既存トーストを除去
@@ -24648,6 +25034,856 @@ function closeReflectionToast() {
   if (t) t.remove();
 }
 window.closeReflectionToast = closeReflectionToast;
+// ===== マイルール管理システム =====
+
+
+
+
+// ===== より良いフォーカス先管理システム =====
+
+function getMyFocus() {
+  return (allSettings.myFocus || []).filter(function(r){ return r && r.trim(); });
+}
+window.getMyFocus = getMyFocus;
+
+function saveMyFocus(focus) {
+  allSettings.myFocus = focus;
+  saveAllSettings();
+  renderMyFocusDashboard();
+  renderMyFocusSettings();
+}
+window.saveMyFocus = saveMyFocus;
+
+function addMyFocus(text) {
+  if (!text || !text.trim()) return;
+  var f = getMyFocus();
+  f.push(text.trim());
+  saveMyFocus(f);
+}
+window.addMyFocus = addMyFocus;
+
+function deleteMyFocus(idx) {
+  var focus = getMyFocus();
+  var target = focus[idx];
+  if (!target) return;
+  var old = document.getElementById('_myFocusDeleteToast');
+  if (old) old.remove();
+  var toast = document.createElement('div');
+  toast.id = '_myFocusDeleteToast';
+  toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:400px;background:#1a1a2e;border-radius:14px;box-shadow:0 4px 20px rgba(0,0,0,0.3);padding:14px 16px;z-index:99000;';
+  var _html = '<div style="font-size:0.82em;color:#fff;margin-bottom:10px;">「' + target + '」を削除しますか？</div>';
+  _html += '<div style="display:flex;gap:8px;">';
+  _html += '<button id="_myFocusDeleteConfirm" style="flex:1;padding:8px;background:#ef4444;border:none;border-radius:8px;color:#fff;font-size:0.85em;font-weight:700;cursor:pointer;">削除する</button>';
+  _html += '<button onclick="closeMyFocusDeleteToast()" style="flex:1;padding:8px;background:#444;border:none;border-radius:8px;color:#fff;font-size:0.85em;cursor:pointer;">キャンセル</button>';
+  _html += '</div>';
+  toast.innerHTML = _html;
+  document.body.appendChild(toast);
+  document.getElementById('_myFocusDeleteConfirm').onclick = function() {
+    toast.remove();
+    var f = getMyFocus();
+    f.splice(idx, 1);
+    saveMyFocus(f);
+    showToast('削除しました', {duration:1500});
+  };
+  setTimeout(function(){ if (toast.parentNode) toast.remove(); }, 5000);
+}
+window.deleteMyFocus = deleteMyFocus;
+
+function closeMyFocusDeleteToast() {
+  var t = document.getElementById('_myFocusDeleteToast');
+  if (t) t.remove();
+}
+window.closeMyFocusDeleteToast = closeMyFocusDeleteToast;
+
+function editMyFocus(idx, newText) {
+  if (!newText || !newText.trim()) return;
+  var f = getMyFocus();
+  f[idx] = newText.trim();
+  saveMyFocus(f);
+}
+window.editMyFocus = editMyFocus;
+
+function renderMyFocusDashboard() {
+  if (!Array.isArray(allSettings.myFocus)) allSettings.myFocus = [];
+  var _comp3 = allTasks.filter(function(t){ return t.kind==='task' && t.completed; }).length;
+  var _jour3 = allTasks.filter(function(t){ return t.kind==='journal'; }).length;
+  var _unl3 = _comp3 >= 20 || _jour3 >= 3 || (allSettings.myFocus || []).length > 0;
+  if (_unl3 && !allSettings.flags.myFocusUnlocked) {
+    allSettings.flags.myFocusUnlocked = true;
+    saveAllSettings();
+    setTimeout(function() {
+      showToast('✨ より良いフォーカス先が、見えてきました', {type:'success', duration:4000});
+    }, 2000);
+  }
+  _renderCardList(
+    document.getElementById('dbMyFocusList'),
+    document.getElementById('dbMyFocusEmpty'),
+    document.getElementById('dbMyFocusCard'),
+    getMyFocus(), '#a855f7', '✨',
+    'startEditMyFocusDashboard', 'deleteMyFocus', 'dbMyFocusInput'
+  );
+}
+window.renderMyFocusDashboard = renderMyFocusDashboard;
+
+function startEditMyFocusDashboard(idx) {
+  var list = document.getElementById('dbMyFocusList');
+  if (!list) return;
+  var row = list.querySelectorAll('div')[idx];
+  if (!row) return;
+  _makeInlineEditor(row, getMyFocus()[idx],
+    function(v) { if(v) editMyFocus(idx,v); else renderMyFocusDashboard(); },
+    function() { renderMyFocusDashboard(); }, '#a855f7');
+}
+window.startEditMyFocusDashboard = startEditMyFocusDashboard;
+
+function renderMyFocusSettings() {
+  var list = document.getElementById('settingsMyFocusList');
+  if (!list) return;
+  if (!Array.isArray(allSettings.myFocus)) allSettings.myFocus = [];
+  var focus = getMyFocus();
+  if (focus.length === 0) {
+    list.innerHTML = '<div style="font-size:0.82em;color:#bbb;padding:8px 0;">まだ登録がありません。</div>';
+    return;
+  }
+  list.innerHTML = focus.map(function(r, i) {
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f5f5f5;">'      + '<span style="color:#a855f7;flex-shrink:0;">✨</span>'      + '<span id="myFocusText_' + i + '" style="flex:1;font-size:0.85em;color:#333;">' + r + '</span>'      + '<button onclick="startEditMyFocusSettings(' + i + ')" style="padding:4px 8px;background:none;border:1px solid #e0e0e0;border-radius:6px;font-size:0.72em;color:#a855f7;cursor:pointer;">編集</button>'      + '<button onclick="deleteMyFocus(' + i + ')" style="padding:4px 8px;background:none;border:1px solid #e0e0e0;border-radius:6px;font-size:0.72em;color:#aaa;cursor:pointer;">削除</button>'      + '</div>';
+  }).join('');
+}
+window.renderMyFocusSettings = renderMyFocusSettings;
+
+function startEditMyFocusSettings(idx) {
+  var list = document.getElementById('settingsMyFocusList');
+  if (!list) return;
+  var span = document.getElementById('myFocusText_' + idx);
+  if (!span) return;
+  _makeInlineEditor(span.parentElement, getMyFocus()[idx],
+    function(v) { if(v) editMyFocus(idx,v); else renderMyFocusSettings(); },
+    function() { renderMyFocusSettings(); }, '#a855f7');
+}
+window.startEditMyFocusSettings = startEditMyFocusSettings;
+
+function openAddMyFocusInline() {
+  var inp = document.getElementById('dbMyFocusInput');
+  var txt = document.getElementById('dbMyFocusInputText');
+  if (inp) inp.style.display = 'block';
+  if (txt) { txt.focus(); txt.value = ''; }
+}
+window.openAddMyFocusInline = openAddMyFocusInline;
+
+function saveMyFocusInline() {
+  var txt = document.getElementById('dbMyFocusInputText');
+  if (!txt || !txt.value.trim()) return;
+  addMyFocus(txt.value);
+  cancelMyFocusInline();
+}
+window.saveMyFocusInline = saveMyFocusInline;
+
+function cancelMyFocusInline() {
+  var inp = document.getElementById('dbMyFocusInput');
+  if (inp) inp.style.display = 'none';
+}
+window.cancelMyFocusInline = cancelMyFocusInline;
+
+function addMyFocusFromSettings() {
+  var inp = document.getElementById('settingsMyFocusInput');
+  if (!inp || !inp.value.trim()) return;
+  addMyFocus(inp.value);
+  inp.value = '';
+}
+window.addMyFocusFromSettings = addMyFocusFromSettings;
+
+// ===== 見えてきた知見管理システム =====
+
+function getMyInsights() {
+  return (allSettings.myInsights || []).filter(function(r){ return r && r.trim(); });
+}
+window.getMyInsights = getMyInsights;
+
+function saveMyInsights(insights) {
+  allSettings.myInsights = insights;
+  saveAllSettings();
+  renderMyInsightsDashboard();
+  renderMyInsightsSettings();
+}
+window.saveMyInsights = saveMyInsights;
+
+function addMyInsight(text) {
+  if (!text || !text.trim()) return;
+  var ins = getMyInsights();
+  ins.push(text.trim());
+  saveMyInsights(ins);
+}
+window.addMyInsight = addMyInsight;
+
+function deleteMyInsight(idx) {
+  var insights = getMyInsights();
+  var target = insights[idx];
+  if (!target) return;
+  var old = document.getElementById('_myInsightDeleteToast');
+  if (old) old.remove();
+  var toast = document.createElement('div');
+  toast.id = '_myInsightDeleteToast';
+  toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:400px;background:#1a1a2e;border-radius:14px;box-shadow:0 4px 20px rgba(0,0,0,0.3);padding:14px 16px;z-index:99000;';
+  var _html = '<div style="font-size:0.82em;color:#fff;margin-bottom:10px;">「' + target + '」を削除しますか？</div>';
+  _html += '<div style="display:flex;gap:8px;">';
+  _html += '<button id="_myInsightDeleteConfirm" style="flex:1;padding:8px;background:#ef4444;border:none;border-radius:8px;color:#fff;font-size:0.85em;font-weight:700;cursor:pointer;">削除する</button>';
+  _html += '<button onclick="closeMyInsightDeleteToast()" style="flex:1;padding:8px;background:#444;border:none;border-radius:8px;color:#fff;font-size:0.85em;cursor:pointer;">キャンセル</button>';
+  _html += '</div>';
+  toast.innerHTML = _html;
+  document.body.appendChild(toast);
+  document.getElementById('_myInsightDeleteConfirm').onclick = function() {
+    toast.remove();
+    var ins = getMyInsights();
+    ins.splice(idx, 1);
+    saveMyInsights(ins);
+    showToast('削除しました', {duration:1500});
+  };
+  setTimeout(function(){ if (toast.parentNode) toast.remove(); }, 5000);
+}
+window.deleteMyInsight = deleteMyInsight;
+
+function closeMyInsightDeleteToast() {
+  var t = document.getElementById('_myInsightDeleteToast');
+  if (t) t.remove();
+}
+window.closeMyInsightDeleteToast = closeMyInsightDeleteToast;
+
+function editMyInsight(idx, newText) {
+  if (!newText || !newText.trim()) return;
+  var ins = getMyInsights();
+  ins[idx] = newText.trim();
+  saveMyInsights(ins);
+}
+window.editMyInsight = editMyInsight;
+
+function _makeInlineEditor(row, currentVal, onSave, onCancel, color) {
+  var inp = document.createElement('input');
+  inp.type = 'text';
+  inp.value = currentVal;
+  inp.style.cssText = 'flex:1;padding:6px 10px;border:1.5px solid ' + color + ';border-radius:8px;font-size:0.85em;outline:none;width:100%;box-sizing:border-box;';
+  var saveBtn = document.createElement('button');
+  saveBtn.textContent = '保存';
+  saveBtn.style.cssText = 'padding:4px 10px;background:' + color + ';border:none;border-radius:6px;color:#fff;font-size:0.75em;font-weight:700;cursor:pointer;flex-shrink:0;';
+  var cancelBtn = document.createElement('button');
+  cancelBtn.textContent = '×';
+  cancelBtn.style.cssText = 'padding:4px 8px;background:#f0f0f0;border:none;border-radius:6px;font-size:0.75em;cursor:pointer;color:#888;flex-shrink:0;';
+  row.innerHTML = '';
+  row.style.gap = '6px';
+  row.appendChild(inp);
+  row.appendChild(saveBtn);
+  row.appendChild(cancelBtn);
+  inp.focus();
+  saveBtn.onclick = function() { onSave(inp.value.trim()); };
+  cancelBtn.onclick = onCancel;
+  inp.onkeydown = function(e) {
+    if (e.key === 'Enter' && !e.isComposing) saveBtn.onclick();
+    if (e.key === 'Escape') cancelBtn.onclick();
+  };
+}
+window._makeInlineEditor = _makeInlineEditor;
+
+function _renderCardList(listEl, emptyEl, cardEl, items, color, icon, editFn, deleteFn, inputId) {
+  if (!listEl || !cardEl) return;
+  var _comp = allTasks.filter(function(t){ return t.kind==='task' && t.completed; }).length;
+  var _jour = allTasks.filter(function(t){ return t.kind==='journal'; }).length;
+  var _unlocked = _comp >= 20 || _jour >= 3 || items.length > 0;
+  if (!_unlocked) { cardEl.style.display = 'none'; return; }
+  cardEl.style.display = 'block';
+  if (items.length === 0) {
+    listEl.innerHTML = '';
+    if (emptyEl) emptyEl.style.display = 'none';
+    // 空の時は入力欄を自動で開く
+    if (inputId) {
+      var _inp = document.getElementById(inputId);
+      if (_inp) _inp.style.display = 'block';
+    }
+    return;
+  }
+  if (emptyEl) emptyEl.style.display = 'none';
+  listEl.innerHTML = items.map(function(r, i) {
+    return '<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.05);">'      + '<span style="color:' + color + ';flex-shrink:0;font-size:0.9em;">' + icon + '</span>'      + '<span style="flex:1;font-size:0.85em;color:#444;">' + r + '</span>'      + '<button onclick="' + editFn + '(' + i + ')" style="padding:2px 8px;background:none;border:1px solid #e0e0e0;border-radius:6px;font-size:0.72em;color:' + color + ';cursor:pointer;">編集</button>'      + '<button onclick="' + deleteFn + '(' + i + ')" style="padding:2px 8px;background:none;border:1px solid #e0e0e0;border-radius:6px;font-size:0.72em;color:#aaa;cursor:pointer;">削除</button>'      + '</div>';
+  }).join('');
+}
+window._renderCardList = _renderCardList;
+
+function renderMyInsightsDashboard() {
+  if (!Array.isArray(allSettings.myInsights)) allSettings.myInsights = [];
+  var _comp2 = allTasks.filter(function(t){ return t.kind==='task' && t.completed; }).length;
+  var _jour2 = allTasks.filter(function(t){ return t.kind==='journal'; }).length;
+  var _unl2 = _comp2 >= 20 || _jour2 >= 3 || (allSettings.myInsights || []).length > 0;
+  if (_unl2 && !allSettings.flags.myInsightsUnlocked) {
+    allSettings.flags.myInsightsUnlocked = true;
+    saveAllSettings();
+    setTimeout(function() {
+      showToast('💡 自分だけの気づきが、見えてきました', {type:'success', duration:4000});
+    }, 1500);
+  }
+  _renderCardList(
+    document.getElementById('dbMyInsightsList'),
+    document.getElementById('dbMyInsightsEmpty'),
+    document.getElementById('dbMyInsightsCard'),
+    getMyInsights(), '#6366f1', '💡',
+    'startEditMyInsightDashboard', 'deleteMyInsight', 'dbMyInsightInput'
+  );
+}
+window.renderMyInsightsDashboard = renderMyInsightsDashboard;
+
+function startEditMyInsightDashboard(idx) {
+  var list = document.getElementById('dbMyInsightsList');
+  if (!list) return;
+  var row = list.querySelectorAll('div')[idx];
+  if (!row) return;
+  _makeInlineEditor(row, getMyInsights()[idx],
+    function(v) { if(v) editMyInsight(idx,v); else renderMyInsightsDashboard(); },
+    function() { renderMyInsightsDashboard(); }, '#6366f1');
+}
+window.startEditMyInsightDashboard = startEditMyInsightDashboard;
+
+function renderMyInsightsSettings() {
+  var list = document.getElementById('settingsMyInsightsList');
+  if (!list) return;
+  if (!Array.isArray(allSettings.myInsights)) allSettings.myInsights = [];
+  var insights = getMyInsights();
+  if (insights.length === 0) {
+    list.innerHTML = '<div style="font-size:0.82em;color:#bbb;padding:8px 0;">まだ記録がありません。</div>';
+    return;
+  }
+  list.innerHTML = insights.map(function(r, i) {
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f5f5f5;">'      + '<span style="color:#6366f1;flex-shrink:0;">💡</span>'      + '<span id="myInsightText_' + i + '" style="flex:1;font-size:0.85em;color:#333;">' + r + '</span>'      + '<button onclick="startEditMyInsightSettings(' + i + ')" style="padding:4px 8px;background:none;border:1px solid #e0e0e0;border-radius:6px;font-size:0.72em;color:#6366f1;cursor:pointer;">編集</button>'      + '<button onclick="deleteMyInsight(' + i + ')" style="padding:4px 8px;background:none;border:1px solid #e0e0e0;border-radius:6px;font-size:0.72em;color:#aaa;cursor:pointer;">削除</button>'      + '</div>';
+  }).join('');
+}
+window.renderMyInsightsSettings = renderMyInsightsSettings;
+
+function startEditMyInsightSettings(idx) {
+  var list = document.getElementById('settingsMyInsightsList');
+  if (!list) return;
+  var span = document.getElementById('myInsightText_' + idx);
+  if (!span) return;
+  _makeInlineEditor(span.parentElement, getMyInsights()[idx],
+    function(v) { if(v) editMyInsight(idx,v); else renderMyInsightsSettings(); },
+    function() { renderMyInsightsSettings(); }, '#6366f1');
+}
+window.startEditMyInsightSettings = startEditMyInsightSettings;
+
+function openAddMyInsightInline() {
+  var inp = document.getElementById('dbMyInsightInput');
+  var txt = document.getElementById('dbMyInsightInputText');
+  if (inp) inp.style.display = 'block';
+  if (txt) { txt.focus(); txt.value = ''; }
+}
+window.openAddMyInsightInline = openAddMyInsightInline;
+
+function saveMyInsightInline() {
+  var txt = document.getElementById('dbMyInsightInputText');
+  if (!txt || !txt.value.trim()) return;
+  addMyInsight(txt.value);
+  cancelMyInsightInline();
+}
+window.saveMyInsightInline = saveMyInsightInline;
+
+function cancelMyInsightInline() {
+  var inp = document.getElementById('dbMyInsightInput');
+  if (inp) inp.style.display = 'none';
+}
+window.cancelMyInsightInline = cancelMyInsightInline;
+
+function addMyInsightFromSettings() {
+  var inp = document.getElementById('settingsMyInsightInput');
+  if (!inp || !inp.value.trim()) return;
+  addMyInsight(inp.value);
+  inp.value = '';
+}
+window.addMyInsightFromSettings = addMyInsightFromSettings;
+
+// ===== 見えてきた行動管理システム =====
+
+function getMyBehaviors() {
+  return (allSettings.myBehaviors || []).filter(function(r){ return r && r.trim(); });
+}
+window.getMyBehaviors = getMyBehaviors;
+
+function saveMyBehaviors(behaviors) {
+  allSettings.myBehaviors = behaviors;
+  saveAllSettings();
+  renderMyBehaviorsDashboard();
+  renderMyBehaviorsSettings();
+}
+window.saveMyBehaviors = saveMyBehaviors;
+
+function addMyBehavior(text) {
+  if (!text || !text.trim()) return;
+  var b = getMyBehaviors();
+  b.push(text.trim());
+  saveMyBehaviors(b);
+}
+window.addMyBehavior = addMyBehavior;
+
+function deleteMyBehavior(idx) {
+  var behaviors = getMyBehaviors();
+  var target = behaviors[idx];
+  if (!target) return;
+  var old = document.getElementById('_myBehaviorDeleteToast');
+  if (old) old.remove();
+  var toast = document.createElement('div');
+  toast.id = '_myBehaviorDeleteToast';
+  toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:400px;background:#1a1a2e;border-radius:14px;box-shadow:0 4px 20px rgba(0,0,0,0.3);padding:14px 16px;z-index:99000;';
+  var _html = '<div style="font-size:0.82em;color:#fff;margin-bottom:10px;">「' + target + '」を削除しますか？</div>';
+  _html += '<div style="display:flex;gap:8px;">';
+  _html += '<button id="_myBehaviorDeleteConfirm" style="flex:1;padding:8px;background:#ef4444;border:none;border-radius:8px;color:#fff;font-size:0.85em;font-weight:700;cursor:pointer;">削除する</button>';
+  _html += '<button onclick="closeMyBehaviorDeleteToast()" style="flex:1;padding:8px;background:#444;border:none;border-radius:8px;color:#fff;font-size:0.85em;cursor:pointer;">キャンセル</button>';
+  _html += '</div>';
+  toast.innerHTML = _html;
+  document.body.appendChild(toast);
+  document.getElementById('_myBehaviorDeleteConfirm').onclick = function() {
+    toast.remove();
+    var b = getMyBehaviors();
+    b.splice(idx, 1);
+    saveMyBehaviors(b);
+    showToast('削除しました', {duration:1500});
+  };
+  setTimeout(function(){ if (toast.parentNode) toast.remove(); }, 5000);
+}
+window.deleteMyBehavior = deleteMyBehavior;
+
+function closeMyBehaviorDeleteToast() {
+  var t = document.getElementById('_myBehaviorDeleteToast');
+  if (t) t.remove();
+}
+window.closeMyBehaviorDeleteToast = closeMyBehaviorDeleteToast;
+
+function editMyBehavior(idx, newText) {
+  if (!newText || !newText.trim()) return;
+  var b = getMyBehaviors();
+  b[idx] = newText.trim();
+  saveMyBehaviors(b);
+}
+window.editMyBehavior = editMyBehavior;
+
+function renderMyBehaviorsDashboard() {
+  var list = document.getElementById('dbMyBehaviorsList');
+  var empty = document.getElementById('dbMyBehaviorsEmpty');
+  var card = document.getElementById('dbMyBehaviorsCard');
+  if (!list || !card) return;
+  if (!Array.isArray(allSettings.myBehaviors)) allSettings.myBehaviors = [];
+
+  // 解放条件：マイルールカードと同じ
+  var _completedCount = allTasks.filter(function(t){ return t.kind==='task' && t.completed; }).length;
+  var _journalCount = allTasks.filter(function(t){ return t.kind==='journal'; }).length;
+  var _unlocked = _completedCount >= 20 || _journalCount >= 3;
+  if ((allSettings.myBehaviors || []).length > 0) _unlocked = true;
+  if (!_unlocked) { card.style.display = 'none'; return; }
+
+  // 初回解放トースト
+  if (!allSettings.flags.myBehaviorsUnlocked) {
+    allSettings.flags.myBehaviorsUnlocked = true;
+    saveAllSettings();
+    setTimeout(function() {
+      showToast('👁 自分の行動パターンが、見えてきました', {type:'success', duration:4000});
+    }, 500);
+  }
+  card.style.display = 'block';
+
+  var behaviors = getMyBehaviors();
+  if (behaviors.length === 0) {
+    list.innerHTML = '';
+    if (empty) empty.style.display = 'none';
+    var _bInp2 = document.getElementById('dbMyBehaviorInput');
+    if (_bInp2) _bInp2.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  // アイテムがある時は入力欄を閉じる
+  var _bInp = document.getElementById('dbMyBehaviorInput');
+  if (_bInp && behaviors.length > 0) _bInp.style.display = 'none';
+  list.innerHTML = behaviors.map(function(r, i) {
+    return '<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid rgba(34,197,94,0.1);">'      + '<span style="color:#22c55e;flex-shrink:0;font-size:0.9em;">👁</span>'      + '<span style="flex:1;font-size:0.85em;color:#444;">' + r + '</span>'      + '<button onclick="startEditMyBehaviorDashboard(' + i + ')" style="padding:2px 8px;background:none;border:1px solid #e0e0e0;border-radius:6px;font-size:0.72em;color:#22c55e;cursor:pointer;">編集</button>'      + '<button onclick="deleteMyBehavior(' + i + ')" style="padding:2px 8px;background:none;border:1px solid #e0e0e0;border-radius:6px;font-size:0.72em;color:#aaa;cursor:pointer;">削除</button>'      + '</div>';
+  }).join('');
+}
+window.renderMyBehaviorsDashboard = renderMyBehaviorsDashboard;
+
+function startEditMyBehaviorDashboard(idx) {
+  var behaviors = getMyBehaviors();
+  var list = document.getElementById('dbMyBehaviorsList');
+  if (!list) return;
+  var rows = list.querySelectorAll('div');
+  var row = rows[idx];
+  if (!row) return;
+  var inp = document.createElement('input');
+  inp.type = 'text';
+  inp.value = behaviors[idx];
+  inp.style.cssText = 'flex:1;padding:6px 10px;border:1.5px solid #22c55e;border-radius:8px;font-size:0.85em;outline:none;width:100%;box-sizing:border-box;';
+  var saveBtn = document.createElement('button');
+  saveBtn.textContent = '保存';
+  saveBtn.style.cssText = 'padding:4px 10px;background:#22c55e;border:none;border-radius:6px;color:#fff;font-size:0.75em;font-weight:700;cursor:pointer;flex-shrink:0;';
+  var cancelBtn = document.createElement('button');
+  cancelBtn.textContent = '×';
+  cancelBtn.style.cssText = 'padding:4px 8px;background:#f0f0f0;border:none;border-radius:6px;font-size:0.75em;cursor:pointer;color:#888;flex-shrink:0;';
+  row.innerHTML = '';
+  row.style.gap = '6px';
+  row.appendChild(inp);
+  row.appendChild(saveBtn);
+  row.appendChild(cancelBtn);
+  inp.focus();
+  saveBtn.onclick = function() { if (inp.value.trim()) editMyBehavior(idx, inp.value.trim()); else renderMyBehaviorsDashboard(); };
+  cancelBtn.onclick = function() { renderMyBehaviorsDashboard(); };
+  inp.onkeydown = function(e) { if (e.key==='Enter'&&!e.isComposing) saveBtn.onclick(); if (e.key==='Escape') cancelBtn.onclick(); };
+}
+window.startEditMyBehaviorDashboard = startEditMyBehaviorDashboard;
+
+function renderMyBehaviorsSettings() {
+  var list = document.getElementById('settingsMyBehaviorsList');
+  if (!list) return;
+  if (!Array.isArray(allSettings.myBehaviors)) allSettings.myBehaviors = [];
+  var behaviors = getMyBehaviors();
+  if (behaviors.length === 0) {
+    list.innerHTML = '<div style="font-size:0.82em;color:#bbb;padding:8px 0;">まだ記録がありません。</div>';
+    return;
+  }
+  list.innerHTML = behaviors.map(function(r, i) {
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f5f5f5;">'      + '<span style="color:#22c55e;flex-shrink:0;">👁</span>'      + '<span id="myBehaviorText_' + i + '" style="flex:1;font-size:0.85em;color:#333;">' + r + '</span>'      + '<button onclick="startEditMyBehaviorSettings(' + i + ')" style="padding:4px 8px;background:none;border:1px solid #e0e0e0;border-radius:6px;font-size:0.72em;color:#22c55e;cursor:pointer;">編集</button>'      + '<button onclick="deleteMyBehavior(' + i + ')" style="padding:4px 8px;background:none;border:1px solid #e0e0e0;border-radius:6px;font-size:0.72em;color:#aaa;cursor:pointer;">削除</button>'      + '</div>';
+  }).join('');
+}
+window.renderMyBehaviorsSettings = renderMyBehaviorsSettings;
+
+function startEditMyBehaviorSettings(idx) {
+  var behaviors = getMyBehaviors();
+  var list = document.getElementById('settingsMyBehaviorsList');
+  if (!list) return;
+  var span = document.getElementById('myBehaviorText_' + idx);
+  if (!span) return;
+  var row = span.parentElement;
+  var inp = document.createElement('input');
+  inp.type = 'text';
+  inp.value = behaviors[idx];
+  inp.style.cssText = 'flex:1;padding:4px 8px;border:1.5px solid #22c55e;border-radius:6px;font-size:0.85em;outline:none;';
+  var saveBtn = document.createElement('button');
+  saveBtn.textContent = '保存';
+  saveBtn.style.cssText = 'padding:4px 10px;background:#22c55e;border:none;border-radius:6px;color:#fff;font-size:0.75em;font-weight:700;cursor:pointer;';
+  var cancelBtn = document.createElement('button');
+  cancelBtn.textContent = 'キャンセル';
+  cancelBtn.style.cssText = 'padding:4px 8px;background:#f0f0f0;border:none;border-radius:6px;font-size:0.75em;cursor:pointer;color:#888;';
+  row.innerHTML = '';
+  row.style.gap = '6px';
+  row.appendChild(inp);
+  row.appendChild(saveBtn);
+  row.appendChild(cancelBtn);
+  inp.focus();
+  saveBtn.onclick = function() { if (inp.value.trim()) editMyBehavior(idx, inp.value.trim()); else renderMyBehaviorsSettings(); };
+  cancelBtn.onclick = function() { renderMyBehaviorsSettings(); };
+  inp.onkeydown = function(e) { if (e.key==='Enter'&&!e.isComposing) saveBtn.onclick(); if (e.key==='Escape') cancelBtn.onclick(); };
+}
+window.startEditMyBehaviorSettings = startEditMyBehaviorSettings;
+
+function openAddMyBehaviorInline() {
+  var inp = document.getElementById('dbMyBehaviorInput');
+  var txt = document.getElementById('dbMyBehaviorInputText');
+  if (inp) inp.style.display = 'block';
+  if (txt) { txt.focus(); txt.value = ''; }
+}
+window.openAddMyBehaviorInline = openAddMyBehaviorInline;
+
+function saveMyBehaviorInline() {
+  var txt = document.getElementById('dbMyBehaviorInputText');
+  if (!txt || !txt.value.trim()) return;
+  addMyBehavior(txt.value);
+  cancelMyBehaviorInline();
+}
+window.saveMyBehaviorInline = saveMyBehaviorInline;
+
+function cancelMyBehaviorInline() {
+  var inp = document.getElementById('dbMyBehaviorInput');
+  if (inp) inp.style.display = 'none';
+}
+window.cancelMyBehaviorInline = cancelMyBehaviorInline;
+
+function addMyBehaviorFromSettings() {
+  var inp = document.getElementById('settingsMyBehaviorInput');
+  if (!inp || !inp.value.trim()) return;
+  addMyBehavior(inp.value);
+  inp.value = '';
+}
+window.addMyBehaviorFromSettings = addMyBehaviorFromSettings;
+
+function getMyRules() {
+  return (allSettings.myRules || []).filter(function(r){ return r && r.trim(); });
+}
+
+// ===== 今日の焦点バナー =====
+function renderDailyFocusBanner() {
+  var banner = document.getElementById('dailyFocusBanner');
+  var text = document.getElementById('dailyFocusText');
+  if (!banner || !text) return;
+
+  // マイルールページのtextRから「▼ 今日の焦点」以降の▷行を抽出
+  var focus = '';
+  try {
+    var _mrPage = allTasks.find(function(t){
+      return t.kind === 'note' && t.title && t.title.indexOf('マイルール') !== -1;
+    });
+    if (_mrPage && _mrPage.textR) {
+      var _lines = _mrPage.textR.split('\n');
+      for (var i = 0; i < _lines.length; i++) {
+        if (_lines[i].indexOf('▷') === 0) {
+          focus = _lines[i].replace('▷', '').trim();
+          break;
+        }
+        if (_lines[i].indexOf('▼ 今日の焦点') !== -1 && _lines[i+1]) {
+          var _next = (_lines[i+1] || '').replace('▷','').replace('（今日一番大切にすることは？）','').trim();
+          if (_next) { focus = _next; break; }
+        }
+      }
+    }
+  } catch(e) {}
+
+  // より良いフォーカス先も取得
+  var _focusList = (allSettings.myFocus || []).filter(function(r){ return r && r.trim(); });
+  var _focusText = _focusList.length > 0 ? _focusList[0] : '';
+
+  if (focus || _focusText) {
+    var _display = [];
+    if (focus) _display.push('📋 ' + focus);
+    if (_focusText) _display.push('✨ ' + _focusText);
+    text.textContent = _display.join('　');
+    banner.style.display = 'block';
+  } else {
+    banner.style.display = 'none';
+  }
+}
+window.renderDailyFocusBanner = renderDailyFocusBanner;
+
+window.getMyRules = getMyRules;
+
+function saveMyRules(rules) {
+  allSettings.myRules = rules;
+  saveAllSettings();
+  renderMyRulesDashboard();
+  renderMyRulesSettings();
+}
+window.saveMyRules = saveMyRules;
+
+function addMyRule(text) {
+  if (!text || !text.trim()) return;
+  var rules = getMyRules();
+  rules.push(text.trim());
+  saveMyRules(rules);
+}
+window.addMyRule = addMyRule;
+
+function deleteMyRule(idx) {
+  var rules = getMyRules();
+  var target = rules[idx];
+  if (!target) return;
+  // 確認トースト
+  var old = document.getElementById('_myRuleDeleteToast');
+  if (old) old.remove();
+  var toast = document.createElement('div');
+  toast.id = '_myRuleDeleteToast';
+  toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:400px;background:#1a1a2e;border-radius:14px;box-shadow:0 4px 20px rgba(0,0,0,0.3);padding:14px 16px;z-index:99000;';
+  var _html = '<div style="font-size:0.82em;color:#fff;margin-bottom:10px;">「' + target + '」を削除しますか？</div>';
+  _html += '<div style="display:flex;gap:8px;">';
+  _html += '<button id="_myRuleDeleteConfirm" style="flex:1;padding:8px;background:#ef4444;border:none;border-radius:8px;color:#fff;font-size:0.85em;font-weight:700;cursor:pointer;">削除する</button>';
+  _html += '<button onclick="closeMyRuleDeleteToast()" style="flex:1;padding:8px;background:#444;border:none;border-radius:8px;color:#fff;font-size:0.85em;cursor:pointer;">キャンセル</button>';
+  _html += '</div>';
+  toast.innerHTML = _html;
+  document.body.appendChild(toast);
+  document.getElementById('_myRuleDeleteConfirm').onclick = function() {
+    toast.remove();
+    var r = getMyRules();
+    r.splice(idx, 1);
+    saveMyRules(r);
+    showToast('削除しました', {duration:1500});
+  };
+  // 5秒で自動消去
+  setTimeout(function(){ if (toast.parentNode) toast.remove(); }, 5000);
+}
+function closeMyRuleDeleteToast() { var t = document.getElementById('_myRuleDeleteToast'); if (t) t.remove(); }
+window.closeMyRuleDeleteToast = closeMyRuleDeleteToast;
+window.deleteMyRule = deleteMyRule;
+
+function editMyRule(idx, newText) {
+  if (!newText || !newText.trim()) return;
+  var rules = getMyRules();
+  rules[idx] = newText.trim();
+  saveMyRules(rules);
+}
+window.editMyRule = editMyRule;
+
+// ダッシュボードのマイルール描画
+function renderMyRulesDashboard() {
+  var list = document.getElementById('dbMyRulesList');
+  var empty = document.getElementById('dbMyRulesEmpty');
+  var card = document.getElementById('dbMyRulesCard');
+  if (!list || !card) return;
+  // 既存ユーザーのmyRules未定義を補完
+  if (!Array.isArray(allSettings.myRules)) allSettings.myRules = [];
+
+  // 解放条件チェック：タスク完了20件以上 OR 日誌3件以上
+  var _completedCount = allTasks.filter(function(t){ return t.kind==='task' && t.completed; }).length;
+  var _journalCount = allTasks.filter(function(t){ return t.kind==='journal'; }).length;
+  var _unlocked = _completedCount >= 20 || _journalCount >= 3;
+
+  // 既にマイルールを持っているユーザーは常に解放
+  if ((allSettings.myRules || []).length > 0) _unlocked = true;
+
+  if (!_unlocked) {
+    card.style.display = 'none';
+    return;
+  }
+
+  // 初回解放トースト
+  if (!allSettings.flags.myRulesUnlocked) {
+    allSettings.flags.myRulesUnlocked = true;
+    saveAllSettings();
+    setTimeout(function() {
+      showToast('📋 自分のマイルールが、見えかけてきました', {type:'success', duration:4000});
+    }, 1000);
+  }
+
+  card.style.display = 'block';
+  var rules = getMyRules();
+  if (rules.length === 0) {
+    list.innerHTML = '';
+    if (empty) empty.style.display = 'none';
+    var _rInp2 = document.getElementById('dbMyRuleInput');
+    if (_rInp2) _rInp2.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  // アイテムがある時は入力欄を閉じる
+  var _rInp = document.getElementById('dbMyRuleInput');
+  if (_rInp && rules.length > 0) _rInp.style.display = 'none';
+  list.innerHTML = rules.map(function(r, i) {
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(245,158,11,0.1);">'
+      + '<span style="color:#f59e0b;flex-shrink:0;font-size:0.9em;">⬡</span>'
+      + '<span style="flex:1;font-size:0.85em;color:#444;">' + r + '</span>'
+      + '<button onclick="startEditMyRuleDashboard(' + i + ')" style="padding:2px 8px;background:none;border:1px solid #e0e0e0;border-radius:6px;font-size:0.72em;color:#6366f1;cursor:pointer;">編集</button>'
+      + '<button onclick="deleteMyRule(' + i + ')" style="padding:2px 8px;background:none;border:1px solid #e0e0e0;border-radius:6px;font-size:0.72em;color:#aaa;cursor:pointer;">削除</button>'
+      + '</div>';
+  }).join('');
+}
+window.renderMyRulesDashboard = renderMyRulesDashboard;
+
+function startEditMyRuleDashboard(idx) {
+  var rules = getMyRules();
+  var list = document.getElementById('dbMyRulesList');
+  if (!list) return;
+  var rows = list.querySelectorAll('div');
+  var row = rows[idx];
+  if (!row) return;
+  var inp = document.createElement('input');
+  inp.type = 'text';
+  inp.value = rules[idx];
+  inp.style.cssText = 'flex:1;padding:6px 10px;border:1.5px solid #f59e0b;border-radius:8px;font-size:0.85em;outline:none;width:100%;box-sizing:border-box;';
+  var saveBtn = document.createElement('button');
+  saveBtn.textContent = '保存';
+  saveBtn.style.cssText = 'padding:4px 10px;background:#f59e0b;border:none;border-radius:6px;color:#fff;font-size:0.75em;font-weight:700;cursor:pointer;flex-shrink:0;';
+  var cancelBtn = document.createElement('button');
+  cancelBtn.textContent = '×';
+  cancelBtn.style.cssText = 'padding:4px 8px;background:#f0f0f0;border:none;border-radius:6px;font-size:0.75em;cursor:pointer;color:#888;flex-shrink:0;';
+  row.innerHTML = '';
+  row.style.gap = '6px';
+  row.appendChild(inp);
+  row.appendChild(saveBtn);
+  row.appendChild(cancelBtn);
+  inp.focus();
+  saveBtn.onclick = function() { if (inp.value.trim()) editMyRule(idx, inp.value.trim()); else renderMyRulesDashboard(); };
+  cancelBtn.onclick = function() { renderMyRulesDashboard(); };
+  inp.onkeydown = function(e) { if (e.key==='Enter'&&!e.isComposing) saveBtn.onclick(); if (e.key==='Escape') cancelBtn.onclick(); };
+}
+window.startEditMyRuleDashboard = startEditMyRuleDashboard;
+
+// 設定のマイルール描画
+function renderMyRulesSettings() {
+  var list = document.getElementById('settingsMyRulesList');
+  if (!list) return;
+  // 既存ユーザーのmyRules未定義を補完
+  if (!Array.isArray(allSettings.myRules)) allSettings.myRules = [];
+  var rules = getMyRules();
+  if (rules.length === 0) {
+    list.innerHTML = '<div style="font-size:0.82em;color:#bbb;padding:8px 0;">まだマイルールがありません。</div>';
+    return;
+  }
+  list.innerHTML = rules.map(function(r, i) {
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f5f5f5;">'
+      + '<span style="color:#f59e0b;flex-shrink:0;">⬡</span>'
+      + '<span id="myRuleText_' + i + '" style="flex:1;font-size:0.85em;color:#333;" onclick="startEditMyRule(' + i + ')">' + r + '</span>'
+      + '<button onclick="startEditMyRule(' + i + ')" style="padding:4px 8px;background:none;border:1px solid #e0e0e0;border-radius:6px;font-size:0.72em;color:#6366f1;cursor:pointer;">編集</button>'
+      + '<button onclick="deleteMyRule(' + i + ')" style="padding:4px 8px;background:none;border:1px solid #e0e0e0;border-radius:6px;font-size:0.72em;color:#aaa;cursor:pointer;">削除</button>'
+      + '</div>';
+  }).join('');
+}
+window.renderMyRulesSettings = renderMyRulesSettings;
+
+function startEditMyRule(idx) {
+  var rules = getMyRules();
+  var list = document.getElementById('settingsMyRulesList');
+  if (!list) return;
+  var span = document.getElementById('myRuleText_' + idx);
+  if (!span) return;
+  // インライン編集に切り替え
+  var orig = rules[idx];
+  var inp = document.createElement('input');
+  inp.type = 'text';
+  inp.value = orig;
+  inp.style.cssText = 'flex:1;padding:4px 8px;border:1.5px solid #6366f1;border-radius:6px;font-size:0.85em;outline:none;';
+  var saveBtn = document.createElement('button');
+  saveBtn.textContent = '保存';
+  saveBtn.style.cssText = 'padding:4px 10px;background:#6366f1;border:none;border-radius:6px;color:#fff;font-size:0.75em;font-weight:700;cursor:pointer;';
+  var cancelBtn = document.createElement('button');
+  cancelBtn.textContent = 'キャンセル';
+  cancelBtn.style.cssText = 'padding:4px 8px;background:#f0f0f0;border:none;border-radius:6px;font-size:0.75em;cursor:pointer;color:#888;';
+  var row = span.parentElement;
+  var origContent = row.innerHTML;
+  row.innerHTML = '';
+  row.style.gap = '6px';
+  row.appendChild(inp);
+  row.appendChild(saveBtn);
+  row.appendChild(cancelBtn);
+  inp.focus();
+  saveBtn.onclick = function() {
+    if (inp.value.trim()) editMyRule(idx, inp.value.trim());
+    else row.innerHTML = origContent;
+  };
+  cancelBtn.onclick = function() { row.innerHTML = origContent; };
+  inp.onkeydown = function(e) {
+    if (e.key === 'Enter' && !e.isComposing) saveBtn.onclick();
+    if (e.key === 'Escape') cancelBtn.onclick();
+  };
+}
+window.startEditMyRule = startEditMyRule;
+
+// ダッシュボードのインライン追加
+function openAddMyRuleInline() {
+  var inp = document.getElementById('dbMyRuleInput');
+  var txt = document.getElementById('dbMyRuleInputText');
+  if (inp) inp.style.display = 'block';
+  if (txt) { txt.focus(); txt.value = ''; }
+}
+window.openAddMyRuleInline = openAddMyRuleInline;
+
+function saveMyRuleInline() {
+  var txt = document.getElementById('dbMyRuleInputText');
+  if (!txt || !txt.value.trim()) return;
+  addMyRule(txt.value);
+  cancelMyRuleInline();
+}
+window.saveMyRuleInline = saveMyRuleInline;
+
+function cancelMyRuleInline() {
+  var inp = document.getElementById('dbMyRuleInput');
+  if (inp) inp.style.display = 'none';
+}
+window.cancelMyRuleInline = cancelMyRuleInline;
+
+// 設定画面からの追加
+function addMyRuleFromSettings() {
+  var inp = document.getElementById('settingsMyRuleInput');
+  if (!inp || !inp.value.trim()) return;
+  addMyRule(inp.value);
+  inp.value = '';
+}
+window.addMyRuleFromSettings = addMyRuleFromSettings;
+
 window._showReflectionToast = _showReflectionToast;
 
 function saveReflectionEntry() {
@@ -24756,6 +25992,10 @@ function updateCraftHUD() {
     titleEl.style.color = t.color || '#fff';
     titleEl.style.textShadow = '0 0 8px ' + (t.color || '#fff') + '88';
   }
+  // 称号変化チェック
+  if (typeof checkTitleChangeAndNotify === 'function') checkTitleChangeAndNotify();
+  // 自分新聞
+  if (typeof renderNewspaper === 'function') renderNewspaper();
   // 天命降臨：王国力カンスト検知（伝説到達で天命カウント開始）
   (function _checkTenmeiKanst() {
     if (window._isTesting) return;
@@ -35732,7 +36972,7 @@ function showDebugLog(_initOnly) {
        var _st39FlagKeys = ['tutorialSeen','gantTourSeen','journalTourSeen','scratchTourSeen','adminMode','inspectionMode','purpose','purposeConfirmed','stopCondition','stopConditionSaved'];
        var _st39FlagMissing = _st39FlagKeys.filter(function(k){ return !(k in allSettings.flags); });
        // flags許容フィールド（動的追加される既知フラグも含む）
-       var _st39FlagAllowed = _st39FlagKeys.concat(['searchOnboardSeen','nbGouTokuPageAdded','zenOnboardSeen','nbZenPageAdded','nbTitlesPageAdded','nbMatrixIntroPageAdded','oshiraseRead','reflectionTime','reflectionAskedDate']);
+       var _st39FlagAllowed = _st39FlagKeys.concat(['searchOnboardSeen','nbGouTokuPageAdded','zenOnboardSeen','nbZenPageAdded','nbTitlesPageAdded','nbMatrixIntroPageAdded','oshiraseRead','reflectionTime','reflectionAskedDate','nbMyRulesPageAdded','myRulesUnlocked','myBehaviorsUnlocked','myInsightsUnlocked','myFocusUnlocked']);
        var _st39FlagUnknown = Object.keys(allSettings.flags).filter(function(k){ return _st39FlagAllowed.indexOf(k) === -1; });
        _st39FlagMissing.length === 0
          ? ok('SPAG[·A1·SETTINGS INTEGRITY] allSettings.flags必須フィールド全確認')
