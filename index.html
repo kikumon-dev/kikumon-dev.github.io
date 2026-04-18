@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.44.262 ★ -->
+<!-- ★ CURRENT VERSION: v0.44.265 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -198,7 +198,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.262';
+    const APP_VERSION = 'v0.44.271';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -683,9 +683,10 @@ END OF 開発ルール
       display: flex;
       align-items: center;
       gap: 10px;
-      margin-bottom: 15px;
+      margin-bottom: 8px;
       flex-wrap: nowrap;
       justify-content: flex-start;
+      min-height: 32px;
     }
     .header-row h4 {
       margin: 0;
@@ -760,9 +761,10 @@ END OF 開発ルール
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 15px;
+      margin-bottom: 8px;
       flex-wrap: wrap;
       gap: 4px;
+      min-height: 32px;
     }
     .simple-header h4 {
       margin: 0;
@@ -827,23 +829,12 @@ END OF 開発ルール
       border-radius: 4px;
       font-size: 0.9em;
       margin-bottom: 8px;
+      display: block;
     }
-    /* 各象限ごとに幅を調整 */
-    #input1 {
-      width: 254px;
-      max-width: 100%;
-    }
-    #input2 {
-      width: 285px;
-      max-width: 100%;
-    }
-    #input3 {
-      width: 309px;
-      max-width: 100%;
-    }
-    #input4 {
-      width: 438px;
-      max-width: 100%;
+    /* 各象限の入力欄：幅を100%に統一 */
+    #input1, #input2, #input3, #input4 {
+      width: 100%;
+      box-sizing: border-box;
     }
     .task-input:focus {
       outline: none;
@@ -1016,19 +1007,20 @@ END OF 開発ルール
       transform: translateY(0) scale(0.97);
     }
     .deep-dive-btn {
-      padding: 4px 12px;
+      padding: 3px 10px;
       background-color: #f0f0f0;
       color: #888;
       border: none;
       border-radius: 6px;
       cursor: pointer;
       font-size: 0.75em;
-      margin-right: 6px;
+      margin-right: 4px;
       line-height: 1.4;
-      min-height: 24px;
+      height: 26px;
       display: inline-flex;
       align-items: center;
       transition: all 0.2s ease;
+      flex-shrink: 0;
     }
     .deep-dive-btn:hover {
       background-color: #e0e0e0;
@@ -1039,7 +1031,7 @@ END OF 開発ルール
       transform: translateY(0) scale(0.97);
     }
     .timer-btn {
-      padding: 4px 10px;
+      padding: 3px 10px;
       color: white;
       border: none;
       border-radius: 3px;
@@ -1047,7 +1039,8 @@ END OF 開発ルール
       font-size: 0.8em;
       font-weight: bold;
       white-space: nowrap;
-      line-height: 1.5;
+      height: 26px;
+      line-height: 1;
       min-height: 28px;
       min-width: 50px;
       display: none;  /* 初期状態では非表示 */
@@ -1540,6 +1533,7 @@ END OF 開発ルール
         white-space: nowrap;
       }
       /* タイマーボタン：フル幅 */
+      /* タイマーボタン：スマホでは幅100%・input直前に配置 */
       .timer-btn {
         width: 100% !important;
         min-width: unset !important;
@@ -1548,6 +1542,13 @@ END OF 開発ルール
         border-radius: 5px !important;
         box-sizing: border-box !important;
         padding: 3px 6px !important;
+        margin-bottom: 4px !important;
+      }
+      /* header-row: スマホではh4のみ横並び */
+      .header-row {
+        flex-direction: row !important;
+        align-items: center !important;
+        margin-bottom: 5px !important;
       }
 
       /* ===== 第2象限 simple-header：横並び ===== */
@@ -1558,6 +1559,14 @@ END OF 開発ルール
         gap: 4px;
         margin-bottom: 5px;
         width: 100%;
+      }
+      /* 第2象限h4：長いテキストでも点検ボタンが押し出されないよう制約 */
+      #section2 .simple-header h4 {
+        flex-shrink: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
       /* 止める仕組み：スマホでは非表示のため表示CSSは不要 */
 
@@ -3275,6 +3284,12 @@ END OF 開発ルール
     }
     /* PC: タイムラインビュー中央寄せ */
     @media (min-width: 769px) {
+      /* PC：タイマーボタンはinput直前に配置（スマホと同じ位置）だがmargin調整 */
+      #section1 .timer-btn {
+        margin-bottom: 4px;
+        width: auto;
+        min-width: 120px;
+      }
       #timelineView {
         padding: 16px 32px;
         width: 600px;
@@ -4196,8 +4211,8 @@ END OF 開発ルール
           <span id="purposeText"></span>
           <button class="edit-btn" onclick="editPurpose()">編集</button>
         </div>
-        <button class="timer-btn" id="timerBtn" onclick="handleTimerClick()"></button>
       </div>
+      <button class="timer-btn" id="timerBtn" onclick="handleTimerClick()"></button>
       <input type="text" class="task-input" id="input1" placeholder="本質的で今すぐ必要な行動は？...">
       <ul class="task-list" id="list1"></ul>
     </div>
@@ -14947,13 +14962,11 @@ function reviveBlueprint(id) {
       }
       btn.textContent = text;
       btn.style.backgroundColor = color;
-      // idle状態の時はボタンを非表示
       if (timerState === 'idle') {
         btn.style.display = 'none';
       } else {
         btn.style.display = 'block';
       }
-      // Keep Going!とポモドーロ完了の時は文字色もグレーに
       if (timerState === 'complete' || timerState === 'pomodoroComplete') {
         btn.style.color = '#666';
       } else {
