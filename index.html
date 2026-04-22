@@ -198,7 +198,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.272';
+    const APP_VERSION = 'v0.44.297';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -526,28 +526,16 @@ END OF 開発ルール
     .scratch-body {
       flex: 1;
       overflow-y: auto;
-      padding: 0 16px;
+      padding: 0 16px 0;
       position: relative;
       z-index: 1;
       min-height: 0;
     }
+    /* 雑記帳下部の余白（罫線と同時に確保） */
+
     .scratch-body::-webkit-scrollbar { width: 3px; }
     .scratch-body::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
-    /* 罫線背景 */
-    .scratch-body::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background-image: repeating-linear-gradient(
-        to bottom,
-        transparent 0px,
-        transparent 47px,
-        #e6e0d4 47px,
-        #e6e0d4 48px
-      );
-      pointer-events: none;
-      z-index: 0;
-    }
+    /* 罫線：各アイテムのborder-bottomで引く（スクロールずれ防止） */
     /* アイテム */
     .scratch-item {
       display: flex;
@@ -556,6 +544,8 @@ END OF 開発ルール
       position: relative;
       gap: 10px;
       cursor: pointer;
+      flex-wrap: wrap;
+      border-bottom: 1px solid #e6e0d4;
     }
     .scratch-item-dot {
       width: 6px;
@@ -570,11 +560,10 @@ END OF 開発ルール
       flex: 1;
       font-size: 0.9em;
       color: #2d2416;
-      line-height: 1;
+      line-height: 1.4;
       word-break: break-all;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      white-space: normal;
+      min-width: 0;
     }
     .scratch-item.promoted .scratch-item-text {
       color: #bbb;
@@ -604,6 +593,7 @@ END OF 開発ルール
       display: flex;
       gap: 4px;
       flex-shrink: 0;
+      flex-wrap: wrap;
     }
     .scratch-item-actions button {
       padding: 3px 9px;
@@ -619,6 +609,7 @@ END OF 開発ルール
     .scratch-item-actions .btn-del     { color: #f66;    border-color: #f66; }
     .scratch-item-actions .btn-gant    { color: #a78bfa; border-color: #a78bfa; }
     .scratch-item-actions .btn-journal { color: #262626; border-color: #262626; }
+    .scratch-item-actions .btn-hodokosu { color: #6a1b9a; border-color: rgba(156,39,176,0.4); background: linear-gradient(135deg,#f3e5f5,#e8eaf6); }
     /* タップで選択中（旧） */
     .scratch-item.selected .scratch-item-dot { background: #4facfe; }
     .scratch-task-label {
@@ -634,6 +625,29 @@ END OF 開発ルール
       min-height: 48px;
       padding: 0;
       gap: 10px;
+      border-bottom: 1px solid #e6e0d4;
+    }
+    .scratch-hodokosu-btn {
+      flex-shrink: 0;
+      background: linear-gradient(135deg, #f3e5f5, #e8eaf6);
+      border: 1px solid rgba(156,39,176,0.25);
+      border-radius: 20px;
+      padding: 5px 10px;
+      font-size: 0.78em;
+      color: #6a1b9a;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .scratch-hodokosu-btn:active {
+      background: linear-gradient(135deg, #e1bee7, #c5cae9);
+    }
+    .scratch-hodokosu-label {
+      font-size: 0.9em;
+      font-weight: 700;
     }
     .scratch-input-dot {
       width: 6px;
@@ -4186,7 +4200,9 @@ END OF 開発ルール
       <div class="scratch-input-row" id="scratchInputRow">
         <div class="scratch-input-dot" id="scratchInputDot"></div>
         <textarea class="scratch-input" id="scratchInput" placeholder="なんでも…" rows="1"></textarea>
+        <button class="scratch-hodokosu-btn" id="scratchHodokusuBtn" onclick="window.addScratchHodokosu()" title="貢献として記録（陰徳・陽徳自動判定）" style="display:none;">🤲<span class="scratch-hodokosu-label">人のためにほどこす</span></button>
       </div>
+      <div id="scratchBottomPad" style="height:400px;background-image:repeating-linear-gradient(to bottom,transparent 0px,transparent 47px,#e6e0d4 47px,#e6e0d4 48px);pointer-events:none;"></div>
 
     </div>
   </div>
@@ -5527,6 +5543,22 @@ END OF 開発ルール
 </div>
 
 <!-- ===== お知らせモーダル ===== -->
+<div id="hodokusuModal" style="display:none;position:fixed;inset:0;z-index:99500;background:rgba(0,0,0,0.88);align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(8px);">
+  <div style="max-width:340px;width:100%;text-align:center;padding:40px 32px;background:linear-gradient(160deg,#1a1a2e,#16213e);border-radius:24px;border:1px solid rgba(167,139,250,0.2);box-shadow:0 24px 80px rgba(0,0,0,0.6);">
+    <div style="font-size:3em;margin-bottom:20px;line-height:1;">🤲</div>
+    <div style="font-size:1.1em;font-weight:800;color:#a78bfa;margin-bottom:20px;letter-spacing:0.04em;">貢献感こそが、幸福の源泉。</div>
+    <div style="font-size:0.88em;color:#ccc;line-height:2;margin-bottom:28px;">
+      あなたが今、誰かのために動いた。<br>
+      それだけで、あなたの魂に積まれていく。<br>
+      見返りは要らない。<br>
+      承認も要らない。<br>
+    </div>
+    <div style="font-size:1em;font-weight:700;color:#e2d9f3;margin-bottom:32px;line-height:1.6;">あなたは今日も、<br>誰かの何かになった。</div>
+    <button onclick="window.closeHodokusuModal()" style="width:100%;padding:14px;background:linear-gradient(135deg,#7c3aed,#a855f7);border:none;border-radius:12px;color:#fff;font-size:0.95em;font-weight:700;cursor:pointer;letter-spacing:0.05em;margin-bottom:16px;">閉じる</button>
+    <div onclick="window.closeHodokusuModal();setTimeout(function(){switchView('notebook');setTimeout(function(){var pages=nbPages();if(pages&&pages.length>0){nbCurrentId=pages[0].id;nbRender();}},150);},300);" style="font-size:0.78em;color:#a78bfa;cursor:pointer;opacity:0.8;">📖 図書館でもっと読む</div>
+  </div>
+</div>
+
 <div id="oshiraseModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99000;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);" onclick="if(event.target===this)closeOshiraseModal()">
   <div style="background:#fff;border-radius:20px;width:100%;max-width:400px;max-height:85vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.2);">
     <div style="padding:20px 20px 0;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f0f0f0;margin-bottom:0;">
@@ -5657,7 +5689,12 @@ END OF 開発ルール
           <button onclick="toggleLockedMatrixLayer('ethics')" id="adminEthicsBtn" style="width:100%;padding:9px;background:transparent;border:1px solid #880e4f;border-radius:8px;color:#f48fb1;font-size:0.82em;cursor:pointer;margin-bottom:6px;">🏛️ 最高倫理マトリクス: <span id="adminEthicsStatus">非表示</span></button>
           <button onclick="toggleLockedMatrixLayer('destiny')" id="adminDestinyBtn" style="width:100%;padding:9px;background:transparent;border:1px solid #212121;border-radius:8px;color:#9e9e9e;font-size:0.82em;cursor:pointer;margin-bottom:6px;">🏛️ 天命マトリクス: <span id="adminDestinyStatus">（kingdom tier）</span></button>
         </div>
-        <button onclick="toggleAdminMode()" style="width:100%;padding:9px;background:transparent;border:1px solid #555;border-radius:8px;color:#888;font-size:0.82em;cursor:pointer;">🔒 管理者モードを解除する</button>
+        <div style="margin-top:14px;border-top:1px solid #333;padding-top:14px;">
+          <div style="font-size:0.82em;font-weight:700;color:#a78bfa;margin-bottom:8px;">🤲 ほどこすオンボーディングリセット</div>
+          <p style="font-size:0.72em;color:#888;margin:0 0 10px 0;">初回モーダルを再表示したい場合にリセット</p>
+          <button onclick="allSettings.flags.hodokusuFirstDone=false;saveAllSettings();showToast&&showToast('リセット完了。次回ほどこす時にモーダルが出ます',{type:'success'});" style="width:100%;padding:9px;background:transparent;border:1px solid #7c3aed;border-radius:8px;color:#a78bfa;font-size:0.82em;cursor:pointer;">🔄 ほどこすモーダルをリセット</button>
+        </div>
+        <button onclick="toggleAdminMode()" style="width:100%;padding:9px;background:transparent;border:1px solid #555;border-radius:8px;color:#888;font-size:0.82em;cursor:pointer;margin-top:10px;">🔒 管理者モードを解除する</button>
         <!-- 申請承認パネル -->
         <div style="margin-top:16px;border-top:1px solid #333;padding-top:14px;">
           <div style="font-size:0.82em;font-weight:700;color:#ffd700;margin-bottom:8px;">🏪 デッキショップ申請承認</div>
@@ -15615,10 +15652,18 @@ function reviveBlueprint(id) {
         (_showJournal ? '<button class="btn-journal">日誌に</button>' : '') +
         (_showGant    ? '<button class="btn-gant">造営に</button>' : '') +
         '<button class="btn-save">保存</button>' +
-        '<button class="btn-del">削除</button>';
+        '<button class="btn-del">削除</button>' +
+        '<button class="btn-hodokosu">🤲 人のためにほどこす</button>';
       actions.querySelector('.btn-save').onclick    = (e) => { e.stopPropagation(); saveInlineEdit(div, item, ta.value); };
       actions.querySelector('.btn-promote').onclick = (e) => { e.stopPropagation(); promoteInlineItem(div, item); };
       actions.querySelector('.btn-del').onclick     = (e) => { e.stopPropagation(); deleteInlineItem(div, item); };
+      actions.querySelector('.btn-hodokosu').onclick = (e) => {
+        e.stopPropagation();
+        var _text = ta.value.trim();
+        if (!_text) return;
+        var _textWithTag = _text.includes('#貢献') ? _text : _text + ' #貢献';
+        saveInlineEdit(div, item, _textWithTag);
+      };
       const _btnGant    = actions.querySelector('.btn-gant');
       const _btnJournal = actions.querySelector('.btn-journal');
       if (_btnGant)    _btnGant.onclick    = (e) => { e.stopPropagation(); promoteScratchToGant(ta.value, item); };
@@ -15696,6 +15741,17 @@ function reviveBlueprint(id) {
         input.oninput = function() {
           this.style.height = 'auto';
           this.style.height = this.scrollHeight + 'px';
+          // 入力があるときだけほどこすボタンを表示
+          var btn = document.getElementById('scratchHodokusuBtn');
+          if (btn) {
+            var _hasText = this.value.trim();
+            btn.style.display = _hasText ? 'flex' : 'none';
+            // 初回表示時のフラグ（モーダルは押下時に出す）
+            if (_hasText && !allSettings.flags.hodokusuOnboardSeen) {
+              allSettings.flags.hodokusuOnboardSeen = true;
+              saveAllSettings();
+            }
+          }
         };
         input.onkeydown = function(e) {
           if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
@@ -15705,6 +15761,32 @@ function reviveBlueprint(id) {
         };
       }
     }
+    function addScratchHodokosu() {
+      var input = document.getElementById('scratchInput');
+      if (!input || !input.value.trim()) {
+        showToast && showToast('何かを書いてからほどこしてください', {type:'info'});
+        return;
+      }
+      var text = input.value.trim();
+      // #貢献タグを付与して通常の保存フローに乗せる
+      var textWithTag = text.includes('#貢献') ? text : text + ' #貢献';
+      input.value = '';
+      if (input._autoResize) input._autoResize();
+      addScratchItem(textWithTag);
+    }
+    window.addScratchHodokosu = addScratchHodokosu;
+
+    function openHodokusuModal() {
+      var m = document.getElementById('hodokusuModal');
+      if (m) m.style.display = 'flex';
+    }
+    function closeHodokusuModal() {
+      var m = document.getElementById('hodokusuModal');
+      if (m) m.style.display = 'none';
+    }
+    window.openHodokusuModal = openHodokusuModal;
+    window.closeHodokusuModal = closeHodokusuModal;
+
     function addScratchItem(text) {
       if (!text) return;
       allTasks.push({
@@ -15716,6 +15798,51 @@ function reviveBlueprint(id) {
       });
       saveAllTasks();
       renderScratchView();
+      // ===== 貢献記録システム =====
+      if (text.includes('#貢献')) {
+        var _today = getLocalDateStr(new Date());
+        // SSOT: allSettings.flags.koukenCounts に日付キーで保存
+        if (!allSettings.flags.koukenCounts) allSettings.flags.koukenCounts = {};
+        var _koukenCount = parseInt(allSettings.flags.koukenCounts[_today] || '0');
+        if (_koukenCount >= 20) {
+          showToast && showToast('今日の貢献記録は20回が上限です', {type:'info'});
+        } else {
+          // 陰徳・陽徳の自動判定
+          // 他者名・人称・感謝反応キーワードがあれば陽徳
+          var _youTokens = ['さん','くん','ちゃん','君','様','氏','お客','先生','上司','部下',
+                            'ありがとう','感謝','喜','助かった','喜んで','喜ばれ','褒め','称え',
+                            'みんな','皆','彼','彼女','相手','友人','家族','親','子ども','子供'];
+          var _isYou = _youTokens.some(function(t){ return text.includes(t); });
+          var _kind = _isYou ? '陽徳' : '陰徳';
+          var _tokuAmt = _isYou ? 1 : 3;
+          var _gdpAmt  = _isYou ? 3 : 9;
+          // 報酬付与
+          if (typeof addToku === 'function') addToku(_tokuAmt, '貢献記録（' + _kind + '）');
+          if (typeof addGDP  === 'function') addGDP(_gdpAmt,  '貢献記録（' + _kind + '）');
+          // カウント更新
+          allSettings.flags.koukenCounts[_today] = String(_koukenCount + 1);
+          saveAllSettings();
+          // トースト
+          var _icon = _isYou ? '🌟' : '🌙';
+          // 初回ほどこし時はモーダルで思想を伝える
+          if (!allSettings.flags.hodokusuFirstDone) {
+            allSettings.flags.hodokusuFirstDone = true;
+            saveAllSettings();
+            setTimeout(function() { openHodokusuModal(); }, 400);
+            setTimeout(function() {
+              showToast && showToast(_icon + ' ' + _kind + 'を記録（徳+' + _tokuAmt + ' / GDP+' + _gdpAmt + '万）', {type:'success'});
+            }, 800);
+          } else {
+            showToast && showToast(
+              _icon + ' ' + _kind + 'を記録（徳+' + _tokuAmt + ' / GDP+' + _gdpAmt + '万）',
+              {type:'success'}
+            );
+          }
+          // お城エフェクト（陰徳は特別な輝き）
+          if (typeof triggerKoukenEffect === 'function') triggerKoukenEffect(_kind);
+        }
+      }
+      // ===========================
       setTimeout(() => {
         const input = document.getElementById('scratchInput');
         if (input) input.focus();
@@ -17043,6 +17170,21 @@ function reviveBlueprint(id) {
     } catch(e) {}
     window._dbgLog('【解析完了】BOOT SEQUENCE INITIATED --- 主の記憶領域にアクセスします / 全システム、起動を開始します / ' + APP_VERSION);
     window._dbgLog('loadAllSettings done. craftMode=' + allSettings.ui.craftModeEnabled + ' renderMode=' + allSettings.ui.craftRenderMode + ' savedView=' + localStorage.getItem('currentView'));
+    // hodokos→hodokosuフラグ名マイグレーション（旧スペルミス修正）
+    (function() {
+      var _f = allSettings.flags;
+      var _changed = false;
+      if (_f.hodokosOnboardSeen !== undefined) {
+        _f.hodokusuOnboardSeen = _f.hodokosOnboardSeen; delete _f.hodokosOnboardSeen; _changed = true;
+      }
+      if (_f.hodokosFirstDone !== undefined) {
+        _f.hodokusuFirstDone = _f.hodokosFirstDone; delete _f.hodokosFirstDone; _changed = true;
+      }
+      if (_f.nbHodokosPageAdded !== undefined) {
+        _f.nbHodokusuPageAdded = _f.nbHodokosPageAdded; delete _f.nbHodokosPageAdded; _changed = true;
+      }
+      if (_changed) saveAllSettings();
+    })();
     // gantEnabledをデフォルトtrue（既存ユーザー対応）
     if (allSettings.ui.gantEnabled !== true) {
       allSettings.ui.gantEnabled = true;
@@ -17923,7 +18065,7 @@ function reviveBlueprint(id) {
             createdAt: _mxNow, updatedAt: _mxNow
           };
           var _mxPages = nbPages();
-          _mxPages.push(_mxPage);
+          _mxPages.unshift(_mxPage);
           nbPagesSet(_mxPages);
           setTimeout(function(){ nbRender(); }, 100);
         }
@@ -17961,7 +18103,7 @@ function reviveBlueprint(id) {
             createdAt: _gtNow, updatedAt: _gtNow
           };
           var _pages = nbPages();
-          _pages.push(_gtPage);
+          _pages.unshift(_gtPage);
 
           // 称号一覧ページも同時追加
           var _titlesText = (typeof KINGDOM_TITLES !== 'undefined' ? KINGDOM_TITLES : []).map(function(t, i) {
@@ -17988,6 +18130,30 @@ function reviveBlueprint(id) {
           };
           _pages.push(_tlPage);
           nbPagesSet(_pages);
+          setTimeout(function(){ nbRender(); }, 100);
+        }
+
+        // ほどこすページ自動追加
+        if (!allSettings.flags.nbHodokusuPageAdded) {
+          allSettings.flags.nbHodokusuPageAdded = true;
+          saveAllSettings();
+          var _hkId = generateTaskId();
+          var _hkNow = new Date().toISOString();
+          var _hkTL = '「貢献感こそが、幸福の源泉。」' + '\n\n' + 'アドラー心理学では、幸福の三条件のひとつに「貢献感」を挙げる。' + '\n\n' + '承認されなくてもいい。感謝されなくてもいい。' + '\n' + '「自分は誰かの役に立てている」' + '\n' + 'という感覚そのものが、人を幸福にする。' + '\n\n' + '《陰徳と陽徳》' + '\n' + '陽徳：人に見える善行。' + '\n' + '陰徳：人に見えない善行。誰も知らない。' + '\n\n' + '陰徳の方が徳が高いとされる。見返りゼロ。それが本物。';
+          var _hkTR = '「ほどこす」とは' + '\n' + '仏教の「布施（ふせ）」に由来する。' + '\n' + '与えること自体が修行であり、' + '\n' + '与えた瞬間に功徳が生まれる。' + '\n\n' + '雑記帳に書いた行動を' + '\n' + '「人のためにほどこす」として記録できる。' + '\n\n' + '自動で陰徳・陽徳を判定し、魂の帳簿に刻まれる。' + '\n\n' + '《報酬》' + '\n' + '陽徳：徳+1 / GDP+3万' + '\n' + '陰徳：徳+3 / GDP+9万' + '\n\n' + '《心得》' + '\n' + 'あなたの行動が、誰かの何かになる。' + '\n' + '今日も、あなたは誰かのために動いた。';
+          var _hkPage = {
+            id: _hkId, kind: 'note',
+            title: '🤲 貢献感と、ほどこすこと',
+            textL: _hkTL,
+            textR: _hkTR,
+            dateL: '', dateR: '',
+            text: '', margin: '',
+            order: 998,
+            createdAt: _hkNow, updatedAt: _hkNow
+          };
+          var _hkPages = nbPages();
+          _hkPages.unshift(_hkPage);
+          nbPagesSet(_hkPages);
           setTimeout(function(){ nbRender(); }, 100);
         }
 
@@ -26056,6 +26222,38 @@ function updateCraftHUD() {
     if (typeof applyTokubunEffect === 'function') applyTokubunEffect();
   }
 }
+// ===== 貢献エフェクト =====
+function triggerKoukenEffect(kind) {
+  // craftViewが表示中ならキャンバスに光を走らせる
+  var cv = document.getElementById('craftView');
+  var canvas = document.getElementById('craftCanvas');
+  if (!cv || cv.style.display === 'none' || !canvas) return;
+  var ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  var W = canvas.width, H = canvas.height;
+  var frame = 0;
+  var maxFrame = kind === '陰徳' ? 60 : 40;
+  // 陰徳：青白い静かな光、陽徳：金色の明るい光
+  var r = kind === '陰徳' ? 180 : 255;
+  var g = kind === '陰徳' ? 200 : 220;
+  var b = kind === '陰徳' ? 255 : 100;
+  function drawEffect() {
+    if (frame >= maxFrame) return;
+    frame++;
+    var alpha = 0.35 * (1 - frame / maxFrame);
+    ctx.save();
+    var grad = ctx.createRadialGradient(W/2, H*0.45, 0, W/2, H*0.45, W*0.5);
+    grad.addColorStop(0, 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')');
+    grad.addColorStop(1, 'rgba(' + r + ',' + g + ',' + b + ',0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+    requestAnimationFrame(drawEffect);
+  }
+  drawEffect();
+}
+window.triggerKoukenEffect = triggerKoukenEffect;
+// ==========================
 function getToku() {
   return parseInt(localStorage.getItem('tokuPoints') || '0');
 }
@@ -29823,7 +30021,7 @@ function showDebugLog(_initOnly) {
          'lpModal','lpModalFrame','modal-root','setupOverlay',
          'taskEditModal','customModal','searchModal','sdfModal',
          'quizModal','deckBuilderModal','familyShareModal',
-         'tutorialOverlay','restoreModal','restoreList',
+         'tutorialOverlay','restoreModal','restoreList','hodokusuModal',
          'photoViewerModal','photoUploadModal','pvDeleteConfirm',
          'scratchView','timelineView','weeklyView','monthlyView',
          'gantView','journalView','photoLogView','notebookView',
@@ -29852,6 +30050,7 @@ function showDebugLog(_initOnly) {
          'toggleGantEnabled','toggleVisibleTab',
          'openSearchModal','closeSearchModal',
          'openZenMode','closeZenMode','saveZenMode',
+         'openHodokusuModal','closeHodokusuModal',
          'addToku','getToku','addGDP','getGDP','addGou','getGouNew',
          'generateTaskId','updateTask','createTask','toggleTaskById',
          'validateCalendarIds','isCalendarVisible',
@@ -36932,6 +37131,60 @@ function showDebugLog(_initOnly) {
        ok('ST-132: お知らせモーダルテスト 完了');
      } catch(e) { ng('ST-132: 例外', e.message); }
 
+     // ST-133: hodokosuシステムテスト
+     try {
+       ok('');
+       ok('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+       ok('ST-133: hodokosuシステムテスト');
+       ok('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+       // ①モーダルDOM確認
+       document.getElementById('hodokusuModal')
+         ? ok('ST-133·①: #hodokusuModal DOM確認')
+         : ng('ST-133·①: #hodokusuModal DOM消失', '');
+       // ②関数公開確認
+       typeof window.openHodokusuModal === 'function'
+         ? ok('ST-133·②: openHodokusuModal 公開確認')
+         : ng('ST-133·②: openHodokusuModal 未公開', '');
+       typeof window.closeHodokusuModal === 'function'
+         ? ok('ST-133·②: closeHodokusuModal 公開確認')
+         : ng('ST-133·②: closeHodokusuModal 未公開', '');
+       typeof window.addScratchHodokosu === 'function'
+         ? ok('ST-133·②: addScratchHodokosu 公開確認')
+         : ng('ST-133·②: addScratchHodokosu 未公開', '');
+       // ③ボタンDOM確認
+       document.getElementById('scratchHodokusuBtn')
+         ? ok('ST-133·③: #scratchHodokusuBtn DOM確認')
+         : ng('ST-133·③: #scratchHodokusuBtn DOM消失', '');
+       // ④フラグホワイトリスト確認
+       var _st133FlagAllowed = ['hodokusuOnboardSeen','hodokusuFirstDone','nbHodokusuPageAdded'];
+       var _st133FlagOK = _st133FlagAllowed.every(function(k){ return ['hodokusuOnboardSeen','hodokusuFirstDone','nbHodokusuPageAdded','koukenCounts','searchOnboardSeen','nbGouTokuPageAdded','zenOnboardSeen','nbZenPageAdded','nbTitlesPageAdded','nbMatrixIntroPageAdded','oshiraseRead','reflectionTime','reflectionAskedDate','nbMyRulesPageAdded','myRulesUnlocked','myBehaviorsUnlocked','myInsightsUnlocked','myFocusUnlocked'].indexOf(k) !== -1; });
+       _st133FlagOK
+         ? ok('ST-133·④: hodokosuフラグ ホワイトリスト登録確認')
+         : ng('ST-133·④: hodokosuフラグ ホワイトリスト未登録', '');
+       // ⑤旧スペルフラグ残存なし確認
+       var _st133OldFlags = ['hodokosOnboardSeen','hodokosFirstDone','nbHodokosPageAdded'];
+       var _st133OldRemain = _st133OldFlags.filter(function(k){ return allSettings.flags[k] !== undefined; });
+       _st133OldRemain.length === 0
+         ? ok('ST-133·⑤: 旧スペル(hodokos)フラグ残存なし確認')
+         : ng('ST-133·⑤: 旧スペルフラグ残存', _st133OldRemain.join(','));
+       // ⑥addScratchHodokosu 空文字ガード
+       var _st133Before = allTasks.filter(function(t){ return t.kind==='scratch'; }).length;
+       window.addScratchHodokosu && (function(){
+         var _inp = document.getElementById('scratchInput');
+         if (_inp) { _inp.value = ''; window.addScratchHodokosu(); }
+       })();
+       var _st133After = allTasks.filter(function(t){ return t.kind==='scratch'; }).length;
+       _st133After === _st133Before
+         ? ok('ST-133·⑥: addScratchHodokosu 空文字ガード確認（件数変化なし）')
+         : ng('ST-133·⑥: 空文字ガード失敗', '');
+       // ⑦雑記帳下部余白確認
+       var _st133Pad = document.getElementById('scratchBottomPad');
+       _st133Pad
+         ? ok('ST-133·⑦: #scratchBottomPad DOM確認')
+         : ng('ST-133·⑦: #scratchBottomPad DOM消失', '');
+       ok('ST-133: hodokosuシステムテスト 完了');
+     } catch(e) { ng('ST-133: 例外', e.message); }
+
      try {
        ok('');
        ok('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -36983,7 +37236,7 @@ function showDebugLog(_initOnly) {
        var _st39FlagKeys = ['tutorialSeen','gantTourSeen','journalTourSeen','scratchTourSeen','adminMode','inspectionMode','purpose','purposeConfirmed','stopCondition','stopConditionSaved'];
        var _st39FlagMissing = _st39FlagKeys.filter(function(k){ return !(k in allSettings.flags); });
        // flags許容フィールド（動的追加される既知フラグも含む）
-       var _st39FlagAllowed = _st39FlagKeys.concat(['searchOnboardSeen','nbGouTokuPageAdded','zenOnboardSeen','nbZenPageAdded','nbTitlesPageAdded','nbMatrixIntroPageAdded','oshiraseRead','reflectionTime','reflectionAskedDate','nbMyRulesPageAdded','myRulesUnlocked','myBehaviorsUnlocked','myInsightsUnlocked','myFocusUnlocked']);
+       var _st39FlagAllowed = _st39FlagKeys.concat(['searchOnboardSeen','nbGouTokuPageAdded','zenOnboardSeen','nbZenPageAdded','nbTitlesPageAdded','nbMatrixIntroPageAdded','oshiraseRead','reflectionTime','reflectionAskedDate','nbMyRulesPageAdded','myRulesUnlocked','myBehaviorsUnlocked','myInsightsUnlocked','myFocusUnlocked','koukenCounts','hodokusuOnboardSeen','hodokusuFirstDone','nbHodokusuPageAdded']);
        var _st39FlagUnknown = Object.keys(allSettings.flags).filter(function(k){ return _st39FlagAllowed.indexOf(k) === -1; });
        _st39FlagMissing.length === 0
          ? ok('SPAG[·A1·SETTINGS INTEGRITY] allSettings.flags必須フィールド全確認')
