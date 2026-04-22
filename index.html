@@ -198,7 +198,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.271';
+    const APP_VERSION = 'v0.44.272';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -27134,9 +27134,7 @@ function getSkyColor() {
   var tokubun = (typeof getTokubun === 'function') ? getTokubun() : 0;
   var purity = Math.max(0, Math.min(1, tokubun / 100));
   var gouLevel = Math.max(0, Math.min(1, -tokubun / 50));
-  // 業が深い：空全体が暗く濁る
-  if (gouLevel > 0.5) return {sky:0x0a0510, fog:0x150a20, ground:0x1a0808, type:'night'};
-  if (gouLevel > 0.1) return {sky:0x0a0f1a, fog:0x1a2030, ground:0x1a1a1a, type:'night'};
+  // 業ペナルティは空を暗くする程度にとどめ、時刻判定を優先する（朝なのに夜にならないよう）
   // 純粋さ高い：時間帯の色がより鮮やかに澄む
   if (purity > 0.8) {
     if (h >= _dawn    && h < _sunrise) return {sky:0x4070c8, fog:0x80b8f0, ground:0x3a6a2a, type:'dawn'};
