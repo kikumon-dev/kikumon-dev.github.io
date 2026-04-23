@@ -198,7 +198,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.313';
+    const APP_VERSION = 'v0.44.314';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -15730,6 +15730,9 @@ function reviveBlueprint(id) {
       if (input) {
         input.value = '';
         input.style.height = '';
+        // 入力リセット時はほどこすボタンを隠す
+        var _hBtn = document.getElementById('scratchHodokusuBtn');
+        if (_hBtn) _hBtn.style.display = 'none';
         input.oninput = function() {
           this.style.height = 'auto';
           this.style.height = this.scrollHeight + 'px';
