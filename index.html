@@ -198,7 +198,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.307';
+    const APP_VERSION = 'v0.44.308';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -25831,10 +25831,13 @@ function renderDailyFocusBanner() {
     var _badge = document.getElementById('navFocusBadge');
     var _badgeText = document.getElementById('navFocusText');
     if (_badge && _badgeText) { _badgeText.textContent = _displayStr; _badge.style.display = 'flex'; }
-    // スマホ用下部バッジにも反映
+    // スマホ用下部バッジにも反映（768px以下のみ）
     var _mbadge = document.getElementById('mobileNavFocusBadge');
     var _mbadgeText = document.getElementById('mobileNavFocusText');
-    if (_mbadge && _mbadgeText) { _mbadgeText.textContent = _displayStr; _mbadge.style.display = 'block'; }
+    if (_mbadge && _mbadgeText) {
+      _mbadgeText.textContent = _displayStr;
+      _mbadge.style.display = window.innerWidth <= 768 ? 'block' : 'none';
+    }
   } else {
     if (banner) banner.style.display = 'none';
     var _badge2 = document.getElementById('navFocusBadge');
