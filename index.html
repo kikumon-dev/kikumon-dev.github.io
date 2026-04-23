@@ -198,7 +198,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.308';
+    const APP_VERSION = 'v0.44.313';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -4141,7 +4141,7 @@ END OF 開発ルール
       style="font-size:1em;padding:12px 8px;">🔍</button>
     <button class="nav-tab" id="navDashboard" onclick="switchView('dashboard')" title="ダッシュボード" style="font-size:1.1em;padding:10px 7px;">📈</button>
     <div id="navFocusBadge" style="display:none;align-items:center;position:sticky;right:0;background:#fff;padding:0 6px 0 4px;border-left:1px solid #f0f0f0;flex-shrink:0;z-index:1;">
-      <span id="navFocusText" style="font-size:0.68em;color:#f59e0b;font-weight:700;white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis;letter-spacing:0.01em;"></span>
+      <span id="navFocusText" style="font-size:0.68em;color:#f59e0b;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:0.01em;cursor:default;" title=""></span>
     </div>
     <button class="nav-tab nav-tab-settings" id="navSettings" onclick="switchView('settings')">
       <div class="nav-avatar-wrapper" id="navAvatarWrapper" style="display: none;">
@@ -25830,12 +25830,19 @@ function renderDailyFocusBanner() {
     // ナビタブ右端バッジにも反映（PC）
     var _badge = document.getElementById('navFocusBadge');
     var _badgeText = document.getElementById('navFocusText');
-    if (_badge && _badgeText) { _badgeText.textContent = _displayStr; _badge.style.display = 'flex'; }
+    if (_badge && _badgeText) {
+      // ナビタブには焦点テキストをそのまま表示
+      var _rawFocus = _focusText || focus || '';
+      _badgeText.textContent = '✨ ' + _rawFocus;
+      _badgeText.title = _displayStr;
+      _badge.style.display = 'flex';
+    }
     // スマホ用下部バッジにも反映（768px以下のみ）
     var _mbadge = document.getElementById('mobileNavFocusBadge');
     var _mbadgeText = document.getElementById('mobileNavFocusText');
     if (_mbadge && _mbadgeText) {
-      _mbadgeText.textContent = _displayStr;
+      var _mRaw = _focusText || focus || '';
+      _mbadgeText.textContent = '✨ ' + _mRaw;
       _mbadge.style.display = window.innerWidth <= 768 ? 'block' : 'none';
     }
   } else {
@@ -41396,7 +41403,7 @@ window.togglePvStampPalette = togglePvStampPalette;
 
   <!-- スマホ用焦点バッジ（下部ナビの上） -->
   <div id="mobileNavFocusBadge" style="display:none;position:fixed;bottom:56px;left:0;right:0;z-index:5999;background:rgba(255,255,255,0.96);border-top:1px solid rgba(245,158,11,0.2);padding:3px 12px;text-align:center;">
-    <span id="mobileNavFocusText" style="font-size:0.68em;color:#f59e0b;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;max-width:100%;"></span>
+    <span id="mobileNavFocusText" style="font-size:0.72em;color:#f59e0b;font-weight:700;display:block;line-height:1.5;"></span>
   </div>
   <!-- ===== スマホ用下部ナビゲーション ===== -->
   <nav id="bottomNav" style="display:none;">
