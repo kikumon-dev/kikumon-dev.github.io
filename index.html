@@ -198,7 +198,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.297';
+    const APP_VERSION = 'v0.44.299';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -2336,14 +2336,6 @@ END OF 開発ルール
         padding: 0 8px;
       }
     }
-    @page {
-      size: A4 landscape;
-      margin: 0;
-    }
-    @page {
-      size: A4 landscape;
-      margin: 0;
-    }
     @media print {
       @page {
         margin: 0;
@@ -2358,7 +2350,7 @@ END OF 開発ルール
         overflow: hidden;
       }
       /* 印刷に不要な全UI非表示 */
-      .nav-tabs, #dailyInnerTabBar, #scratchView, #timelineView,
+      .nav-tabs, #dailyInnerTabBar, #dailyFocusBanner, #scratchView, #timelineView,
       #weeklyView, #monthlyView, #yearlyView, #notebookView,
       #shopView, #craftView, #craftHUD, #craftGDPBadge,
       #settingsView, #setupOverlay, #tutorialHelpBtn,
@@ -2505,15 +2497,6 @@ END OF 開発ルール
       /* 雑記帳・タイムラインビューを印刷時に非表示 */
       #scratchView, #timelineView {
         display: none !important;
-      }
-      /* containerをA4横 */
-      .container {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr;
-        grid-template-rows: 1fr 1fr;
-        height: 190mm;
-        width: 277mm;
-        gap: 0;
       }
     }
     /* 設定ビュー */
