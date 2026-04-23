@@ -198,7 +198,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.314';
+    const APP_VERSION = 'v0.44.317';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -25043,22 +25043,18 @@ function checkTitleChangeAndNotify() {
     { delay: 6500, icon: '✨', text: 'より良いフォーカス先が、見えてきました' }
   ];
 
-  // まず称号変化を告知
+  // 称号変化を1枚のトーストにまとめて告知
   setTimeout(function() {
-    showToast(_title.icon + ' ' + _title.name + ' に称号が変わりました', {type:'success', duration:3000});
+    showToast(
+      _title.icon + ' ' + _title.name + ' に称号が変わりました\n' +
+      '👁 自分の行動パターンが、見えてきました\n' +
+      '💡 自分だけの気づきが、見えてきました\n' +
+      '📋 自分のマイルールが、見えかけてきました\n' +
+      '✨ より良いフォーカス先が、見えてきました\n' +
+      '📈 ダッシュボードで4つの軸を見直しましょう',
+      {type:'success', duration:6000}
+    );
   }, 100);
-
-  // 続けて4軸を問いかけ
-  _msgs.forEach(function(m) {
-    setTimeout(function() {
-      showToast(m.icon + ' ' + m.text, {type:'next', duration:3000});
-    }, m.delay);
-  });
-
-  // 最後にダッシュボードへの誘導
-  setTimeout(function() {
-    showToast('ダッシュボードで4つの軸を見直しましょう', {duration:3000});
-  }, 9000);
 }
 window.checkTitleChangeAndNotify = checkTitleChangeAndNotify;
 // ===== 自分新聞 =====
