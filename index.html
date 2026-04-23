@@ -198,7 +198,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.300';
+    const APP_VERSION = 'v0.44.301';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3862,6 +3862,8 @@ END OF 開発ルール
     if (typeof showKazedayoriModal === 'function') {
       showKazedayoriModal();
     }
+    // スプラッシュ消去後に焦点バナーを再描画（起動時の50ms描画はスプラッシュに隠れるため）
+    if (typeof renderDailyFocusBanner === 'function') renderDailyFocusBanner();
   }, 2600);
 
   // 初回起動時（_splashGreetingSeen未設定 = まだ1回も起動していない）にマトリクス紹介を表示
@@ -15577,6 +15579,8 @@ function reviveBlueprint(id) {
         updateDate();
         renderAllSections(_matrixDate);
       }
+      // 今日の焦点バナーを更新
+      if (typeof renderDailyFocusBanner === 'function') renderDailyFocusBanner();
       // 設定のdailyViewModeも更新（テスト中は保存しない）
       if (!window._isTesting) {
         allSettings.ui.dailyViewMode = mode;
@@ -17891,7 +17895,6 @@ function reviveBlueprint(id) {
       document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
       if (view === 'daily') {
         dailyView.style.display = 'grid';
-        if (typeof renderDailyFocusBanner === 'function') setTimeout(renderDailyFocusBanner, 50);
         dailyView.classList.add('daily-active');
         document.getElementById('dailyInnerTabBar').style.display = 'flex';
         var _navBar = document.getElementById('dailyDateNavBar');
