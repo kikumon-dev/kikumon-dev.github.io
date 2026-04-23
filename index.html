@@ -198,7 +198,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.301';
+    const APP_VERSION = 'v0.44.302';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -15650,6 +15650,12 @@ function reviveBlueprint(id) {
         if (!_text) return;
         var _textWithTag = _text.includes('#貢献') ? _text : _text + ' #貢献';
         saveInlineEdit(div, item, _textWithTag);
+        // 初回ほどこし時はオンボーディングモーダルを表示
+        if (!allSettings.flags.hodokusuFirstDone) {
+          allSettings.flags.hodokusuFirstDone = true;
+          saveAllSettings();
+          setTimeout(function() { openHodokusuModal(); }, 400);
+        }
       };
       const _btnGant    = actions.querySelector('.btn-gant');
       const _btnJournal = actions.querySelector('.btn-journal');
@@ -28684,6 +28690,21 @@ function _ycGoSlide(n) {
               <div id="heavenBlueprintList" style="display:flex;flex-direction:column;gap:8px;">
                 <div style="font-size:0.78em;color:#a78bfa;line-height:1.7;padding:8px 0 4px 0;border-bottom:1px solid rgba(167,139,250,0.15);margin-bottom:8px;">貢献感は、幸福の源泉。<br><span style="color:#888;">ここに来るたびに、自分の貢献を確かめてね。</span></div>
               </div>
+            </div>
+          </div>
+          <div style="margin-bottom:6px;">
+            <button onclick="toggleAbout('aboutHodokosu')" style="width:100%;text-align:left;background:rgba(106,27,154,0.08);border:1px solid rgba(156,39,176,0.25);border-radius:8px;padding:8px 12px;color:#ce93d8;font-size:0.85em;font-weight:bold;cursor:pointer;">🤲 ほどこすこと</button>
+            <div id="aboutHodokosu" style="display:none;background:rgba(106,27,154,0.04);border:1px solid rgba(156,39,176,0.15);border-radius:0 0 8px 8px;padding:14px 12px;font-size:0.82em;color:#ccc;line-height:1.9;">
+              <div style="color:#ce93d8;font-weight:700;margin-bottom:6px;">🤲 布施（ふせ）― 与えること自体が修行</div>
+              <div style="margin-bottom:10px;">仏教の「布施」に由来する。与えた瞬間に功徳が生まれ、魂の帳簿に刻まれる。</div>
+              <div style="color:#ce93d8;font-weight:700;margin-bottom:6px;">陰徳と陽徳</div>
+              <div style="margin-bottom:4px;">🌙 <strong style="color:#ccc;">陰徳</strong>：誰にも見られずに行った善行。徳+3 / GDP+9万</div>
+              <div style="margin-bottom:10px;">🌟 <strong style="color:#ccc;">陽徳</strong>：誰かに喜ばれた善行。徳+1 / GDP+3万</div>
+              <div style="color:#ce93d8;font-weight:700;margin-bottom:6px;">使い方</div>
+              <div style="margin-bottom:4px;">① 雑記帳に行動を書く</div>
+              <div style="margin-bottom:4px;">② 「🤲 人のためにほどこす」ボタンを押す</div>
+              <div style="margin-bottom:10px;">③ 自動で陰徳・陽徳を判定し、#貢献タグで記録される</div>
+              <div style="color:#888;font-size:0.9em;">あなたの行動が、誰かの何かになる。<br>今日も、あなたは誰かのために動いた。</div>
             </div>
           </div>
           <div style="margin-bottom:6px;">
