@@ -198,7 +198,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.299';
+    const APP_VERSION = 'v0.44.300';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -17890,8 +17890,8 @@ function reviveBlueprint(id) {
       // タブのアクティブ状態を更新
       document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
       if (view === 'daily') {
-        if (typeof renderDailyFocusBanner === 'function') renderDailyFocusBanner();
         dailyView.style.display = 'grid';
+        if (typeof renderDailyFocusBanner === 'function') setTimeout(renderDailyFocusBanner, 50);
         dailyView.classList.add('daily-active');
         document.getElementById('dailyInnerTabBar').style.display = 'flex';
         var _navBar = document.getElementById('dailyDateNavBar');
