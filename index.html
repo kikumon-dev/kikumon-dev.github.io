@@ -198,7 +198,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.302';
+    const APP_VERSION = 'v0.44.306';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -20844,17 +20844,28 @@ function loadSettingsUI() {
           var _gk = getCurrentShichijuniKou(_now);
           if (_gk) {
             var _sekkiR = typeof getNijushiSekkiReading === 'function' ? getNijushiSekkiReading(_gk.sekkiName) : '';
+            var _sekkiPct  = Math.round((_gk.sekkiDay||1) / (_gk.sekkiTotalDays||15) * 100);
+            var _kouPct    = Math.round((_gk.dayInKou||1) / (_gk.totalDays||5) * 100);
             _body =
-              '今日は' + _gk.sekkiName + '（' + _sekkiR + '）で、\n' +
-              _gk.name + '（' + _gk.reading + '）です。\n' +
-              '\n' +
-              '🌿 二十四節気 ＝ ' + _gk.sekkiName + ' ' + (_gk.sekkiDay||'-') + '日目\n' +
-              '　　（' + (_gk.sekkiStart||'') + '〜' + (_gk.sekkiEnd||'') + '）\n' +
-              '\n' +
-              '🍃 七十二候 ＝ ' + _gk.name + ' ' + (_gk.dayInKou||'-') + '日目\n' +
-              '　　（' + (_gk.kouStart||'') + '〜' + (_gk.kouEnd||'') + '）\n' +
-              '\n' +
-              _gk.desc + '。';
+              '<div style="margin-bottom:14px;font-size:0.95em;line-height:1.8;">' +
+              '今日は' + _gk.sekkiName + '（' + _sekkiR + '）で、<br>' +
+              _gk.name + '（' + _gk.reading + '）です。' +
+              '</div>' +
+              '<div style="margin-bottom:14px;">' +
+              '<div style="font-size:0.78em;font-weight:700;margin-bottom:5px;opacity:0.85;">🌿 二十四節気 ＝ ' + _gk.sekkiName + '　' + (_gk.sekkiDay||'-') + '日目 / ' + (_gk.sekkiTotalDays||'-') + '日間</div>' +
+              '<div style="font-size:0.7em;opacity:0.6;margin-bottom:5px;">（' + (_gk.sekkiStart||'') + '〜' + (_gk.sekkiEnd||'') + '）</div>' +
+              '<div style="background:rgba(0,0,0,0.15);border-radius:99px;height:10px;overflow:hidden;">' +
+              '<div style="height:100%;border-radius:99px;background:' + _col.text + ';width:' + _sekkiPct + '%;transition:width 0.6s ease;"></div>' +
+              '</div>' +
+              '</div>' +
+              '<div style="margin-bottom:14px;">' +
+              '<div style="font-size:0.78em;font-weight:700;margin-bottom:5px;opacity:0.85;">🍃 七十二候 ＝ ' + _gk.name + '　' + (_gk.dayInKou||'-') + '日目 / ' + (_gk.totalDays||'-') + '日間</div>' +
+              '<div style="font-size:0.7em;opacity:0.6;margin-bottom:5px;">（' + (_gk.kouStart||'') + '〜' + (_gk.kouEnd||'') + '）</div>' +
+              '<div style="background:rgba(0,0,0,0.15);border-radius:99px;height:10px;overflow:hidden;">' +
+              '<div style="height:100%;border-radius:99px;background:' + _col.text + ';width:' + _kouPct + '%;transition:width 0.6s ease;"></div>' +
+              '</div>' +
+              '</div>' +
+              '<div style="font-size:0.88em;line-height:1.8;opacity:0.85;">' + _gk.desc + '。</div>';
             if (typeof getShichijuniKouColor === 'function') {
               _col = getShichijuniKouColor(_gk.sekkiName, _gk.kouOrder);
             }
@@ -20878,7 +20889,7 @@ function loadSettingsUI() {
         if (!_modal || !_card) return;
         document.getElementById('kazedayoriDate').textContent  = _dateStr;
         document.getElementById('kazedayoriGreet').textContent = _greet;
-        document.getElementById('kazedayoriBody').textContent  = _body;
+        document.getElementById('kazedayoriBody').innerHTML  = _body;
         document.getElementById('kazedayoriFooter').textContent = _moonFooter;
 
         // 候カラーを適用
@@ -24228,7 +24239,7 @@ window.addEventListener('afterprint', function() {
         <div style="font-size:1.35em;font-weight:800;letter-spacing:0.06em;margin-bottom:6px;" id="kazedayoriLabel">🌸 季節の風だより</div>
         <div style="font-size:0.85em;font-weight:500;margin-bottom:18px;opacity:0.75;" id="kazedayoriDate"></div>
         <div style="font-size:0.98em;font-weight:700;margin-bottom:18px;line-height:1.6;" id="kazedayoriGreet"></div>
-        <div style="font-size:0.93em;line-height:2.0;white-space:pre-line;" id="kazedayoriBody"></div>
+        <div style="font-size:0.93em;line-height:1.8;" id="kazedayoriBody"></div>
         <div style="margin-top:20px;font-size:0.93em;line-height:2.0;white-space:pre-line;" id="kazedayoriFooter"></div>
       </div>
       <!-- 常に見える閉じるボタン -->
