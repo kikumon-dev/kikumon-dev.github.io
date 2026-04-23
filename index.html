@@ -198,7 +198,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.306';
+    const APP_VERSION = 'v0.44.307';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -2350,7 +2350,7 @@ END OF 開発ルール
         overflow: hidden;
       }
       /* 印刷に不要な全UI非表示 */
-      .nav-tabs, #dailyInnerTabBar, #dailyFocusBanner, #scratchView, #timelineView,
+      .nav-tabs, #dailyInnerTabBar, #navFocusBadge, #mobileNavFocusBadge, #scratchView, #timelineView,
       #weeklyView, #monthlyView, #yearlyView, #notebookView,
       #shopView, #craftView, #craftHUD, #craftGDPBadge,
       #settingsView, #setupOverlay, #tutorialHelpBtn,
@@ -4140,6 +4140,9 @@ END OF 開発ルール
     <button class="nav-tab" id="navSearch" onclick="openSearchModal()" title="タスクを検索"
       style="font-size:1em;padding:12px 8px;">🔍</button>
     <button class="nav-tab" id="navDashboard" onclick="switchView('dashboard')" title="ダッシュボード" style="font-size:1.1em;padding:10px 7px;">📈</button>
+    <div id="navFocusBadge" style="display:none;align-items:center;position:sticky;right:0;background:#fff;padding:0 6px 0 4px;border-left:1px solid #f0f0f0;flex-shrink:0;z-index:1;">
+      <span id="navFocusText" style="font-size:0.68em;color:#f59e0b;font-weight:700;white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis;letter-spacing:0.01em;"></span>
+    </div>
     <button class="nav-tab nav-tab-settings" id="navSettings" onclick="switchView('settings')">
       <div class="nav-avatar-wrapper" id="navAvatarWrapper" style="display: none;">
         <img id="navAvatar" src="" alt="" class="nav-avatar">
@@ -4191,11 +4194,7 @@ END OF 開発ルール
 
     </div>
   </div>
-  <!-- 今日の焦点バナー -->
-  <div id="dailyFocusBanner" style="display:none;margin:0 8px 8px;padding:10px 14px;background:linear-gradient(135deg,#fff9f0,#fffdf5);border-radius:12px;border:1px solid rgba(245,158,11,0.25);cursor:pointer;" onclick="switchView('notebook')">
-    <div style="font-size:0.7em;color:#f59e0b;font-weight:700;margin-bottom:2px;">📋 今日の焦点</div>
-    <div id="dailyFocusText" style="font-size:0.85em;color:#444;font-weight:600;line-height:1.4;"></div>
-  </div>
+
   <div class="container" style="position:relative;">
     <!-- 左上: 緊急かつ重要 -->
     <div class="section" id="section1">
@@ -21006,7 +21005,7 @@ function loadSettingsUI() {
           if (!banner || !empty) return;
           const gvs = getGrandVisions();
           if (gvs.length === 0) {
-            banner.style.display = 'none';
+            if (banner) banner.style.display = 'none';
             empty.style.display  = 'block';
             _selectedGrandVisionId = null;
             return;
@@ -25792,9 +25791,9 @@ function getMyRules() {
 
 // ===== 今日の焦点バナー =====
 function renderDailyFocusBanner() {
-  var banner = document.getElementById('dailyFocusBanner');
-  var text = document.getElementById('dailyFocusText');
-  if (!banner || !text) return;
+  // バナーは削除済み。ナビタブバッジのみ更新する
+  var banner = null;
+  var text = { textContent: '' };
 
   // マイルールページのtextRから「▼ 今日の焦点」以降の▷行を抽出
   var focus = '';
@@ -25825,10 +25824,23 @@ function renderDailyFocusBanner() {
     var _display = [];
     if (focus) _display.push('📋 ' + focus);
     if (_focusText) _display.push('✨ ' + _focusText);
-    text.textContent = _display.join('　');
-    banner.style.display = 'block';
+    var _displayStr = _display.join('　');
+    text.textContent = _displayStr;
+    if (banner) banner.style.display = 'block';
+    // ナビタブ右端バッジにも反映（PC）
+    var _badge = document.getElementById('navFocusBadge');
+    var _badgeText = document.getElementById('navFocusText');
+    if (_badge && _badgeText) { _badgeText.textContent = _displayStr; _badge.style.display = 'flex'; }
+    // スマホ用下部バッジにも反映
+    var _mbadge = document.getElementById('mobileNavFocusBadge');
+    var _mbadgeText = document.getElementById('mobileNavFocusText');
+    if (_mbadge && _mbadgeText) { _mbadgeText.textContent = _displayStr; _mbadge.style.display = 'block'; }
   } else {
-    banner.style.display = 'none';
+    if (banner) banner.style.display = 'none';
+    var _badge2 = document.getElementById('navFocusBadge');
+    if (_badge2) _badge2.style.display = 'none';
+    var _mbadge2 = document.getElementById('mobileNavFocusBadge');
+    if (_mbadge2) _mbadge2.style.display = 'none';
   }
 }
 window.renderDailyFocusBanner = renderDailyFocusBanner;
@@ -41379,6 +41391,10 @@ window.togglePvStampPalette = togglePvStampPalette;
       }
     </style>
 
+  <!-- スマホ用焦点バッジ（下部ナビの上） -->
+  <div id="mobileNavFocusBadge" style="display:none;position:fixed;bottom:56px;left:0;right:0;z-index:5999;background:rgba(255,255,255,0.96);border-top:1px solid rgba(245,158,11,0.2);padding:3px 12px;text-align:center;">
+    <span id="mobileNavFocusText" style="font-size:0.68em;color:#f59e0b;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;max-width:100%;"></span>
+  </div>
   <!-- ===== スマホ用下部ナビゲーション ===== -->
   <nav id="bottomNav" style="display:none;">
     <button class="bnav-btn" id="bnavDaily" onclick="switchView('daily')">
