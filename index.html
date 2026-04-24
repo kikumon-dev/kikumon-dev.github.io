@@ -195,12 +195,12 @@ END OF 開発ルール
   <meta charset="utf-8">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Noto+Sans+JP:wght@400;700&display=swap">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>やることクラフト</title>  <!-- バージョンはJSで動的設定 -->
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.59';
+    const APP_VERSION = 'v0.45.60';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -3668,17 +3668,17 @@ END OF 開発ルール
 #universityView .hero-in{position:relative;z-index:1;max-width:780px;margin:0 auto;}
 #universityView .hero-icon{font-size:48px;display:block;margin-bottom:10px;}
 #universityView .hero-h1{font-family:'Cinzel',serif;font-size:clamp(17px,4vw,30px);color:#F0D060;letter-spacing:.07em;line-height:1.35;margin-bottom:10px;text-shadow:0 2px 20px rgba(240,208,96,.3);}
-#universityView .hero-sub{font-size:12px;color:#606070;margin-bottom:14px;font-style:italic;}
+#universityView .hero-sub{font-size:14px;color:#606070;margin-bottom:14px;font-style:italic;}
 #universityView .hero-desc{font-size:clamp(13px,1.8vw,15px);color:#8A9080;line-height:1.9;max-width:640px;margin:0 auto 22px;}
 #universityView .hero-kpi{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:340px;margin:0 auto;}
 #universityView .kpi{background:rgba(255,255,255,.07);border:1px solid rgba(240,208,96,.3);border-radius:12px;padding:16px 12px;text-align:center;}
 #universityView .kpi-n{font-family:'Cinzel',serif;font-size:28px;font-weight:900;color:#F0D060;display:block;margin-bottom:4px;}
-#universityView .kpi-l{font-size:12px;color:#B0A880;letter-spacing:0.02em;}
+#universityView .kpi-l{font-size:14px;color:#B0A880;letter-spacing:0.02em;}
 
 /* カード */
 #universityView .sec-head{max-width:1100px;margin:0 auto;padding:24px 16px 12px;}
-#universityView .sec-title{font-family:'Cinzel',serif;font-size:14px;font-weight:700;color:#2A1808;padding:0 0 7px 12px;border-left:4px solid #8A6020;border-bottom:1px solid #DDD8CC;}
-#universityView .sec-note{font-size:11px;color:#888;margin-top:6px;}
+#universityView .sec-title{font-family:'Cinzel',serif;font-size:17px;font-weight:700;color:#2A1808;padding:0 0 9px 14px;border-left:4px solid #8A6020;border-bottom:1px solid #DDD8CC;}
+#universityView .sec-note{font-size:13px;color:#888;margin-top:6px;}
 #universityView .tc-grid{max-width:1100px;margin:0 auto;padding:0 12px 20px;display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
 @media(min-width:600px){#universityView .tc-grid{grid-template-columns:repeat(3,1fr);}}
 @media(min-width:900px){#universityView .tc-grid{grid-template-columns:repeat(4,1fr);}}
@@ -3686,9 +3686,9 @@ END OF 開発ルール
 #universityView .tc:active{transform:scale(.96);}
 #universityView .tc.active{border-color:var(--c,#8A6020);}
 #universityView .tc .c-icon{font-size:26px;line-height:1.3;height:34px;display:flex;align-items:center;}
-#universityView .tc .c-title{font-family:'Cinzel',serif;font-size:12px;font-weight:700;line-height:1.3;}
-#universityView .tc .c-sub{font-size:10px;color:#888;}
-#universityView .tc .c-desc{font-size:11px;color:#666;line-height:1.5;margin-top:2px;}
+#universityView .tc .c-title{font-family:'Cinzel',serif;font-size:15px;font-weight:700;line-height:1.35;}
+#universityView .tc .c-sub{font-size:13px;color:#888;}
+#universityView .tc .c-desc{font-size:14px;color:#666;line-height:1.6;margin-top:4px;}
 #universityView .tc .c-bar{height:3px;border-radius:2px;margin-top:5px;background:var(--c,#8A6020);}
 #universityView .tc.card-dark{background:linear-gradient(135deg,#0C1820,#081018)!important;border-color:rgba(32,128,160,.3)!important;}
 #universityView .tc.card-fire{background:linear-gradient(135deg,#1A0808,#0A0C14)!important;border-color:rgba(192,48,16,.3)!important;}
@@ -3707,7 +3707,7 @@ END OF 開発ルール
 #ov-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;width:100%;max-width:100%;box-sizing:border-box;}
 
 /* フッター */
-#universityView .ft{background:#141008;color:#404030;text-align:center;padding:22px 14px;font-size:11px;font-style:italic;line-height:1.9;}
+#universityView .ft{background:#141008;color:#404030;text-align:center;padding:22px 14px;font-size:13px;font-style:italic;line-height:1.9;}
 #universityView .ft-t{font-family:'Cinzel',serif;font-size:11px;color:#605040;margin-bottom:4px;font-style:normal;}
 
 /* ポータル共通コンポーネント（パネル内で使用） */
@@ -3727,12 +3727,12 @@ END OF 開発ルール
 #universityView .hero-kpi{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:340px;margin:0 auto;}
 #universityView .kpi{background:rgba(255,255,255,.07);border:1px solid rgba(240,208,96,.3);border-radius:12px;padding:16px 12px;text-align:center;}
 #universityView .kpi-n{font-family:'Cinzel',serif;font-size:28px;font-weight:900;color:#F0D060;display:block;margin-bottom:4px;}
-#universityView .kpi-l{font-size:12px;color:#B0A880;letter-spacing:0.02em;}
+#universityView .kpi-l{font-size:14px;color:#B0A880;letter-spacing:0.02em;}
 
 /* 共通セクション見出し */
 #universityView .sec-wrap{max-width:1100px;margin:0 auto;padding:40px 18px 18px;}
 #universityView .sec-title{font-family:'Cinzel',serif;font-size:17px;font-weight:700;color:#2A1808;padding:0 0 10px 16px;border-left:5px solid #8A6020;border-bottom:1px solid #DDD8CC;}
-#universityView .sec-desc{font-size:13px;color:#888;margin-top:8px;line-height:1.7;}
+#universityView .sec-desc{font-size:14px;color:#777;margin-top:8px;line-height:1.8;}
 
 /* 帝国選択グリッド */
 #universityView .empire-grid{max-width:1100px;margin:0 auto;padding:0 16px 20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:13px;}
@@ -3741,10 +3741,10 @@ END OF 開発ルール
 #universityView .empire-card.active{border-color:var(--ec,#8A6020);box-shadow:0 4px 14px rgba(0,0,0,.1);}
 #universityView .ec-icon{font-size:34px;line-height:1;}
 #universityView .ec-title{font-family:'Cinzel',serif;font-size:14px;font-weight:700;}
-#universityView .ec-era{font-size:11px;color:#999;}
-#universityView .ec-currency{font-size:11px;color:#777;}
-#universityView .ec-duration{font-family:'Cinzel',serif;font-size:13px;font-weight:700;margin-top:2px;}
-#universityView .ec-desc{font-size:12px;color:#666;line-height:1.6;margin-top:3px;}
+#universityView .ec-era{font-size:13px;color:#999;}
+#universityView .ec-currency{font-size:13px;color:#777;}
+#universityView .ec-duration{font-family:'Cinzel',serif;font-size:15px;font-weight:700;margin-top:3px;}
+#universityView .ec-desc{font-size:14px;color:#666;line-height:1.7;margin-top:4px;}
 #universityView .ec-bar{height:4px;border-radius:2px;margin-top:6px;background:var(--ec,#8A6020);}
 #universityView .sum-card{background:linear-gradient(135deg,#2A1808,#0A1018);color:#EEE8D8;border-color:rgba(200,168,48,.3);}
 #universityView .sum-card .ec-title{color:#F0D060;}#universityView .sum-card .ec-desc{color:#9090A0;}#universityView .sum-card .ec-era, #universityView .sum-card .ec-currency{color:#606060;}
@@ -4085,7 +4085,7 @@ END OF 開発ルール
 #universityView .hero-kpi{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:340px;margin:0 auto;}
 #universityView .kpi{background:rgba(255,255,255,.07);border:1px solid rgba(240,208,96,.3);border-radius:12px;padding:16px 12px;text-align:center;}
 #universityView .kpi-n{font-family:'Cinzel',serif;font-size:28px;font-weight:900;color:#F0D060;display:block;margin-bottom:4px;}
-#universityView .kpi-l{font-size:12px;color:#B0A880;letter-spacing:0.02em;}
+#universityView .kpi-l{font-size:14px;color:#B0A880;letter-spacing:0.02em;}
 
 /* ━━━ セクション ━━━ */
 #universityView .sec{max-width:1000px;margin:0 auto;padding:44px 18px 0;}
@@ -4185,7 +4185,7 @@ END OF 開発ルール
 #universityView .hero-kpi{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:340px;margin:0 auto;}
 #universityView .kpi{background:rgba(255,255,255,.07);border:1px solid rgba(240,208,96,.3);border-radius:12px;padding:16px 12px;text-align:center;}
 #universityView .kpi-n{font-family:'Cinzel',serif;font-size:28px;font-weight:900;color:#F0D060;display:block;margin-bottom:4px;}
-#universityView .kpi-l{font-size:12px;color:#B0A880;letter-spacing:0.02em;}
+#universityView .kpi-l{font-size:14px;color:#B0A880;letter-spacing:0.02em;}
 
 /* 注意書き */
 #universityView .caution-bar{background:rgba(200,120,20,.08);border:1px solid rgba(200,120,20,.2);padding:12px 18px;text-align:center;font-size:13px;color:#705020;}
@@ -5802,8 +5802,8 @@ END OF 開発ルール
 
 
 
-#ov-body .tip-title{font-size:11px;font-weight:700;color:#E8C060;margin-bottom:4px;}
-#ov-body .tip-body{font-size:10px;color:#B0A080;line-height:1.5;}
+#ov-body .tip-title{font-size:13px;font-weight:700;color:#E8C060;margin-bottom:5px;}
+#ov-body .tip-body{font-size:12px;color:#B0A080;line-height:1.6;}
 #ov-body .subtitle{font-size:14px;color:#888;font-style:italic;margin-top:6px;line-height:1.6;}
 #ov-body .era-badge{display:inline-block;font-size:12px;color:#8A6020;background:rgba(200,168,48,.1);border:1px solid rgba(200,168,48,.3);border-radius:20px;padding:3px 12px;margin-top:8px;}
 #ov-body header{text-align:center;padding:8px 16px 16px;border-bottom:1px solid #DDD8CC;margin-bottom:20px;}
