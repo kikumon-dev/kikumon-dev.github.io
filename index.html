@@ -200,7 +200,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.50';
+    const APP_VERSION = 'v0.45.51';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -7407,13 +7407,19 @@ function openPanel(sid) {
     el.style.wordBreak = 'break-word';
   });
 
-  // ブロックのタップ
+  // ブロックのタップ（タッチのみopenクラス付与、マウス環境はhoverCSSのみ）
   ovBody.querySelectorAll('.block').forEach(function(bl) {
     bl.addEventListener('click', function(e) {
+      // マウス操作（pointer:fine）の場合はopen不要（hover CSSで対応）
+      if (window.matchMedia('(pointer:fine)').matches) return;
       var isOpen = bl.classList.contains('open');
       ovBody.querySelectorAll('.block').forEach(function(b){ b.classList.remove('open'); });
       if (!isOpen) bl.classList.add('open');
       e.stopPropagation();
+    });
+    // マウス離脱でopenを必ず消す
+    bl.addEventListener('mouseleave', function() {
+      bl.classList.remove('open');
     });
   });
   ovBody.addEventListener('click', function() {
@@ -27956,13 +27962,19 @@ function openPanel(sid) {
     el.style.wordBreak = 'break-word';
   });
 
-  // ブロックのタップ
+  // ブロックのタップ（タッチのみopenクラス付与、マウス環境はhoverCSSのみ）
   ovBody.querySelectorAll('.block').forEach(function(bl) {
     bl.addEventListener('click', function(e) {
+      // マウス操作（pointer:fine）の場合はopen不要（hover CSSで対応）
+      if (window.matchMedia('(pointer:fine)').matches) return;
       var isOpen = bl.classList.contains('open');
       ovBody.querySelectorAll('.block').forEach(function(b){ b.classList.remove('open'); });
       if (!isOpen) bl.classList.add('open');
       e.stopPropagation();
+    });
+    // マウス離脱でopenを必ず消す
+    bl.addEventListener('mouseleave', function() {
+      bl.classList.remove('open');
     });
   });
   ovBody.addEventListener('click', function() {
