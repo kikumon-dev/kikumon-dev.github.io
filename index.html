@@ -200,7 +200,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.25';
+    const APP_VERSION = 'v0.45.50';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -222,6 +222,12 @@ END OF 開発ルール
       (function() {
         try {
           var params = new URLSearchParams(window.location.search);
+          // ?view=university で大学ビューを直接開く
+          var viewParam = params.get('view');
+          if (viewParam === 'university') {
+            window.history.replaceState({}, '', window.location.pathname);
+            setTimeout(function(){ if(typeof switchView==='function') switchView('university'); }, 800);
+          }
           var deckParam = params.get('deck');
           if (!deckParam) return;
           // パラメータをクリア（履歴汚染防止）
@@ -3664,10 +3670,10 @@ END OF 開発ルール
 #universityView .hero-h1{font-family:'Cinzel',serif;font-size:clamp(17px,4vw,30px);color:#F0D060;letter-spacing:.07em;line-height:1.35;margin-bottom:10px;text-shadow:0 2px 20px rgba(240,208,96,.3);}
 #universityView .hero-sub{font-size:12px;color:#606070;margin-bottom:14px;font-style:italic;}
 #universityView .hero-desc{font-size:clamp(13px,1.8vw,15px);color:#8A9080;line-height:1.9;max-width:640px;margin:0 auto 22px;}
-#universityView .hero-kpi{display:flex;flex-wrap:wrap;justify-content:center;gap:9px;}
-#universityView .kpi{background:rgba(255,255,255,.05);border:1px solid rgba(240,208,96,.2);border-radius:9px;padding:9px 14px;min-width:80px;}
-#universityView .kpi-n{font-family:'Cinzel',serif;font-size:17px;font-weight:900;color:#F0D060;display:block;margin-bottom:2px;}
-#universityView .kpi-l{font-size:10px;color:#5A5A6A;}
+#universityView .hero-kpi{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:340px;margin:0 auto;}
+#universityView .kpi{background:rgba(255,255,255,.07);border:1px solid rgba(240,208,96,.3);border-radius:12px;padding:16px 12px;text-align:center;}
+#universityView .kpi-n{font-family:'Cinzel',serif;font-size:28px;font-weight:900;color:#F0D060;display:block;margin-bottom:4px;}
+#universityView .kpi-l{font-size:12px;color:#B0A880;letter-spacing:0.02em;}
 
 /* カード */
 #universityView .sec-head{max-width:1100px;margin:0 auto;padding:24px 16px 12px;}
@@ -3718,10 +3724,10 @@ END OF 開発ルール
 #universityView .hero-h1{font-family:'Cinzel',serif;font-size:clamp(20px,5vw,34px);color:#F0D060;letter-spacing:.07em;line-height:1.35;margin-bottom:12px;text-shadow:0 2px 20px rgba(240,208,96,.3);}
 #universityView .hero-sub{font-size:13px;color:#606070;margin-bottom:20px;font-style:italic;}
 #universityView .hero-desc{font-size:clamp(13px,1.8vw,15px);color:#8A9080;line-height:2.0;max-width:640px;margin:0 auto 30px;}
-#universityView .hero-kpi{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;}
-#universityView .kpi{background:rgba(255,255,255,.05);border:1px solid rgba(240,208,96,.2);border-radius:10px;padding:12px 20px;min-width:108px;}
-#universityView .kpi-n{font-family:'Cinzel',serif;font-size:22px;font-weight:900;color:#F0D060;display:block;margin-bottom:3px;}
-#universityView .kpi-l{font-size:11px;color:#5A5A6A;}
+#universityView .hero-kpi{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:340px;margin:0 auto;}
+#universityView .kpi{background:rgba(255,255,255,.07);border:1px solid rgba(240,208,96,.3);border-radius:12px;padding:16px 12px;text-align:center;}
+#universityView .kpi-n{font-family:'Cinzel',serif;font-size:28px;font-weight:900;color:#F0D060;display:block;margin-bottom:4px;}
+#universityView .kpi-l{font-size:12px;color:#B0A880;letter-spacing:0.02em;}
 
 /* 共通セクション見出し */
 #universityView .sec-wrap{max-width:1100px;margin:0 auto;padding:40px 18px 18px;}
@@ -4076,10 +4082,10 @@ END OF 開発ルール
 #universityView .hero-h1{font-family:'Cinzel',serif;font-size:clamp(18px,4.5vw,32px);color:#F0D060;letter-spacing:.07em;line-height:1.35;margin-bottom:12px;text-shadow:0 2px 20px rgba(240,208,96,.3);}
 #universityView .hero-sub{font-size:13px;color:#606070;margin-bottom:20px;font-style:italic;}
 #universityView .hero-desc{font-size:clamp(13px,1.8vw,15px);color:#8A9080;line-height:2.0;max-width:680px;margin:0 auto 28px;}
-#universityView .hero-kpi{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;}
-#universityView .kpi{background:rgba(255,255,255,.05);border:1px solid rgba(240,208,96,.2);border-radius:10px;padding:12px 18px;min-width:100px;}
-#universityView .kpi-n{font-family:'Cinzel',serif;font-size:20px;font-weight:900;color:#F0D060;display:block;margin-bottom:3px;}
-#universityView .kpi-l{font-size:11px;color:#5A5A6A;}
+#universityView .hero-kpi{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:340px;margin:0 auto;}
+#universityView .kpi{background:rgba(255,255,255,.07);border:1px solid rgba(240,208,96,.3);border-radius:12px;padding:16px 12px;text-align:center;}
+#universityView .kpi-n{font-family:'Cinzel',serif;font-size:28px;font-weight:900;color:#F0D060;display:block;margin-bottom:4px;}
+#universityView .kpi-l{font-size:12px;color:#B0A880;letter-spacing:0.02em;}
 
 /* ━━━ セクション ━━━ */
 #universityView .sec{max-width:1000px;margin:0 auto;padding:44px 18px 0;}
@@ -4176,10 +4182,10 @@ END OF 開発ルール
 #universityView .hero-h1{font-family:'Cinzel',serif;font-size:clamp(18px,4vw,30px);color:#F0D060;letter-spacing:.07em;line-height:1.35;margin-bottom:10px;text-shadow:0 2px 20px rgba(240,208,96,.3);}
 #universityView .hero-sub{font-size:13px;color:#606070;margin-bottom:16px;font-style:italic;}
 #universityView .hero-desc{font-size:14px;color:#8A9080;line-height:1.9;max-width:680px;margin:0 auto 24px;}
-#universityView .hero-kpi{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;}
-#universityView .kpi{background:rgba(255,255,255,.05);border:1px solid rgba(240,208,96,.2);border-radius:10px;padding:10px 16px;min-width:90px;}
-#universityView .kpi-n{font-family:'Cinzel',serif;font-size:18px;font-weight:900;color:#F0D060;display:block;margin-bottom:2px;}
-#universityView .kpi-l{font-size:10px;color:#5A5A6A;}
+#universityView .hero-kpi{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:340px;margin:0 auto;}
+#universityView .kpi{background:rgba(255,255,255,.07);border:1px solid rgba(240,208,96,.3);border-radius:12px;padding:16px 12px;text-align:center;}
+#universityView .kpi-n{font-family:'Cinzel',serif;font-size:28px;font-weight:900;color:#F0D060;display:block;margin-bottom:4px;}
+#universityView .kpi-l{font-size:12px;color:#B0A880;letter-spacing:0.02em;}
 
 /* 注意書き */
 #universityView .caution-bar{background:rgba(200,120,20,.08);border:1px solid rgba(200,120,20,.2);padding:12px 18px;text-align:center;font-size:13px;color:#705020;}
@@ -4303,7 +4309,7 @@ END OF 開発ルール
   #universityView .container{ max-width: 960px; margin: 0 auto; padding: 36px 18px 80px; }
 
   /* ヘッダー */
-  #universityView header{ text-align: center; margin-bottom: 48px; }
+  #universityView header{ text-align: center; margin-bottom: 16px; }
   #universityView .hicon{ font-size: 56px; display: block; margin-bottom: 14px; }
   #universityView h1{
     font-family: 'Cinzel', serif;
@@ -4924,12 +4930,54 @@ END OF 開発ルール
 #universityView .header-icon{ font-size: 44px; display: block; margin-bottom: 10px; }
 #universityView .debasement{ background: rgba(212,168,64,0.05); border: 1px solid #4A3818; border-radius: 8px; padding: 16px 20px; margin-bottom: 28px; }
 #universityView .debasement h3{ font-family: 'Cinzel', serif; font-size: 12px; color: #D4A840; margin-bottom: 12px; letter-spacing: 0.06em; }
-#universityView .silver-bars{ display: flex; gap: 4px; align-items: flex-end; height: 60px; margin-bottom: 8px; }
-#universityView .silver-bar{ flex: 1; border-radius: 3px 3px 0 0; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; padding-top: 4px; position: relative; background: #1A1208; border: 1px solid #3A2808; }
-#universityView .silver-fill{ position: absolute; bottom: 0; left: 0; right: 0; border-radius: 3px 3px 0 0; background: linear-gradient(180deg, #C8C8C8, #909090); transition: height 0.3s; }
-#universityView .bar-label{ position: absolute; top: -20px; font-size: 9px; color: #9A8050; white-space: nowrap; }
-#universityView .bar-pct{ position: absolute; bottom: 2px; font-size: 9px; color: #EEE; font-weight: 700; z-index: 1; text-shadow: 0 1px 2px rgba(0,0,0,0.9); }
-#universityView .debasement-note{ font-size: 11px; color: #7A6840; line-height: 1.6; }
+#universityView .silver-bars{
+  display: flex;
+  gap: 3px;
+  align-items: stretch;
+  height: 80px;
+  margin-bottom: 36px;
+}
+#universityView .silver-bar{
+  flex: 1;
+  border-radius: 3px 3px 0 0;
+  position: relative;
+  background: #1A1208;
+  border: 1px solid #3A2808;
+  overflow: visible;
+}
+#universityView .silver-fill{
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  border-radius: 2px 2px 0 0;
+  background: linear-gradient(180deg, #E0E0E0, #909090);
+  transition: height 0.3s;
+}
+
+#universityView .bar-label{
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  color: #8A6830;
+  text-align: center;
+  line-height: 1.3;
+  pointer-events: none;
+  z-index: 10;
+  white-space: nowrap;
+}
+#universityView .bar-pct{
+  position: absolute;
+  top: 4px;
+  left: 0; right: 0;
+  text-align: center;
+  font-size: 10px;
+  color: #FFF;
+  font-weight: 800;
+  z-index: 10;
+  text-shadow: 0 1px 4px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.8);
+}
+#universityView .debasement-note{ font-size: 11px; color: #7A6840; line-height: 1.6; padding-top: 4px; }
 #universityView .debasement-note strong{ color: #D4A840; }
 #universityView .c-agri{ background: #3A6A10; }
 #universityView .c-military{ background: #8A1A10; }
@@ -4940,7 +4988,7 @@ END OF 開発ルール
 #universityView .c-craft{ background: #1A5A5A; }
 #universityView .c-construct{ background: #4A4A10; }
 #universityView .c-decline{ background: #181208; border-color: rgba(212,168,64,0.1) !important; }
-#universityView .silver-bars{ height: 44px; }
+#universityView .silver-bars{ /* height override removed */ }
 #universityView .card-str{ background: rgba(212,168,64,0.06); border-color: #D4A840; }
 #universityView .card-weak{ background: rgba(138,26,16,0.06); border-color: #8A1A10; }
 #universityView .card-title{ font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700; margin-bottom: 10px; }
@@ -4951,11 +4999,11 @@ END OF 開発ルール
 #universityView .arr{ color: #D4A840; flex-shrink: 0; }
 #universityView .solidus-bar{ background: rgba(200,160,48,0.05); border: 1px solid #3A2C10; border-radius: 8px; padding: 16px 20px; margin-bottom: 26px; }
 #universityView .solidus-bar h3{ font-family: 'Cinzel', serif; font-size: 12px; color: #C8A030; margin-bottom: 12px; letter-spacing: 0.06em; }
-#universityView .gold-bars{ display: flex; gap: 4px; align-items: flex-end; height: 56px; margin-bottom: 8px; }
-#universityView .gold-bar{ flex: 1; position: relative; background: #100C04; border: 1px solid #3A2808; border-radius: 3px 3px 0 0; }
-#universityView .gold-fill{ position: absolute; bottom: 0; left: 0; right: 0; border-radius: 3px 3px 0 0; background: linear-gradient(180deg, #FFD700, #B8900A); }
-#universityView .gbar-label{ position: absolute; top: -22px; left: 50%; transform: translateX(-50%); font-size: 9px; color: #806030; white-space: nowrap; text-align: center; }
-#universityView .gbar-pct{ position: absolute; bottom: 2px; left: 0; right: 0; text-align: center; font-size: 9px; color: #FFF; font-weight: 700; z-index: 1; text-shadow: 0 1px 3px #000; }
+#universityView .gold-bars{ display: flex; gap: 3px; align-items: stretch; height: 80px; margin-bottom: 36px; }
+#universityView .gold-bar{ flex: 1; position: relative; background: #100C04; border: 1px solid #3A2808; border-radius: 3px 3px 0 0; overflow: visible; }
+#universityView .gold-fill{ position: absolute; bottom: 0; left: 0; right: 0; border-radius: 2px 2px 0 0; background: linear-gradient(180deg, #FFD700, #B8900A); max-height: calc(100% - 28px); }
+#universityView .gbar-label{ position: absolute; top: calc(100% + 3px); left: 50%; transform: translateX(-50%); font-size: 9px; color: #806020; text-align: center; line-height: 1.3; z-index: 10; white-space: nowrap; }
+#universityView .gbar-pct{ position: absolute; top: 4px; left: 0; right: 0; text-align: center; font-size: 10px; color: #FFF; font-weight: 800; z-index: 10; text-shadow: 0 1px 4px #000; }
 #universityView .solidus-note{ font-size: 11px; color: #706040; line-height: 1.6; }
 #universityView .solidus-note strong{ color: #C8A030; }
 #universityView .tip-up{ bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); }
@@ -4965,7 +5013,7 @@ END OF 開発ルール
 #universityView .c-church{ background: #4A3000; }
 #universityView .c-mining{ background: #5A4A10; }
 #universityView .c-decline{ background: #120E06; border-color: rgba(200,160,48,0.08) !important; }
-#universityView .gold-bars{ height: 44px; }
+#universityView .gold-bars{ /* height override removed */ }
 #universityView .card-str{ background: rgba(200,160,48,0.06); border-color: #C8A030; }
 #universityView .card-weak{ background: rgba(122,26,16,0.06); border-color: #7A1A10; }
 #universityView .card-str .card-title{ color: #C8A030; }
@@ -5131,11 +5179,12 @@ END OF 開発ルール
 #ov-body .tl-year{ font-size: 12px !important; }
 #ov-body .tl-event{ font-size: 11px !important; line-height: 1.4 !important; }
 #ov-body .debasement-note, #ov-body .solidus-note{ font-size: 13px !important; }
+
 #ov-body .collapse-text{ font-size: 14px !important; line-height: 1.7 !important; }
 #ov-body .insight{ font-size: 13px !important; line-height: 1.7 !important; }
 #ov-body .compare-box h2{ font-size: 15px !important; }
-#ov-body .silver-label, #ov-body .gold-label{ font-size: 10px !important; }
-#ov-body .bar-pct{ font-size: 11px !important; }
+#ov-body .silver-label, #ov-body .gold-label{ font-size: 9px !important; }
+#ov-body .bar-pct{ font-size: 11px !important; font-weight: 800 !important; color: #FFF !important; text-shadow: 0 1px 4px rgba(0,0,0,1) !important; position: absolute !important; top: 4px !important; bottom: auto !important; left: 0 !important; right: 0 !important; text-align: center !important; z-index: 10 !important; }
 
 
 
@@ -5641,10 +5690,30 @@ END OF 開発ルール
 #ov-body .compare h2{ font-family: 'Cinzel', serif; font-size: 13px; color: #E8C060; margin-bottom: 14px; }
 #ov-body .header-icon{ font-size: 44px; display: block; margin-bottom: 10px; }
 #ov-body .debasement h3{ font-family: 'Cinzel', serif; font-size: 12px; color: #D4A840; margin-bottom: 12px; letter-spacing: 0.06em; }
-#ov-body .silver-bars{ display: flex; gap: 4px; align-items: flex-end; height: 60px; margin-bottom: 8px; }
-#ov-body .silver-bar{ flex: 1; border-radius: 3px 3px 0 0; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; padding-top: 4px; position: relative; background: #1A1208; border: 1px solid #3A2808; }
-#ov-body .silver-fill{ position: absolute; bottom: 0; left: 0; right: 0; border-radius: 3px 3px 0 0; background: linear-gradient(180deg, #C8C8C8, #909090); transition: height 0.3s; }
-#ov-body .bar-label{ position: absolute; top: -20px; font-size: 9px; color: #9A8050; white-space: nowrap; }
+#ov-body .silver-bars{
+  display: flex;
+  gap: 3px;
+  align-items: stretch;
+  height: 80px;
+  margin-bottom: 36px;
+}
+#ov-body .silver-bar{
+  flex: 1;
+  border-radius: 3px 3px 0 0;
+  position: relative;
+  background: #1A1208;
+  border: 1px solid #3A2808;
+  overflow: visible;
+}
+#ov-body .silver-fill{
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  border-radius: 2px 2px 0 0;
+  background: linear-gradient(180deg, #E0E0E0, #909090);
+  transition: height 0.3s;
+}
+
+#ov-body .bar-label{ position: absolute; top: calc(100% + 3px); left: 50%; transform: translateX(-50%); font-size: 9px; color: #8A6830; text-align: center; line-height: 1.3; z-index: 10; white-space: nowrap; }
 #ov-body .debasement-note strong{ color: #D4A840; }
 #ov-body .card-str{ background: rgba(212,168,64,0.06); border-color: #D4A840; }
 #ov-body .card-weak{ background: rgba(138,26,16,0.06); border-color: #8A1A10; }
@@ -5654,11 +5723,11 @@ END OF 開発ルール
 #ov-body .card-weak li::before{ content: '◆'; position: absolute; left: 0; font-size: 7px; top: 5px; color: #8A1A10; }
 #ov-body .solidus-bar{ background: rgba(200,160,48,0.05); border: 1px solid #3A2C10; border-radius: 8px; padding: 16px 20px; margin-bottom: 26px; }
 #ov-body .solidus-bar h3{ font-family: 'Cinzel', serif; font-size: 12px; color: #C8A030; margin-bottom: 12px; letter-spacing: 0.06em; }
-#ov-body .gold-bars{ display: flex; gap: 4px; align-items: flex-end; height: 56px; margin-bottom: 8px; }
-#ov-body .gold-bar{ flex: 1; position: relative; background: #100C04; border: 1px solid #3A2808; border-radius: 3px 3px 0 0; }
-#ov-body .gold-fill{ position: absolute; bottom: 0; left: 0; right: 0; border-radius: 3px 3px 0 0; background: linear-gradient(180deg, #FFD700, #B8900A); }
-#ov-body .gbar-label{ position: absolute; top: -22px; left: 50%; transform: translateX(-50%); font-size: 9px; color: #806030; white-space: nowrap; text-align: center; }
-#ov-body .gbar-pct{ position: absolute; bottom: 2px; left: 0; right: 0; text-align: center; font-size: 9px; color: #FFF; font-weight: 700; z-index: 1; text-shadow: 0 1px 3px #000; }
+#ov-body .gold-bars{ display: flex; gap: 3px; align-items: stretch; height: 80px; margin-bottom: 36px; }
+#ov-body .gold-bar{ flex: 1; position: relative; background: #100C04; border: 1px solid #3A2808; border-radius: 3px 3px 0 0; overflow: visible; }
+#ov-body .gold-fill{ position: absolute; bottom: 0; left: 0; right: 0; border-radius: 2px 2px 0 0; background: linear-gradient(180deg, #FFD700, #B8900A); max-height: calc(100% - 28px); }
+#ov-body .gbar-label{ position: absolute; top: calc(100% + 3px); left: 50%; transform: translateX(-50%); font-size: 9px; color: #806020; text-align: center; line-height: 1.3; z-index: 10; white-space: nowrap; }
+#ov-body .gbar-pct{ position: absolute; top: 4px; left: 0; right: 0; text-align: center; font-size: 10px; color: #FFF; font-weight: 800; z-index: 10; text-shadow: 0 1px 4px #000; }
 #ov-body .solidus-note strong{ color: #C8A030; }
 #ov-body .tip-up{ bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); }
 #ov-body .baghdad-bar{ background: rgba(96,176,64,0.05); border: 1px solid #203818; border-radius: 8px; padding: 16px 20px; margin-bottom: 26px; }
@@ -5737,7 +5806,7 @@ END OF 開発ルール
 #ov-body .tip-body{font-size:11px;color:#B0A080;line-height:1.6;}
 #ov-body .subtitle{font-size:14px;color:#888;font-style:italic;margin-top:6px;line-height:1.6;}
 #ov-body .era-badge{display:inline-block;font-size:12px;color:#8A6020;background:rgba(200,168,48,.1);border:1px solid rgba(200,168,48,.3);border-radius:20px;padding:3px 12px;margin-top:8px;}
-#ov-body header{text-align:center;padding:20px 16px 16px;border-bottom:1px solid #DDD8CC;margin-bottom:20px;}
+#ov-body header{text-align:center;padding:8px 16px 16px;border-bottom:1px solid #DDD8CC;margin-bottom:20px;}
 #ov-body header h1{font-family:'Cinzel',serif;font-size:clamp(16px,3.5vw,22px);color:#2A1808;line-height:1.4;margin:10px 0 8px;}
 #ov-body hr{border:none;border-top:1px solid #E8E0D0;margin:12px 0;}
 #ov-body h2{font-family:'Cinzel',serif;font-size:15px;color:#2A1808;margin:16px 0 10px;}
@@ -6970,20 +7039,15 @@ END OF 開発ルール
 <div class="tc-grid">
   <div class="tc" id="card-intro" onclick="openPanel('intro')" style="--c:#408040;">
     <div class="c-icon">⏳</div>
+    <div class="c-num" style="font-size:10px;color:#AAA;margin-bottom:-2px;">No.01</div>
     <div class="c-title" style="color:#408040;">ローマ以前の通貨史</div>
     <div class="c-sub">古代通貨の夜明け</div>
     <div class="c-desc">古代メソポタミア〜ギリシャ。なぜローマから基軸通貨が始まるのか。</div>
     <div class="c-bar"></div>
   </div>
-  <div class="tc" id="card-spain" onclick="openPanel('spain')" style="--c:#C03010;">
-    <div class="c-icon">♛</div>
-    <div class="c-title" style="color:#C03010;">スペイン帝国</div>
-    <div class="c-sub">16〜18世紀 / レアル銀貨</div>
-    <div class="c-desc">採掘・銀山が核心。製造業ほぼゼロの「スペイン病」で衰退。</div>
-    <div class="c-bar"></div>
-  </div>
   <div class="tc" id="card-rome" onclick="openPanel('rome')" style="--c:#B02800;">
     <div class="c-icon">🏛</div>
+    <div class="c-num" style="font-size:10px;color:#AAA;margin-bottom:-2px;">No.02</div>
     <div class="c-title" style="color:#B02800;">ローマ帝国</div>
     <div class="c-sub">紀元前200〜後300年</div>
     <div class="c-desc">農業・軍事・地中海貿易が三本柱。銀含有率の低下が衰退の一因。</div>
@@ -6991,6 +7055,7 @@ END OF 開発ルール
   </div>
   <div class="tc" id="card-byz" onclick="openPanel('byz')" style="--c:#C09010;">
     <div class="c-icon">⚜</div>
+    <div class="c-num" style="font-size:10px;color:#AAA;margin-bottom:-2px;">No.03</div>
     <div class="c-title" style="color:#C09010;">ビザンツ帝国</div>
     <div class="c-sub">4〜11世紀 / ソリドゥス</div>
     <div class="c-desc">700年間98%純金を維持。1071年の転換点後に急速に弱体化。</div>
@@ -6998,6 +7063,7 @@ END OF 開発ルール
   </div>
   <div class="tc" id="card-abbasid" onclick="openPanel('abbasid')" style="--c:#1A7A40;">
     <div class="c-icon">🌙</div>
+    <div class="c-num" style="font-size:10px;color:#AAA;margin-bottom:-2px;">No.04</div>
     <div class="c-title" style="color:#1A7A40;">アッバース朝</div>
     <div class="c-sub">8〜13世紀 / ディナール</div>
     <div class="c-desc">インド洋貿易独占・知識産業化の黄金期。モンゴルの侵攻で壊滅。</div>
@@ -7005,13 +7071,23 @@ END OF 開発ルール
   </div>
   <div class="tc" id="card-florence" onclick="openPanel('florence')" style="--c:#905010;">
     <div class="c-icon">🌸</div>
+    <div class="c-num" style="font-size:10px;color:#AAA;margin-bottom:-2px;">No.05</div>
     <div class="c-title" style="color:#905010;">フィレンツェ</div>
     <div class="c-sub">13〜16世紀 / フローリン</div>
     <div class="c-desc">毛織物→銀行業への転換に成功。現代金融の原型を発明。</div>
     <div class="c-bar"></div>
   </div>
+  <div class="tc" id="card-spain" onclick="openPanel('spain')" style="--c:#C03010;">
+    <div class="c-icon">♛</div>
+    <div class="c-num" style="font-size:10px;color:#AAA;margin-bottom:-2px;">No.06</div>
+    <div class="c-title" style="color:#C03010;">スペイン帝国</div>
+    <div class="c-sub">16〜18世紀 / レアル銀貨</div>
+    <div class="c-desc">採掘・銀山が核心。製造業ほぼゼロの「スペイン病」で衰退。</div>
+    <div class="c-bar"></div>
+  </div>
   <div class="tc" id="card-dutch" onclick="openPanel('dutch')" style="--c:#C05010;">
     <div class="c-icon">🌷</div>
+    <div class="c-num" style="font-size:10px;color:#AAA;margin-bottom:-2px;">No.07</div>
     <div class="c-title" style="color:#C05010;">オランダ共和国</div>
     <div class="c-sub">17世紀 / ギルダー</div>
     <div class="c-desc">世界初の株式会社・取引所・中央銀行を発明。英仏に敗れた。</div>
@@ -7019,6 +7095,7 @@ END OF 開発ルール
   </div>
   <div class="tc" id="card-britain" onclick="openPanel('britain')" style="--c:#1860A0;">
     <div class="c-icon">👑</div>
+    <div class="c-num" style="font-size:10px;color:#AAA;margin-bottom:-2px;">No.08</div>
     <div class="c-title" style="color:#1860A0;">大英帝国</div>
     <div class="c-sub">1815〜1944年 / ポンド</div>
     <div class="c-desc">産業革命で「世界の工場」に。二度の大戦で力を失った。</div>
@@ -7026,6 +7103,7 @@ END OF 開発ルール
   </div>
   <div class="tc" id="card-japan_ww2" onclick="openPanel('japan_ww2')" style="--c:#8A1010;">
     <div class="c-icon">🎌</div>
+    <div class="c-num" style="font-size:10px;color:#AAA;margin-bottom:-2px;">No.09</div>
     <div class="c-title" style="color:#8A1010;">大日本帝国（戦時）</div>
     <div class="c-sub">1937〜1945年</div>
     <div class="c-desc">軍需がGDP70%超。石油輸入依存が致命的弱点となった。</div>
@@ -7033,6 +7111,7 @@ END OF 開発ルール
   </div>
   <div class="tc" id="card-us" onclick="openPanel('us')" style="--c:#1060A0;">
     <div class="c-icon">🇺🇸</div>
+    <div class="c-num" style="font-size:10px;color:#AAA;margin-bottom:-2px;">No.10</div>
     <div class="c-title" style="color:#1060A0;">現代 米国</div>
     <div class="c-sub">2024年現在 / ドル覇権</div>
     <div class="c-desc">金融・IT・AI・半導体が牽引する超大国。GDP世界1位の産業構造。</div>
@@ -7040,6 +7119,7 @@ END OF 開発ルール
   </div>
   <div class="tc" id="card-jp" onclick="openPanel('jp')" style="--c:#C03010;">
     <div class="c-icon">🇯🇵</div>
+    <div class="c-num" style="font-size:10px;color:#AAA;margin-bottom:-2px;">No.11</div>
     <div class="c-title" style="color:#C03010;">現代 日本</div>
     <div class="c-sub">2024年現在 / 円と製造業</div>
     <div class="c-desc">自動車・精密機械・素材の「物作り」大国。デジタル化の遅れと財政課題。</div>
@@ -7047,6 +7127,7 @@ END OF 開発ルール
   </div>
   <div class="tc" id="card-modern" onclick="openPanel('modern')" style="--c:#106898;">
     <div class="c-icon">🦅</div>
+    <div class="c-num" style="font-size:10px;color:#AAA;margin-bottom:-2px;">No.12</div>
     <div class="c-title" style="color:#106898;">現代 米国・日本（比較）</div>
     <div class="c-sub">2024年現在 / 産業構造比較</div>
     <div class="c-desc">金融・IT・AIが牽引する米国と、製造業が強みの日本を並べて比較。</div>
@@ -7208,7 +7289,11 @@ function openPanel(sid) {
   // silver-bars / gold-bars（棒グラフ）
   ['.silver-bars','.gold-bars'].forEach(function(sel){
     ovBody.querySelectorAll(sel).forEach(function(el){
-      el.style.cssText += ';display:flex !important;gap:4px !important;align-items:flex-end !important;height:56px !important;margin-bottom:8px !important;';
+      el.style.display = 'flex';
+      el.style.gap = '3px';
+      el.style.alignItems = 'stretch';
+      el.style.height = '80px';
+      el.style.marginBottom = '36px';
     });
   });
 
@@ -7217,12 +7302,11 @@ function openPanel(sid) {
     ovBody.querySelectorAll(sel).forEach(function(el){
       el.style.flex = '1';
       el.style.borderRadius = '3px 3px 0 0';
-      el.style.display = 'flex';
-      el.style.flexDirection = 'column';
-      el.style.justifyContent = 'flex-end';
-      el.style.alignItems = 'center';
+      el.style.display = 'block';
       el.style.position = 'relative';
       el.style.overflow = 'visible';
+      el.style.background = el.classList.contains('silver-bar') ? '#1A1208' : '#100C04';
+      el.style.border = el.classList.contains('silver-bar') ? '1px solid #3A2808' : '1px solid #3A2808';
     });
   });
 
@@ -7315,7 +7399,7 @@ function openPanel(sid) {
   });
   ovBody.querySelectorAll('.card').forEach(function(el){
     el.style.minWidth = '0';
-    el.style.overflow = 'hidden';
+    el.style.overflow = 'visible';
   });
   ovBody.querySelectorAll('.card li').forEach(function(el){
     el.style.fontSize = '12px';
@@ -27754,7 +27838,11 @@ function openPanel(sid) {
   // silver-bars / gold-bars（棒グラフ）
   ['.silver-bars','.gold-bars'].forEach(function(sel){
     ovBody.querySelectorAll(sel).forEach(function(el){
-      el.style.cssText += ';display:flex !important;gap:4px !important;align-items:flex-end !important;height:56px !important;margin-bottom:8px !important;';
+      el.style.display = 'flex';
+      el.style.gap = '3px';
+      el.style.alignItems = 'stretch';
+      el.style.height = '80px';
+      el.style.marginBottom = '36px';
     });
   });
 
@@ -27763,12 +27851,11 @@ function openPanel(sid) {
     ovBody.querySelectorAll(sel).forEach(function(el){
       el.style.flex = '1';
       el.style.borderRadius = '3px 3px 0 0';
-      el.style.display = 'flex';
-      el.style.flexDirection = 'column';
-      el.style.justifyContent = 'flex-end';
-      el.style.alignItems = 'center';
+      el.style.display = 'block';
       el.style.position = 'relative';
       el.style.overflow = 'visible';
+      el.style.background = el.classList.contains('silver-bar') ? '#1A1208' : '#100C04';
+      el.style.border = el.classList.contains('silver-bar') ? '1px solid #3A2808' : '1px solid #3A2808';
     });
   });
 
@@ -27861,7 +27948,7 @@ function openPanel(sid) {
   });
   ovBody.querySelectorAll('.card').forEach(function(el){
     el.style.minWidth = '0';
-    el.style.overflow = 'hidden';
+    el.style.overflow = 'visible';
   });
   ovBody.querySelectorAll('.card li').forEach(function(el){
     el.style.fontSize = '12px';
