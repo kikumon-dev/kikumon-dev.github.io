@@ -200,7 +200,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.44.319';
+    const APP_VERSION = 'v0.44.320';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -42125,8 +42125,16 @@ window.togglePvStampPalette = togglePvStampPalette;
       }
   
     /* ===== 大学ビュー CSS ===== */
-    #universityView * { box-sizing: border-box; margin: 0; padding: 0; }
     #universityView img { max-width: 100%; }
+    #universityView, #universityView * { box-sizing: border-box; }
+    /* やることクラフトの.containerグリッドを無効化 */
+    #universityView .container {
+      display: block !important;
+      grid-template-columns: unset !important;
+      grid-template-rows: unset !important;
+      height: auto !important;
+      gap: unset !important;
+    }
 
 900&family=Noto+Sans+JP:wght@400;700&display=swap');
 
