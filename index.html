@@ -200,7 +200,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.87';
+    const APP_VERSION = 'v0.45.88';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -7502,7 +7502,10 @@ function openPanel(sid) {
       if (top < 8) top = rect.bottom + 8;
       el.style.left = left + 'px'; el.style.top = top + 'px';
       el.style.visibility = 'visible';
-      setTimeout(function() { if (el) el.style.display = 'none'; }, 2500);
+      // タップで消す／スクロールで消える
+      function _hideEmperorTip() { if (el) el.style.display = 'none'; }
+      document.addEventListener('touchmove', _hideEmperorTip, { once: true, passive: true });
+      document.addEventListener('click', _hideEmperorTip, { once: true });
     });
   });
 
@@ -28124,7 +28127,10 @@ function openPanel(sid) {
       if (top < 8) top = rect.bottom + 8;
       el.style.left = left + 'px'; el.style.top = top + 'px';
       el.style.visibility = 'visible';
-      setTimeout(function() { if (el) el.style.display = 'none'; }, 2500);
+      // タップで消す／スクロールで消える
+      function _hideEmperorTip() { if (el) el.style.display = 'none'; }
+      document.addEventListener('touchmove', _hideEmperorTip, { once: true, passive: true });
+      document.addEventListener('click', _hideEmperorTip, { once: true });
     });
   });
 
