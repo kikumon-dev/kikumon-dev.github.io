@@ -200,7 +200,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.75';
+    const APP_VERSION = 'v0.45.76';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -7483,6 +7483,14 @@ function closePanel() {
 }
 
 // next内タブ
+// 第3条: onclick属性から呼ばれる関数をwindow公開
+window.openPanel = openPanel;
+window.closePanel = closePanel;
+
+// 第3条: onclick属性から呼ばれる関数をwindow公開
+window.openPanel = openPanel;
+window.closePanel = closePanel;
+
 function showTab(id) {
   var ob = document.getElementById('ov-body');
   if (!ob) return;
@@ -28069,6 +28077,10 @@ function closePanel() {
 }
 
 // next内タブ
+// 第3条: onclick属性から呼ばれる関数をwindow公開
+window.openPanel = openPanel;
+window.closePanel = closePanel;
+
 function showTab(id) {
   var ob = document.getElementById('ov-body');
   if (!ob) return;
