@@ -200,7 +200,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.74';
+    const APP_VERSION = 'v0.45.75';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -7512,18 +7512,6 @@ document.addEventListener('keydown', function(e){
 
 </div>
 <!-- ===== /大学ビュー ===== -->
-<div id="ov">
-  <div id="ov-bar">
-    <div id="ov-icon"></div>
-    <div id="ov-info">
-      <div id="ov-title"></div>
-      <div id="ov-era"></div>
-    </div>
-    <button id="ov-close" onclick="closePanel()">✕ 閉じる</button>
-  </div>
-  <div id="ov-body"></div>
-</div>
-
 <div id="ov">
   <div id="ov-bar">
     <div id="ov-icon"></div>
