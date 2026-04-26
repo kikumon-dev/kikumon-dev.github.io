@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.44.265 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.205 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -186,6 +186,33 @@ Claude Code導入時にそのまま.claude/skills/に移植できる粒度で書
 自然な進化を妨げないために、今から分離可能な粒度で記述する。
 権威：同上。
 
+第28条【ZIPファイル出力規則】
+ユーザーへの納品はZIPファイルで行う。以下の手順を厳守すること。
+
+【命名規則】
+  ZIPファイル名：yarukotocraft-v{X}_{Y}_{Z}.zip
+  （バージョンのドット「.」はアンダースコア「_」に変換する）
+  例：v0.45.204 → yarukotocraft-v0_45_204.zip
+
+【作成手順】
+  ① 必ずクリーンなディレクトリ（/tmp等）にindex.htmlをコピーしてからzip化する。
+     理由：作業ディレクトリ（/home/claude/yarukotocraft/）で-jオプションなしにzipすると
+     既存の別ZIPが混入し、index.htmlが2重に入るバグが発生する。
+  ② zip -j オプション必須（ディレクトリパスを含めない）。
+     例：cd /tmp && cp /home/claude/yarukotocraft/index.html . && zip -j yarukotocraft-v0_X_Y.zip index.html
+  ③ unzip -l でZIP内のファイルが index.html 1ファイルのみであることを確認してから納品する。
+  ④ /mnt/user-data/outputs/ にコピーしてpresent_filesで提示する。
+
+【確認義務】
+  unzip -l の結果が「1 file」であること。2ファイル以上ある場合は作り直すこと。
+
+制度趣旨：/home/claude/yarukotocraft/で直接zipを作成すると既存ZIPが混入し、
+中身がindex.html 2重になるバグが発生した（v0.45.204納品時に実発生）。
+スマホのFilesアプリ・GitHub経由での展開を想定しているため、
+ZIPの中身はindex.html 1ファイルのみでなければならない。
+権威：v0.45.204納品時、一度目のZIPは2ファイル混入で失敗。
+/tmpにコピーしてから作成する手順に変更して解決した実例に基づく。
+
 =============================================================================
 END OF 開発ルール
 =============================================================================
@@ -200,7 +227,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.199';
+    const APP_VERSION = 'v0.45.205';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
