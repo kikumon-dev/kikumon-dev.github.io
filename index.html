@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.332 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.340 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -281,7 +281,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.332';
+    const APP_VERSION = 'v0.45.340';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -549,8 +549,30 @@ END OF 開発ルール
     /* 設定タブ（プロフィールアイコン）- active時に下線を出さない */
     .nav-tab-settings {
       margin-left: auto;
-      font-size: 1.1em;
       border-bottom: 1.5px solid transparent !important;
+    }
+    /* ===== ナビタブ統一構造 ===== */
+    .nav-tab-icon {
+      display: block;
+      font-size: 1.1em;
+      line-height: 1.2;
+      text-align: center;
+    }
+    .nav-tab-icon svg {
+      width: 14px;
+      height: 14px;
+      vertical-align: middle;
+    }
+    .nav-tab-label {
+      display: block;
+      font-size: 0.75em;
+      line-height: 1.2;
+      text-align: center;
+      font-weight: 500;
+    }
+    .nav-tab {
+      padding: 6px 7px !important;
+      font-size: 1em !important;
     }
     .nav-tab-settings.active {
       border-bottom-color: transparent !important;
@@ -886,8 +908,12 @@ END OF 開発ルール
       display: none;
     }
     @media screen and (max-width: 768px) {
-      .nav-tabs { display: none !important; }
-      #bottomNav {
+      /* デフォルト：上部タブ表示・下部ナビ非表示 */
+      .nav-tabs { display: flex !important; }
+      #bottomNav { display: none !important; }
+      /* 下部ナビバーモード時 */
+      body.mobile-nav-bottom .nav-tabs { display: none !important; }
+      body.mobile-nav-bottom #bottomNav {
         display: flex !important;
         position: fixed;
         bottom: 0; left: 0; right: 0;
@@ -6485,51 +6511,21 @@ END OF 開発ルール
   </div>
   <!-- ナビゲーションタブ -->
   <div class="nav-tabs">
-    <button class="nav-tab" id="navDaily" onclick="switchView('daily')">🐟 日次</button>
-    <button class="nav-tab" id="navWeekly" onclick="switchView('weekly')">🦅 週間</button>
-    <button class="nav-tab active" id="navMonthly" onclick="switchView('monthly')">🐉 月間</button>
-    <button class="nav-tab" id="navYearly" onclick="switchView('yearly')">📅 年間</button>
-    <button class="nav-tab" id="navGant" onclick="switchView('gant')" style="display:none;">造営</button>
-    <button class="nav-tab" id="navNotebook" onclick="switchView('notebook')">✏️ 自由帳</button>
-    <button class="nav-tab" id="navPhoto" onclick="switchView('photo')" title="写真館">📷 写真</button>
-    <button class="nav-tab" id="navUniversity" onclick="switchView('university')" title="大学">🎓 大学</button>
-    <button class="nav-tab" id="navJournal" onclick="switchView('journal')">🦋 日誌</button>
-    <button class="nav-tab" id="navCraft" onclick="switchView('craft')" style="display:none;" title="やることクラフト"><svg width="18" height="16" viewBox="0 0 36 32" fill="currentColor" style="vertical-align:middle;">
-  <!-- 左塔 -->
-  <rect x="2" y="16" width="6" height="14" rx="1"/>
-  <polygon points="5,4 2,16 8,16"/>
-  <rect x="3" y="11" width="1.5" height="3"/>
-  <rect x="5.5" y="11" width="1.5" height="3"/>
-  <!-- 右塔 -->
-  <rect x="28" y="16" width="6" height="14" rx="1"/>
-  <polygon points="31,4 28,16 34,16"/>
-  <rect x="29" y="11" width="1.5" height="3"/>
-  <rect x="31.5" y="11" width="1.5" height="3"/>
-  <!-- 中央本体 -->
-  <rect x="10" y="18" width="16" height="12" rx="1"/>
-  <!-- 中央高い尖塔 -->
-  <rect x="15" y="10" width="6" height="10"/>
-  <polygon points="18,0 13,10 23,10"/>
-  <!-- 中央塔の窓 -->
-  <rect x="17" y="12" width="2" height="3" rx="1" fill="white" opacity="0.5"/>
-  <!-- 正門アーチ -->
-  <path d="M15,30 L15,24 Q18,20 21,24 L21,30 Z" fill="white" opacity="0.4"/>
-  <!-- 城壁の城垛（ギザギザ） -->
-  <rect x="9" y="16" width="2" height="3"/>
-  <rect x="13" y="16" width="2" height="3"/>
-  <rect x="21" y="16" width="2" height="3"/>
-  <rect x="25" y="16" width="2" height="3"/>
-</svg></button>
-    <button class="nav-tab" id="navColosseum" onclick="switchView('colosseum')" title="コロシアム" style="display:none;">⚔️</button>
-    <button class="nav-tab" id="navShop" onclick="switchView('shop')" title="デッキショップ"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;">
-  <!-- 取っ手（灰色半円） -->
-  <path d="M7 12 A5 6 0 0 1 17 12" stroke="#999" stroke-width="2.5"/>
-  <!-- カバン本体（灰色塗り） -->
-  <rect x="3" y="12" width="18" height="10" rx="2" fill="#999" stroke="#999"/>
-</svg></button>
+    <button class="nav-tab" id="navDaily" onclick="switchView('daily')"><span class="nav-tab-icon">🐟</span><span class="nav-tab-label">日次</span></button>
+    <button class="nav-tab" id="navWeekly" onclick="switchView('weekly')"><span class="nav-tab-icon">🦅</span><span class="nav-tab-label">週間</span></button>
+    <button class="nav-tab active" id="navMonthly" onclick="switchView('monthly')"><span class="nav-tab-icon">🐉</span><span class="nav-tab-label">月間</span></button>
+    <button class="nav-tab" id="navYearly" onclick="switchView('yearly')"><span class="nav-tab-icon">📅</span><span class="nav-tab-label">年間</span></button>
+    <button class="nav-tab" id="navGant" onclick="switchView('gant')" style="display:none;"><span class="nav-tab-icon">🏗️</span><span class="nav-tab-label">造営</span></button>
+    <button class="nav-tab" id="navNotebook" onclick="switchView('notebook')"><span class="nav-tab-icon">✏️</span><span class="nav-tab-label">自由帳</span></button>
+    <button class="nav-tab" id="navPhoto" onclick="switchView('photo')" title="写真館"><span class="nav-tab-icon">📷</span><span class="nav-tab-label">写真</span></button>
+    <button class="nav-tab" id="navUniversity" onclick="switchView('university')" title="大学"><span class="nav-tab-icon">🎓</span><span class="nav-tab-label">大学</span></button>
+    <button class="nav-tab" id="navJournal" onclick="switchView('journal')"><span class="nav-tab-icon">🦋</span><span class="nav-tab-label">日誌</span></button>
+    <button class="nav-tab" id="navCraft" onclick="switchView('craft')" style="display:none;" title="やることクラフト"><span class="nav-tab-icon">🏰</span><span class="nav-tab-label">クラフト</span></button>
+    <button class="nav-tab" id="navColosseum" onclick="switchView('colosseum')" title="コロシアム" style="display:none;"><span class="nav-tab-icon">⚔️</span><span class="nav-tab-label">コロシアム</span></button>
+    <button class="nav-tab" id="navShop" onclick="switchView('shop')" title="デッキショップ"><span class="nav-tab-icon">🛒</span><span class="nav-tab-label">ショップ</span></button>
     <button class="nav-tab" id="navSearch" onclick="openSearchModal()" title="タスクを検索"
-      style="font-size:1em;padding:12px 8px;">🔍</button>
-    <button class="nav-tab" id="navDashboard" onclick="switchView('dashboard')" title="ダッシュボード" style="font-size:1.1em;padding:10px 7px;">📈</button>
+      ><span class="nav-tab-icon">🔍</span><span class="nav-tab-label">検索</span></button>
+    <button class="nav-tab" id="navDashboard" onclick="switchView('dashboard')" title="ダッシュボード"><span class="nav-tab-icon">📈</span><span class="nav-tab-label">統計</span></button>
     <div id="navFocusBadge" style="display:none;align-items:center;position:sticky;right:0;background:#fff;padding:0 6px 0 4px;flex-shrink:0;z-index:1;">
       <span id="navFocusText" style="font-size:0.68em;color:#f59e0b;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:0.01em;cursor:default;" title=""></span>
     </div>
@@ -6537,7 +6533,7 @@ END OF 開発ルール
       <div class="nav-avatar-wrapper" id="navAvatarWrapper" style="display: none;">
         <img id="navAvatar" src="" alt="" class="nav-avatar">
       </div>
-      <span id="navAvatarPlaceholder">⚙️</span>
+      <span id="navAvatarPlaceholder"><span class="nav-tab-icon">⚙</span><span class="nav-tab-label">設定</span></span>
     </button>
   </div>
   <!-- 日次日付ナビバー -->
@@ -9159,6 +9155,24 @@ document.addEventListener('keydown', function(e){
           </div>
         </div>
       </div>
+      <!-- スマホナビ配置 -->
+      <div id="mobileNavPositionSection" style="margin-bottom:20px;">
+        <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">📱 スマホのナビゲーション表示位置</h3>
+        <div class="settings-radio-group" id="mobileNavPositionGroup">
+          <label class="settings-radio-label">
+            <input type="radio" name="mobileNavPosition" value="top" checked>
+            <span>☰ 上部スクロール</span>
+            <span style="font-size: 0.75em; color: #4facfe; margin-left: 8px; font-weight:700;">おすすめ</span>
+            <span style="font-size: 0.75em; color: #8e8e8e; margin-left: 4px;">全メニューが一覧できる</span>
+          </label>
+          <label class="settings-radio-label">
+            <input type="radio" name="mobileNavPosition" value="bottom">
+            <span>📱 下部ナビバー</span>
+            <span style="font-size: 0.75em; color: #8e8e8e; margin-left: 8px;">親指で届きやすいが「その他」に格納されるメニューが多い</span>
+          </label>
+        </div>
+      </div>
+
       <!-- 日次ビュー表示モード -->
       <div style="margin-top: 24px; border-top: 1px solid #efefef; padding-top: 18px;">
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">日次ビュー</h3>
@@ -10066,6 +10080,7 @@ document.addEventListener('keydown', function(e){
         weeklyCellScale:  100,
         weeklyTimeBar:    'show',
         tlScrollMode:     'last',
+        mobileNavPosition: 'top',
         quadViewSlots: [
           { label: 'プライベート', emoji: '🔒' },
           { label: '午前',         emoji: '🌅' },
@@ -20386,6 +20401,10 @@ function reviveBlueprint(id) {
       localStorage.removeItem('_dbg_log');
     })();
     loadAllSettings();
+    // スマホナビ配置を起動時に適用
+    if (typeof applyMobileNavPosition === 'function') {
+      applyMobileNavPosition(allSettings.ui.mobileNavPosition || 'top');
+    }
     // 王国createdAt初期化（未設定なら現在日時をセット・一度セットしたら変えない）
     if (!allSettings.meta.createdAt) {
       allSettings.meta.createdAt = new Date().toISOString();
@@ -22774,6 +22793,12 @@ var OFFICIAL_DECKS = [
 function loadSettingsUI() {
       // モードに応じた設定セクション表示制御
       if (typeof applySettingsSectionVisibility === 'function') applySettingsSectionVisibility();
+      // スマホナビ配置ラジオボタンを反映
+      var _mnp = allSettings.ui.mobileNavPosition || 'top';
+      document.querySelectorAll('input[name="mobileNavPosition"]').forEach(function(r) {
+        r.checked = (r.value === _mnp);
+        r.onchange = function() { saveMobileNavPosition(this.value); };
+      });
       // 🐟 魚の目ビュー列ラベルを入力欄に反映
       var _qCols = (allSettings.quadViewSlots && allSettings.quadViewSlots.length === 4)
         ? allSettings.quadViewSlots
@@ -24449,6 +24474,22 @@ function loadSettingsUI() {
       return div;
     }
     window.renderQuadView = renderQuadView;
+
+    // ===== スマホナビ配置切り替え =====
+    function applyMobileNavPosition(pos) {
+      if (pos === 'bottom') {
+        document.body.classList.add('mobile-nav-bottom');
+      } else {
+        document.body.classList.remove('mobile-nav-bottom');
+      }
+    }
+    function saveMobileNavPosition(pos) {
+      allSettings.ui.mobileNavPosition = pos;
+      saveAllSettings();
+      applyMobileNavPosition(pos);
+    }
+    window.applyMobileNavPosition = applyMobileNavPosition;
+    window.saveMobileNavPosition = saveMobileNavPosition;
 
     // ===== Fタグスタンプモード =====
     var _quadFTagModeOn = false;
@@ -27731,7 +27772,7 @@ window.addEventListener('afterprint', function() {
       <!-- タブ -->
       <div style="display:flex;gap:6px;margin-bottom:10px;">
         <button id="searchTabSearch" onclick="switchSearchTab('search')"
-          style="flex:1;padding:6px 0;border-radius:20px;border:1.5px solid #333;background:#333;color:#fff;font-size:0.8em;font-weight:700;cursor:pointer;">🔍 検索</button>
+          style="flex:1;padding:6px 0;border-radius:20px;border:1.5px solid #333;background:#333;color:#fff;font-size:0.8em;font-weight:700;cursor:pointer;"><span class="nav-tab-icon">🔍</span><span class="nav-tab-label">検索</span></button>
         <button id="searchTabTodo" onclick="switchSearchTab('todo')"
           style="flex:1;padding:6px 0;border-radius:20px;border:1.5px solid #e0e0e0;background:#fff;color:#888;font-size:0.8em;font-weight:700;cursor:pointer;">📋 未完了</button>
         <button id="searchTabGou" onclick="switchSearchTab('gou')"
