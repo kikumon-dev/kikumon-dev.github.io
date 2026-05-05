@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.320 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.332 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -281,7 +281,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.320';
+    const APP_VERSION = 'v0.45.332';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -6485,15 +6485,15 @@ END OF 開発ルール
   </div>
   <!-- ナビゲーションタブ -->
   <div class="nav-tabs">
-    <button class="nav-tab" id="navDaily" onclick="switchView('daily')">日次</button>
-    <button class="nav-tab" id="navWeekly" onclick="switchView('weekly')">週間</button>
-    <button class="nav-tab active" id="navMonthly" onclick="switchView('monthly')">月間</button>
-    <button class="nav-tab" id="navYearly" onclick="switchView('yearly')">年間</button>
+    <button class="nav-tab" id="navDaily" onclick="switchView('daily')">🐟 日次</button>
+    <button class="nav-tab" id="navWeekly" onclick="switchView('weekly')">🦅 週間</button>
+    <button class="nav-tab active" id="navMonthly" onclick="switchView('monthly')">🐉 月間</button>
+    <button class="nav-tab" id="navYearly" onclick="switchView('yearly')">📅 年間</button>
     <button class="nav-tab" id="navGant" onclick="switchView('gant')" style="display:none;">造営</button>
-    <button class="nav-tab" id="navNotebook" onclick="switchView('notebook')">自由帳</button>
-    <button class="nav-tab" id="navPhoto" onclick="switchView('photo')" title="写真館">写真</button>
-    <button class="nav-tab" id="navUniversity" onclick="switchView('university')" title="大学">大学</button>
-    <button class="nav-tab" id="navJournal" onclick="switchView('journal')">日誌</button>
+    <button class="nav-tab" id="navNotebook" onclick="switchView('notebook')">✏️ 自由帳</button>
+    <button class="nav-tab" id="navPhoto" onclick="switchView('photo')" title="写真館">📷 写真</button>
+    <button class="nav-tab" id="navUniversity" onclick="switchView('university')" title="大学">🎓 大学</button>
+    <button class="nav-tab" id="navJournal" onclick="switchView('journal')">🦋 日誌</button>
     <button class="nav-tab" id="navCraft" onclick="switchView('craft')" style="display:none;" title="やることクラフト"><svg width="18" height="16" viewBox="0 0 36 32" fill="currentColor" style="vertical-align:middle;">
   <!-- 左塔 -->
   <rect x="2" y="16" width="6" height="14" rx="1"/>
@@ -6557,6 +6557,7 @@ END OF 開発ルール
     <button class="daily-inner-tab" id="dailyTabScratch" onclick="switchDailyTab('scratch')">✏️ 雑記帳</button>
     <button class="daily-inner-tab" id="dailyTabMatrix" onclick="if(document.getElementById('dailyTabMatrix').classList.contains('active')){switchMatrixLayer();}else{switchDailyTab('matrix');}">📊 マトリクス</button>
     <button class="daily-inner-tab" id="dailyTabTimeline" onclick="switchDailyTab('timeline')">🕐 タイムライン</button>
+    <button class="daily-inner-tab" id="dailyTabQuad" onclick="switchDailyTab('quad')">🐟 魚の目</button>
   </div>
   <!-- 雑記帳ビュー -->
   <div id="scratchView" style="display:none; flex-direction:column;">
@@ -6589,7 +6590,7 @@ END OF 開発ルール
     <!-- 左上: 緊急かつ重要 -->
     <div class="section" id="section1">
       <div class="header-row">
-        <h4>【緊急かつ重要】</h4>
+        <h4>【緊急かつ重要】</h4><button onclick="openQuadZoomModal(1,'緊急かつ重要')" style="background:none;border:none;cursor:pointer;font-size:1.1em;flex-shrink:0;" title="魚の目モードで開く">🐟</button>
         <!-- スマホ縦画面用：日付を第1象限に表示 -->
         <div class="date-display date-display-mobile" id="dateDisplayMobile"></div>
         <div class="purpose-group" id="purposeGroup" style="display: none;">
@@ -6612,7 +6613,7 @@ END OF 開発ルール
     <div class="section" id="section2">
       <div class="simple-header">
         <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
-          <h4>【緊急でないが重要】</h4>
+          <h4>【緊急でないが重要】</h4><button onclick="openQuadZoomModal(2,'緊急でないが重要')" style="background:none;border:none;cursor:pointer;font-size:0.9em;flex-shrink:0;" title="魚の目モードで開く">🐟</button>
           <button class="deep-dive-btn" onclick="toggleDeepDive()">点検</button>
           <!-- 止める仕組み入力（点検ボタン押下後に表示） -->
           <div id="stopConditionGroup" style="display: none; flex-direction: row; align-items: center; gap: 4px; flex: 1;">
@@ -6652,7 +6653,7 @@ END OF 開発ルール
     <!-- 左下: 緊急だが重要ではない -->
     <div class="section" id="section3">
       <div class="simple-header">
-        <h4>【緊急だが重要ではない】</h4>
+        <h4>【緊急だが重要ではない】</h4><button onclick="openQuadZoomModal(3,'緊急だが重要ではない')" style="background:none;border:none;cursor:pointer;font-size:0.9em;flex-shrink:0;" title="魚の目モードで開く">🐟</button>
         <button class="color-toggle-btn" onclick="toggleColors()">色切替</button>
       </div>
       <input type="text" class="task-input" id="input3" placeholder="些細だが急ぎの行動は？（人に任せる）..." title="些細だが急ぎの行動は？（人に任せる）">
@@ -6661,7 +6662,7 @@ END OF 開発ルール
     <!-- 右下: 緊急でも重要でもない -->
     <div class="section" id="section4">
       <div class="simple-header">
-        <h4>【緊急でも重要でもない】</h4>
+        <h4>【緊急でも重要でもない】</h4><button onclick="openQuadZoomModal(4,'緊急でも重要でもない')" style="background:none;border:none;cursor:pointer;font-size:0.9em;flex-shrink:0;" title="魚の目モードで開く">🐟</button>
         <div class="header-buttons">
           <button class="data-btn" onclick="exportData()">📤 エクスポート</button>
           <button class="data-btn" onclick="document.getElementById('importFile').click()">📥 インポート</button>
@@ -6692,6 +6693,27 @@ END OF 開発ルール
       <button onclick="resetTlRowHeight()" style="font-size:0.6em;color:#aaa;background:none;border:1px solid #ddd;border-radius:3px;padding:2px 6px;cursor:pointer;flex-shrink:0;">↺</button>
     </div>
     <div id="timelineBody" style="width:100%; border: 1px solid #e0e0e0; border-radius: 8px; box-sizing: border-box; position:relative;"></div>
+  </div>
+  <!-- 4分割日次ビュー（魚の目） -->
+  <div id="quadView" style="display:none;flex-direction:column;height:calc(100vh - 100px);overflow-y:auto;padding:8px;box-sizing:border-box;background:#fafafa;">
+    <div id="quadFTagBar" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:4px 6px;background:#fff;border-radius:8px;border:1px solid #eee;">
+      <button id="quadFTagModeBtn" onclick="toggleQuadFTagMode()" style="padding:4px 10px;border-radius:6px;border:1px solid #ddd;background:#f5f5f5;font-size:0.8em;cursor:pointer;">🏷️ Fタグ OFF</button>
+      <span id="quadFTagCounter" style="font-size:0.75em;color:#888;"></span>
+    </div>
+    <div id="quadViewBody" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;min-height:100%;"></div>
+  </div>
+  <!-- 🐟 魚の目モーダル -->
+  <div id="quadZoomModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:3000;align-items:center;justify-content:center;">
+    <div id="quadZoomContent" style="background:#fafafa;width:96%;max-width:600px;height:88vh;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;transform:scale(0.85);opacity:0;transition:transform 0.25s ease,opacity 0.25s ease;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff;border-bottom:1px solid #eee;">
+        <span id="quadZoomTitle" style="font-size:0.9em;font-weight:700;color:#333;"></span>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button id="quadZoomFTagBtn" onclick="toggleQuadZoomFTagMode()" style="padding:4px 10px;border-radius:6px;border:1px solid #ddd;background:#f5f5f5;font-size:0.78em;cursor:pointer;">🏷️ Fタグ OFF</button>
+          <button onclick="closeQuadZoomModal()" style="padding:4px 10px;border-radius:6px;border:none;background:#eee;font-size:0.85em;cursor:pointer;">✕ 閉じる</button>
+        </div>
+      </div>
+      <div id="quadZoomBody" style="flex:1;overflow-y:auto;padding:8px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;"></div>
+    </div>
   </div>
   <!-- 逃げ出したメッセージ -->
   <div id="escapeMessage" class="escape-message">
@@ -9161,6 +9183,37 @@ document.addEventListener('keydown', function(e){
             </label>
           </div>
         </div>
+        <!-- 🐟 魚の目ビュー 列ラベル設定 -->
+        <div style="margin-top:16px;">
+          <label style="display:block;margin-bottom:8px;font-weight:600;color:#262626;font-size:0.9em;">🐟 魚の目ビュー 列ラベル設定</label>
+          <p style="font-size:0.8em;color:#8e8e8e;margin:0 0 10px 0;">4列のラベルを自由に変更できます</p>
+          <div id="quadSlotSettingsArea" style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:0.8em;color:#888;width:24px;">列1</span>
+              <input type="text" id="quadSlotLabel1" maxlength="12" placeholder="プライベート"
+                style="flex:1;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:0.85em;"
+                onchange="saveQuadSlotSettings()">
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:0.8em;color:#888;width:24px;">列2</span>
+              <input type="text" id="quadSlotLabel2" maxlength="12" placeholder="午前"
+                style="flex:1;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:0.85em;"
+                onchange="saveQuadSlotSettings()">
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:0.8em;color:#888;width:24px;">列3</span>
+              <input type="text" id="quadSlotLabel3" maxlength="12" placeholder="午後"
+                style="flex:1;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:0.85em;"
+                onchange="saveQuadSlotSettings()">
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:0.8em;color:#888;width:24px;">列4</span>
+              <input type="text" id="quadSlotLabel4" maxlength="12" placeholder="夕方"
+                style="flex:1;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:0.85em;"
+                onchange="saveQuadSlotSettings()">
+            </div>
+          </div>
+        </div>
         <div style="margin-top:16px;">
           <label style="display:block;margin-bottom:8px;font-weight:600;color:#262626;font-size:0.9em;">🕐 タイムライン開始位置</label>
           <p style="font-size:0.8em;color:#8e8e8e;margin:0 0 10px 0;">タイムラインを開いたときのスクロール位置</p>
@@ -10013,6 +10066,12 @@ document.addEventListener('keydown', function(e){
         weeklyCellScale:  100,
         weeklyTimeBar:    'show',
         tlScrollMode:     'last',
+        quadViewSlots: [
+          { label: 'プライベート', emoji: '🔒' },
+          { label: '午前',         emoji: '🌅' },
+          { label: '午後',         emoji: '☀️' },
+          { label: '夕方',         emoji: '🌆' }
+        ],
         tlLastScrollTop:  0,
         tlTimeBar:        'show',
         tlRowHeights:     null,
@@ -18708,11 +18767,13 @@ function reviveBlueprint(id) {
       const dailyView = document.querySelector('.container');
       const timelineView = document.getElementById('timelineView');
       const scratchView = document.getElementById('scratchView');
+      const quadView = document.getElementById('quadView');
       // 全て非表示（daily-activeクラスも除去してgrid !importantを解除）
       dailyView.style.display = 'none';
       dailyView.classList.remove('daily-active');
       timelineView.style.display = 'none';
       scratchView.style.display = 'none';
+      if (quadView) quadView.style.display = 'none';
       // マトリクス以外のタブでは中央円を非表示
       var _mcc = document.getElementById('matrixCenterCircle');
       if (_mcc) _mcc.style.display = (mode === 'matrix') ? 'flex' : 'none';
@@ -18741,6 +18802,15 @@ function reviveBlueprint(id) {
           currentTimelineDate = new Date();
         }
         renderTimelineView();
+      } else if (mode === 'quad') {
+        var _quadView = document.getElementById('quadView');
+        if (_quadView) {
+          _quadView.style.display = 'flex';
+          _quadView.style.flexDirection = 'column';
+        }
+        var _qTab = document.getElementById('dailyTabQuad');
+        if (_qTab) _qTab.classList.add('active');
+        if (typeof renderQuadView === 'function') renderQuadView();
       } else {
         // matrix（デフォルト）
         dailyView.style.display = 'grid';
@@ -21060,6 +21130,7 @@ function reviveBlueprint(id) {
       }
       document.getElementById('timelineView').style.display = 'none';
       document.getElementById('scratchView').style.display = 'none';
+      var _quadViewHide = document.getElementById('quadView'); if (_quadViewHide) _quadViewHide.style.display = 'none';
       var _jv = document.getElementById('journalView'); if (_jv) _jv.style.display = 'none';
       var _plv = document.getElementById('photoLogView'); if (_plv) _plv.style.display = 'none';
       var _univHide = document.getElementById('universityView'); if (_univHide) _univHide.style.display = 'none';
@@ -22703,6 +22774,14 @@ var OFFICIAL_DECKS = [
 function loadSettingsUI() {
       // モードに応じた設定セクション表示制御
       if (typeof applySettingsSectionVisibility === 'function') applySettingsSectionVisibility();
+      // 🐟 魚の目ビュー列ラベルを入力欄に反映
+      var _qCols = (allSettings.quadViewSlots && allSettings.quadViewSlots.length === 4)
+        ? allSettings.quadViewSlots
+        : [{label:'プライベート'},{label:'午前'},{label:'午後'},{label:'夕方'}];
+      for (var _qi = 1; _qi <= 4; _qi++) {
+        var _qEl = document.getElementById('quadSlotLabel' + _qi);
+        if (_qEl) _qEl.value = _qCols[_qi-1].label || '';
+      }
       // 成長軸ボタン初期化
       if (typeof updateGrowthAxisButtons === 'function') updateGrowthAxisButtons();
       // クラフトモード
@@ -24165,6 +24244,416 @@ function loadSettingsUI() {
     window.showGantTour = showGantTour;
     window._buildTaskBar = _buildTaskBar;
     window.switchDailyTab = switchDailyTab;
+
+    // ===== 4分割日次ビュー（魚の目）=====
+    // デフォルト列定義（allSettingsに保存）
+    var QUAD_SLOT_DEFAULTS = [
+      { key: 'slot1', label: 'プライベート', emoji: '🔒', color: '#e8f4fd' },
+      { key: 'slot2', label: '午前',         emoji: '🌅', color: '#fff8e1' },
+      { key: 'slot3', label: '午後',         emoji: '☀️',  color: '#f3e5f5' },
+      { key: 'slot4', label: '夕方',         emoji: '🌆', color: '#e8f5e9' }
+    ];
+    function getQuadSlots() {
+      // allSettingsに保存済みならそれを使う、なければデフォルト
+      if (allSettings.quadViewSlots && allSettings.quadViewSlots.length === 4) {
+        return allSettings.quadViewSlots.map(function(c, i) {
+          return {
+            key: QUAD_SLOT_DEFAULTS[i].key,
+            label: c.label || QUAD_SLOT_DEFAULTS[i].label,
+            emoji: c.emoji || QUAD_SLOT_DEFAULTS[i].emoji,
+            color: QUAD_SLOT_DEFAULTS[i].color
+          };
+        });
+      }
+      return QUAD_SLOT_DEFAULTS.slice();
+    }
+    function renderQuadView() {
+      var body = document.getElementById('quadViewBody');
+      if (!body) return;
+      var targetDate = currentDailyDate || getLocalDateStr(new Date());
+      // 今日のタスクを取得（scratch・zenは除外）
+      var tasks = allTasks.filter(function(t) {
+        if (t.kind === 'scratch' || t.kind === 'zen') return false;
+        var d = t.date || t.scheduledDate || '';
+        return d === targetDate;
+      });
+      var slots = getQuadSlots();
+      body.innerHTML = '';
+      body.style.gridTemplateColumns = 'repeat(4,1fr)';
+      slots.forEach(function(col) {
+        // timeSlot未設定のタスクはslot1（左端）に入れる
+        var colTasks;
+        if (col.key === 'slot1') {
+          colTasks = tasks.filter(function(t) {
+            return t.timeSlot === 'slot1' || !t.timeSlot;
+          });
+        } else {
+          colTasks = tasks.filter(function(t) { return t.timeSlot === col.key; });
+        }
+        body.appendChild(_buildQuadSlot(col, colTasks));
+      });
+    }
+    function _buildQuadSlot(col, tasks) {
+      var div = document.createElement('div');
+      div.style.cssText = 'background:' + col.color + ';border-radius:8px;padding:6px;min-height:200px;display:flex;flex-direction:column;';
+      div.addEventListener('dragover', function(e) { e.preventDefault(); div.style.outline = '2px dashed #4facfe'; });
+      div.addEventListener('dragleave', function() { div.style.outline = ''; });
+      div.addEventListener('drop', function(e) {
+        e.preventDefault();
+        div.style.outline = '';
+        var taskId = e.dataTransfer.getData('text/plain');
+        var task = allTasks.find(function(t) { return t.id === taskId; });
+        if (!task) return;
+        task.timeSlot = col.key;
+        saveAllTasks();
+        renderQuadView();
+      });
+      // ヘッダー
+      var header = document.createElement('div');
+      header.style.cssText = 'font-size:0.75em;font-weight:700;color:#444;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid rgba(0,0,0,0.1);';
+      header.textContent = col.emoji + ' ' + col.label;
+      div.appendChild(header);
+      // タスク一覧
+      // 新規タスク入力欄（ヘッダー直後・上部）
+      var inputRow = document.createElement('div');
+      inputRow.style.cssText = 'display:flex;gap:4px;margin-bottom:6px;';
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = '追加...';
+      input.style.cssText = 'flex:1;padding:4px 6px;border:1px solid #ddd;border-radius:6px;font-size:0.75em;background:#fff;min-width:0;';
+      var addBtn = document.createElement('button');
+      addBtn.textContent = '+';
+      addBtn.style.cssText = 'padding:4px 8px;background:#4facfe;color:#fff;border:none;border-radius:6px;font-size:0.75em;cursor:pointer;flex-shrink:0;';
+      // スロット選択セレクト
+      var slotSelect = document.createElement('select');
+      slotSelect.style.cssText = 'padding:3px 4px;border:1px solid #ddd;border-radius:6px;font-size:0.72em;background:#fff;flex-shrink:0;max-width:70px;';
+      getQuadSlots().forEach(function(s) {
+        var opt = document.createElement('option');
+        opt.value = s.key;
+        opt.textContent = s.emoji + s.label;
+        if (s.key === col.key) opt.selected = true;
+        slotSelect.appendChild(opt);
+      });
+      var addQuadTask = function() {
+        var title = input.value.trim();
+        if (!title) return;
+        var targetDate = currentDailyDate || getLocalDateStr(new Date());
+        var newTask = {
+          id: generateTaskId(),
+          title: title,
+          date: targetDate,
+          timeSlot: slotSelect.value,
+          kind: 'task',
+          done: false,
+          createdAt: new Date().toISOString()
+        };
+        allTasks.push(newTask);
+        saveAllTasks();
+        input.value = '';
+        renderQuadView();
+      };
+      addBtn.onclick = addQuadTask;
+      input.onkeydown = function(e) { if (e.key === 'Enter') { e.preventDefault(); addQuadTask(); } };
+      inputRow.appendChild(slotSelect);
+      inputRow.appendChild(input);
+      inputRow.appendChild(addBtn);
+      div.appendChild(inputRow);
+      // タスク一覧（既存li UIに近づける）
+      var taskList = document.createElement('div');
+      taskList.style.cssText = 'flex:1;';
+      tasks.forEach(function(t) {
+        var item = document.createElement('div');
+        item.className = 'task-item' + (t.completed || t.done ? ' completed' : '');
+        item.style.cssText = 'background:#fff;border-radius:6px;padding:5px 7px;margin-bottom:4px;font-size:0.78em;color:#333;border:1px solid rgba(0,0,0,0.07);display:flex;align-items:center;gap:4px;cursor:move;-webkit-user-select:none;user-select:none;';
+        item.draggable = true;
+        item.dataset.taskId = t.id;
+        item.addEventListener('dragstart', function(e) {
+          e.dataTransfer.setData('text/plain', t.id);
+          item.style.opacity = '0.4';
+        });
+        item.addEventListener('dragend', function() { item.style.opacity = '1'; });
+        // 縦並び替え：タスク上にドロップで順序入れ替え
+        item.addEventListener('dragover', function(e) {
+          e.preventDefault(); e.stopPropagation();
+          item.style.borderTop = '2px solid #4facfe';
+        });
+        item.addEventListener('dragleave', function() { item.style.borderTop = ''; });
+        item.addEventListener('drop', function(e) {
+          e.preventDefault(); e.stopPropagation();
+          item.style.borderTop = '';
+          var fromId = e.dataTransfer.getData('text/plain');
+          var toId = t.id;
+          if (fromId === toId) return;
+          var fromIdx = allTasks.findIndex(function(x) { return x.id === fromId; });
+          var toIdx = allTasks.findIndex(function(x) { return x.id === toId; });
+          if (fromIdx === -1 || toIdx === -1) return;
+          var moved = allTasks.splice(fromIdx, 1)[0];
+          // スロットを移動先に合わせる
+          moved.timeSlot = t.timeSlot || 'slot1';
+          var newToIdx = allTasks.findIndex(function(x) { return x.id === toId; });
+          allTasks.splice(newToIdx, 0, moved);
+          saveAllTasks();
+          renderQuadView();
+        });
+        // カレンダー記号
+        var _sym = (typeof getCalendarSymbol === 'function') ? getCalendarSymbol(t.calendarId) : '';
+        // 本能アイコン
+        var _instOn = allSettings.ui.instinctMode === true;
+        var _instIcon = (_instOn && typeof getInstinctIcon === 'function') ? getInstinctIcon(t.instinct) : '';
+        // 本能カラー
+        var _instColor = (_instOn && typeof getInstinctColor === 'function') ? getInstinctColor(t.instinct) : '';
+        if (_instColor) { item.style.borderLeft = '3px solid ' + _instColor; item.style.paddingLeft = '6px'; }
+        // Fタグ
+        var fTag = t.fTag ? '<span style="font-size:0.8em;color:#4facfe;font-weight:700;margin-right:2px;">' + t.fTag + '</span>' : '';
+        // テキスト
+        var displayText = (_sym ? _sym + ' ' : '') + (_instIcon ? _instIcon + ' ' : '') + (t.time ? t.time + ' ' : '') + (t.title || t.text || '');
+        var textSpan = document.createElement('span');
+        textSpan.style.cssText = 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;';
+        textSpan.innerHTML = fTag + displayText;
+        textSpan.onclick = function() {
+          if (_quadFTagModeOn) {
+            applyQuadFTag(t.id);
+          } else {
+            if (typeof toggleTaskById === 'function') toggleTaskById(t.id);
+          }
+        };
+        item.appendChild(textSpan);
+        // ✏️編集
+        var editBtn = document.createElement('span');
+        editBtn.textContent = '✏️';
+        editBtn.style.cssText = 'cursor:pointer;font-size:0.9em;flex-shrink:0;';
+        editBtn.onclick = function(e) { e.stopPropagation(); if (typeof editTaskById === 'function') editTaskById(t.id, textSpan); };
+        item.appendChild(editBtn);
+        // 📅スケジュール
+        var schedBtn = document.createElement('span');
+        schedBtn.textContent = '📅';
+        schedBtn.style.cssText = 'cursor:pointer;font-size:0.9em;flex-shrink:0;';
+        schedBtn.onclick = function(e) { e.stopPropagation(); if (typeof openDaySelectModalById === 'function') openDaySelectModalById(t.id); };
+        item.appendChild(schedBtn);
+        // 🏃逃げる
+        var escBtn = document.createElement('span');
+        escBtn.textContent = '🏃';
+        escBtn.style.cssText = 'cursor:pointer;font-size:0.9em;flex-shrink:0;';
+        escBtn.title = '逃げる';
+        escBtn.onclick = function(e) { e.stopPropagation(); if (typeof escapeTaskById === 'function') escapeTaskById(t.id); };
+        item.appendChild(escBtn);
+        // ×削除
+        var delBtn = document.createElement('span');
+        delBtn.textContent = '×';
+        delBtn.style.cssText = 'cursor:pointer;color:#aaa;font-size:1em;flex-shrink:0;';
+        delBtn.onclick = function(e) { e.stopPropagation(); if (typeof deleteTaskById === 'function') deleteTaskById(t.id); };
+        item.appendChild(delBtn);
+        taskList.appendChild(item);
+      });
+      div.appendChild(taskList);
+      return div;
+    }
+    window.renderQuadView = renderQuadView;
+
+    // ===== Fタグスタンプモード =====
+    var _quadFTagModeOn = false;
+    var _quadFTagSequence = ['F1','F2','F3','F4','F5','F6','F7','FN','FZ',null];
+    function toggleQuadFTagMode() {
+      _quadFTagModeOn = !_quadFTagModeOn;
+      var btn = document.getElementById('quadFTagModeBtn');
+      var counter = document.getElementById('quadFTagCounter');
+      if (btn) {
+        btn.textContent = _quadFTagModeOn ? '🏷️ Fタグ ON' : '🏷️ Fタグ OFF';
+        btn.style.background = _quadFTagModeOn ? '#4facfe' : '#f5f5f5';
+        btn.style.color = _quadFTagModeOn ? '#fff' : '#333';
+        btn.style.borderColor = _quadFTagModeOn ? '#4facfe' : '#ddd';
+      }
+      if (counter) counter.textContent = _quadFTagModeOn ? 'タスクをタップしてFタグを付与' : '';
+      renderQuadView();
+    }
+    function applyQuadFTag(taskId) {
+      var task = allTasks.find(function(t) { return t.id === taskId; });
+      if (!task) return;
+      var cur = task.fTag || null;
+      var idx = _quadFTagSequence.indexOf(cur);
+      var next = _quadFTagSequence[(idx + 1) % _quadFTagSequence.length];
+      task.fTag = next;
+      saveAllTasks();
+      renderQuadView();
+    }
+    window.toggleQuadFTagMode = toggleQuadFTagMode;
+    window.applyQuadFTag = applyQuadFTag;
+
+    // ===== 象限🐟ズームモーダル =====
+    var _quadZoomFTagModeOn = false;
+    function openQuadZoomModal(sectionNum, title) {
+      var modal = document.getElementById('quadZoomModal');
+      var content = document.getElementById('quadZoomContent');
+      var titleEl = document.getElementById('quadZoomTitle');
+      if (!modal || !content) return;
+      titleEl.textContent = '🐟 ' + title;
+      _quadZoomFTagModeOn = false;
+      var fBtn = document.getElementById('quadZoomFTagBtn');
+      if (fBtn) { fBtn.textContent = '🏷️ Fタグ OFF'; fBtn.style.background = '#f5f5f5'; fBtn.style.color = '#333'; }
+      modal.style.display = 'flex';
+      setTimeout(function() {
+        content.style.transform = 'scale(1)';
+        content.style.opacity = '1';
+      }, 10);
+      renderQuadZoomBody(sectionNum);
+      modal._sectionNum = sectionNum;
+    }
+    function closeQuadZoomModal() {
+      var modal = document.getElementById('quadZoomModal');
+      var content = document.getElementById('quadZoomContent');
+      if (!modal || !content) return;
+      content.style.transform = 'scale(0.85)';
+      content.style.opacity = '0';
+      setTimeout(function() { modal.style.display = 'none'; }, 250);
+    }
+    function toggleQuadZoomFTagMode() {
+      _quadZoomFTagModeOn = !_quadZoomFTagModeOn;
+      var btn = document.getElementById('quadZoomFTagBtn');
+      if (btn) {
+        btn.textContent = _quadZoomFTagModeOn ? '🏷️ Fタグ ON' : '🏷️ Fタグ OFF';
+        btn.style.background = _quadZoomFTagModeOn ? '#4facfe' : '#f5f5f5';
+        btn.style.color = _quadZoomFTagModeOn ? '#fff' : '#333';
+      }
+      var modal = document.getElementById('quadZoomModal');
+      if (modal && modal._sectionNum) renderQuadZoomBody(modal._sectionNum);
+    }
+    function applyQuadZoomFTag(taskId) {
+      var task = allTasks.find(function(t) { return t.id === taskId; });
+      if (!task) return;
+      var cur = task.fTag || null;
+      var idx = _quadFTagSequence.indexOf(cur);
+      var next = _quadFTagSequence[(idx + 1) % _quadFTagSequence.length];
+      task.fTag = next;
+      saveAllTasks();
+      var modal = document.getElementById('quadZoomModal');
+      if (modal && modal._sectionNum) renderQuadZoomBody(modal._sectionNum);
+    }
+    function renderQuadZoomBody(sectionNum) {
+      var body = document.getElementById('quadZoomBody');
+      if (!body) return;
+      var targetDate = currentDailyDate || getLocalDateStr(new Date());
+      // 第6条デバッグ4軸：sectionNumで象限のタスクだけを取得
+      var dailyTasksBySec = (typeof getDailyTasks === 'function') ? getDailyTasks(targetDate) : {};
+      var sectionTasks = (dailyTasksBySec[sectionNum] || []);
+      var slots = getQuadSlots();
+      body.innerHTML = '';
+      slots.forEach(function(slot) {
+        var colDiv = document.createElement('div');
+        colDiv.style.cssText = 'background:' + slot.color + ';border-radius:8px;padding:6px;display:flex;flex-direction:column;';
+        var hdr = document.createElement('div');
+        hdr.style.cssText = 'font-size:0.75em;font-weight:700;color:#444;margin-bottom:4px;padding-bottom:3px;border-bottom:1px solid rgba(0,0,0,0.1);';
+        hdr.textContent = slot.emoji + ' ' + slot.label;
+        colDiv.appendChild(hdr);
+        // 入力欄
+        var inputRow = document.createElement('div');
+        inputRow.style.cssText = 'display:flex;gap:3px;margin-bottom:5px;';
+        var inp = document.createElement('input');
+        inp.type = 'text'; inp.placeholder = '追加...';
+        inp.style.cssText = 'flex:1;padding:3px 5px;border:1px solid #ddd;border-radius:5px;font-size:0.72em;min-width:0;';
+        var addB = document.createElement('button');
+        addB.textContent = '+';
+        addB.style.cssText = 'padding:3px 7px;background:#4facfe;color:#fff;border:none;border-radius:5px;font-size:0.72em;cursor:pointer;';
+        var addFn = function(slotKey) { return function() {
+          var title = inp.value.trim(); if (!title) return;
+          // 新規タスクはこの象限（sectionNum）に追加
+          var sectionKey = ['urgent_important','not_urgent_important','urgent_not_important','not_urgent_not_important'][sectionNum-1] || '';
+          allTasks.push({ id: generateTaskId(), title: title, text: title, date: targetDate, timeSlot: slotKey, section: sectionNum, kind: 'task', done: false, createdAt: new Date().toISOString() });
+          saveAllTasks(); inp.value = '';
+          renderQuadZoomBody(sectionNum);
+        }; }(slot.key);
+        addB.onclick = addFn;
+        inp.onkeydown = function(e) { if (e.key === 'Enter') { e.preventDefault(); addFn(); } };
+        inputRow.appendChild(inp); inputRow.appendChild(addB);
+        colDiv.appendChild(inputRow);
+        // この象限のタスクをスロットでフィルタ
+        var slotTasks = slot.key === 'slot1'
+          ? sectionTasks.filter(function(t) { return t.timeSlot === 'slot1' || !t.timeSlot; })
+          : sectionTasks.filter(function(t) { return t.timeSlot === slot.key; });
+        slotTasks.forEach(function(t) {
+          var item = document.createElement('div');
+          item.className = 'task-item' + (t.completed || t.done ? ' completed' : '');
+          item.style.cssText = 'background:#fff;border-radius:5px;padding:4px 6px;margin-bottom:3px;font-size:0.75em;color:#333;display:flex;align-items:center;gap:3px;cursor:pointer;';
+          if (_quadZoomFTagModeOn) {
+            item.style.outline = '2px solid #4facfe';
+            item.onclick = function() { applyQuadZoomFTag(t.id); };
+          } else {
+            item.onclick = function() { if (typeof toggleTaskById === 'function') toggleTaskById(t.id); renderQuadZoomBody(sectionNum); };
+          }
+          var fTag = t.fTag ? '<span style="color:#4facfe;font-weight:700;margin-right:2px;font-size:0.85em;">' + t.fTag + '</span>' : '';
+          var sym = (typeof getCalendarSymbol === 'function') ? getCalendarSymbol(t.calendarId) : '';
+          var textS = document.createElement('span');
+          textS.style.cssText = 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+          textS.innerHTML = fTag + (sym ? sym + ' ' : '') + (t.title || t.text || '');
+          item.appendChild(textS);
+          var delB = document.createElement('span');
+          delB.textContent = '×'; delB.style.cssText = 'color:#aaa;cursor:pointer;flex-shrink:0;';
+          delB.onclick = function(e) { e.stopPropagation(); if (typeof deleteTaskById === 'function') deleteTaskById(t.id); renderQuadZoomBody(sectionNum); };
+          item.appendChild(delB);
+          colDiv.appendChild(item);
+        });
+        body.appendChild(colDiv);
+      });
+    }
+    window.openQuadZoomModal = openQuadZoomModal;
+    window.closeQuadZoomModal = closeQuadZoomModal;
+    window.toggleQuadZoomFTagMode = toggleQuadZoomFTagMode;
+    window.renderQuadZoomBody = renderQuadZoomBody;
+
+    // ===== 第1象限への魚の目4分割 試験的埋め込み =====
+    function renderSection1QuadEmbed(dateStr) {
+      var section1 = document.getElementById('section1');
+      if (!section1) return;
+      // 既存の埋め込みエリアを削除してから再描画
+      var existing = document.getElementById('section1QuadEmbed');
+      if (existing) existing.remove();
+      var targetDate = dateStr || currentDailyDate || getLocalDateStr(new Date());
+      var slots = getQuadSlots();
+      var tasks = allTasks.filter(function(t) {
+        if (t.kind === 'scratch' || t.kind === 'zen') return false;
+        var d = t.date || t.scheduledDate || '';
+        return d === targetDate;
+      });
+      var embed = document.createElement('div');
+      embed.id = 'section1QuadEmbed';
+      embed.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:8px;border-top:1px dashed #ccc;padding-top:8px;';
+      slots.forEach(function(slot) {
+        var colDiv = document.createElement('div');
+        colDiv.style.cssText = 'background:' + slot.color + ';border-radius:6px;padding:4px;min-height:60px;';
+        var hdr = document.createElement('div');
+        hdr.style.cssText = 'font-size:0.65em;font-weight:700;color:#555;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+        hdr.textContent = slot.emoji + ' ' + slot.label;
+        colDiv.appendChild(hdr);
+        var slotTasks;
+        if (slot.key === 'slot1') {
+          slotTasks = tasks.filter(function(t) { return t.timeSlot === 'slot1' || !t.timeSlot; });
+        } else {
+          slotTasks = tasks.filter(function(t) { return t.timeSlot === slot.key; });
+        }
+        slotTasks.forEach(function(t) {
+          var item = document.createElement('div');
+          item.style.cssText = 'background:#fff;border-radius:4px;padding:2px 4px;margin-bottom:2px;font-size:0.65em;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;';
+          item.textContent = t.title || t.text || '';
+          item.onclick = function() {
+            if (typeof openTaskEditModal === 'function') openTaskEditModal(t.id);
+          };
+          colDiv.appendChild(item);
+        });
+        embed.appendChild(colDiv);
+      });
+      section1.appendChild(embed);
+    }
+    window.renderSection1QuadEmbed = renderSection1QuadEmbed;
+    function saveQuadSlotSettings() {
+      var labels = ['quadSlotLabel1','quadSlotLabel2','quadSlotLabel3','quadSlotLabel4'];
+      var emojis = ['🔒','🌅','☀️','🌆'];
+      allSettings.quadViewSlots = labels.map(function(id, i) {
+        var el = document.getElementById(id);
+        var label = (el && el.value.trim()) ? el.value.trim() : QUAD_SLOT_DEFAULTS[i].label;
+        return { label: label, emoji: emojis[i] };
+      });
+      saveAllSettings();
+    }
+    window.saveQuadSlotSettings = saveQuadSlotSettings;
 
     window.toggleBlueprintEmojiPicker = toggleBlueprintEmojiPicker;
     window.toggleColors = toggleColors;
