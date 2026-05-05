@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.340 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.341 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -281,7 +281,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.340';
+    const APP_VERSION = 'v0.45.341';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -18800,11 +18800,7 @@ function reviveBlueprint(id) {
         scratchView.style.display = 'flex';
         scratchView.style.flexDirection = 'column';
         document.getElementById('dailyTabScratch').classList.add('active');
-        if (!allSettings.flags.scratchTourSeen) {
-          allSettings.flags.scratchTourSeen = true; saveAllSettings();
-          setTimeout(function(){ if (typeof showScratchOnboarding === 'function') showScratchOnboarding(); }, 400);
-        }
-        renderScratchView();
+        renderScratchView(); // オンボーディングは初回入力時に発火（scratchTourSeen参照）
       } else if (mode === 'timeline') {
         timelineView.style.display = 'flex';
         timelineView.style.flexDirection = 'column';
@@ -19001,6 +18997,11 @@ function reviveBlueprint(id) {
             if (_hasText && !allSettings.flags.hodokusuOnboardSeen) {
               allSettings.flags.hodokusuOnboardSeen = true;
               saveAllSettings();
+            }
+            // 雑記帳オンボーディング：初回入力時に発火（タブ開いた時ではなく入力した時）
+            if (_hasText && !allSettings.flags.scratchTourSeen) {
+              allSettings.flags.scratchTourSeen = true; saveAllSettings();
+              setTimeout(function(){ if (typeof showScratchOnboarding === 'function') showScratchOnboarding(); }, 600);
             }
           }
         };
@@ -24192,7 +24193,25 @@ function loadSettingsUI() {
         var _btnArea = document.getElementById('kazedayoriBtnArea');
         if (_btnArea) { _btnArea.style.background = 'linear-gradient(160deg,' + _col.from + ' 0%,' + _col.to + ' 100%)'; }
 
+        // ふわっとフェードイン＋スケールアップ（高級感）
+        _modal.style.opacity = '0';
         _modal.style.display = 'flex';
+        var _card = document.getElementById('kazedayoriCard');
+        if (_card) {
+          _card.style.transform = 'scale(0.92) translateY(16px)';
+          _card.style.opacity = '0';
+          _card.style.transition = 'transform 0.55s cubic-bezier(0.22,1,0.36,1), opacity 0.45s ease';
+        }
+        _modal.style.transition = 'opacity 0.35s ease';
+        requestAnimationFrame(function() {
+          requestAnimationFrame(function() {
+            _modal.style.opacity = '1';
+            if (_card) {
+              _card.style.transform = 'scale(1) translateY(0)';
+              _card.style.opacity = '1';
+            }
+          });
+        });
 
         // 35秒後に自動消去（フェードアウト）
         if (window._kazedayoriTimer) clearTimeout(window._kazedayoriTimer);
