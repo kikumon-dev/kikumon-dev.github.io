@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.352 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.355 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -281,7 +281,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.352';
+    const APP_VERSION = 'v0.45.355';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -20489,6 +20489,21 @@ function reviveBlueprint(id) {
       localStorage.setItem(_migKey2, '1');
       window._dbgLog && window._dbgLog('mig_display_scope_empty_v1 done. fixed=' + _fixCount + '件');
     })();
+    // displayScope空タスク補完v3・text欠如補完（quadViewで追加したタスクの不足フィールドを修正）
+    (function() {
+      var _migKey4 = 'mig_display_scope_text_v3';
+      if (localStorage.getItem(_migKey4)) return;
+      var _fixCount4 = 0;
+      allTasks.forEach(function(t) {
+        if (t.kind === 'task') {
+          if (!t.displayScope) { t.displayScope = 'daily_only'; _fixCount4++; }
+          if (t.text === undefined) { t.text = t.title || ''; _fixCount4++; }
+        }
+      });
+      if (_fixCount4 > 0) saveAllTasks();
+      localStorage.setItem(_migKey4, '1');
+      window._dbgLog && window._dbgLog('mig_display_scope_text_v3 done. fixed=' + _fixCount4 + '件');
+    })();
     // displayScope空タスク補完v2（バニッシュ今日移動等でdisplayScopeがnullのまま残ったタスクを修正）
     (function() {
       var _migKey3 = 'mig_display_scope_empty_v2';
@@ -21004,7 +21019,7 @@ function reviveBlueprint(id) {
       // 雑記帳
       '_lastScratchMoveDate', '_importLog',
       // マイグレーション済みキー
-      'mig_ids_to_uuid_v7', 'mig_show_in_daily_to_display_scope_v1', 'mig_display_scope_empty_v1', 'mig_display_scope_empty_v2',
+      'mig_ids_to_uuid_v7', 'mig_show_in_daily_to_display_scope_v1', 'mig_display_scope_empty_v1', 'mig_display_scope_empty_v2', 'mig_display_scope_text_v3',
       'mig_category_to_calendar_v170', 'mig_death_ghost_flags_v0_24_59',
       'mig_gant_enabled_default_v0_32', 'mig_journals_to_alltasks_v1', 'mig_kingdom_mode_default_v1', 'mig_kingdom_mode_default_v2',
       'mig_gdp_to_oku_v1', 'mig_orphan_taskids_v1', 'mig_done_completed_sync_v1',
@@ -24406,17 +24421,9 @@ function loadSettingsUI() {
         var title = input.value.trim();
         if (!title) return;
         var targetDate = currentDailyDate || getLocalDateStr(new Date());
-        var newTask = {
-          id: generateTaskId(),
-          title: title,
-          date: targetDate,
-          timeSlot: slotSelect.value,
-          kind: 'task',
-          done: false,
-          createdAt: new Date().toISOString()
-        };
-        allTasks.push(newTask);
-        saveAllTasks();
+        // createTask経由でフィールドを完全に揃える（第一条：SSOT）
+        var newTask = createTask(title, targetDate, null, 1, 'daily_only');
+        newTask.timeSlot = slotSelect.value;
         input.value = '';
         renderQuadView();
       };
@@ -24483,6 +24490,7 @@ function loadSettingsUI() {
             applyQuadFTag(t.id);
           } else {
             if (typeof toggleTaskById === 'function') toggleTaskById(t.id);
+            renderQuadView();
           }
         };
         item.appendChild(textSpan);
