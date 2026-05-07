@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.355 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.358 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -268,6 +268,55 @@ PANELSに文字列を追加・編集したあとは必ずnode --checkで全scrip
 node --checkで初めて根本原因を特定できた実例に基づく。
 
 =============================================================================
+
+第30条【タスク作成はcreateTask経由で行う】
+kind='task'のレコードを新規作成する場合は必ずcreateTask()関数を経由すること。
+allTasks.pushに直接オブジェクトリテラルでkind:'task'を追加することを禁止する。
+createTask()はtext/displayScope/calendarId/completed/instinct/owner/createdAt/updatedAt等の
+必須フィールドを全て保証する唯一の正規経路（SSOT）である。
+直接pushした場合、textやdisplayScopeが未設定のままになり、STのSPAG·A2やST-61で
+検出されるが、ユーザーデータが壊れた状態で蓄積される危険がある。
+例外：テストコード内の一時レコード（smoke-/st-プレフィックスのID）は許容。
+確認方法：addQuadTask等の新しいタスク追加関数を作る際は必ずcreateTask()を呼ぶ。
+権威：v0.45.353でaddQuadTaskが直接pushしていたためtext/displayScopeが欠如し
+      ST-61・SPAG·A2で検出。createTask経由に修正（v0.45.355）。
+
+第31条【HTMLタグの開き・閉じ対応チェック】
+HTML文字列を編集・追加したあとは開きタグと閉じタグが正しく対応していることを確認すること。
+また文字列内のバックスラッシュ・シングルクォートのエスケープが正しいことを確認すること。
+【確認すべき4パターン】
+  ① バックスラッシュ問題：\nが\\nになるなど多重エスケープ。PANELSに文字列追加時に頻発。
+  ② シングルクォート問題：'（アポストロフィ）が文字列を早期終端させる。\'でエスケープ必要。
+  ③ 閉じタグ漏れ：</div>や</span>が欠如したままDOMが崩れる。
+  ④ 開きタグ対応ミス：<div class="A"><div class="B">に対して</div>が1個しかないケース。
+node --checkはJS構文エラーは拾うがHTMLタグの対応ミスは拾えない。
+目視または専用スクリプトでカウントして確認すること。
+権威：PANELSデバッグ（第29条）で繰り返し発生した実例多数。
+
+第32条【廃止コードは即削除・残骸を残さない】
+設計変更・リファクタリングで不要になった関数・変数・コメント・マイグレーションコードは
+その場で即座に削除すること。「念のために残す」「後で使うかも」は禁止。
+残骸が残るとAIが文脈を誤読して再利用し、SSOT違反・バグの温床になる。
+
+【削除すべき残骸の種類】
+  ① 廃止された関数定義（旧実装・置き換え済みのもの）
+  ② 使われなくなったグローバル変数・定数
+  ③ 古い方式のコード（例：allTasks.pushによる直接タスク生成）
+  ④ 参照されなくなったDOM要素・CSS
+  ⑤ 適用済みマイグレーションのロジック（フラグは残すがロジックは削除可）
+
+【削除と補完のセット作業手順】
+  1. 廃止コードを削除する
+  2. 既存データへの影響があればマイグレーション（mig_xxxフラグ）で補完する
+  3. STのクリーンアップでフラグ・残骸がないことを確認する
+  4. 第22条（段階的実装）に従い1箇所ずつ確認しながら進める
+
+制度趣旨：AIは残存コードを「現役のコード」と誤認する。
+         残骸を残すことは将来の自分（とAI）への罠を仕掛けることと同義。
+権威：v0.45.353でaddQuadTaskが旧方式（直接push）のまま残存し、
+      createTaskへの移行が不完全だったことで発覚。v0.45.355で完全削除・移行。
+
+========
 END OF 開発ルール
 =============================================================================
 -->
@@ -281,7 +330,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.355';
+    const APP_VERSION = 'v0.45.358';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -24646,8 +24695,10 @@ function loadSettingsUI() {
           var title = inp.value.trim(); if (!title) return;
           // 新規タスクはこの象限（sectionNum）に追加
           var sectionKey = ['urgent_important','not_urgent_important','urgent_not_important','not_urgent_not_important'][sectionNum-1] || '';
-          allTasks.push({ id: generateTaskId(), title: title, text: title, date: targetDate, timeSlot: slotKey, section: sectionNum, kind: 'task', done: false, createdAt: new Date().toISOString() });
-          saveAllTasks(); inp.value = '';
+          // createTask経由でフィールドを完全に揃える（第25条・SSOT）
+          var _newQzTask = createTask(title, targetDate, null, sectionNum, 'daily_only');
+          _newQzTask.timeSlot = slotKey;
+          inp.value = '';
           renderQuadZoomBody(sectionNum);
         }; }(slot.key);
         addB.onclick = addFn;
@@ -41492,6 +41543,169 @@ function showDebugLog(_initOnly) {
 
        ok('ST-134: 大学ビューテスト 完了');
      } catch(e) { ng('ST-134: 例外', e.message); }
+
+     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     // ST-135: createTask経由チェック（第30条）
+     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     try {
+       ok('');
+       ok('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+       ok('ST-135: createTask経由チェック（第30条）');
+       ok('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+       // ① createTask関数の存在確認
+       typeof createTask === 'function'
+         ? ok('ST-135·①: createTask関数 存在確認')
+         : ng('ST-135·①: createTask関数', '未定義');
+
+       // ② createTaskが返すタスクの必須フィールドを確認
+       var _ct135 = createTask('テストタスク135', '2026-01-01', null, 1, 'daily_only');
+       var _ct135Fields = ['id','kind','text','date','completed','displayScope','calendarId','createdAt','updatedAt'];
+       var _ct135Missing = _ct135Fields.filter(function(f){ return _ct135[f] === undefined; });
+       _ct135Missing.length === 0
+         ? ok('ST-135·②: createTask返値 必須フィールド全確認（' + _ct135Fields.length + '件）')
+         : ng('ST-135·②: createTask返値 フィールド欠如', _ct135Missing.join(','));
+
+       // ③ kind='task'であること
+       _ct135.kind === 'task'
+         ? ok('ST-135·③: createTask返値 kind=task確認')
+         : ng('ST-135·③: createTask返値 kind', _ct135.kind);
+
+       // ④ textとtitleが一致すること
+       _ct135.text === 'テストタスク135'
+         ? ok('ST-135·④: createTask返値 text設定確認')
+         : ng('ST-135·④: createTask返値 text', _ct135.text);
+
+       // ⑤ displayScopeが設定されていること
+       ['daily_only','both','weekly_only'].includes(_ct135.displayScope)
+         ? ok('ST-135·⑤: createTask返値 displayScope設定確認（' + _ct135.displayScope + '）')
+         : ng('ST-135·⑤: createTask返値 displayScope', _ct135.displayScope);
+
+       // ⑥ addQuadTask内にallTasks.pushが直接ない（createTask経由確認）
+       var _src135 = (typeof addQuadTask === 'function') ? addQuadTask.toString() : '';
+       // addQuadTaskはローカルスコープなのでソース検索で確認
+       var _html135 = document.documentElement.outerHTML;
+       var _addQuadIdx = _html135.indexOf('var addQuadTask = function');
+       var _addQuadChunk = _addQuadIdx !== -1 ? _html135.slice(_addQuadIdx, _addQuadIdx + 500) : '';
+       _addQuadChunk.indexOf('allTasks.push') === -1
+         ? ok('ST-135·⑥: addQuadTask内 直接push禁止確認（createTask経由）')
+         : ng('ST-135·⑥: addQuadTask内 allTasks.push直接使用検出', '第30条違反');
+
+       // クリーンアップ
+       allTasks = allTasks.filter(function(t){ return t.text !== 'テストタスク135'; });
+       saveAllTasks();
+       ok('ST-135·⑦: クリーンアップ完了（' + allTasks.length + '件）');
+       ok('ST-135: createTask経由チェック 完了');
+     } catch(e) { ng('ST-135: 例外', e.message); }
+
+     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     // ST-136: HTMLタグ対応・エスケープチェック（第31条）
+     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     try {
+       ok('');
+       ok('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+       ok('ST-136: HTMLタグ対応・エスケープチェック（第31条）');
+       ok('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+       // ① PANELS文字列の多重バックスラッシュ問題チェック
+       var _panelKeys = (typeof PANELS !== 'undefined') ? Object.keys(PANELS) : [];
+       var _badBackslash = _panelKeys.filter(function(k){
+         return PANELS[k].indexOf('\\\\n') !== -1;
+       });
+       _badBackslash.length === 0
+         ? ok('ST-136·①: PANELS 多重バックスラッシュ問題なし（' + _panelKeys.length + '件検査）')
+         : ng('ST-136·①: PANELS 多重バックスラッシュ検出', _badBackslash.join(','));
+
+       // ② universityView本体（tc-grid部分）のdiv対応確認
+       // ※ ov-bodyはPANELSの動的HTMLを挿入するため、div不整合は設計上許容
+       var _uvGrid = document.querySelector('#universityView .tc-grid');
+       if (_uvGrid) {
+         var _uvHtml = _uvGrid.outerHTML;
+         var _openDiv = (_uvHtml.match(/<div/g) || []).length;
+         var _closeDiv = (_uvHtml.match(/<\/div>/g) || []).length;
+         _openDiv === _closeDiv
+           ? ok('ST-136·②: universityView tc-grid divタグ対応確認（開き=' + _openDiv + ' 閉じ=' + _closeDiv + '）')
+           : ng('ST-136·②: universityView tc-grid divタグ不一致', '開き=' + _openDiv + ' 閉じ=' + _closeDiv);
+       } else {
+         ok('ST-136·②: universityView未表示（スキップ）');
+       }
+
+       // ③ settingsViewのdiv開き・閉じタグ対応確認
+       var _svEl = document.getElementById('settingsView');
+       if (_svEl) {
+         var _svHtml = _svEl.innerHTML;
+         var _openSv = (_svHtml.match(/<div/g) || []).length;
+         var _closeSv = (_svHtml.match(/<\/div>/g) || []).length;
+         _openSv === _closeSv
+           ? ok('ST-136·③: settingsView divタグ対応確認（開き=' + _openSv + ' 閉じ=' + _closeSv + '）')
+           : ng('ST-136·③: settingsView divタグ不一致', '開き=' + _openSv + ' 閉じ=' + _closeSv);
+       } else {
+         ok('ST-136·③: settingsView未表示（スキップ）');
+       }
+
+       // ④ 第30条・第31条がルールコメントに記載されているか
+       var _srcHtml = document.documentElement.outerHTML;
+       _srcHtml.indexOf('第30条【タスク作成はcreateTask経由') !== -1
+         ? ok('ST-136·④: 第30条 開発ルール記載確認')
+         : ng('ST-136·④: 第30条', '記載なし');
+       _srcHtml.indexOf('第31条【HTMLタグの開き・閉じ対応') !== -1
+         ? ok('ST-136·⑤: 第31条 開発ルール記載確認')
+         : ng('ST-136·⑤: 第31条', '記載なし');
+
+       ok('ST-136: HTMLタグ対応・エスケープチェック 完了');
+     } catch(e) { ng('ST-136: 例外', e.message); }
+
+     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     // ST-137: 廃止コード残骸チェック（第32条）
+     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     try {
+       ok('');
+       ok('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+       ok('ST-137: 廃止コード残骸チェック（第32条）');
+       ok('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+       var _src137 = document.documentElement.outerHTML;
+
+       // ① 旧addQuadTask直接push残骸チェック
+       // addQuadTask内にallTasks.pushが直接ない（createTask経由に移行済み）
+       var _aqtIdx = _src137.indexOf('var addQuadTask = function');
+       var _aqtChunk = _aqtIdx !== -1 ? _src137.slice(_aqtIdx, _aqtIdx + 600) : '';
+       _aqtChunk.indexOf('allTasks.push') === -1
+         ? ok('ST-137·①: addQuadTask 旧直接push残骸なし確認')
+         : ng('ST-137·①: addQuadTask 旧直接push残骸検出', '第30条・第32条違反');
+
+       // ② renderQuadZoomBodyの直接push残骸チェック
+       var _qzIdx = _src137.indexOf('function renderQuadZoomBody');
+       if (_qzIdx === -1) _qzIdx = _src137.indexOf('renderQuadZoomBody = function');
+       var _qzChunk = _qzIdx !== -1 ? _src137.slice(_qzIdx, _qzIdx + 3000) : '';
+       // createTask経由になっているか
+       _qzChunk.indexOf('createTask(') !== -1
+         ? ok('ST-137·②: renderQuadZoomBody createTask経由確認')
+         : ng('ST-137·②: renderQuadZoomBody', 'createTask未使用');
+
+       // ③ 廃止済みグローバル変数の残骸チェック
+       // openQuadZoomModal/quadZoomModalはマトリクスの象限ズームとして現役のため対象外
+       // 旧addQuadTask直接push関連の廃止変数をチェック
+       var _bannedGlobals2 = ['_oldAddQuadTask', 'addQuadTaskDirect'];
+       var _foundBanned2 = _bannedGlobals2.filter(function(g){
+         return typeof window[g] !== 'undefined';
+       });
+       _foundBanned2.length === 0
+         ? ok('ST-137·③: 廃止グローバル変数残骸なし確認（チェック対象=' + _bannedGlobals2.join(',') + '）')
+         : ng('ST-137·③: 廃止グローバル変数残骸検出', _foundBanned2.join(','));
+
+       // ④ 第32条がルールに記載されているか
+       _src137.indexOf('第32条【廃止コードは即削除') !== -1
+         ? ok('ST-137·④: 第32条 開発ルール記載確認')
+         : ng('ST-137·④: 第32条', '記載なし');
+
+       // ⑤ mig_display_scope_text_v3適用済み確認（補完マイグレーション完了）
+       localStorage.getItem('mig_display_scope_text_v3') === '1'
+         ? ok('ST-137·⑤: mig_display_scope_text_v3 適用済み確認（旧直接push補完完了）')
+         : ng('ST-137·⑤: mig_display_scope_text_v3', '未適用');
+
+       ok('ST-137: 廃止コード残骸チェック 完了');
+     } catch(e) { ng('ST-137: 例外', e.message); }
 
 
      try {
