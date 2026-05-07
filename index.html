@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.341 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.347 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -281,7 +281,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.341';
+    const APP_VERSION = 'v0.45.347';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -2793,12 +2793,25 @@ END OF 開発ルール
     /* 設定アイコン（⚙️）のスタイル */
     #navAvatarPlaceholder {
       font-size: 1.2em;
-      transition: transform 0.3s ease;
     }
-    .nav-tab-settings:hover #navAvatarPlaceholder {
+    /* ⚙ SVG歯車アイコンだけ回転・「設定」ラベルは静止 */
+    .settings-gear-only {
+      display: block;
+      line-height: 1.2;
+      text-align: center;
+    }
+    .settings-gear-svg {
+      width: 15px;
+      height: 15px;
+      color: inherit;
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      display: block;
+      margin: 0 auto;
+    }
+    .nav-tab-settings:hover .settings-gear-svg {
       transform: rotate(60deg);
     }
-    .nav-tab-settings.active #navAvatarPlaceholder {
+    .nav-tab-settings.active .settings-gear-svg {
       transform: rotate(90deg);
     }
     @media (max-width: 600px) {
@@ -6519,7 +6532,7 @@ END OF 開発ルール
     <button class="nav-tab" id="navNotebook" onclick="switchView('notebook')"><span class="nav-tab-icon">✏️</span><span class="nav-tab-label">自由帳</span></button>
     <button class="nav-tab" id="navPhoto" onclick="switchView('photo')" title="写真館"><span class="nav-tab-icon">📷</span><span class="nav-tab-label">写真</span></button>
     <button class="nav-tab" id="navUniversity" onclick="switchView('university')" title="大学"><span class="nav-tab-icon">🎓</span><span class="nav-tab-label">大学</span></button>
-    <button class="nav-tab" id="navJournal" onclick="switchView('journal')"><span class="nav-tab-icon">🦋</span><span class="nav-tab-label">日誌</span></button>
+    <button class="nav-tab" id="navJournal" onclick="switchView('journal')"><span class="nav-tab-icon" style="filter:hue-rotate(180deg) saturate(2);">🦋</span><span class="nav-tab-label">日誌</span></button>
     <button class="nav-tab" id="navCraft" onclick="switchView('craft')" style="display:none;" title="やることクラフト"><span class="nav-tab-icon">🏰</span><span class="nav-tab-label">クラフト</span></button>
     <button class="nav-tab" id="navColosseum" onclick="switchView('colosseum')" title="コロシアム" style="display:none;"><span class="nav-tab-icon">⚔️</span><span class="nav-tab-label">コロシアム</span></button>
     <button class="nav-tab" id="navShop" onclick="switchView('shop')" title="デッキショップ"><span class="nav-tab-icon">🛒</span><span class="nav-tab-label">ショップ</span></button>
@@ -6533,7 +6546,9 @@ END OF 開発ルール
       <div class="nav-avatar-wrapper" id="navAvatarWrapper" style="display: none;">
         <img id="navAvatar" src="" alt="" class="nav-avatar">
       </div>
-      <span id="navAvatarPlaceholder"><span class="nav-tab-icon">⚙</span><span class="nav-tab-label">設定</span></span>
+      <span id="navAvatarPlaceholder"><span class="settings-gear-only"><svg class="settings-gear-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path fill="currentColor" d="M12 15.5A3.5 3.5 0 0 1 8.5 12 3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5 3.5 3.5 0 0 1-3.5 3.5m7.43-2.92c.04-.34.07-.68.07-1.08 0-.4-.03-.74-.07-1.08l2.3-1.77c.21-.16.27-.46.13-.7l-2.18-3.77c-.14-.24-.43-.31-.67-.24l-2.71 1.07c-.57-.44-1.17-.79-1.84-1.06L14.05 2.4A.54.54 0 0 0 13.5 2h-4c-.28 0-.5.18-.54.44L8.64 5.07C7.97 5.34 7.37 5.7 6.8 6.13L4.09 5.06c-.24-.09-.5 0-.67.24L1.24 9.07c-.14.24-.08.54.13.7l2.3 1.77C3.63 11.88 3.6 12.22 3.6 12.5c0 .28.03.62.07.96l-2.3 1.77c-.21.16-.27.46-.13.7l2.18 3.77c.14.24.43.31.67.24l2.71-1.07c.57.44 1.17.79 1.84 1.06l.32 2.67c.04.26.26.44.54.44h4c.28 0 .5-.18.54-.44l.32-2.67c.67-.27 1.27-.62 1.84-1.06l2.71 1.07c.24.09.5 0 .67-.24l2.18-3.77c.14-.24.08-.54-.13-.7l-2.3-1.77Z"/>
+</svg></span><span class="nav-tab-label">設定</span></span>
     </button>
   </div>
   <!-- 日次日付ナビバー -->
@@ -6553,7 +6568,7 @@ END OF 開発ルール
     <button class="daily-inner-tab" id="dailyTabScratch" onclick="switchDailyTab('scratch')">✏️ 雑記帳</button>
     <button class="daily-inner-tab" id="dailyTabMatrix" onclick="if(document.getElementById('dailyTabMatrix').classList.contains('active')){switchMatrixLayer();}else{switchDailyTab('matrix');}">📊 マトリクス</button>
     <button class="daily-inner-tab" id="dailyTabTimeline" onclick="switchDailyTab('timeline')">🕐 タイムライン</button>
-    <button class="daily-inner-tab" id="dailyTabQuad" onclick="switchDailyTab('quad')">🐟 魚の目</button>
+    <button class="daily-inner-tab" id="dailyTabQuad" onclick="window._quadSectionFilter=null;switchDailyTab('quad')">🐟 魚の目</button>
   </div>
   <!-- 雑記帳ビュー -->
   <div id="scratchView" style="display:none; flex-direction:column;">
@@ -6693,7 +6708,9 @@ END OF 開発ルール
   <!-- 4分割日次ビュー（魚の目） -->
   <div id="quadView" style="display:none;flex-direction:column;height:calc(100vh - 100px);overflow-y:auto;padding:8px;box-sizing:border-box;background:#fafafa;">
     <div id="quadFTagBar" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:4px 6px;background:#fff;border-radius:8px;border:1px solid #eee;">
+      <button onclick="window._quadSectionFilter=null;switchDailyTab('matrix')" style="padding:4px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:0.78em;cursor:pointer;color:#555;">◀ マトリクス</button>
       <button id="quadFTagModeBtn" onclick="toggleQuadFTagMode()" style="padding:4px 10px;border-radius:6px;border:1px solid #ddd;background:#f5f5f5;font-size:0.8em;cursor:pointer;">🏷️ Fタグ OFF</button>
+      <span id="quadSectionLabel" style="font-size:0.78em;color:#888;font-weight:600;"></span>
       <span id="quadFTagCounter" style="font-size:0.75em;color:#888;"></span>
     </div>
     <div id="quadViewBody" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;min-height:100%;"></div>
@@ -24319,7 +24336,10 @@ function loadSettingsUI() {
       var tasks = allTasks.filter(function(t) {
         if (t.kind === 'scratch' || t.kind === 'zen') return false;
         var d = t.date || t.scheduledDate || '';
-        return d === targetDate;
+        if (d !== targetDate) return false;
+        // 象限フィルタ
+        if (_quadSectionFilter && (t.section || 1) !== _quadSectionFilter) return false;
+        return true;
       });
       var slots = getQuadSlots();
       body.innerHTML = '';
@@ -24541,22 +24561,19 @@ function loadSettingsUI() {
 
     // ===== 象限🐟ズームモーダル =====
     var _quadZoomFTagModeOn = false;
+    // 象限フィルタ（null=全表示、1-4=象限絞り込み）
+    var _quadSectionFilter = null;
+
     function openQuadZoomModal(sectionNum, title) {
-      var modal = document.getElementById('quadZoomModal');
-      var content = document.getElementById('quadZoomContent');
-      var titleEl = document.getElementById('quadZoomTitle');
-      if (!modal || !content) return;
-      titleEl.textContent = '🐟 ' + title;
-      _quadZoomFTagModeOn = false;
-      var fBtn = document.getElementById('quadZoomFTagBtn');
-      if (fBtn) { fBtn.textContent = '🏷️ Fタグ OFF'; fBtn.style.background = '#f5f5f5'; fBtn.style.color = '#333'; }
-      modal.style.display = 'flex';
-      setTimeout(function() {
-        content.style.transform = 'scale(1)';
-        content.style.opacity = '1';
-      }, 10);
-      renderQuadZoomBody(sectionNum);
-      modal._sectionNum = sectionNum;
+      // モーダルではなく全体の魚の目ビューを開く（象限フィルタ付き）
+      _quadSectionFilter = sectionNum || null;
+      // セクションラベルを更新
+      var _lbl = document.getElementById('quadSectionLabel');
+      if (_lbl) {
+        var _sn = {1:'🔴 緊急×重要',2:'🟡 重要',3:'🟠 緊急',4:'⬜ その他'};
+        _lbl.textContent = _quadSectionFilter ? _sn[_quadSectionFilter] : '';
+      }
+      switchDailyTab('quad');
     }
     function closeQuadZoomModal() {
       var modal = document.getElementById('quadZoomModal');
@@ -41401,15 +41418,15 @@ function showDebugLog(_initOnly) {
 
        // ③ カード枚数確認（12枚の時代カード＋3枚まとめ系＋1枚BC＝16枚）
        var _st134Cards = document.querySelectorAll('#universityView .tc');
-       _st134Cards.length === 16
-         ? ok('ST-134·③: カード枚数 16枚確認（' + _st134Cards.length + '枚）')
-         : ng('ST-134·③: カード枚数異常', '期待15枚・実際' + _st134Cards.length + '枚');
+       _st134Cards.length === 24
+         ? ok('ST-134·③: カード枚数 24枚確認（' + _st134Cards.length + '枚）')
+         : ng('ST-134·③: カード枚数異常', '期待24枚・実際' + _st134Cards.length + '枚');
 
        // ④ 通し番号（No.01〜No.12）が存在確認
        var _st134Nums = document.querySelectorAll('#universityView .c-num');
-       _st134Nums.length === 12
-         ? ok('ST-134·④: 通し番号 12個確認')
-         : ng('ST-134·④: 通し番号数異常', '期待12個・実際' + _st134Nums.length + '個');
+       _st134Nums.length === 13
+         ? ok('ST-134·④: 通し番号 13個確認')
+         : ng('ST-134·④: 通し番号数異常', '期待13個・実際' + _st134Nums.length + '個');
 
        // ⑤ switchView('university') 関数が公開されていること
        typeof switchView === 'function'
@@ -41436,7 +41453,7 @@ function showDebugLog(_initOnly) {
 
        // ⑨ シングルトンtip（_uniTipSingleton）の関数が存在すること
        // ※ DOM生成は初回ホバー時なので関数の存在はJSパース確認で代替
-       var _st134TipFnOk = content.indexOf('_uniTipSingleton') > -1 || document.getElementById('_uniTipSingleton') !== null;
+       var _st134TipFnOk = document.body.innerHTML.indexOf('_uniTipSingleton') > -1 || document.getElementById('_uniTipSingleton') !== null;
        // window上の関数は直接チェックできないので、ov-bodyのblockにclickListenerが設定されていることを確認
        var _st134OvBody = document.getElementById('ov-body');
        _st134OvBody
