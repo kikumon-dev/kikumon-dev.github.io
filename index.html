@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.351 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.352 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -281,7 +281,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.351';
+    const APP_VERSION = 'v0.45.352';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -24355,9 +24355,24 @@ function loadSettingsUI() {
         e.preventDefault();
         div.style.outline = '';
         var taskId = e.dataTransfer.getData('text/plain');
-        var task = allTasks.find(function(t) { return t.id === taskId; });
-        if (!task) return;
-        task.timeSlot = col.key;
+        var fromIdx = allTasks.findIndex(function(t) { return t.id === taskId; });
+        if (fromIdx === -1) return;
+        var moved = allTasks.splice(fromIdx, 1)[0];
+        moved.timeSlot = col.key;
+        // 同じスロットの最後のタスクの直後に挿入（無ければ末尾追加）
+        var lastIdxOfCol = -1;
+        for (var i = allTasks.length - 1; i >= 0; i--) {
+          var _t = allTasks[i];
+          var _isSlotMatch = (col.key === 'slot1')
+            ? (_t.timeSlot === 'slot1' || !_t.timeSlot)
+            : (_t.timeSlot === col.key);
+          if (_isSlotMatch) { lastIdxOfCol = i; break; }
+        }
+        if (lastIdxOfCol === -1) {
+          allTasks.push(moved);
+        } else {
+          allTasks.splice(lastIdxOfCol + 1, 0, moved);
+        }
         saveAllTasks();
         renderQuadView();
       });
