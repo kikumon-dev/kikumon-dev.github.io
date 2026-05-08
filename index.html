@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.394 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.397 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -145,7 +145,7 @@ SSPTの唯一の正規ソース。
   SPAG  ：SSOT Purify Absolute Green        — allTasksのSSOT汚染検証
   SCPAG ：Scope Control Purify Absolute Green — スコープ越境・window公開漏れ検証
   KPAG  ：Key Purify Absolute Green          — localStorageキー不整合・残骸検証
-  LPAG  ：Law Purify Absolute Guardian       — 開発ルール第1〜32条遵守率自動検証
+  LPAG  ：Law Purify Absolute Green          — 開発ルール第1〜33条遵守率自動検証
   TPAG  ：Temporal Purify Absolute Green     — ST前後のlocalStorage差分・副作用ゼロ保証
 
 制度趣旨：5体のガーディアンはそれぞれ独立した検証軸を持つが、1体でも沈黙すれば
@@ -491,7 +491,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.394';
+    const APP_VERSION = 'v0.45.397';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -42581,7 +42581,7 @@ function showDebugLog(_initOnly) {
          : ng('KPAG — CONTAMINATION DETECTED', 'Review failed items above');
      } catch(e) { ng('KPAG — INSPECTION ABORTED', e.message); }
 
-     // ===== LPAG — Law Purify Absolute Guardian =====
+     // ===== LPAG — Law Purify Absolute Green =====
      // 【開発フロー別 条文ガイド】
      // 設計時   → 第10条【命名規則】第16条【関数名一目瞭然化】
      // 実装時   → 第2条【nullチェック】第3条【window公開】第5条【allTasks操作】
@@ -43114,7 +43114,7 @@ function showDebugLog(_initOnly) {
          ? ok('LPAG]: 開発ルール遵守率 100% (' + _rp + '/' + _rc + '条) 🟢')
          : ng('LPAG]: 開発ルール遵守率', _rate + '% (' + _rp + '/' + _rc + '条) — ' + (_rc-_rp) + '件違反');
        _rate === 100
-         ? ok('🟢 LPAG — LAW PURIFY ABSOLUTE GUARDIAN · ALL ' + _rc + ' LAWS CLEARED · ZERO VIOLATION')
+         ? ok('🟢 LPAG — LAW PURIFY ABSOLUTE GREEN · ALL ' + _rc + ' LAWS CLEARED · ZERO VIOLATION')
          : ng('LPAG — LAW VIOLATION DETECTED', (_rc-_rp) + '件違反 · ' + _rate + '%遵守');
      } catch(e) { ng('LPAG]: 開発ルール遵守率', e.message); }
 
