@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.417 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.418 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
-最終更新: 2026-05-10 v0.45.417
+最終更新: 2026-05-10 v0.45.418
 =============================================================================
 【重要】このコメントは削除・省略厳禁。
 スレッドが変わっても開発継続性を保つため全条文をここに保管する。
@@ -500,7 +500,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.417';
+    const APP_VERSION = 'v0.45.418';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -16178,23 +16178,24 @@ function toggleGantEnabled(checked) {
       el.style.visibility = 'visible';
       el.style.opacity = '1';
       card.style.boxShadow = '0 4px 16px ' + color + '55';
-      // タッチデバイス対応：どこかタップしたら消える（タイマーなし・待ちなし・シンプル実装）
+      // タッチデバイス対応：onclickでtoggle（タッチ専用・onmouseleaveは発火しないため）
       if (!window.matchMedia('(pointer:fine)').matches) {
-        // 前のリスナーをキャンセル
+        // リスナーをクリーンアップ
         if (el._bpOutsideTapFn) {
           document.removeEventListener('touchstart', el._bpOutsideTapFn, true);
           el._bpOutsideTapFn = null;
         }
         el._bpCurrentCard = card;
-        // 次のtouchstartで即消す（残響対策不要・onmouseenter経由なのでtouchstartは既に終了済み）
-        el._bpOutsideTapFn = function(e) {
-          document.removeEventListener('touchstart', el._bpOutsideTapFn, true);
-          el._bpOutsideTapFn = null;
-          el._bpCurrentCard = null;
-          _hideBlueprintTip();
-        };
-        document.addEventListener('touchstart', el._bpOutsideTapFn, true);
       }
+    }
+    // タッチデバイス専用：志カードタップでtipをtoggle
+    function _toggleBlueprintTipOnTouch(card) {
+      if (window.matchMedia('(pointer:fine)').matches) return; // マウス環境では何もしない
+      var el = document.getElementById('_bpTipSingleton');
+      if (el && el._bpCurrentCard === card && el.style.display === 'block') {
+        _hideBlueprintTip(); // 同じカード再タップ→消す
+      }
+      // 別カードタップ→_showBlueprintTipが呼ばれるのでここでは何もしない
     }
     function _hideBlueprintTip() {
       var el = document.getElementById('_bpTipSingleton');
@@ -16442,7 +16443,7 @@ function toggleGantEnabled(checked) {
           background:${isSelected ? color + '15' : '#fff'};
           cursor:pointer; flex-shrink:0; position:relative;
           transition:box-shadow 0.2s;
-        " onclick="selectGantBlueprint('${bp.id}')"
+        " onclick="selectGantBlueprint('${bp.id}');_toggleBlueprintTipOnTouch(this)"
            onmouseenter="_showBlueprintTip(this)"
            onmouseleave="_hideBlueprintTip()"
            data-bp-msg="${_bpMsg.replace(/"/g,'&quot;')}" data-bp-color="${color}" data-bp-textcolor="${bp.textColor||'#1a237e'}">
@@ -24034,6 +24035,7 @@ function loadSettingsUI() {
     window._gantEditTask = _gantEditTask;
     window._gantToggle = _gantToggle;
     window._bpReorder = _bpReorder;
+    window._toggleBlueprintTipOnTouch = _toggleBlueprintTipOnTouch;
   window._gantReorderTask = _gantReorderTask;
   window._gantMoveTask = _gantMoveTask;
   window._initBlueprintDrag = _initBlueprintDrag;
