@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.415 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.416 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
-最終更新: 2026-05-10 v0.45.415
+最終更新: 2026-05-10 v0.45.416
 =============================================================================
 【重要】このコメントは削除・省略厳禁。
 スレッドが変わっても開発継続性を保つため全条文をここに保管する。
@@ -500,7 +500,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.415';
+    const APP_VERSION = 'v0.45.416';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -16187,14 +16187,20 @@ function toggleGantEnabled(checked) {
           document.removeEventListener('touchstart', el._bpOutsideTapFn, true);
           el._bpOutsideTapFn = null;
         }
+        // 既に同じカードのtipが表示中ならtoggle（消す）
+        if (el._bpCurrentCard === card && el.style.display === 'block') {
+          _hideBlueprintTip();
+          return;
+        }
+        el._bpCurrentCard = card;
         // 300ms後にカード以外タップリスナーを登録（タップ残響を回避）
         el._bpRegisterTimer = setTimeout(function() {
           el._bpOutsideTapFn = function(e) {
-            if (!card.contains(e.target)) {
-              document.removeEventListener('touchstart', el._bpOutsideTapFn, true);
-              el._bpOutsideTapFn = null;
-              _hideBlueprintTip();
-            }
+            // 全ての志カードのタップも「外タップ」扱いにして消す
+            document.removeEventListener('touchstart', el._bpOutsideTapFn, true);
+            el._bpOutsideTapFn = null;
+            el._bpCurrentCard = null;
+            _hideBlueprintTip();
           };
           document.addEventListener('touchstart', el._bpOutsideTapFn, true);
         }, 300);
@@ -16206,6 +16212,7 @@ function toggleGantEnabled(checked) {
       // タイマー・リスナー・登録待ちsetTimeoutを全てクリーンアップ
       clearTimeout(el._bpHideTimer);
       clearTimeout(el._bpRegisterTimer);
+      el._bpCurrentCard = null;
       if (el._bpOutsideTapFn) {
         document.removeEventListener('touchstart', el._bpOutsideTapFn, true);
         el._bpOutsideTapFn = null;
@@ -21440,6 +21447,9 @@ function reviveBlueprint(id) {
     var _switchViewLast = '';
     var _switchViewTimer = null;
     function switchView(view) {
+      // ビュー切替時はスナックバーを必ず除去
+      var _snackSv = document.getElementById('_ganttLinkSnackbar');
+      if (_snackSv) _snackSv.remove();
       // ビュー切替時は中央円を必ず非表示（matrixタブでのみ再表示）
       var _mccSv = document.getElementById('matrixCenterCircle');
       if (_mccSv) _mccSv.style.display = 'none';
