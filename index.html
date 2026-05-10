@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.412 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.413 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
-最終更新: 2026-05-10 v0.45.412
+最終更新: 2026-05-10 v0.45.413
 =============================================================================
 【重要】このコメントは削除・省略厳禁。
 スレッドが変わっても開発継続性を保つため全条文をここに保管する。
@@ -500,7 +500,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.412';
+    const APP_VERSION = 'v0.45.413';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -16170,24 +16170,19 @@ function toggleGantEnabled(checked) {
       el.style.visibility = 'visible';
       el.style.opacity = '1';
       card.style.boxShadow = '0 4px 16px ' + color + '55';
-      // タッチデバイス対応：5秒タイマー自動消去 + カード以外タップで消去
+      // タッチデバイス対応：別の場所タップで消去（タイマーなし・シンプル実装）
       if (!window.matchMedia('(pointer:fine)').matches) {
-        // 前のタイマー・リスナー・登録待ちsetTimeoutを全てキャンセル
+        // 前のリスナー・待機タイマーを全てキャンセル
         clearTimeout(el._bpHideTimer);
         clearTimeout(el._bpRegisterTimer);
         if (el._bpOutsideTapFn) {
           document.removeEventListener('touchstart', el._bpOutsideTapFn, true);
           el._bpOutsideTapFn = null;
         }
-        // 5秒後にフェードアウト
-        el._bpHideTimer = setTimeout(function() {
-          _hideBlueprintTip();
-        }, 5000);
         // 300ms後にカード以外タップリスナーを登録（タップ残響を回避）
         el._bpRegisterTimer = setTimeout(function() {
           el._bpOutsideTapFn = function(e) {
             if (!card.contains(e.target)) {
-              clearTimeout(el._bpHideTimer);
               document.removeEventListener('touchstart', el._bpOutsideTapFn, true);
               el._bpOutsideTapFn = null;
               _hideBlueprintTip();
@@ -18617,7 +18612,7 @@ function reviveBlueprint(id) {
       ].join(';');
       snack.innerHTML = `
         <span style="white-space:nowrap;color:#aaa;">🏗 手立てに追加？</span>
-        <select id="_ganttLinkSnackSel" style="flex:1;padding:5px 8px;border-radius:8px;border:none;background:#444;color:#fff;font-size:0.85em;">${optHtml}</select>
+        <select id="_ganttLinkSnackSel" style="flex:1;min-width:0;padding:5px 8px;border-radius:8px;border:none;background:#444;color:#fff;font-size:0.85em;">${optHtml}</select>
         <button onclick="document.getElementById('_ganttLinkSnackbar').remove()" style="background:none;border:none;color:#888;font-size:1.1em;cursor:pointer;padding:0 2px;">✕</button>
       `;
       // style追加
