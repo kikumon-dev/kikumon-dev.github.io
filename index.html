@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.409 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.410 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
-最終更新: 2026-05-10 v0.45.409
+最終更新: 2026-05-10 v0.45.410
 =============================================================================
 【重要】このコメントは削除・省略厳禁。
 スレッドが変わっても開発継続性を保つため全条文をここに保管する。
@@ -500,7 +500,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.409';
+    const APP_VERSION = 'v0.45.410';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -9297,11 +9297,11 @@ document.addEventListener('keydown', function(e){
       </div>
       <div class="settings-section" id="settingsNavTabSection">
         <h3 style="margin: 0 0 15px 0; color: #262626; font-size: 1.05em; font-weight: 600; border-bottom: 1px solid #efefef; padding-bottom: 12px;">🗂️ タブ表示</h3>
-        <p style="margin:0 0 12px 0;font-size:0.8em;color:#888;">表示するタブを選択できます。🔍・⚙️は常時表示。</p>
+        <p style="margin:0 0 12px 0;font-size:0.8em;color:#888;">表示するタブを選択できます。日次・🔍・⚙️は常時表示。</p>
         <div style="display:flex;flex-direction:column;gap:10px;">
-          <label id="settingsLabelDaily" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-            <input type="checkbox" id="visTabDaily" onchange="toggleVisibleTab('daily',this.checked)" style="width:18px;height:18px;accent-color:#4facfe;cursor:pointer;">
-            <span style="font-size:0.9em;color:#333;font-weight:600;">📅 日次</span>
+          <label id="settingsLabelDaily" style="display:flex;align-items:center;gap:10px;opacity:0.45;">
+            <input type="checkbox" id="visTabDaily" checked disabled style="width:18px;height:18px;accent-color:#4facfe;cursor:not-allowed;">
+            <span style="font-size:0.9em;color:#333;font-weight:600;">📅 日次 <span style="font-size:0.78em;color:#aaa;font-weight:400;">（常時表示）</span></span>
           </label>
           <label id="settingsLabelWeekly" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
             <input type="checkbox" id="visTabWeekly" onchange="toggleVisibleTab('weekly',this.checked)" style="width:18px;height:18px;accent-color:#4facfe;cursor:pointer;">
@@ -21494,9 +21494,10 @@ function reviveBlueprint(id) {
       document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
       if (view === 'daily') {
         // 日次が非表示設定の場合は造営（またはgant）へリダイレクト
+        // 日次は常時表示（設定で非表示にできない）
         if (allSettings.ui.visibleTabs && allSettings.ui.visibleTabs.daily === false) {
-          var _fallback = allSettings.ui.gantEnabled ? 'gant' : 'settings';
-          switchView(_fallback); return;
+          allSettings.ui.visibleTabs.daily = true; // 強制復元
+          saveAllSettings();
         }
         dailyView.style.display = 'grid';
         dailyView.classList.add('daily-active');
