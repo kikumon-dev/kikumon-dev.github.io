@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.416 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.417 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
-最終更新: 2026-05-10 v0.45.416
+最終更新: 2026-05-10 v0.45.417
 =============================================================================
 【重要】このコメントは削除・省略厳禁。
 スレッドが変わっても開発継続性を保つため全条文をここに保管する。
@@ -500,7 +500,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.416';
+    const APP_VERSION = 'v0.45.417';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -16178,40 +16178,28 @@ function toggleGantEnabled(checked) {
       el.style.visibility = 'visible';
       el.style.opacity = '1';
       card.style.boxShadow = '0 4px 16px ' + color + '55';
-      // タッチデバイス対応：別の場所タップで消去（タイマーなし・シンプル実装）
+      // タッチデバイス対応：どこかタップしたら消える（タイマーなし・待ちなし・シンプル実装）
       if (!window.matchMedia('(pointer:fine)').matches) {
-        // 前のリスナー・待機タイマーを全てキャンセル
-        clearTimeout(el._bpHideTimer);
-        clearTimeout(el._bpRegisterTimer);
+        // 前のリスナーをキャンセル
         if (el._bpOutsideTapFn) {
           document.removeEventListener('touchstart', el._bpOutsideTapFn, true);
           el._bpOutsideTapFn = null;
         }
-        // 既に同じカードのtipが表示中ならtoggle（消す）
-        if (el._bpCurrentCard === card && el.style.display === 'block') {
-          _hideBlueprintTip();
-          return;
-        }
         el._bpCurrentCard = card;
-        // 300ms後にカード以外タップリスナーを登録（タップ残響を回避）
-        el._bpRegisterTimer = setTimeout(function() {
-          el._bpOutsideTapFn = function(e) {
-            // 全ての志カードのタップも「外タップ」扱いにして消す
-            document.removeEventListener('touchstart', el._bpOutsideTapFn, true);
-            el._bpOutsideTapFn = null;
-            el._bpCurrentCard = null;
-            _hideBlueprintTip();
-          };
-          document.addEventListener('touchstart', el._bpOutsideTapFn, true);
-        }, 300);
+        // 次のtouchstartで即消す（残響対策不要・onmouseenter経由なのでtouchstartは既に終了済み）
+        el._bpOutsideTapFn = function(e) {
+          document.removeEventListener('touchstart', el._bpOutsideTapFn, true);
+          el._bpOutsideTapFn = null;
+          el._bpCurrentCard = null;
+          _hideBlueprintTip();
+        };
+        document.addEventListener('touchstart', el._bpOutsideTapFn, true);
       }
     }
     function _hideBlueprintTip() {
       var el = document.getElementById('_bpTipSingleton');
       if (!el) return;
-      // タイマー・リスナー・登録待ちsetTimeoutを全てクリーンアップ
-      clearTimeout(el._bpHideTimer);
-      clearTimeout(el._bpRegisterTimer);
+      // リスナーをクリーンアップ
       el._bpCurrentCard = null;
       if (el._bpOutsideTapFn) {
         document.removeEventListener('touchstart', el._bpOutsideTapFn, true);
