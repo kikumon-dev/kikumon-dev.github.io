@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.407 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.408 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
-最終更新: 2026-05-10 v0.45.407
+最終更新: 2026-05-10 v0.45.408
 =============================================================================
 【重要】このコメントは削除・省略厳禁。
 スレッドが変わっても開発継続性を保つため全条文をここに保管する。
@@ -500,7 +500,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.407';
+    const APP_VERSION = 'v0.45.408';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -18606,7 +18606,7 @@ function reviveBlueprint(id) {
         'background:#262626','color:#fff','border-radius:12px',
         'padding:12px 16px','display:flex','align-items:center','gap:8px',
         'z-index:9999','box-shadow:0 4px 20px rgba(0,0,0,0.3)',
-        'font-size:0.9em','max-width:92vw','width:380px',
+        'font-size:0.9em','max-width:min(380px, calc(100vw - 32px))','width:auto',
         'animation:_snackIn 0.2s ease'
       ].join(';');
       snack.innerHTML = `
