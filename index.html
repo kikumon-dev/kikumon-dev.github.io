@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.418 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.419 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
-最終更新: 2026-05-10 v0.45.418
+最終更新: 2026-05-10 v0.45.419
 =============================================================================
 【重要】このコメントは削除・省略厳禁。
 スレッドが変わっても開発継続性を保つため全条文をここに保管する。
@@ -500,7 +500,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.418';
+    const APP_VERSION = 'v0.45.419';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -16134,6 +16134,9 @@ function toggleGantEnabled(checked) {
       }
     }
     function _showBlueprintTip(card) {
+      // タッチデバイスではonmouseenterからの呼び出しを無視（onclickのみで制御）
+      if (!window.matchMedia('(pointer:fine)').matches && !card._bpCalledFromClick) return;
+      card._bpCalledFromClick = false; // フラグをリセット
       var msg   = card.getAttribute('data-bp-msg') || '';
       if (!msg) return;
       var color = card.getAttribute('data-bp-color') || '#4facfe';
@@ -16188,14 +16191,16 @@ function toggleGantEnabled(checked) {
         el._bpCurrentCard = card;
       }
     }
-    // タッチデバイス専用：志カードタップでtipをtoggle
+    // タッチデバイス専用：志カードタップでtipをtoggle/切り替え
     function _toggleBlueprintTipOnTouch(card) {
       if (window.matchMedia('(pointer:fine)').matches) return; // マウス環境では何もしない
       var el = document.getElementById('_bpTipSingleton');
       if (el && el._bpCurrentCard === card && el.style.display === 'block') {
         _hideBlueprintTip(); // 同じカード再タップ→消す
+      } else {
+        card._bpCalledFromClick = true; // onmouseenterガードを通過させるフラグ
+        _showBlueprintTip(card); // 別カードまたは非表示→表示
       }
-      // 別カードタップ→_showBlueprintTipが呼ばれるのでここでは何もしない
     }
     function _hideBlueprintTip() {
       var el = document.getElementById('_bpTipSingleton');
