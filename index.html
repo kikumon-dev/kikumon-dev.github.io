@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.411 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.412 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
-最終更新: 2026-05-10 v0.45.411
+最終更新: 2026-05-10 v0.45.412
 =============================================================================
 【重要】このコメントは削除・省略厳禁。
 スレッドが変わっても開発継続性を保つため全条文をここに保管する。
@@ -500,7 +500,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.411';
+    const APP_VERSION = 'v0.45.412';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -16172,8 +16172,9 @@ function toggleGantEnabled(checked) {
       card.style.boxShadow = '0 4px 16px ' + color + '55';
       // タッチデバイス対応：5秒タイマー自動消去 + カード以外タップで消去
       if (!window.matchMedia('(pointer:fine)').matches) {
-        // 前のタイマー・リスナーをキャンセル
+        // 前のタイマー・リスナー・登録待ちsetTimeoutを全てキャンセル
         clearTimeout(el._bpHideTimer);
+        clearTimeout(el._bpRegisterTimer);
         if (el._bpOutsideTapFn) {
           document.removeEventListener('touchstart', el._bpOutsideTapFn, true);
           el._bpOutsideTapFn = null;
@@ -16183,7 +16184,7 @@ function toggleGantEnabled(checked) {
           _hideBlueprintTip();
         }, 5000);
         // 300ms後にカード以外タップリスナーを登録（タップ残響を回避）
-        setTimeout(function() {
+        el._bpRegisterTimer = setTimeout(function() {
           el._bpOutsideTapFn = function(e) {
             if (!card.contains(e.target)) {
               clearTimeout(el._bpHideTimer);
@@ -16199,8 +16200,9 @@ function toggleGantEnabled(checked) {
     function _hideBlueprintTip() {
       var el = document.getElementById('_bpTipSingleton');
       if (!el) return;
-      // タイマー・リスナーをクリーンアップ
+      // タイマー・リスナー・登録待ちsetTimeoutを全てクリーンアップ
       clearTimeout(el._bpHideTimer);
+      clearTimeout(el._bpRegisterTimer);
       if (el._bpOutsideTapFn) {
         document.removeEventListener('touchstart', el._bpOutsideTapFn, true);
         el._bpOutsideTapFn = null;
