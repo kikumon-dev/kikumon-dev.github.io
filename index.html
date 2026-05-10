@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.408 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.409 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
-最終更新: 2026-05-10 v0.45.408
+最終更新: 2026-05-10 v0.45.409
 =============================================================================
 【重要】このコメントは削除・省略厳禁。
 スレッドが変わっても開発継続性を保つため全条文をここに保管する。
@@ -500,7 +500,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.408';
+    const APP_VERSION = 'v0.45.409';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -21780,6 +21780,11 @@ function reviveBlueprint(id) {
         }
 
       } else if (view === 'gant') {
+        // 日次系ビューが残っていた場合の確実な非表示ガード
+        var _svGant = document.getElementById('scratchView'); if (_svGant) _svGant.style.display = 'none';
+        var _tvGant = document.getElementById('timelineView'); if (_tvGant) _tvGant.style.display = 'none';
+        var _qvGant = document.getElementById('quadView'); if (_qvGant) _qvGant.style.display = 'none';
+        var _dvGant = document.querySelector('.container'); if (_dvGant) { _dvGant.style.display = 'none'; _dvGant.classList.remove('daily-active'); }
         if (gantView) {
           gantView.style.display = 'flex';
           gantView.style.visibility = 'visible';
