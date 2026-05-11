@@ -488,6 +488,19 @@ v0.45.388〜v0.45.390で第33条追加時に条文テキスト自体が画面に
   特に「--&gt;」はHTMLコメント終了として解釈されるため絶対に使わないこと。
   エスケープ対応表：&lt; → &amp;lt; / &gt; → &amp;gt; / &amp; → &amp;amp; / -- → (使用禁止)
 
+第35条【外部JSON組み立て時のdateフィールド必須】
+制度趣旨：importDataのバリデーションはkind='task'のレコードにdateフィールドが
+YYYY-MM-DD形式で存在することを要求する。外部（Python等）でJSONを直接組み立てる際に
+date:nullやdateフィールド省略でインポート時に「データ破損により失敗」が発生する。
+
+本文：Pythonスクリプト等でkind='task'のレコードを直接組み立てる場合は必ず
+date:'YYYY-MM-DD'形式の日付文字列を設定すること。
+sectionも1〜4の整数が必須。nullや省略は不可。
+
+権威：2026-05-11、掃除タスク24件をPythonで組み立てた際にdate:nullで全件失敗。
+アプリ側も対策としてimportData内でdate未設定タスクを弾かず今日の日付で補完するよう修正済み（v0.45.404）。
+ただし外部スクリプト側でも明示的に設定すること（防衛的設計）。
+
 END OF 開発ルール
 =============================================================================
 -->
@@ -501,7 +514,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.404';
+    const APP_VERSION = 'v0.45.405';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -20317,7 +20330,14 @@ function reviveBlueprint(id) {
             if (task.kind === 'task' || !task.kind) {
               if (!task.text || typeof task.text !== 'string') { _invalidCount++; return false; }
               if (!task.section || ![1,2,3,4].includes(task.section)) { _invalidCount++; return false; }
-              if (!task.date || !/^\d{4}-\d{2}-\d{2}$/.test(task.date)) { _invalidCount++; return false; }
+              // date未設定・null・不正形式の場合は今日の日付で補完（弾かない）
+              // 第35条：外部JSON組み立て時にdate:nullになるケースに対応
+              if (!task.date || !/^\d{4}-\d{2}-\d{2}$/.test(task.date)) {
+                const _today = new Date();
+                task.date = _today.getFullYear() + '-'
+                  + String(_today.getMonth()+1).padStart(2,'0') + '-'
+                  + String(_today.getDate()).padStart(2,'0');
+              }
               if (!includeCompleted && task.completed) return false;
             }
             return true;
