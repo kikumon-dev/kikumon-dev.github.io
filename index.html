@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.468 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.469 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -781,7 +781,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.468';
+    const APP_VERSION = 'v0.45.469';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -16520,7 +16520,7 @@ function toggleGantEnabled(checked) {
         document.addEventListener('mousemove', function(e) {
           if (!_gantResizerState.dragging) return;
           const diff = e.clientX - _gantResizerState.startX;
-          const _areaW = (document.getElementById('gantChartArea') || {}).clientWidth || window.innerWidth;
+          const _areaW = Math.max((document.getElementById('gantChartArea') || {}).clientWidth || 0, window.innerWidth);
           const _maxLW = Math.max(200, _areaW - GANT_CHART_MIN_W); // 第40条
           const newW = Math.max(100, Math.min(_maxLW, _gantResizerState.startW + diff));
           allSettings.ui.gantLabelW = Math.round(newW);
@@ -16551,7 +16551,7 @@ function toggleGantEnabled(checked) {
           const bubble = document.getElementById('_gantResizerBubble');
           if (bubble) bubble.remove();
           // 保存前に必ずクランプ（第40条：チャートエリア動的上限）
-          var _saveAreaW = (document.getElementById('gantChartArea') || {}).clientWidth || window.innerWidth;
+          var _saveAreaW = Math.max((document.getElementById('gantChartArea') || {}).clientWidth || 0, window.innerWidth);
           var _saveMaxLW = Math.max(200, _saveAreaW - GANT_CHART_MIN_W);
           allSettings.ui.gantLabelW = Math.max(100, Math.min(_saveMaxLW, allSettings.ui.gantLabelW || 200));
           saveAllSettings();
@@ -16562,7 +16562,7 @@ function toggleGantEnabled(checked) {
           e.preventDefault(); // 画面スクロール防止（passive:false必須）
           const touch = e.touches[0];
           const diff = touch.clientX - _gantResizerState.startX;
-          const _areaW2 = (document.getElementById('gantChartArea') || {}).clientWidth || window.innerWidth;
+          const _areaW2 = Math.max((document.getElementById('gantChartArea') || {}).clientWidth || 0, window.innerWidth);
           const _maxLW2 = Math.max(200, _areaW2 - GANT_CHART_MIN_W); // 第40条
           const newW = Math.max(100, Math.min(_maxLW2, _gantResizerState.startW + diff));
           allSettings.ui.gantLabelW = Math.round(newW);
@@ -16589,7 +16589,7 @@ function toggleGantEnabled(checked) {
           _gantResizerState.dragging = false;
           var bubbleEnd = document.getElementById('_gantResizerBubble');
           if (bubbleEnd) bubbleEnd.remove();
-          var _saveAreaW = (document.getElementById('gantChartArea') || {}).clientWidth || window.innerWidth;
+          var _saveAreaW = Math.max((document.getElementById('gantChartArea') || {}).clientWidth || 0, window.innerWidth);
           var _saveMaxLW = Math.max(200, _saveAreaW - GANT_CHART_MIN_W);
           allSettings.ui.gantLabelW = Math.max(100, Math.min(_saveMaxLW, allSettings.ui.gantLabelW || 200));
           saveAllSettings();
