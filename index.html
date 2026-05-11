@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.442 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.443 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -591,7 +591,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.442';
+    const APP_VERSION = 'v0.45.443';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -16328,7 +16328,7 @@ function toggleGantEnabled(checked) {
       document.addEventListener('mousemove', function(e) {
         if (!dragging) return;
         const diff = e.clientX - startX;
-        const newW = Math.max(100, Math.min(280, startW + diff));
+        const newW = Math.max(100, Math.min(580, startW + diff));
         allSettings.ui.gantLabelW = Math.round(newW);
         // バブル表示
         let bubble = document.getElementById('_gantResizerBubble');
@@ -16362,7 +16362,7 @@ function toggleGantEnabled(checked) {
       handle.addEventListener('touchmove', function(e) {
         if (!dragging) return;
         const diff = e.touches[0].clientX - startX;
-        const newW = Math.max(100, Math.min(280, startW + diff));
+        const newW = Math.max(100, Math.min(580, startW + diff));
         allSettings.ui.gantLabelW = Math.round(newW);
         renderGantChart();
         setTimeout(_initGantLabelResizer, 0);
