@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.421 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.423 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -527,7 +527,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.421';
+    const APP_VERSION = 'v0.45.423';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -17118,6 +17118,7 @@ function toggleGantEnabled(checked) {
           area2.scrollLeft = Math.max(0, nowX - Math.floor(chartAreaW / 2));
         }
         _initGantLabelResizer();
+        if (typeof window._initGantRowDrag === 'function') window._initGantRowDrag();
       });
     }
 
@@ -28311,6 +28312,8 @@ function renderDeckShop(filterCategory) {
     }
   // 手立て行（gantt行）の並び替えD&D ※第13条：beforeprintより前のグローバル領域
   function _initGantRowDrag() {
+    if (window._gantRowDragInitialized) return; // 累積登録防止
+    window._gantRowDragInitialized = true;
     var _drag = { gid: null, fromIdx: null, startY: 0 };
     document.addEventListener('mousedown', function(e) {
       var grip = e.target.closest ? e.target.closest('.gant-row-grip') : null;
@@ -37951,6 +37954,18 @@ function showDebugLog(_initOnly) {
          ? ok('ST-62: window._gantRowReorder 公開確認')
          : ng('ST-62: window._gantRowReorder', '未公開');
      } catch(e) { ng('ST-62: window公開', e.message); }
+
+     // renderGantChartから_initGantRowDragが呼ばれているか確認
+     try {
+       var _rgcStr = typeof renderGantChart === 'function' ? renderGantChart.toString() : '';
+       _rgcStr.indexOf('_initGantRowDrag') !== -1
+         ? ok('ST-62: renderGantChart内 _initGantRowDrag呼び出し確認')
+         : ng('ST-62: renderGantChart内 _initGantRowDrag呼び出しなし', 'D&Dが初期化されない');
+       var _ridStr = typeof _initGantRowDrag === 'function' ? _initGantRowDrag.toString() : '';
+       _ridStr.indexOf('_gantRowDragInitialized') !== -1
+         ? ok('ST-62: _initGantRowDrag 累積登録防止フラグ確認')
+         : ng('ST-62: _initGantRowDrag 累積登録防止なし', 'addEventListener累積の危険');
+     } catch(e) { ng('ST-62: D&D呼び出し確認', e.message); }
 
      ok('ST-62: 今日追加機能テスト 完了');
 
