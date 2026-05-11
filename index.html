@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.403 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.409 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -527,7 +527,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.407';
+    const APP_VERSION = 'v0.45.409';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -17055,6 +17055,7 @@ function toggleGantEnabled(checked) {
           + '</div>'
           + '<button data-gid="' + gantt.id + '" onclick="_gantEdit(this)" style="background:none;border:none;font-size:12px;cursor:pointer;padding:0 1px;flex-shrink:0;opacity:0.5;line-height:1;min-width:18px;">✏️</button>'
           + '<button data-gid="' + gantt.id + '" onclick="_gantAddTask(this)" style="background:' + barColor + '44;border:none;border-radius:50%;font-size:13px;font-weight:700;cursor:pointer;width:20px;height:20px;flex-shrink:0;line-height:20px;text-align:center;padding:0;margin-right:2px;">+</button>'
+          + (tc > 0 ? '<button data-gid="' + gantt.id + '" onclick="event.stopPropagation();launchGanttStepMission(\'' + gantt.id + '\')" style="background:linear-gradient(135deg,#7c3aed,#5b21b6);border:none;border-radius:50%;font-size:12px;cursor:pointer;width:22px;height:22px;flex-shrink:0;line-height:22px;text-align:center;padding:0;margin-right:2px;box-shadow:0 2px 6px rgba(124,58,237,0.4);" title="ミッション発進">🚀</button>' : '')
           + '</div></td>';
 
         // ステップバー
@@ -24062,6 +24063,189 @@ function loadSettingsUI() {
   window._gantMoveTask = _gantMoveTask;
   window._initBlueprintDrag = _initBlueprintDrag;
   window._initGantTaskDrag = _initGantTaskDrag;
+
+  // ===== launchGanttStepMission =====
+  var _launchGanttCurrentGanttId = null;
+  var _launchGanttPendingTaskIds = [];
+  var _launchGanttTotalCount = 0;
+
+  var _launchGanttMotivations = [
+    '一手打った。それだけで勝ちだ。',
+    '神経回路が書き換わった。',
+    'また一つ、自分を超えた。',
+    '積み重ねは裏切らない。',
+    '今日の一善、完了。',
+    '各個撃破。お前は強い。',
+    'バトルフィールドを制圧した。',
+    '小さな一手が、未来を変える。',
+    'アムロ、やりました。',
+    '継続が、最強の武器だ。',
+  ];
+
+  window.launchGanttStepMission = function(ganttId) {
+    var gantt = allTasks.find(function(t){ return t.id === ganttId; });
+    if (!gantt) return;
+
+    // 未完了タスクを順番通りに取得
+    var taskIds = gantt.taskIds || [];
+    var pending = taskIds.filter(function(id){
+      var t = allTasks.find(function(x){ return x.id === id; });
+      return t && !t.completed && !t.done;
+    });
+
+    if (pending.length === 0) {
+      // 全完了済み
+      alert('🎉 このステップは全て完了しています！');
+      return;
+    }
+
+    _launchGanttCurrentGanttId = ganttId;
+    _launchGanttPendingTaskIds = pending;
+    _launchGanttTotalCount = taskIds.length;
+
+    // 志名を取得
+    var blueprintName = '';
+    if (gantt.blueprintId) {
+      var bp = allTasks.find(function(t){ return t.id === gantt.blueprintId; });
+      if (bp) blueprintName = (bp.emoji || '🏰') + ' ' + (bp.title || '');
+    }
+
+    var bpNameEl = document.getElementById('ganttLaunchBlueprintName');
+    var stepNameEl = document.getElementById('ganttLaunchStepName');
+    if (bpNameEl) bpNameEl.textContent = blueprintName;
+    if (stepNameEl) stepNameEl.textContent = (gantt.emoji || '🏗') + ' ' + (gantt.title || '');
+
+    var motEl = document.getElementById('ganttLaunchMotivation');
+    if (motEl) motEl.textContent = '';
+
+    _launchGanttStepMissionRenderTask();
+
+    // モーダル表示
+    var overlay = document.getElementById('ganttLaunchOverlay');
+    var modal = document.getElementById('ganttLaunchModal');
+    if (!overlay || !modal) return;
+    overlay.style.display = 'flex';
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        modal.style.transform = 'translateY(0)';
+      });
+    });
+  };
+
+  function _launchGanttStepMissionRenderTask() {
+    var pending = _launchGanttPendingTaskIds;
+    var total = _launchGanttTotalCount;
+    var done = total - pending.length;
+    var currentId = pending[0];
+    var currentTask = allTasks.find(function(t){ return t.id === currentId; });
+
+    var taskTextEl = document.getElementById('ganttLaunchTaskText');
+    var countEl = document.getElementById('ganttLaunchCount');
+    var progressEl = document.getElementById('ganttLaunchProgressBar');
+
+    if (taskTextEl) taskTextEl.textContent = currentTask ? currentTask.text : '';
+    if (countEl) countEl.textContent = (done + 1) + ' / ' + total + ' 件目';
+    if (progressEl) progressEl.style.width = (total > 0 ? Math.round(done / total * 100) : 0) + '%';
+  }
+
+  window.launchGanttStepMissionDone = function() {
+    var currentId = _launchGanttPendingTaskIds[0];
+    if (!currentId) return;
+
+    // 完了フラグを立てる
+    var task = allTasks.find(function(t){ return t.id === currentId; });
+    if (task) {
+      task.completed = true;
+      task.done = true;
+      task.updatedAt = new Date().toISOString();
+      saveAllTasks();
+    }
+
+    // 紙吹雪
+    _launchGanttConfetti();
+
+    // 励まし言葉
+    var motEl = document.getElementById('ganttLaunchMotivation');
+    var mot = _launchGanttMotivations[Math.floor(Math.random() * _launchGanttMotivations.length)];
+    if (motEl) motEl.textContent = mot;
+
+    // やった！ボタン一時無効化
+    var btn = document.getElementById('ganttLaunchDoneBtn');
+    if (btn) btn.disabled = true;
+
+    _launchGanttPendingTaskIds.shift();
+
+    setTimeout(function(){
+      if (btn) btn.disabled = false;
+      if (_launchGanttPendingTaskIds.length === 0) {
+        // 全完了
+        _launchGanttAllComplete();
+      } else {
+        // 次のタスクへスライド
+        var card = document.getElementById('ganttLaunchTaskCard');
+        if (card) {
+          card.style.transition = 'opacity 0.2s,transform 0.2s';
+          card.style.opacity = '0';
+          card.style.transform = 'translateX(-30px)';
+          setTimeout(function(){
+            _launchGanttStepMissionRenderTask();
+            if (motEl) motEl.textContent = '';
+            card.style.transition = 'opacity 0.25s,transform 0.25s';
+            card.style.opacity = '1';
+            card.style.transform = 'translateX(0)';
+          }, 220);
+        }
+      }
+      // 造営ビューを再描画
+      if (typeof renderBlueprintView === 'function') renderBlueprintView();
+    }, 1400);
+  };
+
+  function _launchGanttAllComplete() {
+    var taskTextEl = document.getElementById('ganttLaunchTaskText');
+    var countEl = document.getElementById('ganttLaunchCount');
+    var btn = document.getElementById('ganttLaunchDoneBtn');
+    var progressEl = document.getElementById('ganttLaunchProgressBar');
+    if (taskTextEl) taskTextEl.textContent = '🎉 ステップ完全制圧！';
+    if (countEl) countEl.textContent = '全タスク完了';
+    if (progressEl) progressEl.style.width = '100%';
+    if (btn) btn.style.display = 'none';
+    var motEl = document.getElementById('ganttLaunchMotivation');
+    if (motEl) motEl.textContent = 'バトルフィールドを制圧した。次のステップへ。';
+    _launchGanttConfetti();
+    setTimeout(function(){
+      closeLaunchGanttStepMission();
+      if (btn) btn.style.display = '';
+    }, 2500);
+  }
+
+  function _launchGanttConfetti() {
+    var container = document.getElementById('ganttLaunchConfetti');
+    if (!container) return;
+    var colors = ['#a78bfa','#7c3aed','#f472b6','#fbbf24','#34d399','#60a5fa'];
+    for (var i = 0; i < 48; i++) {
+      (function(i){
+        var el = document.createElement('div');
+        var color = colors[Math.floor(Math.random() * colors.length)];
+        var size = 7 + Math.random() * 8;
+        var left = Math.random() * 100;
+        var delay = Math.random() * 0.5;
+        var duration = 1.0 + Math.random() * 0.8;
+        el.style.cssText = 'position:absolute;top:-10px;left:' + left + '%;width:' + size + 'px;height:' + size + 'px;background:' + color + ';border-radius:' + (Math.random()>0.5?'50%':'2px') + ';opacity:1;animation:ganttConfettiFall ' + duration + 's ' + delay + 's ease-in forwards;';
+        container.appendChild(el);
+        setTimeout(function(){ el.remove(); }, (duration + delay + 0.2) * 1000);
+      })(i);
+    }
+  }
+
+  window.closeLaunchGanttStepMission = function() {
+    var modal = document.getElementById('ganttLaunchModal');
+    var overlay = document.getElementById('ganttLaunchOverlay');
+    if (modal) modal.style.transform = 'translateY(100%)';
+    setTimeout(function(){
+      if (overlay) overlay.style.display = 'none';
+    }, 350);
+  };
 
   window._gantToggleCompleted = _gantToggleCompleted;
   window.triggerNextGanttStepUnlock = triggerNextGanttStepUnlock;
@@ -32890,6 +33074,7 @@ try {
     @keyframes _ycTitleGlow  { 0%{text-shadow:0 0 0 rgba(255,215,0,0);} 50%{text-shadow:0 0 30px rgba(255,215,0,0.9),0 0 60px rgba(255,215,0,0.4);} 100%{text-shadow:0 0 10px rgba(255,215,0,0.3);} }
     @keyframes _ycGoldFlash  { 0%{opacity:0;} 25%{opacity:1;} 75%{opacity:0.9;} 100%{opacity:0;} }
     @keyframes _ycGoldPulse  { 0%{transform:scale(0);opacity:0;} 40%{transform:scale(1.4);opacity:1;} 100%{transform:scale(0.8);opacity:0;} }
+    @keyframes ganttConfettiFall { 0%{transform:translateY(0) rotate(0deg);opacity:1;} 100%{transform:translateY(100vh) rotate(720deg);opacity:0;} }
     </style>
 
     <script>
@@ -35785,7 +35970,7 @@ function showDebugLog(_initOnly) {
 
        // ===== ST-34C: テストセクション自己存在確認 =====
        // テストセクション自己存在確認：ソースコード上の存在をチェック
-       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-103','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75','ST-76','ST-77','ST-78','ST-79','ST-80','ST-81','ST-82','ST-106','ST-107','ST-108','ST-109','ST-110','ST-111','ST-112','ST-113','ST-114','ST-115','ST-116','ST-119','ST-120','ST-121','ST-122','ST-123','ST-124','ST-125','ST-126','ST-127','ST-128','ST-129','ST-130','ST-131','ST-132'];
+       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-103','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75','ST-76','ST-77','ST-78','ST-79','ST-80','ST-81','ST-82','ST-106','ST-107','ST-108','ST-109','ST-110','ST-111','ST-112','ST-113','ST-114','ST-115','ST-116','ST-119','ST-120','ST-121','ST-122','ST-123','ST-124','ST-125','ST-126','ST-127','ST-128','ST-129','ST-130','ST-131','ST-132','ST-138'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -41991,6 +42176,57 @@ function showDebugLog(_initOnly) {
        ok('ST-137: 廃止コード残骸チェック 完了');
      } catch(e) { ng('ST-137: 例外', e.message); }
 
+     // ===== ST-138: launchGanttStepMission テスト =====
+     try {
+       ok('');
+       ok('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+       ok('ST-138: launchGanttStepMission テスト');
+
+       // ① DOM存在確認
+       var _lgsOverlay = document.getElementById('ganttLaunchOverlay');
+       var _lgsModal   = document.getElementById('ganttLaunchModal');
+       var _lgsTask    = document.getElementById('ganttLaunchTaskText');
+       var _lgsBtn     = document.getElementById('ganttLaunchDoneBtn');
+       var _lgsConf    = document.getElementById('ganttLaunchConfetti');
+       var _lgsProgress= document.getElementById('ganttLaunchProgressBar');
+       _lgsOverlay ? ok('ST-138·①: #ganttLaunchOverlay DOM確認') : ng('ST-138·①: #ganttLaunchOverlay 未存在');
+       _lgsModal   ? ok('ST-138·①: #ganttLaunchModal DOM確認')   : ng('ST-138·①: #ganttLaunchModal 未存在');
+       _lgsTask    ? ok('ST-138·①: #ganttLaunchTaskText DOM確認') : ng('ST-138·①: #ganttLaunchTaskText 未存在');
+       _lgsBtn     ? ok('ST-138·①: #ganttLaunchDoneBtn DOM確認') : ng('ST-138·①: #ganttLaunchDoneBtn 未存在');
+       _lgsConf    ? ok('ST-138·①: #ganttLaunchConfetti DOM確認') : ng('ST-138·①: #ganttLaunchConfetti 未存在');
+       _lgsProgress? ok('ST-138·①: #ganttLaunchProgressBar DOM確認') : ng('ST-138·①: #ganttLaunchProgressBar 未存在');
+
+       // ② window公開確認
+       typeof window.launchGanttStepMission === 'function'
+         ? ok('ST-138·②: launchGanttStepMission window公開確認')
+         : ng('ST-138·②: launchGanttStepMission 未公開');
+       typeof window.launchGanttStepMissionDone === 'function'
+         ? ok('ST-138·②: launchGanttStepMissionDone window公開確認')
+         : ng('ST-138·②: launchGanttStepMissionDone 未公開');
+       typeof window.closeLaunchGanttStepMission === 'function'
+         ? ok('ST-138·②: closeLaunchGanttStepMission window公開確認')
+         : ng('ST-138·②: closeLaunchGanttStepMission 未公開');
+
+       // ③ ganttConfettiFallアニメーション定義確認
+       var _lgsStyles = Array.from(document.querySelectorAll('style')).map(function(s){ return s.textContent; }).join('');
+       _lgsStyles.indexOf('ganttConfettiFall') !== -1
+         ? ok('ST-138·③: @keyframes ganttConfettiFall CSS定義確認')
+         : ng('ST-138·③: @keyframes ganttConfettiFall 未定義');
+
+       // ④ モーダル初期状態確認（display:none）
+       (_lgsOverlay && _lgsOverlay.style.display === 'none' || _lgsOverlay && getComputedStyle(_lgsOverlay).display === 'none')
+         ? ok('ST-138·④: ganttLaunchOverlay 初期非表示確認')
+         : ng('ST-138·④: ganttLaunchOverlay 初期表示状態異常');
+
+       // ⑤ 🚀ボタンがganttRow描画関数内に存在確認（ソースチェック）
+       var _lgsSource = (typeof renderBlueprintView !== 'undefined' ? '' : '') + document.documentElement.innerHTML;
+       _lgsSource.indexOf('launchGanttStepMission') !== -1
+         ? ok('ST-138·⑤: 🚀ボタン onclick=launchGanttStepMission 存在確認')
+         : ng('ST-138·⑤: 🚀ボタン未実装');
+
+       ok('ST-138: launchGanttStepMission テスト 完了');
+     } catch(e) { ng('ST-138: 例外', e.message); }
+
 
      try {
        ok('');
@@ -46340,6 +46576,35 @@ window.togglePvStampPalette = togglePvStampPalette;
     </div>
   </div>
   <div id="bottomNavMoreOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:7999;" onclick="closeBottomNavMore()"></div>
+
+  <!-- launchGanttStepMission モーダル -->
+  <div id="ganttLaunchOverlay" style="display:none;position:fixed;inset:0;z-index:19000;background:rgba(10,8,20,0.88);align-items:flex-end;justify-content:center;" onclick="closeLaunchGanttStepMission()">
+    <div id="ganttLaunchModal" onclick="event.stopPropagation()" style="width:100%;max-width:520px;background:#1a1630;border-radius:24px 24px 0 0;padding:28px 24px 40px;box-shadow:0 -8px 40px rgba(0,0,0,0.5);position:relative;transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.34,1.26,0.64,1);">
+      <!-- 閉じるボタン -->
+      <button onclick="closeLaunchGanttStepMission()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.1);border:none;color:#fff;border-radius:50%;width:32px;height:32px;font-size:1.1em;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+      <!-- 志・ステップ名 -->
+      <div id="ganttLaunchBlueprintName" style="font-size:0.75em;color:#a89ec0;margin-bottom:4px;letter-spacing:0.05em;"></div>
+      <div id="ganttLaunchStepName" style="font-size:0.9em;color:#c9b8ff;font-weight:600;margin-bottom:20px;"></div>
+      <!-- 進捗バー -->
+      <div style="background:rgba(255,255,255,0.1);border-radius:99px;height:6px;margin-bottom:24px;">
+        <div id="ganttLaunchProgressBar" style="height:6px;border-radius:99px;background:linear-gradient(90deg,#7c3aed,#a78bfa);transition:width 0.4s ease;width:0%;"></div>
+      </div>
+      <!-- メインタスク表示 -->
+      <div id="ganttLaunchTaskCard" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:16px;padding:28px 20px;text-align:center;margin-bottom:8px;min-height:100px;display:flex;align-items:center;justify-content:center;">
+        <div id="ganttLaunchTaskText" style="font-size:1.25em;font-weight:700;color:#f0eaff;line-height:1.5;"></div>
+      </div>
+      <!-- 件数表示 -->
+      <div id="ganttLaunchCount" style="text-align:center;font-size:0.8em;color:#7c6fa0;margin-bottom:24px;"></div>
+      <!-- やった！ボタン -->
+      <button id="ganttLaunchDoneBtn" onclick="launchGanttStepMissionDone()" style="width:100%;padding:18px;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border:none;border-radius:16px;font-size:1.1em;font-weight:700;cursor:pointer;letter-spacing:0.05em;box-shadow:0 4px 20px rgba(124,58,237,0.4);transition:transform 0.1s,box-shadow 0.1s;" onmousedown="this.style.transform='scale(0.97)'" onmouseup="this.style.transform=''" ontouchstart="this.style.transform='scale(0.97)'" ontouchend="this.style.transform=''">
+        ✓ やった！
+      </button>
+      <!-- 励まし言葉 -->
+      <div id="ganttLaunchMotivation" style="text-align:center;font-size:0.8em;color:#6b5e8a;margin-top:14px;min-height:1.2em;"></div>
+      <!-- 紙吹雪コンテナ -->
+      <div id="ganttLaunchConfetti" style="position:fixed;inset:0;pointer-events:none;z-index:19100;overflow:hidden;"></div>
+    </div>
+  </div>
 
 </body>
 </html
