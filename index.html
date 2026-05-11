@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.433 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.434 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -527,7 +527,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.433';
+    const APP_VERSION = 'v0.45.434';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -28370,10 +28370,13 @@ function renderDeckShop(filterCategory) {
     if (fromIdx < toIdx) insertIdx++;
     allTasks.splice(insertIdx < 0 ? allTasks.length : insertIdx, 0, moved);
     saveAllTasks();
-    if (typeof renderGantView === 'function') renderGantView();
+    // window経由で確実に呼ぶ
+    if (typeof window.renderGantView === 'function') window.renderGantView();
+    else if (typeof renderGantView === 'function') renderGantView();
   }
   window._initGantRowDrag = _initGantRowDrag;
   window._gantRowReorder  = _gantRowReorder;
+  window.renderGantView   = renderGantView;
 
   // 横向き時：志エリアトグル
   function toggleGantBlueprintLandscape() {
