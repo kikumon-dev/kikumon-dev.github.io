@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.419 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.420 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -527,7 +527,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.419';
+    const APP_VERSION = 'v0.45.420';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -21405,6 +21405,8 @@ function reviveBlueprint(id) {
       'memoMigrationDone_v97', 'inspectionMode',
       'autoMainCalendar', 'nbLastPageId',
       '_splashGreetingSeen',
+      // ブラウザ拡張機能由来キー（外部書き込み・アプリは使用しないが削除不能な場合は許容）
+      'extendedvaluekey',
     ]);
     window.KEY_WHITELIST = KEY_WHITELIST;
     const KNOWN_KEYS = KEY_WHITELIST; // 後方互換エイリアス
@@ -43057,7 +43059,7 @@ function showDebugLog(_initOnly) {
          'tlScrollMode',        // allSettings.ui.tlScrollModeに統合
          'wgScrollMode',        // allSettings.ui.wgScrollModeに統合
          'ycPwAuth',            // パスワード認証廃止・自動削除済み
-         'extendedvaluekey',    // 旧拡張システム廃止・ブラウザ拡張由来の可能性あり・削除対象
+         // extendedvaluekeyはブラウザ拡張由来のため削除不能な場合あり→KEY_WHITELISTに移動（v0.45.420）
        ];
        var _bannedFound = _bannedKeys.filter(function(k){ return _kpKeys.indexOf(k) !== -1; });
        _bannedFound.length === 0
