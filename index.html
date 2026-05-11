@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.415 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.416 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -527,7 +527,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.415';
+    const APP_VERSION = 'v0.45.416';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -24103,15 +24103,25 @@ function loadSettingsUI() {
     var optionsHtml = '<option value="">── 未設定 ──</option>'
       + gvs.map(function(gv){ return '<option value="' + gv.id + '">' + (gv.emoji||'🎖️') + ' ' + (gv.title||'') + '</option>'; }).join('');
 
-    list.innerHTML = bps.map(function(bp) {
+    var listEl = document.getElementById('blueprintGvLinkList');
+    if (!listEl) return;
+
+    // ヘッダー行を再構築
+    listEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:0 12px;margin-bottom:4px;">'
+      + '<div style="flex:1;font-size:0.75em;font-weight:700;color:#6d28d9;letter-spacing:0.05em;">志</div>'
+      + '<div style="flex-shrink:0;max-width:160px;width:160px;font-size:0.75em;font-weight:700;color:#6d28d9;letter-spacing:0.05em;">グランドビジョン</div>'
+      + '</div>';
+
+    bps.forEach(function(bp) {
       var currentGvId = bp.grandvisionId || '';
-      return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f5f3ff;border-radius:10px;">'
-        + '<div style="flex:1;font-size:0.9em;font-weight:600;color:#3730a3;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (bp.emoji||'📌') + ' ' + (bp.title||'') + '</div>'
-        + '<select data-bpid="' + bp.id + '" style="background:#fff;border:1px solid #c4b5fd;border-radius:8px;color:#4c1d95;font-size:0.8em;padding:4px 6px;cursor:pointer;flex-shrink:0;max-width:160px;">'
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f5f3ff;border-radius:10px;';
+      row.innerHTML = '<div style="flex:1;font-size:0.9em;font-weight:600;color:#3730a3;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (bp.emoji||'📌') + ' ' + (bp.title||'') + '</div>'
+        + '<select data-bpid="' + bp.id + '" style="background:#fff;border:1px solid #c4b5fd;border-radius:8px;color:#4c1d95;font-size:0.8em;padding:4px 6px;cursor:pointer;flex-shrink:0;max-width:160px;width:160px;">'
         + optionsHtml.replace('value="' + currentGvId + '"', 'value="' + currentGvId + '" selected')
-        + '</select>'
-        + '</div>';
-    }).join('');
+        + '</select>';
+      listEl.appendChild(row);
+    });
 
     overlay.style.display = 'flex';
   };
@@ -46697,7 +46707,12 @@ window.togglePvStampPalette = togglePvStampPalette;
         <div style="font-size:1em;font-weight:700;color:#3730a3;">🔗 志をグランドビジョンに紐づける</div>
         <button onclick="closeBlueprintGvLinkModal()" style="background:none;border:none;font-size:1.2em;cursor:pointer;color:#888;padding:0 4px;">✕</button>
       </div>
-      <div id="blueprintGvLinkList" style="display:flex;flex-direction:column;gap:12px;"></div>
+      <div id="blueprintGvLinkList" style="display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;align-items:center;gap:10px;padding:0 12px;margin-bottom:4px;">
+          <div style="flex:1;font-size:0.75em;font-weight:700;color:#6d28d9;letter-spacing:0.05em;">志</div>
+          <div style="flex-shrink:0;width:160px;font-size:0.75em;font-weight:700;color:#6d28d9;letter-spacing:0.05em;">グランドビジョン</div>
+        </div>
+      </div>
       <div style="margin-top:20px;display:flex;justify-content:flex-end;">
         <button onclick="saveBlueprintGvLinks()" style="background:linear-gradient(135deg,#6d28d9,#4c1d95);color:#fff;border:none;border-radius:10px;padding:10px 28px;font-size:0.95em;font-weight:700;cursor:pointer;">保存</button>
       </div>
