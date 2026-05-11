@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.412 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.413 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -527,7 +527,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.412';
+    const APP_VERSION = 'v0.45.413';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -14101,10 +14101,13 @@ function myDeckApply(idx) {
       if (gantt.progressMode === 'manual' && gantt.progressManual !== null) return gantt.progressManual;
       const taskIds = gantt.taskIds || [];
       if (taskIds.length === 0) return 0;
-      const tasks = taskIds.map(id => allTasks.find(t => t.id === id)).filter(Boolean);
-      if (tasks.length === 0) return 0;
-      const done = tasks.filter(t => (t.completed || t.done)).length;
-      return Math.round(done / tasks.length * 100);
+      // ganttRowと同じeidsベースで計算（repeatGroupId経由の拡張分も含む）
+      const _bids = new Set(taskIds);
+      const _lids = allTasks.filter(function(t){ return t.kind!=='gantt'&&t.kind!=='blueprint'&&t.kind!=='stamp'&&(t.repeatGroupId&&_bids.has(t.repeatGroupId)||_bids.has(t.id)); }).map(function(t){ return t.id; });
+      const eids = Array.from(new Set(taskIds.concat(_lids)));
+      if (eids.length === 0) return 0;
+      const done = eids.filter(function(id){ var t=allTasks.find(function(x){return x.id===id;}); return t&&(t.completed||t.done); }).length;
+      return Math.round(done / eids.length * 100);
     }
     function getBlueprintDateRange(bp) {
       // タスク優先原則：常にステップから計算した期間を返す
