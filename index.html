@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.413 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.415 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -527,7 +527,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.413';
+    const APP_VERSION = 'v0.45.415';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -7307,6 +7307,10 @@ END OF 開発ルール
             <div style="position:relative;display:inline-block;">
               <button onclick="openGrandVisionEditor(document.getElementById('gvBannerSelect').value||null)" onmouseenter="this.nextElementSibling.style.display='block'" onmouseleave="this.nextElementSibling.style.display='none'" style="background:rgba(255,255,255,0.1);border:1px solid rgba(167,139,250,0.3);border-radius:8px;font-size:0.75em;color:#c4b5fd;cursor:pointer;padding:4px 8px;">✏️</button>
               <div style="display:none;position:absolute;left:0;top:30px;background:#1a1a2e;color:#fff;font-size:10px;font-weight:600;padding:5px 10px;border-radius:7px;white-space:nowrap;pointer-events:none;z-index:999;box-shadow:0 2px 8px rgba(0,0,0,0.2);">グランドビジョンを編集</div>
+            </div>
+            <div style="position:relative;display:inline-block;">
+              <button onclick="openBlueprintGvLinkModal()" onmouseenter="this.nextElementSibling.style.display='block'" onmouseleave="this.nextElementSibling.style.display='none'" style="background:rgba(167,139,250,0.2);border:1px solid rgba(167,139,250,0.3);border-radius:8px;font-size:0.75em;color:#c4b5fd;cursor:pointer;padding:4px 8px;">🔗</button>
+              <div style="display:none;position:absolute;left:0;top:30px;background:#1a1a2e;color:#fff;font-size:10px;font-weight:600;padding:5px 10px;border-radius:7px;white-space:nowrap;pointer-events:none;z-index:999;box-shadow:0 2px 8px rgba(0,0,0,0.2);">志をGVに紐づける</div>
             </div>
             <div style="position:relative;display:inline-block;">
               <button onclick="openGrandVisionEditor(null)" onmouseenter="this.nextElementSibling.style.display='block'" onmouseleave="this.nextElementSibling.style.display='none'" style="background:rgba(167,139,250,0.3);border:none;border-radius:8px;font-size:0.75em;color:#fff;cursor:pointer;padding:4px 8px;font-weight:700;">＋</button>
@@ -24084,6 +24088,55 @@ function loadSettingsUI() {
     'アムロ、やりました。',
     '継続が、最強の武器だ。',
   ];
+
+  // ===== 志GV紐づけモーダル =====
+  window.openBlueprintGvLinkModal = function() {
+    var overlay = document.getElementById('blueprintGvLinkOverlay');
+    var list    = document.getElementById('blueprintGvLinkList');
+    if (!overlay || !list) return;
+
+    var gvs = allTasks.filter(function(t){ return t.kind === 'grandvision'; });
+    var bps = allTasks.filter(function(t){ return t.kind === 'blueprint' && !t.inHeaven; });
+
+    if (gvs.length === 0) { alert('グランドビジョンがありません。先に作成してください。'); return; }
+
+    var optionsHtml = '<option value="">── 未設定 ──</option>'
+      + gvs.map(function(gv){ return '<option value="' + gv.id + '">' + (gv.emoji||'🎖️') + ' ' + (gv.title||'') + '</option>'; }).join('');
+
+    list.innerHTML = bps.map(function(bp) {
+      var currentGvId = bp.grandvisionId || '';
+      return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f5f3ff;border-radius:10px;">'
+        + '<div style="flex:1;font-size:0.9em;font-weight:600;color:#3730a3;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (bp.emoji||'📌') + ' ' + (bp.title||'') + '</div>'
+        + '<select data-bpid="' + bp.id + '" style="background:#fff;border:1px solid #c4b5fd;border-radius:8px;color:#4c1d95;font-size:0.8em;padding:4px 6px;cursor:pointer;flex-shrink:0;max-width:160px;">'
+        + optionsHtml.replace('value="' + currentGvId + '"', 'value="' + currentGvId + '" selected')
+        + '</select>'
+        + '</div>';
+    }).join('');
+
+    overlay.style.display = 'flex';
+  };
+
+  window.closeBlueprintGvLinkModal = function() {
+    var overlay = document.getElementById('blueprintGvLinkOverlay');
+    if (overlay) overlay.style.display = 'none';
+  };
+
+  window.saveBlueprintGvLinks = function() {
+    var selects = document.querySelectorAll('#blueprintGvLinkList select[data-bpid]');
+    selects.forEach(function(sel) {
+      var bpId = sel.getAttribute('data-bpid');
+      var gvId = sel.value;
+      var bp = allTasks.find(function(t){ return t.id === bpId; });
+      if (bp) {
+        bp.grandvisionId = gvId || null;
+        bp.updatedAt = new Date().toISOString();
+      }
+    });
+    saveAllTasks();
+    closeBlueprintGvLinkModal();
+    if (typeof renderBlueprintView === 'function') renderBlueprintView();
+    if (typeof window.renderGrandVisionBar === 'function') window.renderGrandVisionBar();
+  };
 
   window.launchGanttStepMission = function(ganttId) {
     var gantt = allTasks.find(function(t){ return t.id === ganttId; });
@@ -46626,7 +46679,7 @@ window.togglePvStampPalette = togglePvStampPalette;
       </div>
       <!-- 件数表示 -->
       <div id="ganttLaunchCount" style="text-align:center;font-size:0.8em;color:#7c6fa0;margin-bottom:24px;"></div>
-      <!-- やった！ボタン -->
+  <!-- やった！ボタン -->
       <button id="ganttLaunchDoneBtn" onclick="launchGanttStepMissionDone()" style="width:100%;padding:18px;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border:none;border-radius:16px;font-size:1.1em;font-weight:700;cursor:pointer;letter-spacing:0.05em;box-shadow:0 4px 20px rgba(124,58,237,0.4);transition:transform 0.1s,box-shadow 0.1s;" onmousedown="this.style.transform='scale(0.97)'" onmouseup="this.style.transform=''" ontouchstart="this.style.transform='scale(0.97)'" ontouchend="this.style.transform=''">
         ✓ やりきった！
       </button>
@@ -46634,6 +46687,20 @@ window.togglePvStampPalette = togglePvStampPalette;
       <div id="ganttLaunchMotivation" style="text-align:center;font-size:0.8em;color:#6b5e8a;margin-top:14px;min-height:1.2em;"></div>
       <!-- 紙吹雪コンテナ -->
       <div id="ganttLaunchConfetti" style="position:fixed;inset:0;pointer-events:none;z-index:19100;overflow:hidden;"></div>
+    </div>
+  </div>
+
+  <!-- 志GV紐づけモーダル -->
+  <div id="blueprintGvLinkOverlay" style="display:none;position:fixed;inset:0;z-index:18000;background:rgba(10,8,20,0.85);align-items:center;justify-content:center;" onclick="closeBlueprintGvLinkModal()">
+    <div id="blueprintGvLinkModal" onclick="event.stopPropagation()" style="width:92%;max-width:480px;background:#fff;border-radius:20px;padding:24px;box-shadow:0 8px 40px rgba(0,0,0,0.3);max-height:80vh;overflow-y:auto;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+        <div style="font-size:1em;font-weight:700;color:#3730a3;">🔗 志をグランドビジョンに紐づける</div>
+        <button onclick="closeBlueprintGvLinkModal()" style="background:none;border:none;font-size:1.2em;cursor:pointer;color:#888;padding:0 4px;">✕</button>
+      </div>
+      <div id="blueprintGvLinkList" style="display:flex;flex-direction:column;gap:12px;"></div>
+      <div style="margin-top:20px;display:flex;justify-content:flex-end;">
+        <button onclick="saveBlueprintGvLinks()" style="background:linear-gradient(135deg,#6d28d9,#4c1d95);color:#fff;border:none;border-radius:10px;padding:10px 28px;font-size:0.95em;font-weight:700;cursor:pointer;">保存</button>
+      </div>
     </div>
   </div>
 
