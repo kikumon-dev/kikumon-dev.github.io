@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.438 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.440 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -557,7 +557,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.438';
+    const APP_VERSION = 'v0.45.440';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -37959,23 +37959,26 @@ function showDebugLog(_initOnly) {
        _grSrc.indexOf('renderGantView') !== -1
          ? ok('ST-62: _gantRowReorder renderGantView参照確認')
          : ng('ST-62: _gantRowReorder', 'renderGantView参照なし');
-       // _gantRowReorder挙動テスト
+       // _gantRowReorder挙動テスト（after=true：A→B後ろに移動）
        var _testBpId = generateTaskId();
        var _testGId1 = generateTaskId();
        var _testGId2 = generateTaskId();
-       var _testBp = { id: _testBpId, kind: 'blueprint', title: 'テストBP', taskIds: [] };
+       var _testBp = { id: _testBpId, kind: 'blueprint', title: 'テストBP', taskIds: [], inHeaven: false };
        var _testG1 = { id: _testGId1, kind: 'gantt', blueprintId: _testBpId, title: '手立てA', taskIds: [] };
        var _testG2 = { id: _testGId2, kind: 'gantt', blueprintId: _testBpId, title: '手立てB', taskIds: [] };
        var _origLen = allTasks.length;
        allTasks.push(_testBp, _testG1, _testG2);
-       var _beforeOrder = allTasks.filter(function(t){ return t.blueprintId===_testBpId; }).map(function(t){ return t.title; });
-       _gantRowReorder(_testGId1, 0, 1);  // A→B後に移動
+       var _prevSave2 = window.saveAllTasks; var _prevRender2 = window.renderGantView;
+       window.saveAllTasks = function(){}; window.renderGantView = function(){};
+       var _prevBpId2 = _gantSelectedBlueprintId; _gantSelectedBlueprintId = null;
+       _gantRowReorder(_testGId1, 0, 1, true);  // A→B後ろに移動
+       _gantSelectedBlueprintId = _prevBpId2;
+       window.saveAllTasks = _prevSave2; window.renderGantView = _prevRender2;
        var _afterOrder = allTasks.filter(function(t){ return t.blueprintId===_testBpId; }).map(function(t){ return t.title; });
        (_afterOrder[0] === '手立てB' && _afterOrder[1] === '手立てA')
          ? ok('ST-62: _gantRowReorder 並び替え挙動確認（A→B後に移動）')
          : ng('ST-62: _gantRowReorder', '並び替え失敗: ' + JSON.stringify(_afterOrder));
        allTasks = allTasks.filter(function(t){ return t.id !== _testBpId && t.id !== _testGId1 && t.id !== _testGId2; });
-       saveAllTasks();
        allTasks.length === _origLen
          ? ok('ST-62: _gantRowReorder クリーンアップ完了（' + allTasks.length + '件）')
          : ng('ST-62: クリーンアップ', '件数不一致: ' + allTasks.length + '件');
@@ -38047,23 +38050,29 @@ function showDebugLog(_initOnly) {
          ? ok('ST-62: _gantRowReorder _gantSelectedBlueprintId分岐確認')
          : ng('ST-62: _gantRowReorder _gantSelectedBlueprintId分岐なし', 'フィルタ不一致の可能性');
 
-       // ⑤ _gantRowReorder実挙動テスト（第37条：全表示モード・after=true/false両方）
+       // ⑤ _gantRowReorder内部ロジックテスト（第37条：saveAllTasksを呼ばずロジックのみ検証）
        try {
-         var _d37bpA = Object.assign({}, createTask('ST-37-bp-A'), {kind:'blueprint',title:'ST37BpA',id:'st37bpA',taskIds:[]});
-         var _d37bpB = Object.assign({}, createTask('ST-37-bp-B'), {kind:'blueprint',title:'ST37BpB',id:'st37bpB',taskIds:[]});
+         // saveAllTasks/renderGantViewを一時無効化してTPAG汚染を防ぐ
+         var _prevSave = window.saveAllTasks;
+         var _prevRender = window.renderGantView;
+         window.saveAllTasks = function(){};
+         window.renderGantView = function(){};
+         var _d37bpA = {kind:'blueprint',id:'st37bpA',title:'ST37BpA',taskIds:[],inHeaven:false};
+         var _d37bpB = {kind:'blueprint',id:'st37bpB',title:'ST37BpB',taskIds:[],inHeaven:false};
          var _d37g0 = {kind:'gantt',id:'st37g0',title:'ST37-手立て0',blueprintId:'st37bpA',taskIds:[]};
          var _d37g1 = {kind:'gantt',id:'st37g1',title:'ST37-手立て1',blueprintId:'st37bpA',taskIds:[]};
          var _d37g2 = {kind:'gantt',id:'st37g2',title:'ST37-手立て2',blueprintId:'st37bpB',taskIds:[]};
          allTasks.push(_d37bpA, _d37bpB, _d37g0, _d37g1, _d37g2);
+         // blueprint単体モードでテスト（全作戦モードでは実データが混在してgidxがズレる）
          var _prevBpId = _gantSelectedBlueprintId;
-         _gantSelectedBlueprintId = null;
-         // after=true: gidx=0をgidx=1の後ろ（gidx=1とgidx=2の間）に移動
+         _gantSelectedBlueprintId = 'st37bpA'; // st37bpA内のgidx=0→1の後ろに移動
+         // st37bpA内: g0(idx=0), g1(idx=1) → g0をg1の後ろへ
          _gantRowReorder('st37g0', 0, 1, true);
          var _a1 = allTasks.findIndex(function(t){ return t.id==='st37g0'; });
          var _b1 = allTasks.findIndex(function(t){ return t.id==='st37g1'; });
          var _c1 = allTasks.findIndex(function(t){ return t.id==='st37g2'; });
-         _a1 > _b1 && _a1 < _c1
-           ? ok('ST-62: _gantRowReorder after=true 1→2の間に挿入確認（第37条）')
+         _a1 > _b1
+           ? ok('ST-62: _gantRowReorder after=true g0→g1後ろへ挿入確認（第37条）')
            : ng('ST-62: _gantRowReorder after=true挿入失敗', 'g0='+_a1+' g1='+_b1+' g2='+_c1);
          // クリーンアップ
          ['st37bpA','st37bpB','st37g0','st37g1','st37g2'].forEach(function(id){
@@ -38071,6 +38080,8 @@ function showDebugLog(_initOnly) {
            if (i>=0) allTasks.splice(i,1);
          });
          _gantSelectedBlueprintId = _prevBpId;
+         window.saveAllTasks = _prevSave;
+         window.renderGantView = _prevRender;
          ok('ST-62: _gantRowReorder クリーンアップ完了（' + allTasks.length + '件）');
        } catch(e2) { ng('ST-62: _gantRowReorder挙動テスト', e2.message); }
      } catch(e) { ng('ST-62: D&D通し番号テスト', e.message); }
