@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.436 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.438 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -557,7 +557,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.436';
+    const APP_VERSION = 'v0.45.438';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -28342,15 +28342,34 @@ function renderDeckShop(filterCategory) {
     }
   // 手立て行D&D ※第37条：data-gidxは表示上の通し番号。_gantRowReorderも同じ通し番号で動作させること
   var _gantRowDragState = { gid: null, fromIdx: null };
-  function _gantRowNearestIdx(clientY) {
-    var best = null, bestD = Infinity;
-    document.querySelectorAll('tr[data-gid]').forEach(function(r) {
+  // _gantRowDropTarget: マウスY座標から「どの行のどこに挿入するか」を返す
+  // 返値: { toIdx: number, after: bool }
+  //   after=false → toIdxの行の前に挿入
+  //   after=true  → toIdxの行の後ろに挿入
+  function _gantRowDropTarget(clientY) {
+    var rows = document.querySelectorAll('tr[data-gid]');
+    var result = null;
+    rows.forEach(function(r) {
       var rect = r.getBoundingClientRect();
-      var d = Math.abs(clientY - (rect.top + rect.height / 2));
-      if (d < bestD) { bestD = d; best = parseInt(r.dataset.gidx); }
+      if (clientY >= rect.top && clientY < rect.bottom) {
+        var mid = rect.top + rect.height / 2;
+        result = { toIdx: parseInt(r.dataset.gidx), after: clientY >= mid };
+      }
     });
-    return best;
+    // 全行の外にドロップした場合は最近傍で判定
+    if (!result) {
+      var best = null, bestD = Infinity, bestAfter = false;
+      rows.forEach(function(r) {
+        var rect = r.getBoundingClientRect();
+        var mid = rect.top + rect.height / 2;
+        var d = Math.abs(clientY - mid);
+        if (d < bestD) { bestD = d; best = parseInt(r.dataset.gidx); bestAfter = clientY >= mid; }
+      });
+      result = { toIdx: best, after: bestAfter };
+    }
+    return result;
   }
+
   function _initGantRowDrag() {
     if (window._gantRowDragListening) return;
     window._gantRowDragListening = true;
@@ -28366,26 +28385,29 @@ function renderDeckShop(filterCategory) {
     });
     document.addEventListener('mousemove', function(e) {
       if (!_gantRowDragState.gid) return;
-      var toIdx = _gantRowNearestIdx(e.clientY);
-      document.querySelectorAll('tr[data-gid]').forEach(function(r){ r.style.borderTop=''; });
-      if (toIdx !== null && toIdx !== _gantRowDragState.fromIdx) {
+      var _drop = _gantRowDropTarget(e.clientY);
+      document.querySelectorAll('tr[data-gid]').forEach(function(r){ r.style.borderTop=''; r.style.borderBottom=''; });
+      if (_drop !== null && _drop.toIdx !== _gantRowDragState.fromIdx) {
         document.querySelectorAll('tr[data-gid]').forEach(function(r){
-          if (parseInt(r.dataset.gidx) === toIdx) r.style.borderTop = '3px solid #a78bfa';
+          if (parseInt(r.dataset.gidx) === _drop.toIdx) {
+            if (_drop.after) r.style.borderBottom = '3px solid #a78bfa';
+            else r.style.borderTop = '3px solid #a78bfa';
+          }
         });
       }
     });
     document.addEventListener('mouseup', function(e) {
       if (!_gantRowDragState.gid) return;
-      var toIdx = _gantRowNearestIdx(e.clientY);
-      document.querySelectorAll('tr[data-gid]').forEach(function(r){ r.style.opacity=''; r.style.borderTop=''; });
-      if (toIdx !== null && toIdx !== _gantRowDragState.fromIdx) {
-        _gantRowReorder(_gantRowDragState.gid, _gantRowDragState.fromIdx, toIdx);
+      var _drop = _gantRowDropTarget(e.clientY);
+      document.querySelectorAll('tr[data-gid]').forEach(function(r){ r.style.opacity=''; r.style.borderTop=''; r.style.borderBottom=''; });
+      if (_drop !== null && _drop.toIdx !== _gantRowDragState.fromIdx) {
+        _gantRowReorder(_gantRowDragState.gid, _gantRowDragState.fromIdx, _drop.toIdx, _drop.after);
       }
       _gantRowDragState = { gid: null, fromIdx: null };
     });
   }
-  function _gantRowReorder(fromGid, fromIdx, toIdx) {
-    // 表示中のgantsリスト（renderGantChartと同じロジック）を再現
+  function _gantRowReorder(fromGid, fromIdx, toIdx, after) {
+    // 表示中のgantsリスト（renderGantChartと同じロジック）を再現（第37条）
     var visGants = _gantSelectedBlueprintId
       ? allTasks.filter(function(t){ return t.kind==='gantt' && t.blueprintId===_gantSelectedBlueprintId; })
       : allTasks.filter(function(t){
@@ -28394,7 +28416,7 @@ function renderDeckShop(filterCategory) {
           return !bp || !bp.inHeaven;
         });
     if (!allSettings.ui.gantShowCompleted) visGants = visGants.filter(function(g){ return !g.achieved; });
-    // fromIdx/toIdxは表示上の通し番号
+    // fromIdx/toIdxは表示上の通し番号（第37条）
     if (fromIdx < 0 || toIdx < 0 || fromIdx >= visGants.length || toIdx >= visGants.length) return;
     var fromId = visGants[fromIdx].id;
     var toId   = visGants[toIdx].id;
@@ -28402,7 +28424,8 @@ function renderDeckShop(filterCategory) {
     if (fromRealIdx < 0) return;
     var moved = allTasks.splice(fromRealIdx, 1)[0];
     var toRealIdx = allTasks.findIndex(function(t){ return t.id === toId; });
-    if (fromIdx < toIdx) toRealIdx++;
+    // after=true: toIdxの行の後ろ、after=false: 前
+    if (after) toRealIdx++;
     allTasks.splice(toRealIdx < 0 ? allTasks.length : toRealIdx, 0, moved);
     saveAllTasks();
     if (typeof window.renderGantView === 'function') window.renderGantView();
@@ -37995,55 +38018,59 @@ function showDebugLog(_initOnly) {
 
      // 第37条：D&D通し番号テスト
      try {
-       // ① _initGantRowDrag呼び出し確認（_gantRowDragListeningフラグ方式）
+       // ① 累積登録防止フラグ確認
        var _src37 = document.documentElement.innerHTML;
        _src37.indexOf('_gantRowDragListening') !== -1
          ? ok('ST-62: _initGantRowDrag 累積登録防止フラグ（_gantRowDragListening）確認')
          : ng('ST-62: _initGantRowDrag 累積登録防止なし', '_gantRowDragListeningが見つからない');
 
-       // ② _gantRowReorderがvisGantsを使った通し番号方式であることを確認（第37条）
+       // ② _gantRowDropTarget存在確認（上半分/下半分判定）
+       typeof _gantRowDropTarget === 'function'
+         ? ok('ST-62: _gantRowDropTarget 存在確認（上半分/下半分判定）')
+         : ng('ST-62: _gantRowDropTarget 未定義', 'ドロップ位置判定が動かない');
+
+       // ③ _gantRowDropTargetがafter属性を返すことを確認
+       var _dtSrc = typeof _gantRowDropTarget === 'function' ? _gantRowDropTarget.toString() : '';
+       _dtSrc.indexOf('after') !== -1
+         ? ok('ST-62: _gantRowDropTarget after属性確認（上半分/下半分）')
+         : ng('ST-62: _gantRowDropTarget after属性なし', 'ドロップ位置がズレる');
+
+       // ④ _gantRowReorderがvisGants通し番号方式・after引数対応であることを確認（第37条）
        var _reorderSrc = typeof _gantRowReorder === 'function' ? _gantRowReorder.toString() : '';
        _reorderSrc.indexOf('visGants') !== -1
          ? ok('ST-62: _gantRowReorder visGants通し番号方式確認（第37条）')
          : ng('ST-62: _gantRowReorder visGantsなし', '第37条違反：インデックス不一致の危険');
-
-       // ③ visGantsが_gantSelectedBlueprintIdでフィルタする分岐を持つことを確認
+       _reorderSrc.indexOf('after') !== -1
+         ? ok('ST-62: _gantRowReorder after引数対応確認')
+         : ng('ST-62: _gantRowReorder after引数なし', 'ドロップ位置補正が効かない');
        _reorderSrc.indexOf('_gantSelectedBlueprintId') !== -1
          ? ok('ST-62: _gantRowReorder _gantSelectedBlueprintId分岐確認')
          : ng('ST-62: _gantRowReorder _gantSelectedBlueprintId分岐なし', 'フィルタ不一致の可能性');
 
-       // ④ _gantRowNearestIdx関数の存在確認
-       typeof _gantRowNearestIdx === 'function'
-         ? ok('ST-62: _gantRowNearestIdx 存在確認')
-         : ng('ST-62: _gantRowNearestIdx 未定義', 'D&Dの宛先判定が動かない');
-
-       // ⑤ _gantRowReorder実挙動テスト（第37条：全表示モードで通し番号が正しく動くか）
+       // ⑤ _gantRowReorder実挙動テスト（第37条：全表示モード・after=true/false両方）
        try {
          var _d37bpA = Object.assign({}, createTask('ST-37-bp-A'), {kind:'blueprint',title:'ST37BpA',id:'st37bpA',taskIds:[]});
          var _d37bpB = Object.assign({}, createTask('ST-37-bp-B'), {kind:'blueprint',title:'ST37BpB',id:'st37bpB',taskIds:[]});
-         var _d37g0 = {kind:'gantt',id:'st37g0',title:'ST37-手立て0',blueprintId:'st37bpA',taskIds:[],order:0};
-         var _d37g1 = {kind:'gantt',id:'st37g1',title:'ST37-手立て1',blueprintId:'st37bpA',taskIds:[],order:1};
-         var _d37g2 = {kind:'gantt',id:'st37g2',title:'ST37-手立て2',blueprintId:'st37bpB',taskIds:[],order:0};
+         var _d37g0 = {kind:'gantt',id:'st37g0',title:'ST37-手立て0',blueprintId:'st37bpA',taskIds:[]};
+         var _d37g1 = {kind:'gantt',id:'st37g1',title:'ST37-手立て1',blueprintId:'st37bpA',taskIds:[]};
+         var _d37g2 = {kind:'gantt',id:'st37g2',title:'ST37-手立て2',blueprintId:'st37bpB',taskIds:[]};
          allTasks.push(_d37bpA, _d37bpB, _d37g0, _d37g1, _d37g2);
-         // 全作戦表示モード（_gantSelectedBlueprintId=null）でgidx=0とgidx=2を入れ替え
          var _prevBpId = _gantSelectedBlueprintId;
          _gantSelectedBlueprintId = null;
-         var _before0 = allTasks.findIndex(function(t){ return t.id==='st37g0'; });
-         var _before2 = allTasks.findIndex(function(t){ return t.id==='st37g2'; });
-         _gantRowReorder('st37g0', 0, 2); // 通し番号0→2へ移動
-         var _after0 = allTasks.findIndex(function(t){ return t.id==='st37g0'; });
-         var _after2 = allTasks.findIndex(function(t){ return t.id==='st37g2'; });
-         _gantSelectedBlueprintId = _prevBpId;
-         // g0がg2より後ろに移動していればOK
-         _after0 > _after2
-           ? ok('ST-62: _gantRowReorder 全作戦モード通し番号並び替え確認（第37条）')
-           : ng('ST-62: _gantRowReorder 全作戦モード並び替え失敗', 'before0='+_before0+' after0='+_after0+' after2='+_after2);
+         // after=true: gidx=0をgidx=1の後ろ（gidx=1とgidx=2の間）に移動
+         _gantRowReorder('st37g0', 0, 1, true);
+         var _a1 = allTasks.findIndex(function(t){ return t.id==='st37g0'; });
+         var _b1 = allTasks.findIndex(function(t){ return t.id==='st37g1'; });
+         var _c1 = allTasks.findIndex(function(t){ return t.id==='st37g2'; });
+         _a1 > _b1 && _a1 < _c1
+           ? ok('ST-62: _gantRowReorder after=true 1→2の間に挿入確認（第37条）')
+           : ng('ST-62: _gantRowReorder after=true挿入失敗', 'g0='+_a1+' g1='+_b1+' g2='+_c1);
          // クリーンアップ
-         allTasks.splice(allTasks.findIndex(function(t){return t.id==='st37bpA';}),1);
-         allTasks.splice(allTasks.findIndex(function(t){return t.id==='st37bpB';}),1);
-         allTasks.splice(allTasks.findIndex(function(t){return t.id==='st37g0';}),1);
-         allTasks.splice(allTasks.findIndex(function(t){return t.id==='st37g1';}),1);
-         allTasks.splice(allTasks.findIndex(function(t){return t.id==='st37g2';}),1);
+         ['st37bpA','st37bpB','st37g0','st37g1','st37g2'].forEach(function(id){
+           var i = allTasks.findIndex(function(t){return t.id===id;});
+           if (i>=0) allTasks.splice(i,1);
+         });
+         _gantSelectedBlueprintId = _prevBpId;
          ok('ST-62: _gantRowReorder クリーンアップ完了（' + allTasks.length + '件）');
        } catch(e2) { ng('ST-62: _gantRowReorder挙動テスト', e2.message); }
      } catch(e) { ng('ST-62: D&D通し番号テスト', e.message); }
@@ -43717,9 +43744,13 @@ function showDebugLog(_initOnly) {
          && _r35src.indexOf('_dupIds') !== -1;
        _rf('第36条', _r36ok, 'importData ID重複自動修復確認（generateTaskId再発行）');
        // 第37条：visGants通し番号方式確認
-       var _r37src = typeof _gantRowReorder === 'function' ? _gantRowReorder.toString() : '';
-       var _r37ok = _r37src.indexOf('visGants') !== -1 && _r37src.indexOf('_gantSelectedBlueprintId') !== -1;
-       _rf('第37条', _r37ok, '表示インデックスと内部インデックス一致確認（visGants通し番号方式）');
+       var _r37reorder = typeof _gantRowReorder === 'function' ? _gantRowReorder.toString() : '';
+       var _r37drop = typeof _gantRowDropTarget === 'function' ? _gantRowDropTarget.toString() : '';
+       var _r37ok = _r37reorder.indexOf('visGants') !== -1
+         && _r37reorder.indexOf('_gantSelectedBlueprintId') !== -1
+         && _r37reorder.indexOf('after') !== -1
+         && _r37drop.indexOf('after') !== -1;
+       _rf('第37条', _r37ok, '表示インデックスと内部インデックス一致確認（visGants通し番号・after上下判定）');
 
        // 遵守率
        var _rate = Math.round(_rp/_rc*100);
