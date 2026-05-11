@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.434 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.436 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -514,6 +514,36 @@ ganttのtaskIds・タスクのganttIdも追従して更新すること。
 権威：2026-05-11、掃除タスク29件がtime.sleep(0.001)の精度不足で全件019e1465になり
 Step2以降が表示されなかった実例。v0.45.406で対応。
 
+第37条【表示インデックスと内部インデックスを一致させる】
+制度趣旨：D&Dや並び替え処理では「表示上の通し番号（data-gidx等）」と
+「内部配列の操作インデックス」を必ず一致させなければならない。
+不一致があると、動いているように見えて実際には動かない・一部だけ動くという
+デバッグ困難なバグを生む。
+
+権威：2026-05-11の手立てD&D修正で、data-gidxが全作戦表示時の通し番号（0〜11）なのに
+_gantRowReorderがblueprint内の0始まりインデックスで動作していたため、
+blueprint内に1件しかない手立ては範囲チェックで即returnし動かなかった。
+デバッグに10バージョン以上を費やした実例（v0.45.422〜v0.45.435）に基づく。
+
+本文：並び替え・移動処理を実装する際は以下を必ず確認すること。
+
+【確認すべき3点】
+  ① DOMに埋め込むインデックス（data-gidx等）は何を基準にした番号か明示する。
+    例：「全表示gantsの通し番号」「blueprint内0始まり」など。
+  ② 並び替え関数が受け取るインデックスはDOMと同じ基準で動作しているか確認する。
+  ③ 「全件表示」「フィルタ表示」「単一選択」の3モードで動作を確認する。
+
+【デバッグ手順（第6条4軸）】
+  名前：どの変数・関数のインデックスがずれているか
+  状態：DOMのdata-gidxの値 vs 内部配列のインデックス値
+  関係：renderとreorderで同じgants配列を参照しているか
+  時間：いつ（どのモードで）ずれが発生するか
+
+【実装パターン（正）】
+  renderGantChartでgants.map(gantt, i)したiをdata-gidxに入れる場合、
+  _gantRowReorderも同じgants生成ロジック（同一フィルタ）でvisGantsを作り、
+  fromIdx/toIdxをvisGants上のインデックスとして扱うこと。
+
 END OF 開発ルール
 =============================================================================
 -->
@@ -527,7 +557,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.434';
+    const APP_VERSION = 'v0.45.436';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -28310,9 +28340,9 @@ function renderDeckShop(filterCategory) {
         showToast('コピーに失敗しました', {type:'error'});
       });
     }
-  // 手立て行D&D（window経由で全変数アクセス）
-  window._gantRowDragState = { gid: null, fromIdx: null };
-  window._gantRowNearestIdx = function(clientY) {
+  // 手立て行D&D ※第37条：data-gidxは表示上の通し番号。_gantRowReorderも同じ通し番号で動作させること
+  var _gantRowDragState = { gid: null, fromIdx: null };
+  function _gantRowNearestIdx(clientY) {
     var best = null, bestD = Infinity;
     document.querySelectorAll('tr[data-gid]').forEach(function(r) {
       var rect = r.getBoundingClientRect();
@@ -28320,57 +28350,61 @@ function renderDeckShop(filterCategory) {
       if (d < bestD) { bestD = d; best = parseInt(r.dataset.gidx); }
     });
     return best;
-  };
-  window._gantRowOnMousedown = function(e) {
-    var grip = e.target.closest && e.target.closest('.gant-row-grip');
-    if (!grip) return;
-    var tr = grip.closest('tr[data-gid]');
-    if (!tr) return;
-    e.preventDefault();
-    window._gantRowDragState.gid = tr.dataset.gid;
-    window._gantRowDragState.fromIdx = parseInt(tr.dataset.gidx);
-    tr.style.opacity = '0.5';
-  };
-  window._gantRowOnMousemove = function(e) {
-    if (!window._gantRowDragState.gid) return;
-    var toIdx = window._gantRowNearestIdx(e.clientY);
-    document.querySelectorAll('tr[data-gid]').forEach(function(r){ r.style.borderTop=''; });
-    if (toIdx !== null && toIdx !== window._gantRowDragState.fromIdx) {
-      document.querySelectorAll('tr[data-gid]').forEach(function(r){
-        if (parseInt(r.dataset.gidx) === toIdx) r.style.borderTop = '3px solid #a78bfa';
-      });
-    }
-  };
-  window._gantRowOnMouseup = function(e) {
-    if (!window._gantRowDragState.gid) return;
-    var toIdx = window._gantRowNearestIdx(e.clientY);
-    document.querySelectorAll('tr[data-gid]').forEach(function(r){ r.style.opacity=''; r.style.borderTop=''; });
-    if (toIdx !== null && toIdx !== window._gantRowDragState.fromIdx) {
-      window._gantRowReorder(window._gantRowDragState.gid, window._gantRowDragState.fromIdx, toIdx);
-    }
-    window._gantRowDragState = { gid: null, fromIdx: null };
-  };
+  }
   function _initGantRowDrag() {
     if (window._gantRowDragListening) return;
     window._gantRowDragListening = true;
-    document.addEventListener('mousedown', window._gantRowOnMousedown);
-    document.addEventListener('mousemove', window._gantRowOnMousemove);
-    document.addEventListener('mouseup',   window._gantRowOnMouseup);
+    document.addEventListener('mousedown', function(e) {
+      var grip = e.target.closest && e.target.closest('.gant-row-grip');
+      if (!grip) return;
+      var tr = grip.closest('tr[data-gid]');
+      if (!tr) return;
+      e.preventDefault();
+      _gantRowDragState.gid = tr.dataset.gid;
+      _gantRowDragState.fromIdx = parseInt(tr.dataset.gidx);
+      tr.style.opacity = '0.5';
+    });
+    document.addEventListener('mousemove', function(e) {
+      if (!_gantRowDragState.gid) return;
+      var toIdx = _gantRowNearestIdx(e.clientY);
+      document.querySelectorAll('tr[data-gid]').forEach(function(r){ r.style.borderTop=''; });
+      if (toIdx !== null && toIdx !== _gantRowDragState.fromIdx) {
+        document.querySelectorAll('tr[data-gid]').forEach(function(r){
+          if (parseInt(r.dataset.gidx) === toIdx) r.style.borderTop = '3px solid #a78bfa';
+        });
+      }
+    });
+    document.addEventListener('mouseup', function(e) {
+      if (!_gantRowDragState.gid) return;
+      var toIdx = _gantRowNearestIdx(e.clientY);
+      document.querySelectorAll('tr[data-gid]').forEach(function(r){ r.style.opacity=''; r.style.borderTop=''; });
+      if (toIdx !== null && toIdx !== _gantRowDragState.fromIdx) {
+        _gantRowReorder(_gantRowDragState.gid, _gantRowDragState.fromIdx, toIdx);
+      }
+      _gantRowDragState = { gid: null, fromIdx: null };
+    });
   }
   function _gantRowReorder(fromGid, fromIdx, toIdx) {
-    var bpId = (allTasks.find(function(t){ return t.id === fromGid; }) || {}).blueprintId || _gantSelectedBlueprintId;
-    var gants = allTasks.filter(function(t){ return t.kind==='gantt' && t.blueprintId===bpId; });
-    if (fromIdx < 0 || toIdx < 0 || fromIdx >= gants.length || toIdx >= gants.length) return;
-    var fromId = gants[fromIdx].id;
-    var toId   = gants[toIdx].id;
+    // 表示中のgantsリスト（renderGantChartと同じロジック）を再現
+    var visGants = _gantSelectedBlueprintId
+      ? allTasks.filter(function(t){ return t.kind==='gantt' && t.blueprintId===_gantSelectedBlueprintId; })
+      : allTasks.filter(function(t){
+          if (t.kind !== 'gantt') return false;
+          var bp = allTasks.find(function(b){ return b.id === t.blueprintId; });
+          return !bp || !bp.inHeaven;
+        });
+    if (!allSettings.ui.gantShowCompleted) visGants = visGants.filter(function(g){ return !g.achieved; });
+    // fromIdx/toIdxは表示上の通し番号
+    if (fromIdx < 0 || toIdx < 0 || fromIdx >= visGants.length || toIdx >= visGants.length) return;
+    var fromId = visGants[fromIdx].id;
+    var toId   = visGants[toIdx].id;
     var fromRealIdx = allTasks.findIndex(function(t){ return t.id === fromId; });
     if (fromRealIdx < 0) return;
     var moved = allTasks.splice(fromRealIdx, 1)[0];
-    var insertIdx = allTasks.findIndex(function(t){ return t.id === toId; });
-    if (fromIdx < toIdx) insertIdx++;
-    allTasks.splice(insertIdx < 0 ? allTasks.length : insertIdx, 0, moved);
+    var toRealIdx = allTasks.findIndex(function(t){ return t.id === toId; });
+    if (fromIdx < toIdx) toRealIdx++;
+    allTasks.splice(toRealIdx < 0 ? allTasks.length : toRealIdx, 0, moved);
     saveAllTasks();
-    // window経由で確実に呼ぶ
     if (typeof window.renderGantView === 'function') window.renderGantView();
     else if (typeof renderGantView === 'function') renderGantView();
   }
@@ -37959,19 +37993,60 @@ function showDebugLog(_initOnly) {
          : ng('ST-62: window._gantRowReorder', '未公開');
      } catch(e) { ng('ST-62: window公開', e.message); }
 
-     // renderGantChartから_initGantRowDragが呼ばれているか確認
+     // 第37条：D&D通し番号テスト
      try {
-       // renderGantChartはdocument.innerHTML内に存在するソースで確認
-       var _rgcCheck = document.documentElement.innerHTML.indexOf('_initGantLabelResizer') !== -1
-         && document.documentElement.innerHTML.indexOf('window._initGantRowDrag') !== -1;
-       _rgcCheck
-         ? ok('ST-62: renderGantChart内 _initGantRowDrag呼び出し確認（ソース検索）')
-         : ng('ST-62: renderGantChart内 _initGantRowDrag呼び出しなし', 'D&Dが初期化されない');
-       var _ridStr = typeof _initGantRowDrag === 'function' ? _initGantRowDrag.toString() : '';
-       _ridStr.indexOf('_gantRowDragInitialized') !== -1
-         ? ok('ST-62: _initGantRowDrag 累積登録防止フラグ確認')
-         : ng('ST-62: _initGantRowDrag 累積登録防止なし', 'addEventListener累積の危険');
-     } catch(e) { ng('ST-62: D&D呼び出し確認', e.message); }
+       // ① _initGantRowDrag呼び出し確認（_gantRowDragListeningフラグ方式）
+       var _src37 = document.documentElement.innerHTML;
+       _src37.indexOf('_gantRowDragListening') !== -1
+         ? ok('ST-62: _initGantRowDrag 累積登録防止フラグ（_gantRowDragListening）確認')
+         : ng('ST-62: _initGantRowDrag 累積登録防止なし', '_gantRowDragListeningが見つからない');
+
+       // ② _gantRowReorderがvisGantsを使った通し番号方式であることを確認（第37条）
+       var _reorderSrc = typeof _gantRowReorder === 'function' ? _gantRowReorder.toString() : '';
+       _reorderSrc.indexOf('visGants') !== -1
+         ? ok('ST-62: _gantRowReorder visGants通し番号方式確認（第37条）')
+         : ng('ST-62: _gantRowReorder visGantsなし', '第37条違反：インデックス不一致の危険');
+
+       // ③ visGantsが_gantSelectedBlueprintIdでフィルタする分岐を持つことを確認
+       _reorderSrc.indexOf('_gantSelectedBlueprintId') !== -1
+         ? ok('ST-62: _gantRowReorder _gantSelectedBlueprintId分岐確認')
+         : ng('ST-62: _gantRowReorder _gantSelectedBlueprintId分岐なし', 'フィルタ不一致の可能性');
+
+       // ④ _gantRowNearestIdx関数の存在確認
+       typeof _gantRowNearestIdx === 'function'
+         ? ok('ST-62: _gantRowNearestIdx 存在確認')
+         : ng('ST-62: _gantRowNearestIdx 未定義', 'D&Dの宛先判定が動かない');
+
+       // ⑤ _gantRowReorder実挙動テスト（第37条：全表示モードで通し番号が正しく動くか）
+       try {
+         var _d37bpA = Object.assign({}, createTask('ST-37-bp-A'), {kind:'blueprint',title:'ST37BpA',id:'st37bpA',taskIds:[]});
+         var _d37bpB = Object.assign({}, createTask('ST-37-bp-B'), {kind:'blueprint',title:'ST37BpB',id:'st37bpB',taskIds:[]});
+         var _d37g0 = {kind:'gantt',id:'st37g0',title:'ST37-手立て0',blueprintId:'st37bpA',taskIds:[],order:0};
+         var _d37g1 = {kind:'gantt',id:'st37g1',title:'ST37-手立て1',blueprintId:'st37bpA',taskIds:[],order:1};
+         var _d37g2 = {kind:'gantt',id:'st37g2',title:'ST37-手立て2',blueprintId:'st37bpB',taskIds:[],order:0};
+         allTasks.push(_d37bpA, _d37bpB, _d37g0, _d37g1, _d37g2);
+         // 全作戦表示モード（_gantSelectedBlueprintId=null）でgidx=0とgidx=2を入れ替え
+         var _prevBpId = _gantSelectedBlueprintId;
+         _gantSelectedBlueprintId = null;
+         var _before0 = allTasks.findIndex(function(t){ return t.id==='st37g0'; });
+         var _before2 = allTasks.findIndex(function(t){ return t.id==='st37g2'; });
+         _gantRowReorder('st37g0', 0, 2); // 通し番号0→2へ移動
+         var _after0 = allTasks.findIndex(function(t){ return t.id==='st37g0'; });
+         var _after2 = allTasks.findIndex(function(t){ return t.id==='st37g2'; });
+         _gantSelectedBlueprintId = _prevBpId;
+         // g0がg2より後ろに移動していればOK
+         _after0 > _after2
+           ? ok('ST-62: _gantRowReorder 全作戦モード通し番号並び替え確認（第37条）')
+           : ng('ST-62: _gantRowReorder 全作戦モード並び替え失敗', 'before0='+_before0+' after0='+_after0+' after2='+_after2);
+         // クリーンアップ
+         allTasks.splice(allTasks.findIndex(function(t){return t.id==='st37bpA';}),1);
+         allTasks.splice(allTasks.findIndex(function(t){return t.id==='st37bpB';}),1);
+         allTasks.splice(allTasks.findIndex(function(t){return t.id==='st37g0';}),1);
+         allTasks.splice(allTasks.findIndex(function(t){return t.id==='st37g1';}),1);
+         allTasks.splice(allTasks.findIndex(function(t){return t.id==='st37g2';}),1);
+         ok('ST-62: _gantRowReorder クリーンアップ完了（' + allTasks.length + '件）');
+       } catch(e2) { ng('ST-62: _gantRowReorder挙動テスト', e2.message); }
+     } catch(e) { ng('ST-62: D&D通し番号テスト', e.message); }
 
      ok('ST-62: 今日追加機能テスト 完了');
 
@@ -43641,6 +43716,10 @@ function showDebugLog(_initOnly) {
        var _r36ok = _r35src.indexOf('generateTaskId') !== -1
          && _r35src.indexOf('_dupIds') !== -1;
        _rf('第36条', _r36ok, 'importData ID重複自動修復確認（generateTaskId再発行）');
+       // 第37条：visGants通し番号方式確認
+       var _r37src = typeof _gantRowReorder === 'function' ? _gantRowReorder.toString() : '';
+       var _r37ok = _r37src.indexOf('visGants') !== -1 && _r37src.indexOf('_gantSelectedBlueprintId') !== -1;
+       _rf('第37条', _r37ok, '表示インデックスと内部インデックス一致確認（visGants通し番号方式）');
 
        // 遵守率
        var _rate = Math.round(_rp/_rc*100);
