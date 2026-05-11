@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.445 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.446 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -591,7 +591,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.445';
+    const APP_VERSION = 'v0.45.446';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -16765,7 +16765,7 @@ function toggleGantEnabled(checked) {
           const bw = Math.max(ex - sx, 4);
           const prog = getGanttProgress(gantt);
           const _tipTxt = st + '〜' + et + ' ' + prog + '%';
-          stepBarHtml = '<div style="position:absolute;left:' + sx + 'px;top:4px;width:' + bw + 'px;height:32px;background:' + ctx.barColor + '88;border-radius:6px' + ctx.barColor + ';box-sizing:border-box;cursor:default;"'
+          stepBarHtml = '<div style="position:absolute;left:' + sx + 'px;top:4px;width:' + bw + 'px;height:32px;background:' + ctx.barColor + '88;border-radius:6px;box-sizing:border-box;cursor:default;"'
             + ' onmouseenter="_showStepTip(this,event)"'
             + ' onmouseleave="_hideStepTip()"'
             + ' data-tip="' + _tipTxt + '"></div>'
@@ -16781,7 +16781,7 @@ function toggleGantEnabled(checked) {
           const ex = Math.round((new Date(gantt.endDate)   - ctx.minDate) / 86400000) * ctx.dayW + ctx.dayW;
           const bw = Math.max(ex - sx, 6);
           const prog = getGanttProgress(gantt);
-          stepBarHtml = '<div style="position:absolute;left:' + sx + 'px;top:4px;width:' + bw + 'px;height:32px;background:' + ctx.barColor + '88;border-radius:6px' + ctx.barColor + ';box-sizing:border-box;"></div>'
+          stepBarHtml = '<div style="position:absolute;left:' + sx + 'px;top:4px;width:' + bw + 'px;height:32px;background:' + ctx.barColor + '88;border-radius:6px;box-sizing:border-box;"></div>'
             + (bw > 30 ? '<div style="position:absolute;left:' + (sx+6) + 'px;top:11px;font-size:9px;color:#1a1a2e;font-weight:700;">' + prog + '%</div>' : '');
         } else {
           const msg = taskIds.length === 0 ? 'やることを決めると、バーが現れます' : '日付を刻むと、バーが現れます';
@@ -16816,7 +16816,7 @@ function toggleGantEnabled(checked) {
       }
 
       return '<div>'
-        + '<div style="display:flex;border-bottom:1px solid #efefef;background:' + bg + ';min-height:' + ctx.rowH + 'px;align-items:stretch' + ctx.barColor + '33;">'
+        + '<div style="display:flex;border-bottom:1px solid #efefef;background:' + bg + ';min-height:' + ctx.rowH + 'px;align-items:stretch;">'
         + '<div style="width:' + (ctx.labelW-3) + 'px;min-width:' + (ctx.labelW-3) + 'px;min-height:' + ctx.rowH + 'px;border-right:1px solid #e0e0e0;display:flex;align-items:center;padding:0 3px 0 3px;gap:2px;position:sticky;left:0;z-index:2;background:inherit;">'
         + expandBtn
         + '<button onclick="openGanttEditor(\'' + gantt.id + '\')" style="flex:1;min-height:' + ctx.rowH + 'px;background:none;border:none;text-align:left;padding:4px 2px;cursor:pointer;display:flex;flex-direction:row;align-items:center;gap:4px;min-width:0;position:relative;overflow:hidden;"'
@@ -17114,7 +17114,7 @@ function toggleGantEnabled(checked) {
         const expandBtn = tc > 0
           ? '<button data-eid="' + eid + '" onclick="_gantToggle(this)" style="background:none;border:none;font-size:13px;color:#888;cursor:pointer;padding:2px 2px;flex-shrink:0;transition:transform 0.15s;width:18px;">›</button>'
           : '<span style="display:inline-block;width:18px;"></span>';
-        const labelCell = '<td style="position:sticky;left:0;z-index:2;background:' + bg + ';border-right:1px solid #d0d8e8;border-bottom:1px solid #efefef' + barColor + '55;padding:0;width:' + labelW + 'px;min-width:' + labelW + 'px;max-width:' + labelW + 'px;vertical-align:middle;">'
+        const labelCell = '<td style="position:sticky;left:0;z-index:2;background:' + bg + ';border-right:1px solid #d0d8e8;border-bottom:1px solid #efefef;padding:0;width:' + labelW + 'px;min-width:' + labelW + 'px;max-width:' + labelW + 'px;vertical-align:middle;">'
           + '<div style="display:flex;align-items:center;padding:0 2px;min-height:' + rowH + 'px;overflow:hidden;">'
           + '<span class="gant-row-grip" style="cursor:grab;padding:0 3px;color:#bbb;font-size:13px;flex-shrink:0;user-select:none;">☰</span>'
           + expandBtn
@@ -17136,11 +17136,12 @@ function toggleGantEnabled(checked) {
         const st = gantt.startTime, et = gantt.endTime;
         if (st && et) {
           const sh=parseInt(st),sm=parseInt(st.split(':')[1]||0),eh=parseInt(et),em=parseInt(et.split(':')[1]||0);
-          const sx = Math.max(0, Math.round(((sh*60+sm)-startH*60)/60*colWe));
-          const ex = Math.round(((eh*60+em)-startH*60)/60*colWe);
+          const _wmStartH = (allSettings.ui.gantDayStartH !== undefined) ? allSettings.ui.gantDayStartH : 6;
+          const sx = Math.max(0, Math.round(((sh*60+sm)-_wmStartH*60)/60*colWe));
+          const ex = Math.round(((eh*60+em)-_wmStartH*60)/60*colWe);
           const bw = Math.max(ex-sx, 4);
           const prog = getGanttProgress(gantt);
-          stepBar = '<div style="position:absolute;left:' + sx + 'px;top:8px;width:' + bw + 'px;height:28px;background:' + barColor + '99;border-radius:6px' + barColor + ';box-sizing:border-box;"></div>'
+          stepBar = '<div style="position:absolute;left:' + sx + 'px;top:8px;width:' + bw + 'px;height:28px;background:' + barColor + '99;border-radius:6px;box-sizing:border-box;"></div>'
             + (bw>50 ? '<div style="position:absolute;left:' + (sx+8) + 'px;top:16px;font-size:10px;color:' + textColor + ';font-weight:700;white-space:nowrap;pointer-events:none;">' + st + '〜' + et + ' ' + prog + '%</div>'
                : bw>20 ? '<div style="position:absolute;left:' + (sx+4) + 'px;top:16px;font-size:10px;color:' + textColor + ';font-weight:700;pointer-events:none;">' + prog + '%</div>' : '');
         } else {
@@ -17155,7 +17156,7 @@ function toggleGantEnabled(checked) {
         if (tc > 0) {
           const taskHtml = eids.map(function(tid) {
             var t = allTasks.find(function(x){ return x.id===tid; }); if(!t) return '';
-            var ctx2 = {scale:'day',colW:colWe,labelW:0,rowH:32,chartW:chartW,nowLine:'',rowBg:'#f9f9f9',startH:startH,barColor:barColor,textColor:textColor};
+            var ctx2 = {scale:'day',colW:colWe,labelW:labelW,rowH:32,chartW:chartW,nowLine:'',rowBg:'#f9f9f9',startH:startH,barColor:barColor,textColor:textColor};
             var tBar = _buildTaskBar(t, ctx2) + nowLineBar;
             var tLabelCell = '<td style="position:sticky;left:0;z-index:2;background:#f9f9f9;border-right:1px solid #d0d8e8;border-bottom:1px solid #efefef;padding:0 4px 0 20px;width:' + labelW + 'px;min-width:' + labelW + 'px;max-width:' + labelW + 'px;vertical-align:middle;">'
               + '<div style="display:flex;align-items:center;gap:3px;min-height:32px;overflow:hidden;">'
@@ -17190,7 +17191,11 @@ function toggleGantEnabled(checked) {
 
         // ---- 週/月スケール描画 ----
     function _renderGantWeekMonth(htmlChart, gants, scale) {
-      const labelW = 100, rowH = 40;
+      // ラベル幅は日スケールと共通の設定値を使う（スライダー連動）
+      const _savedLWwm = allSettings.ui.gantLabelW;
+      const _defaultLWwm = Math.min(320, Math.max(150, Math.floor((document.getElementById('gantChartArea') ? document.getElementById('gantChartArea').clientWidth || window.innerWidth : window.innerWidth) * 0.42)));
+      const labelW = (_savedLWwm && _savedLWwm >= 60 && _savedLWwm <= 800) ? _savedLWwm : _defaultLWwm;
+      const rowH = 40;
       const today = new Date(); today.setHours(0,0,0,0);
       // minDate/maxDate：タスクの日付範囲 + 今日を中心に常にデフォルト幅を確保
       const allDates = gants.flatMap(g => (g.taskIds||[]).map(id => {
