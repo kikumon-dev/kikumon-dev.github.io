@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.417 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.419 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -155,7 +155,7 @@ SSPTの唯一の正規ソース。
   SPAG  ：SSOT Purify Absolute Green        — allTasksのSSOT汚染検証
   SCPAG ：Scope Control Purify Absolute Green — スコープ越境・window公開漏れ検証
   KPAG  ：Key Purify Absolute Green          — localStorageキー不整合・残骸検証
-  LPAG  ：Law Purify Absolute Green          — 開発ルール第1〜33条遵守率自動検証
+  LPAG  ：Law Purify Absolute Green          — 開発ルール第1〜36条遵守率自動検証
   TPAG  ：Temporal Purify Absolute Green     — ST前後のlocalStorage差分・副作用ゼロ保証
 
 制度趣旨：5体のガーディアンはそれぞれ独立した検証軸を持つが、1体でも沈黙すれば
@@ -527,7 +527,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.417';
+    const APP_VERSION = 'v0.45.419';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -36064,7 +36064,7 @@ function showDebugLog(_initOnly) {
 
        // ===== ST-34C: テストセクション自己存在確認 =====
        // テストセクション自己存在確認：ソースコード上の存在をチェック
-       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-103','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75','ST-76','ST-77','ST-78','ST-79','ST-80','ST-81','ST-82','ST-106','ST-107','ST-108','ST-109','ST-110','ST-111','ST-112','ST-113','ST-114','ST-115','ST-116','ST-119','ST-120','ST-121','ST-122','ST-123','ST-124','ST-125','ST-126','ST-127','ST-128','ST-129','ST-130','ST-131','ST-132','ST-138'];
+       var _stSections = ['UT-1','UT-2','UT-3','UT-4','UT-5','UT-6','UT-7','UT-8','ST-1','ST-2','ST-3','ST-4','ST-5','ST-6','ST-7','ST-8','ST-9','ST-10','ST-11','ST-12','ST-13','ST-14','ST-15','ST-16','ST-17','ST-18','ST-19','ST-20','ST-21','ST-22','ST-23','ST-24','ST-25','ST-26','ST-27','ST-28','ST-29','ST-30','ST-31','ST-32','ST-33','ST-34','ST-103','ST-35','ST-36','ST-37','ST-38','ST-39','ST-40','ST-41','ST-42','ST-43','ST-44','ST-45','ST-46','ST-47','ST-48','ST-49','ST-50','ST-51','ST-52','ST-53','ST-54','ST-55','ST-56','ST-57','ST-58','ST-59','ST-60','ST-61','ST-62','ST-63','ST-64','ST-65','ST-66','ST-67','ST-68','ST-69','ST-70','ST-71','ST-72','ST-73','ST-74','ST-75','ST-76','ST-77','ST-78','ST-79','ST-80','ST-81','ST-82','ST-106','ST-107','ST-108','ST-109','ST-110','ST-111','ST-112','ST-113','ST-114','ST-115','ST-116','ST-119','ST-120','ST-121','ST-122','ST-123','ST-124','ST-125','ST-126','ST-127','ST-128','ST-129','ST-130','ST-131','ST-132','ST-138','ST-139','ST-140'];
        var _stSrc = document.documentElement.innerHTML;
        var _stMissing = [];
        _stSections.forEach(function(s) {
@@ -42321,6 +42321,97 @@ function showDebugLog(_initOnly) {
        ok('ST-138: launchGanttStepMission テスト 完了');
      } catch(e) { ng('ST-138: 例外', e.message); }
 
+     // ===== ST-139: 志GV紐づけモーダルテスト =====
+     try {
+       ok('');
+       ok('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+       ok('ST-139: 志GV紐づけモーダルテスト');
+
+       // ① DOM存在確認
+       var _gvLinkOverlay = document.getElementById('blueprintGvLinkOverlay');
+       var _gvLinkModal   = document.getElementById('blueprintGvLinkModal');
+       var _gvLinkList    = document.getElementById('blueprintGvLinkList');
+       _gvLinkOverlay ? ok('ST-139·①: #blueprintGvLinkOverlay DOM確認') : ng('ST-139·①: #blueprintGvLinkOverlay 未存在');
+       _gvLinkModal   ? ok('ST-139·①: #blueprintGvLinkModal DOM確認')   : ng('ST-139·①: #blueprintGvLinkModal 未存在');
+       _gvLinkList    ? ok('ST-139·①: #blueprintGvLinkList DOM確認')    : ng('ST-139·①: #blueprintGvLinkList 未存在');
+
+       // ② window公開確認
+       typeof window.openBlueprintGvLinkModal === 'function'
+         ? ok('ST-139·②: openBlueprintGvLinkModal window公開確認')
+         : ng('ST-139·②: openBlueprintGvLinkModal 未公開');
+       typeof window.closeBlueprintGvLinkModal === 'function'
+         ? ok('ST-139·②: closeBlueprintGvLinkModal window公開確認')
+         : ng('ST-139·②: closeBlueprintGvLinkModal 未公開');
+       typeof window.saveBlueprintGvLinks === 'function'
+         ? ok('ST-139·②: saveBlueprintGvLinks window公開確認')
+         : ng('ST-139·②: saveBlueprintGvLinks 未公開');
+
+       // ③ 初期非表示確認
+       (_gvLinkOverlay && (_gvLinkOverlay.style.display === 'none' || getComputedStyle(_gvLinkOverlay).display === 'none'))
+         ? ok('ST-139·③: blueprintGvLinkOverlay 初期非表示確認')
+         : ng('ST-139·③: blueprintGvLinkOverlay 初期表示異常');
+
+       // ④ 開閉挙動確認
+       window.openBlueprintGvLinkModal();
+       (_gvLinkOverlay && _gvLinkOverlay.style.display === 'flex')
+         ? ok('ST-139·④: openBlueprintGvLinkModal → display:flex確認')
+         : ng('ST-139·④: openBlueprintGvLinkModal 表示失敗');
+       window.closeBlueprintGvLinkModal();
+       (_gvLinkOverlay && _gvLinkOverlay.style.display === 'none')
+         ? ok('ST-139·④: closeBlueprintGvLinkModal → display:none確認')
+         : ng('ST-139·④: closeBlueprintGvLinkModal 非表示失敗');
+
+       // ⑤ saveBlueprintGvLinks saveAllTasks参照確認
+       var _gvSaveStr = window.saveBlueprintGvLinks.toString();
+       _gvSaveStr.indexOf('saveAllTasks') !== -1
+         ? ok('ST-139·⑤: saveBlueprintGvLinks saveAllTasks参照確認')
+         : ng('ST-139·⑤: saveBlueprintGvLinks saveAllTasks参照なし');
+
+       // ⑥ 🔗ボタン存在確認
+       document.documentElement.innerHTML.indexOf('openBlueprintGvLinkModal') !== -1
+         ? ok('ST-139·⑥: 🔗ボタン onclick=openBlueprintGvLinkModal 存在確認')
+         : ng('ST-139·⑥: 🔗ボタン未実装');
+
+       ok('ST-139: 志GV紐づけモーダルテスト 完了');
+     } catch(e) { ng('ST-139: 例外', e.message); }
+
+     // ===== ST-140: getGanttProgress eidsベース・スマホlabelW修正テスト =====
+     try {
+       ok('');
+       ok('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+       ok('ST-140: getGanttProgress・labelW修正テスト');
+
+       // ① getGanttProgress eidsベース確認
+       var _gpStr = getGanttProgress.toString();
+       _gpStr.indexOf('repeatGroupId') !== -1
+         ? ok('ST-140·①: getGanttProgress eidsベース（repeatGroupId含む）確認')
+         : ng('ST-140·①: getGanttProgress eidsベース未適用');
+
+       // ② getGanttProgress 正常動作確認
+       var _gpTestGantt = allTasks.find(function(t){ return t.kind==='gantt' && (t.taskIds||[]).length > 0; });
+       if (_gpTestGantt) {
+         var _gpResult = getGanttProgress(_gpTestGantt);
+         (typeof _gpResult === 'number' && _gpResult >= 0 && _gpResult <= 100)
+           ? ok('ST-140·②: getGanttProgress 0〜100範囲内確認（' + _gpResult + '%）')
+           : ng('ST-140·②: getGanttProgress 範囲外（' + _gpResult + '）');
+       } else {
+         ok('ST-140·②: getGanttProgress テスト対象ganttなし（スキップ）');
+       }
+
+       // ③ スマホlabelW 0.45係数確認
+       var _lwStr = document.documentElement.innerHTML;
+       _lwStr.indexOf('0.45') !== -1
+         ? ok('ST-140·③: スマホlabelW 0.45係数確認')
+         : ng('ST-140·③: スマホlabelW 0.45係数未設定');
+
+       // ④ launchGanttStepMissionDone「やりきった！」確認
+       _lwStr.indexOf('やりきった') !== -1
+         ? ok('ST-140·④: やりきった！ボタンテキスト確認')
+         : ng('ST-140·④: やりきった！未設定');
+
+       ok('ST-140: getGanttProgress・labelW修正テスト 完了');
+     } catch(e) { ng('ST-140: 例外', e.message); }
+
 
      try {
        ok('');
@@ -43516,6 +43607,17 @@ function showDebugLog(_initOnly) {
                  && _r21html.indexOf('HTMLコメント構造の遵守') !== -1
                  && _r21html.indexOf('HTMLエンティティエスケープ') !== -1;
        _rf('第33条', _r33ok, 'LPAGテスト品質基準：条文存在・①〜⑤全項目記載確認');
+
+       // 第35条【外部JSON組み立て時のdateフィールド必須】
+       var _r35src = importData ? importData.toString() : '';
+       var _r35ok = _r35src.indexOf('task.date') !== -1
+         && _r35src.indexOf('getFullYear') !== -1;
+       _rf('第35条', _r35ok, 'importData date補完処理確認（date未設定→今日の日付で補完）');
+
+       // 第36条【importData ID重複自動修復】
+       var _r36ok = _r35src.indexOf('generateTaskId') !== -1
+         && _r35src.indexOf('_dupIds') !== -1;
+       _rf('第36条', _r36ok, 'importData ID重複自動修復確認（generateTaskId再発行）');
 
        // 遵守率
        var _rate = Math.round(_rp/_rc*100);
