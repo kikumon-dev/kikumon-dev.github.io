@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.440 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.441 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -557,7 +557,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.440';
+    const APP_VERSION = 'v0.45.441';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -37970,8 +37970,8 @@ function showDebugLog(_initOnly) {
        allTasks.push(_testBp, _testG1, _testG2);
        var _prevSave2 = window.saveAllTasks; var _prevRender2 = window.renderGantView;
        window.saveAllTasks = function(){}; window.renderGantView = function(){};
-       var _prevBpId2 = _gantSelectedBlueprintId; _gantSelectedBlueprintId = null;
-       _gantRowReorder(_testGId1, 0, 1, true);  // A→B後ろに移動
+       var _prevBpId2 = _gantSelectedBlueprintId; _gantSelectedBlueprintId = _testBpId;
+       _gantRowReorder(_testGId1, 0, 1, true);  // bp単体モードでA→B後ろに移動
        _gantSelectedBlueprintId = _prevBpId2;
        window.saveAllTasks = _prevSave2; window.renderGantView = _prevRender2;
        var _afterOrder = allTasks.filter(function(t){ return t.blueprintId===_testBpId; }).map(function(t){ return t.title; });
