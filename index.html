@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.443 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.445 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -591,7 +591,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.443';
+    const APP_VERSION = 'v0.45.445';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -16328,7 +16328,8 @@ function toggleGantEnabled(checked) {
       document.addEventListener('mousemove', function(e) {
         if (!dragging) return;
         const diff = e.clientX - startX;
-        const newW = Math.max(100, Math.min(580, startW + diff));
+        const _maxLW = Math.max(580, Math.floor(window.innerWidth * 0.8));
+        const newW = Math.max(100, Math.min(_maxLW, startW + diff));
         allSettings.ui.gantLabelW = Math.round(newW);
         // バブル表示
         let bubble = document.getElementById('_gantResizerBubble');
@@ -16362,7 +16363,8 @@ function toggleGantEnabled(checked) {
       handle.addEventListener('touchmove', function(e) {
         if (!dragging) return;
         const diff = e.touches[0].clientX - startX;
-        const newW = Math.max(100, Math.min(580, startW + diff));
+        const _maxLW2 = Math.max(580, Math.floor(window.innerWidth * 0.8));
+        const newW = Math.max(100, Math.min(_maxLW2, startW + diff));
         allSettings.ui.gantLabelW = Math.round(newW);
         renderGantChart();
         setTimeout(_initGantLabelResizer, 0);
@@ -17022,7 +17024,7 @@ function toggleGantEnabled(checked) {
       const _defaultLW = _isMobile
         ? Math.min(180, Math.max(140, Math.floor(window.innerWidth * 0.45)))
         : Math.min(320, Math.max(150, Math.floor(areaW * 0.42)));
-      const labelW   = (_savedLW && _savedLW >= 60 && _savedLW <= 300)
+      const labelW   = (_savedLW && _savedLW >= 60 && _savedLW <= 800)
         ? _savedLW
         : _defaultLW;
       const startH   = (allSettings.ui.gantDayStartH !== undefined) ? allSettings.ui.gantDayStartH : 6;
