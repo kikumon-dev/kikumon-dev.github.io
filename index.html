@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.489 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.490 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -803,7 +803,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.489';
+    const APP_VERSION = 'v0.45.490';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -42648,6 +42648,7 @@ function showDebugLog(_initOnly) {
        ok('ST-135·⑦: クリーンアップ完了（' + allTasks.length + '件）');
        // ⑥ createTask後の二重push検出
        var _beforeCount135 = allTasks.length;
+       var targetDate135 = getLocalDateStr(new Date());
        var _nt135 = createTask('ST-135-dupcheck', targetDate135);
        var _afterCreate135 = allTasks.length;
        // createTask内でpush済みなので1件増えているはず
