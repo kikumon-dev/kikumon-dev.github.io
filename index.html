@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.477 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.479 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -489,6 +489,22 @@ v0.45.388〜v0.45.390で第33条追加時に条文テキスト自体が画面に
   ③ 一括置換は絶対禁止（saveAllTasks→saveAllTasks等の誤マッチが起きる）。
   ④ 修正の際は必ずST ALL GREENを確認してからデプロイする（第8条）。
 
+第42条【魚の目ビュー等の動的生成inputのEnterキー二重登録防止】
+制度趣旨：renderXxx()で動的生成されたinputにonkeydownでEnterを検知してaddTask系を呼ぶ場合、
+  renderXxx()が再呼び出されると新しいinputが生成され、Enterイベントが新DOMに伝播して2回実行される。
+
+教訓：2026-05-12、魚の目ビューのEnterキーで二重登録が発生。
+  原因：input.onkeydown→_quadAddTask()→renderQuadView()→新input生成→Enterイベント伝播→2回目実行
+  
+本文：
+  ① 動的生成inputのEnterキー処理では必ずinput.blur()でフォーカスを外してからaddTask系を呼ぶ。
+  ② addTask処理内でrenderXxx()を呼ぶ場合はsetTimeout(fn, 50)で遅延させ、
+     Enterイベントが完全終了してから再描画する。
+  ③ addTask処理には_running等のフラグで連続実行防止ガードを入れる。
+  ④ addBtn.onclick()をonkeydownから呼ぶことを禁止。
+     共通関数を作りボタンとEnterキーの両方から直接呼ぶこと。
+  ⑤ デバッグ時はallTasks.pushをオーバーライドしてstackトレースで呼び出し元を特定する。
+
 END OF 開発ルールの後ろに追加したためHTMLコメント外にテキストが露出。
   → 復旧：第33条を第40条【スライダー上限は「残りエリア最低幅を確保した位置」で物理的に止める】
 制度趣旨：スライダーの上限を固定px値（580・800等）にすると画面幅と乖離し、
@@ -781,7 +797,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.477';
+    const APP_VERSION = 'v0.45.479';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -42856,6 +42872,21 @@ function showDebugLog(_initOnly) {
 
        ok('ST-140: getGanttProgress・labelW修正テスト 完了');
      } catch(e) { ng('ST-140: 例外', e.message); }
+
+
+     try {
+       ok('');
+       ok('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+       ok('ST-141: 魚の目ビュー二重登録防止テスト');
+       ok('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+       var _r141src = document.documentElement.innerHTML;
+       ok(_r141src.indexOf('_quadAddTask._running') !== -1 ? 'ST-141·①: _running ガード確認' : null, '_quadAddTask._running不在');
+       ok(_r141src.indexOf('input.blur()') !== -1 ? 'ST-141·②: input.blur()確認' : null, 'input.blur()不在');
+       ok(_r141src.indexOf('addBtn.type') !== -1 ? 'ST-141·③: addBtn.type=button確認' : null, 'type=button不在');
+       ok(_r141src.indexOf('造営の手立てに紐づける') !== -1 ? 'ST-141·④: スナックバー文言確認' : null, '文言不在');
+       ok(_r141src.indexOf('deleteTaskById(t.id); renderQuadView()') !== -1 ? 'ST-141·⑤: 削除後renderQuadView確認' : null, '削除後再描画不在');
+       ok('ST-141: 魚の目ビュー二重登録防止・削除・スナックバーテスト 完了');
+     } catch(e) { ng('ST-141: 例外', e.message); }
 
 
      try {
