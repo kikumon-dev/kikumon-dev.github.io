@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.482 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.485 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -513,6 +513,127 @@ v0.45.388〜v0.45.390で第33条追加時に条文テキスト自体が画面に
      共通関数を作りボタンとEnterキーの両方から直接呼ぶこと。
   ⑤ デバッグ時はallTasks.pushをオーバーライドしてstackトレースで呼び出し元を特定する。
 
+第43条【データ読み書きはallSettingsを唯一の正とし、旧localStorageキーに頼らない】
+制度趣旨：saveCalendars()でallSettings.calendar.listに一本化済みなのに、
+importData()内のカレンダー存在チェックが旧キーlocalStorage('calendars')を参照していた。
+allSettings.calendar.listにカレンダーが13件あっても旧キーが空なら「カレンダーなし」と
+誤判断し、インポートのたびに同名の別IDカレンダーが増殖するバグが発生した。
+
+権威：2026-05-12、設定画面のカレンダーリストが13件→7件×2＝14件近くに膨張。
+  原因：importData内で localStorage.getItem('calendars') を参照していたため、
+  allSettings移行後に旧キーが空になっていてもカレンダーなしと誤判断。
+  インポートのたびに同名・別IDのカレンダーが増殖した。
+  修正：allSettings.calendar.list を優先参照、旧キーはフォールバックのみに変更（v0.45.483）。
+
+本文：
+  ① データの存在チェック・読み込みは必ずallSettings（SSOT）を優先すること。
+     旧localStorageキー（'calendars'等）はフォールバックとして残すだけで、
+     正常系の判断基準には使わない。
+  ② 新機能・修正でallSettingsのキーを参照する際は、
+     同じデータを旧localStorageキーでも読んでいないか必ず確認する。
+  ③ importData・exportData・migrate系関数は特に注意。
+     これらはSSOT移行期に旧キーを参照したまま放置されやすい。
+  ④ 旧キーへの書き込みは後方互換のためsaveCalendars()等に残してよいが、
+     読み込み時の正とすることを禁止する。
+
+第44条【デフォルトONのチェックボックスは「!== false」で判定する】
+制度趣旨：SETTINGS_DEFAULTでtrueと定義されているフィールドを「=== true」で
+チェックボックスに反映すると、旧localStorageからstring 'true'でマイグレーションされた値や
+undefinedが混入したとき「false」と判定されてバージョンアップ後に勝手に外れて見える。
+
+権威：2026-05-12、craftModeEnabled・gantEnabled・instinctModeが
+  バージョンアップ後に設定画面で外れていることを確認。
+  原因：旧キー'craftModeEnabled'がstring 'true'のままマイグレーションされ、
+  loadSettingsUI内の「=== true」チェックでfalseと判定されていた。
+  修正：デフォルトONのチェックボックスは「!== false」に統一（v0.45.484）。
+
+本文：
+  ① SETTINGS_DEFAULTでtrueと定義されているフィールドのチェックボックス判定は
+     「=== true」ではなく「!== false」を使うこと。
+     理由：undefinedはtrueとして扱われ、DEFAULTの意図が保たれる。
+  ② string型で保存されている可能性がある旧フィールドは
+     「=== true || === 'true'」の両対応にすること。
+  ③ デフォルトOFFのチェックボックスは「=== true」でよい（undefinedはfalse扱いが正しい）。
+  ④ 新しいチェックボックスを追加する際は、DEFAULTの値と判定式が一致しているか
+     必ず確認すること。
+     DEFAULT: true  → 判定: !== false
+     DEFAULT: false → 判定: === true
+
+第45条【SETTINGS_DEFAULT マニフェスト（デフォルト値の意図書き）】
+制度趣旨：SETTINGS_DEFAULTの各値がなぜその初期値なのかを明示する。
+「なんとなくfalse」「とりあえずtrue」ではなく、設計意図を残すことで
+バージョンアップ時の誤変更・チェックボックス問題の再発を防ぐ。
+
+【ui系】
+  initialView: 'daily'
+    → 起動直後は今日の仕事に集中させる。monthlyは俯瞰用で最初には不要。
+  dailyViewMode: 'scratch'
+    → 初回は自由入力の雑記帳から始める。マトリクスは慣れてから。
+  simpleMode: 'off'
+    → 全機能をデフォルトで提供。シンプルモードは意図的に選ぶもの。
+  showCalendarSymbol: true
+    → カレンダーの区別を視覚的に一目でわかるようにする。
+  monthlyMode: 'fixed'
+    → 固定グリッドの方が月全体を把握しやすい。
+  monthlyRowH: 80, monthlyColW: 100
+    → 標準的な視認性を確保する最低限のサイズ。
+  weeklyDays: '7'
+    → 週7日を俯瞰するのがデフォルト。3日・5日は個人最適化後に選ぶ。
+  weeklyTimeBar: 'show', tlTimeBar: 'show'
+    → 時刻バーは最初から表示。時間管理の意識を高める。
+  tlScrollMode: 'last', wgScrollMode: 'last'   ← 注意: DEFAULTは'last'だがloadSettingsUIでfallback'now'と乖離あり。要確認。
+    → 前回の位置を記憶する方が使いやすい。
+  mobileNavPosition: 'top'
+    → 上部ナビがデフォルト。スマホで下部に変更可能。
+  useColors: true
+    → タスクのカレンダー色分けはデフォルトON。視覚的整理が目的。
+  craftModeEnabled: false
+    → クラフトモードは上級機能。初心者が最初から有効にすると混乱する。
+    → ⚠️ DEFAULTはfalseだが旧キーstring 'true'問題あり（第44条参照）。
+  craftRenderMode: '3d'
+    → 3Dの方が視覚的に面白く、初回体験として優れる。
+  gantEnabled: true
+    → 造営（ガントチャート）はやることクラフトの核心機能。デフォルトON。
+    → ⚠️ DEFAULTはtrueなので判定は !== false（第44条参照）。
+  gantDayStartH: 6, gantDayEndH: 24
+    → 早朝6時〜深夜0時を1日の範囲とする。一般的な活動時間帯。
+  kingdomMode: 'kingdom', kingdomModeBase: 'kingdom'
+    → フル機能モードがデフォルト。野営地・村・町は段階的縮小用。
+  instinctMode: true
+    → 本能モードはやることクラフトの哲学的中核。デフォルトON。
+    → ⚠️ DEFAULTはtrueなので判定は !== false（第44条参照）。
+  showInstinctIcon: true, showInstinctColor: true
+    → 本能アイコン・色分けも同様にデフォルトON。
+  matrixLayer: 0
+    → アイゼンハワーマトリクスが最初のレイヤー。最もシンプルで普遍的。
+  visibleTabs: 全true
+    → 全タブをデフォルト表示。ユーザーが不要なものを後から非表示にする。
+
+【calendar系】
+  list: []
+    → 初回セットアップ時に生成。空のまま起動するとsetupOverlayを表示。
+  mainId: ''
+    → セットアップ完了時に先頭カレンダーのIDが入る。
+  autoMain: true
+    → タスク入力時にメインカレンダーへ自動投入。家族共有時はOFFに。
+
+【flags系】
+  tutorialSeen: false → 初回起動時にチュートリアルを表示するため。
+  adminMode: false    → 管理者モードは意図的に解放するもの。
+  oshiraseRead: false → お知らせは未読状態からスタート。
+
+【meta系】
+  unlockedAxes: ['shin']
+    → 成長軸「真」のみ初期解放。善・美・聖・功は徳を積んで解放。
+  dataVersion: 1
+    → マイグレーション管理用。バージョンアップ時に増分。
+
+【チェックリスト（新設フィールド追加時に必ず確認）】
+  □ SETTINGS_DEFAULTに追加したか
+  □ deepMergeSettingsで正しくマージされるか（object型は再帰マージ）
+  □ loadSettingsUIで判定式がDEFAULTと一致しているか（第44条）
+  □ このマニフェスト（第45条）に意図を追記したか
+
 END OF 開発ルールの後ろに追加したためHTMLコメント外にテキストが露出。
   → 復旧：第33条を第40条【スライダー上限は「残りエリア最低幅を確保した位置」で物理的に止める】
 制度趣旨：スライダーの上限を固定px値（580・800等）にすると画面幅と乖離し、
@@ -805,7 +926,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.482';
+    const APP_VERSION = 'v0.45.485';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -16156,7 +16277,7 @@ function updateKingdomModeButtons() {
   });
   // クラフトモード・造営チェックボックスも同期
   var craftCheck = document.getElementById('craftModeEnabled');
-  if (craftCheck) craftCheck.checked = allSettings.ui.craftModeEnabled === true;
+  if (craftCheck) craftCheck.checked = (allSettings.ui.craftModeEnabled === true || allSettings.ui.craftModeEnabled === 'true');
   // 振り返り時間UI初期化
   if (typeof _updateReflectionTimeUI === 'function') _updateReflectionTimeUI();
   // マイルール設定UI初期化
@@ -16173,7 +16294,7 @@ function updateKingdomModeButtons() {
   var _smiInp = document.getElementById('settingsMyRuleInput');
   if (_smiInp) _smiInp.onkeydown = function(e){ if(e.key==='Enter'&&!e.isComposing) addMyRuleFromSettings(); };
   var gantCheck = document.getElementById('gantEnabled');
-  if (gantCheck) gantCheck.checked = allSettings.ui.gantEnabled === true;
+  if (gantCheck) gantCheck.checked = (allSettings.ui.gantEnabled !== false); // DEFAULTがtrueなのでundefinedもtrue扱い
   var visTabGantCheck = document.getElementById('visTabGant');
   if (visTabGantCheck) visTabGantCheck.checked = allSettings.ui.gantEnabled === true;
   // SDFボタン表示も同期
@@ -20653,7 +20774,10 @@ function reviveBlueprint(id) {
         try {
           const data = JSON.parse(e.target.result);
           // ① セットアップ未完了チェック → 未設定なら自動生成
-          var currentCalsCheck = JSON.parse(localStorage.getItem('calendars') || '[]');
+          // allSettings.calendar.listを正とする（旧キー'calendars'は後方互換のみ）
+          var currentCalsCheck = (allSettings.calendar && allSettings.calendar.list && allSettings.calendar.list.length > 0)
+            ? allSettings.calendar.list
+            : JSON.parse(localStorage.getItem('calendars') || '[]');
           if (currentCalsCheck.length === 0) {
             // インポートデータ内のcalendarsがあれば自動生成（全てUUID v7に変換）
             if (data.calendars && Array.isArray(data.calendars) && data.calendars.length > 0) {
@@ -23562,7 +23686,7 @@ function loadSettingsUI() {
       // 造営タブ
       const gantCheck = document.getElementById('gantEnabled');
       if (gantCheck) {
-        gantCheck.checked = allSettings.ui.gantEnabled === true;
+        gantCheck.checked = (allSettings.ui.gantEnabled !== false); // DEFAULTがtrueなのでundefinedもtrue扱い
       }
       // ナビタブ表示チェックボックスを現在の設定で初期化
       (function() {
@@ -23629,11 +23753,11 @@ function loadSettingsUI() {
         radio.checked = (radio.value === monthlyMode);
       });
       // 週間ビュースクロールモード
-      const wgScrollMode = allSettings.ui.wgScrollMode || 'now';
+      const wgScrollMode = allSettings.ui.wgScrollMode || 'last'; // DEFAULT='last'に合わせる
       const wgScrollRadios = document.querySelectorAll('input[name="wgScrollMode"]');
       wgScrollRadios.forEach(radio => { radio.checked = (radio.value === wgScrollMode); });
       // タイムラインスクロールモード
-      const tlScrollMode = allSettings.ui.tlScrollMode || 'now';
+      const tlScrollMode = allSettings.ui.tlScrollMode || 'last'; // DEFAULT='last'に合わせる
       const tlScrollRadios = document.querySelectorAll('input[name="tlScrollMode"]');
       tlScrollRadios.forEach(radio => { radio.checked = (radio.value === tlScrollMode); });
       // 週間表示日数
@@ -23699,7 +23823,7 @@ function loadSettingsUI() {
       if (symCheck) symCheck.checked = allSettings.ui.showCalendarSymbol !== false;
       // 本能マトリクス設定
       var _instModeCheck = document.getElementById('instinctModeCheck');
-      if (_instModeCheck) _instModeCheck.checked = allSettings.ui.instinctMode === true;
+      if (_instModeCheck) _instModeCheck.checked = (allSettings.ui.instinctMode !== false); // DEFAULTがtrueなのでundefinedもtrue扱い
       var _instIconCheck = document.getElementById('showInstinctIconCheck');
       if (_instIconCheck) _instIconCheck.checked = allSettings.ui.showInstinctIcon !== false;
       var _instColorCheck = document.getElementById('showInstinctColorCheck');
@@ -37543,6 +37667,11 @@ function showDebugLog(_initOnly) {
          : ok('ST-49: mig_dedup_tasks_v2 未適用（初回起動時に実行）');
 
        ok('ST-49: インポート内容重複除去 完了');
+
+       // ⑥ importData内カレンダー存在チェックがallSettings優先か確認（第43条）
+       var _st49src = importData.toString();
+       ok(_st49src.indexOf('allSettings.calendar') !== -1 ? 'ST-49·⑥: importData内 allSettings.calendar参照確認' : null, 'importData内にallSettings.calendar参照なし');
+       ok(_st49src.indexOf("localStorage.getItem('calendars')") === -1 || _st49src.indexOf('allSettings.calendar') < _st49src.indexOf("localStorage.getItem('calendars')") ? 'ST-49·⑦: allSettings優先・旧キーはフォールバックのみ確認' : null, 'importData内で旧キーがallSettingsより先に参照されている');
      } catch(e) { ng('ST-49: インポート内容重複除去', e.message); }
 
      // ===== ST-50: 業の記録ダッシュボード移行完全確認 =====
@@ -44160,6 +44289,30 @@ function showDebugLog(_initOnly) {
        var _r41ok3 = _r41src.indexOf('_gantRowReorder') !== -1;
        var _r41ok = _r41ok1 && _r41ok2 && _r41ok3;
        _rf('第41条', _r41ok, '造営識別子Gant(1t)統一：新規定数・関数がGant表記であること');
+
+       // 第43条【allSettings優先・旧localStorageキー不使用（第43条）】
+       var _r43html = document.documentElement.innerHTML;
+       var _r43ok1 = _r43html.indexOf('第43条【データ読み書きはallSettingsを唯一の正とし') !== -1;
+       var _r43ok2 = importData.toString().indexOf('allSettings.calendar') !== -1;
+       var _r43ok3 = (function() {
+         var _s = importData.toString();
+         var _aIdx = _s.indexOf('allSettings.calendar');
+         var _lIdx = _s.indexOf("localStorage.getItem('calendars')");
+         return _lIdx === -1 || _aIdx < _lIdx;
+       })();
+       var _r43ok = _r43ok1 && _r43ok2 && _r43ok3;
+       _rf('第43条', _r43ok, 'importData内 allSettings.calendar優先・旧キーはフォールバックのみ');
+
+       // 第44条【デフォルトONのチェックボックスは !== false で判定する】
+       var _r44src = loadSettingsUI.toString();
+       // gantEnabled・instinctModeが !== false で判定されているか確認
+       var _r44ok1 = _r44src.indexOf('gantEnabled !== false') !== -1;
+       var _r44ok2 = _r44src.indexOf('instinctMode !== false') !== -1;
+       // craftModeEnabledが === 'true' 両対応になっているか確認
+       var _r44ok3 = _r44src.indexOf("craftModeEnabled === 'true'") !== -1;
+       var _r44ok4 = _r21html.indexOf('第44条【デフォルトONのチェックボックス') !== -1;
+       var _r44ok = _r44ok1 && _r44ok2 && _r44ok3 && _r44ok4;
+       _rf('第44条', _r44ok, 'デフォルトONは!==false・craftModeEnabled string両対応確認');
 
        // 遵守率
        var _rate = Math.round(_rp/_rc*100);
