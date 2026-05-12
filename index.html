@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.475 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.477 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -781,7 +781,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.475';
+    const APP_VERSION = 'v0.45.477';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -25379,11 +25379,11 @@ function loadSettingsUI() {
         if (s.key === col.key) opt.selected = true;
         slotSelect.appendChild(opt);
       });
-      addBtn.onclick = function() {
-        if (addBtn._adding) return; // 二重実行ガード
-        addBtn._adding = true;
+      function _quadAddTask() {
+        if (_quadAddTask._running) return;
+        _quadAddTask._running = true;
         var title = input.value.trim();
-        if (!title) { addBtn._adding = false; return; }
+        if (!title) { _quadAddTask._running = false; return; }
         var targetDate = currentDailyDate || getLocalDateStr(new Date());
         var _slotToSection = { slot1: 1, slot2: 2, slot3: 3, slot4: 4 };
         var _section = _slotToSection[slotSelect.value] || 1;
@@ -25392,10 +25392,20 @@ function loadSettingsUI() {
         allTasks.push(newTask);
         saveAllTasks();
         input.value = '';
-        addBtn._adding = false;
-        renderQuadView();
+        setTimeout(function() {
+          _quadAddTask._running = false;
+          renderQuadView(); // Enterイベント完全終了後に再描画
+        }, 50);
+      }
+      addBtn.onclick = _quadAddTask;
+      input.onkeydown = function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          input.blur(); // フォーカスを外してイベント伝播を断ち切る
+          _quadAddTask();
+        }
       };
-      input.onkeydown = function(e) { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); if (!addBtn._adding) addBtn.onclick(); } };
       inputRow.appendChild(slotSelect);
       inputRow.appendChild(input);
       inputRow.appendChild(addBtn);
