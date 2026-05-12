@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.479 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.480 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -797,7 +797,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.479';
+    const APP_VERSION = 'v0.45.480';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -25396,10 +25396,10 @@ function loadSettingsUI() {
         slotSelect.appendChild(opt);
       });
       function _quadAddTask() {
-        if (_quadAddTask._running) return;
-        _quadAddTask._running = true;
+        if (window._quadAddTaskRunning) return; // グローバルフラグで全列共有
+        window._quadAddTaskRunning = true;
         var title = input.value.trim();
-        if (!title) { _quadAddTask._running = false; return; }
+        if (!title) { window._quadAddTaskRunning = false; return; }
         var targetDate = currentDailyDate || getLocalDateStr(new Date());
         var _slotToSection = { slot1: 1, slot2: 2, slot3: 3, slot4: 4 };
         var _section = _slotToSection[slotSelect.value] || 1;
@@ -25409,7 +25409,7 @@ function loadSettingsUI() {
         saveAllTasks();
         input.value = '';
         setTimeout(function() {
-          _quadAddTask._running = false;
+          window._quadAddTaskRunning = false;
           renderQuadView(); // Enterイベント完全終了後に再描画
         }, 50);
       }
