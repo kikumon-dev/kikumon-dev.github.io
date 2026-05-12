@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.471 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.475 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -781,7 +781,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.471';
+    const APP_VERSION = 'v0.45.475';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -18911,7 +18911,7 @@ function reviveBlueprint(id) {
       if (old) old.remove();
       // 志でグループ化したオプション生成
       const blueprints = allTasks.filter(t => t.kind === 'blueprint');
-      let optHtml = '<option value="">手立てを選んで紐づけ...</option>';
+      let optHtml = '<option value="">-- 手立てを選ぶ --</option>';
       blueprints.forEach(bp => {
         const children = gants.filter(g => g.blueprintId === bp.id);
         if (!children.length) return;
@@ -18938,7 +18938,7 @@ function reviveBlueprint(id) {
         'animation:_snackIn 0.2s ease'
       ].join(';');
       snack.innerHTML = `
-        <span style="white-space:nowrap;color:#aaa;">🏗 手立てに追加？</span>
+        <span style="white-space:nowrap;color:#aaa;">🏗 手立てに紐づける</span>
         <select id="_ganttLinkSnackSel" style="flex:1;padding:5px 8px;border-radius:8px;border:none;background:#444;color:#fff;font-size:0.85em;">${optHtml}</select>
         <button onclick="document.getElementById('_ganttLinkSnackbar').remove()" style="background:none;border:none;color:#888;font-size:1.1em;cursor:pointer;padding:0 2px;">✕</button>
       `;
@@ -25366,6 +25366,7 @@ function loadSettingsUI() {
       input.placeholder = '追加...';
       input.style.cssText = 'flex:1;padding:4px 6px;border:1px solid #ddd;border-radius:6px;font-size:0.75em;background:#fff;min-width:0;';
       var addBtn = document.createElement('button');
+      addBtn.type = 'button'; // フォーム送信防止
       addBtn.textContent = '+';
       addBtn.style.cssText = 'padding:4px 8px;background:#4facfe;color:#fff;border:none;border-radius:6px;font-size:0.75em;cursor:pointer;flex-shrink:0;';
       // スロット選択セレクト
@@ -25379,8 +25380,10 @@ function loadSettingsUI() {
         slotSelect.appendChild(opt);
       });
       addBtn.onclick = function() {
+        if (addBtn._adding) return; // 二重実行ガード
+        addBtn._adding = true;
         var title = input.value.trim();
-        if (!title) return;
+        if (!title) { addBtn._adding = false; return; }
         var targetDate = currentDailyDate || getLocalDateStr(new Date());
         var _slotToSection = { slot1: 1, slot2: 2, slot3: 3, slot4: 4 };
         var _section = _slotToSection[slotSelect.value] || 1;
@@ -25389,9 +25392,10 @@ function loadSettingsUI() {
         allTasks.push(newTask);
         saveAllTasks();
         input.value = '';
+        addBtn._adding = false;
         renderQuadView();
       };
-      input.onkeydown = function(e) { if (e.key === 'Enter') { e.preventDefault(); addBtn.onclick(); } };
+      input.onkeydown = function(e) { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); if (!addBtn._adding) addBtn.onclick(); } };
       inputRow.appendChild(slotSelect);
       inputRow.appendChild(input);
       inputRow.appendChild(addBtn);
@@ -25480,7 +25484,7 @@ function loadSettingsUI() {
         var delBtn = document.createElement('span');
         delBtn.textContent = '×';
         delBtn.style.cssText = 'cursor:pointer;color:#aaa;font-size:1em;flex-shrink:0;';
-        delBtn.onclick = function(e) { e.stopPropagation(); if (typeof deleteTaskById === 'function') deleteTaskById(t.id); };
+        delBtn.onclick = function(e) { e.stopPropagation(); if (typeof deleteTaskById === 'function') { deleteTaskById(t.id); renderQuadView(); } };
         item.appendChild(delBtn);
         taskList.appendChild(item);
       });
@@ -25603,6 +25607,7 @@ function loadSettingsUI() {
         inp.type = 'text'; inp.placeholder = '追加...';
         inp.style.cssText = 'flex:1;padding:3px 5px;border:1px solid #ddd;border-radius:5px;font-size:0.72em;min-width:0;';
         var addB = document.createElement('button');
+        addB.type = 'button'; // フォーム送信防止
         addB.textContent = '+';
         addB.style.cssText = 'padding:3px 7px;background:#4facfe;color:#fff;border:none;border-radius:5px;font-size:0.72em;cursor:pointer;';
         var addFn = function(slotKey) { return function() {
