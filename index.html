@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.480 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.481 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -797,7 +797,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.480';
+    const APP_VERSION = 'v0.45.481';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -42880,7 +42880,7 @@ function showDebugLog(_initOnly) {
        ok('ST-141: 魚の目ビュー二重登録防止テスト');
        ok('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
        var _r141src = document.documentElement.innerHTML;
-       ok(_r141src.indexOf('_quadAddTask._running') !== -1 ? 'ST-141·①: _running ガード確認' : null, '_quadAddTask._running不在');
+       ok(_r141src.indexOf('_quadAddTaskRunning') !== -1 ? 'ST-141·①: _runningグローバルガード確認' : null, '_quadAddTaskRunning不在');
        ok(_r141src.indexOf('input.blur()') !== -1 ? 'ST-141·②: input.blur()確認' : null, 'input.blur()不在');
        ok(_r141src.indexOf('addBtn.type') !== -1 ? 'ST-141·③: addBtn.type=button確認' : null, 'type=button不在');
        ok(_r141src.indexOf('造営の手立てに紐づける') !== -1 ? 'ST-141·④: スナックバー文言確認' : null, '文言不在');
