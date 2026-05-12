@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.485 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.486 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -926,7 +926,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.485';
+    const APP_VERSION = 'v0.45.486';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -20887,7 +20887,10 @@ function reviveBlueprint(id) {
             'cal-default-memo': 'メモ'
           };
           // 自分のカレンダー：名前→IDのマップ
-          const currentCals = JSON.parse(localStorage.getItem('calendars') || '[]');
+          // allSettingsを正とする（第43条）
+          const currentCals = (allSettings.calendar && allSettings.calendar.list && allSettings.calendar.list.length > 0)
+            ? allSettings.calendar.list
+            : JSON.parse(localStorage.getItem('calendars') || '[]');
           const nameToId = {};
           currentCals.forEach(function(c) { nameToId[c.name] = c.id; });
           // 送り主のカレンダー：ID→名前のマップ（エクスポートに含まれるcalendars）
@@ -21087,7 +21090,10 @@ function reviveBlueprint(id) {
           saveAllSettings();
           if (data.calendars && Array.isArray(data.calendars)) {
             // マージ方式：IDが同じなら更新、新しければ追加、自分固有のものは残す
-            let myCals = JSON.parse(localStorage.getItem('calendars') || '[]');
+            // allSettingsを正とする（第43条）
+            let myCals = (allSettings.calendar && allSettings.calendar.list && allSettings.calendar.list.length > 0)
+              ? JSON.parse(JSON.stringify(allSettings.calendar.list))
+              : JSON.parse(localStorage.getItem('calendars') || '[]');
             data.calendars.forEach(function(incoming) {
               const idx = myCals.findIndex(function(c) { return c.id === incoming.id; });
               if (idx >= 0) {
