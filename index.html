@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.481 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.482 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -394,8 +394,16 @@ AIは「とりあえず動く最短コード」を書く傾向があり、create
 allTasks.pushに直接オブジェクトリテラルでkind:'task'を追加することを禁止する。
 createTask()はtext/displayScope/calendarId/completed/instinct/owner/createdAt/updatedAt等の
 必須フィールドを全て保証する唯一の正規経路（SSOT）である。
+
+【重要】createTask()はallTasks.push()とsaveAllTasks()を内部で呼ぶ。
+呼び出し側でさらにallTasks.push(newTask)を呼ぶことを厳禁とする（二重登録バグの原因）。
+createTask()呼び出し後に追加フィールドを設定した場合は、saveAllTasks()のみ再呼び出すこと。
+権威v0.45.482：魚の目ビューでcreateTask()後に外側でもallTasks.push()を呼んでいたため
+二重登録が発生。console.traceで2回のpushを確認して発覚。
+
 例外：テストコード内の一時レコード（smoke-/st-プレフィックスのID）は許容。
 確認方法：addQuadTask等の新しいタスク追加関数を作る際は必ずcreateTask()を呼ぶ。
+createTask()の後にallTasks.push()を書いていないか必ず確認すること。
 第31条【HTMLタグの開き・閉じ対応チェック】
 制度趣旨：node --checkはJSの構文エラーは検出できるが、HTML構造の崩壊は検出できない。
 DOMが壊れたままブラウザに渡るとレイアウト崩れ・クリック不能・表示消失が発生するが、
@@ -797,7 +805,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.481';
+    const APP_VERSION = 'v0.45.482';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -25404,9 +25412,8 @@ function loadSettingsUI() {
         var _slotToSection = { slot1: 1, slot2: 2, slot3: 3, slot4: 4 };
         var _section = _slotToSection[slotSelect.value] || 1;
         var newTask = createTask(title, targetDate, null, _section, 'daily_only');
-        newTask.timeSlot = slotSelect.value;
-        allTasks.push(newTask);
-        saveAllTasks();
+        newTask.timeSlot = slotSelect.value; // createTask内でpush済み
+        saveAllTasks(); // timeSlot設定後に再保存
         input.value = '';
         setTimeout(function() {
           window._quadAddTaskRunning = false;
@@ -42624,6 +42631,17 @@ function showDebugLog(_initOnly) {
        allTasks = allTasks.filter(function(t){ return t.text !== 'テストタスク135'; });
        saveAllTasks();
        ok('ST-135·⑦: クリーンアップ完了（' + allTasks.length + '件）');
+       // ⑥ createTask後の二重push検出
+       var _beforeCount135 = allTasks.length;
+       var _nt135 = createTask('ST-135-dupcheck', targetDate135);
+       var _afterCreate135 = allTasks.length;
+       // createTask内でpush済みなので1件増えているはず
+       ok(_afterCreate135 === _beforeCount135 + 1 ? 'ST-135·⑥: createTask内push確認（1件増）' : null, 'createTask内pushなし');
+       // さらに外側でpushしたら2件になる（バグ）
+       var _idx135 = allTasks.findIndex(function(t){return t.id===_nt135.id;});
+       if(_idx135!==-1) allTasks.splice(_idx135,1);
+       saveAllTasks();
+       ok(_beforeCount135 === allTasks.length ? 'ST-135·⑥: クリーンアップ完了（二重push検出テスト）' : null, '件数不一致');
        ok('ST-135: createTask経由チェック 完了');
      } catch(e) { ng('ST-135: 例外', e.message); }
 
