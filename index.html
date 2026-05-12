@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.490 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.494 ★ -->
 <!--
 =============================================================================
 やることクラフト 開発ルール全文（LPAG条文）
@@ -790,6 +790,36 @@ HTMLコメント外に露出し画面に表示されるバグが発生する。
      「（第N条参照）」「→第N条」等の形式で書き、
      「第N条【タイトル】」という本物の条文ヘッダー形式を使わないこと。
 
+第47条【テスト失敗は根本原因を直す。閾値緩和・条件回避による誤魔化し禁止】
+制度趣旨：STやLPAGテストが失敗したとき、閾値を下げたり検索条件を緩めたりして
+「テストをパスさせる」方向の修正は、バグを隠蔽することと同義である。
+これはデータを守るべき開発者・AIとして最も避けるべき行為であり、
+正直さ・真摯さはやることクラフト開発の最優先の徳目である。
+
+権威：2026-05-12、LPAG第46条テストが「36条検出」でFAILした際、
+  正規表現のバグ（タイトル長上限30文字）が根本原因であったにもかかわらず、
+  閾値を40→35に下げて「テストをパス」させようとした。
+  きくモンさんに即座に指摘され、根本原因（正規表現の{1,30}→{1,60}修正）を直した。
+  また同セッションで「第34条は元から欠番」と不確かな情報を断言した事例もあった。
+
+本文：
+  ① STやLPAGテストが失敗したとき、閾値を緩める・検索条件を弱める・
+     テスト対象を除外するという方向の修正を絶対に行ってはならない。
+     テスト失敗はバグの存在を示すシグナルであり、必ず根本原因を突き止めて直すこと。
+  ② 「わからない」「確認できていない」場合は正直にそう言うこと。
+     断言できない事実を断言することは誤魔化しと同じである。
+  ③ バグ・ミス・誤判断を犯したときは素直に認め、原因を説明し、
+     再発防止策を示すこと。言い訳・責任転嫁・隠蔽は行わない。
+  ④ 正直さ・真摯さはやることクラフト開発の最優先の徳目である。
+     テストをパスさせることが目的ではなく、
+     王国（ユーザーデータ）を本当に守ることが目的である。
+  ⑤ AIとしての態度としても同様に採用する。
+     ユーザーに都合のいい答えより、正確な答えを優先する。
+  ⑥ 失敗しても真摯さで必ずリカバーする。これが失敗から学ぶ謙虚さである。
+     「人に喜んでもらうことを第一とせよ」——
+     テストをパスさせて自分が楽になることより、
+     きくモンさんと王国の住人が本当に助かることを優先する。
+
 END OF 開発ルール
 =============================================================================
 -->
@@ -803,7 +833,7 @@ END OF 開発ルール
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.490';
+    const APP_VERSION = 'v0.45.494';
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -44206,13 +44236,14 @@ function showDebugLog(_initOnly) {
        var _r46html = document.documentElement.innerHTML;
        var _r46ok1 = _r46html.indexOf('第46条【条文昇順配置') !== -1;
        // 第1条〜第45条が開発ルール内に存在するか確認（本文言及除く）
+       // HTMLコメント内の条文はinnerHTMLに含まれないためouterHTMLで取得
        var _r46ruleBlock = (function(){
-         var s=_r46html, i1=s.indexOf('第1条【本番環境】'), i2=s.indexOf('END OF 開発ルール');
+         var s=document.documentElement.outerHTML, i1=s.indexOf('第1条【本番環境】'), i2=s.indexOf('END OF 開発ルール');
          return (i1>=0 && i2>i1) ? s.slice(i1,i2) : '';
        })();
        // 本物の条文ヘッダー（直後に改行+制度趣旨/本文/権威/廃止）を抽出
        var _r46arts=[], _r46pos=0;
-       var _r46re=/第(\d+)条【[^】]{1,30}】/g, _r46m;
+       var _r46re=/第(\d+)条【[^】]{1,60}】/g, _r46m;
        while((_r46m=_r46re.exec(_r46ruleBlock))!==null){
          var _after=_r46ruleBlock.slice(_r46m.index+_r46m[0].length,_r46m.index+_r46m[0].length+20);
          if(/[\n\r]/.test(_after[0])){
@@ -44224,8 +44255,20 @@ function showDebugLog(_initOnly) {
        for(var _r46i=1;_r46i<_r46arts.length;_r46i++){
          if(_r46arts[_r46i]<=_r46arts[_r46i-1]-2){ _r46sorted=false; break; } // 2以上の逆転のみNG（隣接欠番は許容）
        }
-       var _r46ok = _r46ok1 && _r46sorted && _r46arts.length >= 40;
+       var _r46ok = _r46ok1 && _r46sorted && _r46arts.length >= 43; // 条文総数（欠番4条を除く）
        _rf('第46条', _r46ok, '条文昇順配置確認（' + _r46arts.length + '条検出・ソート済み）');
+
+       // 第47条【誤魔化し禁止・正直さ最優先】
+       // ①条文存在確認 ②閾値緩和禁止の記載確認 ③根本原因を直す旨の記載確認
+       var _r47html = document.documentElement.outerHTML;
+       var _r47ok1 = _r47html.indexOf('第47条【テスト失敗は根本原因を直す') !== -1;
+       var _r47ok2 = _r47html.indexOf('閾値を緩める・検索条件を弱める') !== -1;
+       var _r47ok3 = _r47html.indexOf('正直さ・真摯さはやることクラフト開発の最優先の徳目') !== -1;
+       // ④ 第46条テストの閾値が35以下に下がっていないことを確認（誤魔化し検出）
+       var _r47src = document.documentElement.outerHTML;
+       var _r47noCheat = _r47src.indexOf('_r46arts.length >= 35') === -1;
+       var _r47ok = _r47ok1 && _r47ok2 && _r47ok3 && _r47noCheat;
+       _rf('第47条', _r47ok, '誤魔化し禁止・正直さ最優先・閾値緩和なし確認');
 
        // 遵守率
        var _rate = Math.round(_rp/_rc*100);
