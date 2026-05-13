@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.515 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.521 ★ -->
 
 <html lang="ja">
 <head>
@@ -11,8 +11,8 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.515';
-  const APP_LAST_UPDATED = '2026-05-12'; // ★ バージョン更新時は必ずセットで更新
+    const APP_VERSION = 'v0.45.521';
+  const APP_LAST_UPDATED = '2026-05-13'; // ★ バージョン更新時は必ずセットで更新
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
       if (typeof saveAllSettings === 'function') saveAllSettings();
@@ -1421,8 +1421,10 @@
         margin-bottom: 5px;
         width: 100%;
       }
-      /* 第2象限h4：長いテキストでも点検ボタンが押し出されないよう制約 */
+      /* 第2象限h4：長いテキストでも点検ボタンが押し出されないよう制約
+         flex:0 0 auto = h4は内容幅で固定し伸びない（🐟が右端に飛ばないため） */
       #section2 .simple-header h4 {
+        flex: 0 0 auto;
         flex-shrink: 1;
         min-width: 0;
         overflow: hidden;
@@ -6343,9 +6345,10 @@
     <!-- 右上: 緊急でないが重要 -->
     <div class="section" id="section2">
       <div class="simple-header">
-        <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
-          <h4>【緊急でないが重要】</h4><button onclick="openQuadZoomModal(2,'緊急でないが重要')" style="background:none;border:none;cursor:pointer;font-size:0.9em;flex-shrink:0;" title="魚の目モードで開く">🐟</button>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <h4>【緊急でないが重要】</h4>
           <button class="deep-dive-btn" onclick="toggleDeepDive()">点検</button>
+          <button onclick="openQuadZoomModal(2,'緊急でないが重要')" style="background:none;border:none;cursor:pointer;font-size:0.9em;flex-shrink:0;" title="魚の目モードで開く">🐟</button>
           <!-- 止める仕組み入力（点検ボタン押下後に表示） -->
           <div id="stopConditionGroup" style="display: none; flex-direction: row; align-items: center; gap: 4px; flex: 1;">
             <label style="font-size:0.75em; font-weight:bold; white-space:nowrap; flex-shrink:0;">止める仕組み:</label>
@@ -6384,7 +6387,9 @@
     <!-- 左下: 緊急だが重要ではない -->
     <div class="section" id="section3">
       <div class="simple-header">
-        <h4>【緊急だが重要ではない】</h4><button onclick="openQuadZoomModal(3,'緊急だが重要ではない')" style="background:none;border:none;cursor:pointer;font-size:0.9em;flex-shrink:0;" title="魚の目モードで開く">🐟</button>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <h4>【緊急だが重要ではない】</h4><button onclick="openQuadZoomModal(3,'緊急だが重要ではない')" style="background:none;border:none;cursor:pointer;font-size:0.9em;flex-shrink:0;" title="魚の目モードで開く">🐟</button>
+        </div>
         <button class="color-toggle-btn" onclick="toggleColors()">色切替</button>
       </div>
       <input type="text" class="task-input" id="input3" placeholder="些細だが急ぎの行動は？（人に任せる）..." title="些細だが急ぎの行動は？（人に任せる）">
@@ -6393,7 +6398,9 @@
     <!-- 右下: 緊急でも重要でもない -->
     <div class="section" id="section4">
       <div class="simple-header">
-        <h4>【緊急でも重要でもない】</h4><button onclick="openQuadZoomModal(4,'緊急でも重要でもない')" style="background:none;border:none;cursor:pointer;font-size:0.9em;flex-shrink:0;" title="魚の目モードで開く">🐟</button>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <h4>【緊急でも重要でもない】</h4><button onclick="openQuadZoomModal(4,'緊急でも重要でもない')" style="background:none;border:none;cursor:pointer;font-size:0.9em;flex-shrink:0;" title="魚の目モードで開く">🐟</button>
+        </div>
         <div class="header-buttons">
           <button class="data-btn" onclick="exportData()">📤 エクスポート</button>
           <button class="data-btn" onclick="document.getElementById('importFile').click()">📥 インポート</button>
