@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ★ CURRENT VERSION: v0.45.521 ★ -->
+<!-- ★ CURRENT VERSION: v0.45.522 ★ -->
 
 <html lang="ja">
 <head>
@@ -11,7 +11,7 @@
   <!-- ★★★ 色の切り替え: true = 色あり / false = 色なし（白） ★★★ -->
   <script>    var USE_COLORS = false;  // ← ここを true/false で切り替え</script>
   <script>    // ★ バージョン番号：ここだけ変えれば全箇所に反映される
-    const APP_VERSION = 'v0.45.521';
+    const APP_VERSION = 'v0.45.522';
   const APP_LAST_UPDATED = '2026-05-13'; // ★ バージョン更新時は必ずセットで更新
     function toggleCraftMode(enabled) {
       if (window.allSettings) window.allSettings.ui.craftModeEnabled = enabled;
@@ -6388,9 +6388,10 @@
     <div class="section" id="section3">
       <div class="simple-header">
         <div style="display: flex; align-items: center; gap: 8px;">
-          <h4>【緊急だが重要ではない】</h4><button onclick="openQuadZoomModal(3,'緊急だが重要ではない')" style="background:none;border:none;cursor:pointer;font-size:0.9em;flex-shrink:0;" title="魚の目モードで開く">🐟</button>
+          <h4>【緊急だが重要ではない】</h4>
+          <button class="color-toggle-btn" onclick="toggleColors()">色切替</button>
+          <button onclick="openQuadZoomModal(3,'緊急だが重要ではない')" style="background:none;border:none;cursor:pointer;font-size:0.9em;flex-shrink:0;" title="魚の目モードで開く">🐟</button>
         </div>
-        <button class="color-toggle-btn" onclick="toggleColors()">色切替</button>
       </div>
       <input type="text" class="task-input" id="input3" placeholder="些細だが急ぎの行動は？（人に任せる）..." title="些細だが急ぎの行動は？（人に任せる）">
       <ul class="task-list" id="list3"></ul>
